@@ -1,0 +1,7 @@
+{
+  "files.exclude": {
+    "toolchain-setup": true
+  },
+  "C_Cpp.loggingLevel": "Debug",
+  "C_Cpp.intelliSenseEngineFallback": "Enabled"
+}

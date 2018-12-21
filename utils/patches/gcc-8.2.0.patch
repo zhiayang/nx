@@ -1,0 +1,206 @@
+diff -urN gcc-8.2.0-backup/config.sub gcc-8.2.0/config.sub
+--- gcc-8.2.0-backup/config.sub	2018-12-21 16:47:13.813098800 +0800
++++ gcc-8.2.0/config.sub	2018-12-21 17:20:40.770418400 +0800
+@@ -1393,7 +1393,7 @@
+ 	-gnu* | -bsd* | -mach* | -minix* | -genix* | -ultrix* | -irix* \
+ 	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -cnk* | -sunos | -sunos[34]*\
+ 	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+-	      | -sym* | -kopensolaris* | -plan9* \
++	      | -sym* | -kopensolaris* | -plan9* | -orionx* \
+ 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+ 	      | -aos* | -aros* | -cloudabi* | -sortix* \
+ 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+diff -urN gcc-8.2.0-backup/fixincludes/mkfixinc.sh gcc-8.2.0/fixincludes/mkfixinc.sh
+--- gcc-8.2.0-backup/fixincludes/mkfixinc.sh	2018-12-21 16:42:23.739331300 +0800
++++ gcc-8.2.0/fixincludes/mkfixinc.sh	2018-12-21 17:40:08.837115400 +0800
+@@ -11,6 +11,8 @@
+
+ # Check for special fix rules for particular targets
+ case $machine in
++    x86_64-*-orionx* | \
++    aarch64-*-orionx* | \
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+     x86_64-*-mingw32* | \
+diff -urN gcc-8.2.0-backup/gcc/config/aarch64/orionx64.h gcc-8.2.0/gcc/config/aarch64/orionx64.h
+--- gcc-8.2.0-backup/gcc/config/aarch64/orionx64.h	1970-01-01 08:00:00.000000000 +0800
++++ gcc-8.2.0/gcc/config/aarch64/orionx64.h	2018-12-21 17:32:07.374932000 +0800
+@@ -0,0 +1,24 @@
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS() \
++	do { \
++		builtin_define_std("orionx"); \
++		builtin_define_std("unix"); \
++		builtin_assert("system=orionx"); \
++		builtin_assert("system=unix"); \
++	} while(0);
++
++
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++#undef  LIB_SPEC
++#define LIB_SPEC "-lm -lc"
++
++#undef  OBJECT_FORMAT_ELF
++#define OBJECT_FORMAT_ELF
++
++#undef  NO_IMPLICIT_EXTERN_C
++#define NO_IMPLICIT_EXTERN_C 1
+diff -urN gcc-8.2.0-backup/gcc/config/i386/orionx64.h gcc-8.2.0/gcc/config/i386/orionx64.h
+--- gcc-8.2.0-backup/gcc/config/i386/orionx64.h	1970-01-01 08:00:00.000000000 +0800
++++ gcc-8.2.0/gcc/config/i386/orionx64.h	2018-12-21 17:31:09.890204500 +0800
+@@ -0,0 +1,24 @@
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS() \
++	do { \
++		builtin_define_std("orionx"); \
++		builtin_define_std("unix"); \
++		builtin_assert("system=orionx"); \
++		builtin_assert("system=unix"); \
++	} while(0);
++
++
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++#undef  LIB_SPEC
++#define LIB_SPEC "-lm -lc"
++
++#undef  OBJECT_FORMAT_ELF
++#define OBJECT_FORMAT_ELF
++
++#undef  NO_IMPLICIT_EXTERN_C
++#define NO_IMPLICIT_EXTERN_C 1
+diff -urN gcc-8.2.0-backup/gcc/config/i386/t-x86_64-orionx gcc-8.2.0/gcc/config/i386/t-x86_64-orionx
+--- gcc-8.2.0-backup/gcc/config/i386/t-x86_64-orionx	1970-01-01 08:00:00.000000000 +0800
++++ gcc-8.2.0/gcc/config/i386/t-x86_64-orionx	2018-12-21 17:59:03.340678900 +0800
+@@ -0,0 +1,4 @@
++# Add libgcc multilib variant without red-zone requirement
++
++MULTILIB_OPTIONS += mno-red-zone
++MULTILIB_DIRNAMES += no-red-zone
+diff -urN gcc-8.2.0-backup/gcc/config.gcc gcc-8.2.0/gcc/config.gcc
+--- gcc-8.2.0-backup/gcc/config.gcc	2018-12-21 16:43:39.143139600 +0800
++++ gcc-8.2.0/gcc/config.gcc	2018-12-21 17:58:21.126930000 +0800
+@@ -174,7 +174,7 @@
+ #			the --with-sysroot configure option or the
+ #			--sysroot command line option is used this
+ #			will be relative to the sysroot.
+-# target_type_format_char
++# target_type_format_char
+ # 			The default character to be used for formatting
+ #			the attribute in a
+ #			.type symbol_name, ${t_t_f_c}<property>
+@@ -646,6 +646,11 @@
+
+ # Common parts for widely ported systems.
+ case ${target} in
++*-*-orionx*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  ;;
+ *-*-darwin*)
+   tmake_file="t-darwin ${cpu_type}/t-darwin"
+   tm_file="${tm_file} darwin.h"
+@@ -1506,6 +1511,13 @@
+     tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/rdos.h i386/rdos64.h"
+     tmake_file="i386/t-i386elf t-svr4"
+     ;;
++x86_64-*-orionx*)
++    tmake_file="${tmake_file} i386/t-x86_64-orionx"
++    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/orionx64.h"
++    ;;
++aarch64-*-orionx*)
++    tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h aarch64/aarch64-elf.h aarch64/orionx64.h"
++	;;
+ i[34567]86-*-dragonfly*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h dragonfly.h dragonfly-stdint.h i386/dragonfly.h"
+ 	tmake_file="${tmake_file} i386/t-crtstuff"
+diff -urN gcc-8.2.0-backup/libgcc/config.host gcc-8.2.0/libgcc/config.host
+--- gcc-8.2.0-backup/libgcc/config.host	2018-12-21 16:42:30.119536600 +0800
++++ gcc-8.2.0/libgcc/config.host	2018-12-21 17:38:07.376587600 +0800
+@@ -99,7 +99,7 @@
+ 	;;
+ avr-*-*)
+ 	cpu_type=avr
+-	;;
++	;;
+ bfin*-*)
+ 	cpu_type=bfin
+ 	;;
+@@ -333,6 +333,15 @@
+ esac
+
+ case ${host} in
++x86_64-*-orionx*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
++aarch64-*-orionx*)
++	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
++	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
++	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
++	;;
+ aarch64*-*-elf | aarch64*-*-rtems*)
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+ 	extra_parts="$extra_parts crtfastmath.o"
+@@ -825,7 +834,7 @@
+ lm32-*-uclinux*)
+         extra_parts="$extra_parts crtbegin.o crtendS.o crtbeginT.o"
+         tmake_file="lm32/t-lm32 lm32/t-uclinux t-libgcc-pic t-softfp-sfdf t-softfp"
+-	;;
++	;;
+ m32r-*-elf*)
+ 	tmake_file="$tmake_file m32r/t-m32r t-fdpbit"
+ 	extra_parts="$extra_parts crtinit.o crtfini.o"
+diff -urN gcc-8.2.0-backup/libstdc++-v3/crossconfig.m4 gcc-8.2.0/libstdc++-v3/crossconfig.m4
+--- gcc-8.2.0-backup/libstdc++-v3/crossconfig.m4	2018-12-21 16:43:24.539834700 +0800
++++ gcc-8.2.0/libstdc++-v3/crossconfig.m4	2018-12-21 17:34:17.370755200 +0800
+@@ -93,7 +93,7 @@
+
+   *-freebsd*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS)
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_SETENV)
+     AC_DEFINE(HAVE_FINITEF)
+@@ -202,7 +202,7 @@
+     ;;
+   *-netbsd*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS)
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_FINITEF)
+     AC_DEFINE(HAVE_FINITE)
+@@ -221,7 +221,7 @@
+     ;;
+   *-qnx6.1* | *-qnx6.2*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS)
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_COSF)
+     AC_DEFINE(HAVE_COSL)
+@@ -269,6 +269,12 @@
+     GLIBCXX_CHECK_MATH_SUPPORT
+     GLIBCXX_CHECK_STDLIB_SUPPORT
+     ;;
++  *-orionx*)
++    GLIBCXX_CHECK_COMPILER_FEATURES
++    GLIBCXX_CHECK_LINKER_FEATURES
++    GLIBCXX_CHECK_MATH_SUPPORT
++    GLIBCXX_CHECK_STDLIB_SUPPORT
++    ;;
+   *-vxworks)
+     AC_DEFINE(HAVE_ACOSF)
+     AC_DEFINE(HAVE_ASINF)
