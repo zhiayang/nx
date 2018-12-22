@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # replace with where you cloned this
-export PROJECT_DIR=/mnt/d/Projects/nx
+export PROJECT_DIR=$(pwd)
 
 # don't change this, the rest of the OS build depends on this.
 # if you like, you can move it and symlink it.
@@ -240,7 +240,7 @@ function build_gcc() {
 		make -j$NUM_MAKE_JOBS all-gcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libgcc)${_NORMAL}"
-		make all-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		make install-gcc install-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-install.log || { return 1; }
@@ -255,7 +255,7 @@ function build_libstdcpp() {
 
 	pushd build-gcc > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libstdc++)${_NORMAL}"
-		make all-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		make install-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-install.log || { return 1; }
