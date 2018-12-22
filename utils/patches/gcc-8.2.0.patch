@@ -161,46 +161,16 @@ diff -urN gcc-8.2.0-backup/libgcc/config.host gcc-8.2.0/libgcc/config.host
  m32r-*-elf*)
  	tmake_file="$tmake_file m32r/t-m32r t-fdpbit"
  	extra_parts="$extra_parts crtinit.o crtfini.o"
-diff -urN gcc-8.2.0-backup/libstdc++-v3/crossconfig.m4 gcc-8.2.0/libstdc++-v3/crossconfig.m4
---- gcc-8.2.0-backup/libstdc++-v3/crossconfig.m4	2018-12-21 16:43:24.539834700 +0800
-+++ gcc-8.2.0/libstdc++-v3/crossconfig.m4	2018-12-21 17:34:17.370755200 +0800
-@@ -93,7 +93,7 @@
+diff -urN gcc-8.2.0-backup/libstdc++-v3/configure gcc-8.2.0/libstdc++-v3/configure
+--- gcc-8.2.0-backup/libstdc++-v3/configure	2018-12-21 16:43:24.539834700 +0800
++++ gcc-8.2.0/libstdc++-v3/configure	2018-12-21 17:34:17.370755200 +0800
+@@ -78305,7 +78305,8 @@
 
-   *-freebsd*)
-     SECTION_FLAGS='-ffunction-sections -fdata-sections'
--    AC_SUBST(SECTION_FLAGS)
-+    AC_SUBST(SECTION_FLAGS)
-     GLIBCXX_CHECK_LINKER_FEATURES
-     AC_DEFINE(HAVE_SETENV)
-     AC_DEFINE(HAVE_FINITEF)
-@@ -202,7 +202,7 @@
      ;;
-   *-netbsd*)
-     SECTION_FLAGS='-ffunction-sections -fdata-sections'
--    AC_SUBST(SECTION_FLAGS)
-+    AC_SUBST(SECTION_FLAGS)
-     GLIBCXX_CHECK_LINKER_FEATURES
-     AC_DEFINE(HAVE_FINITEF)
-     AC_DEFINE(HAVE_FINITE)
-@@ -221,7 +221,7 @@
-     ;;
-   *-qnx6.1* | *-qnx6.2*)
-     SECTION_FLAGS='-ffunction-sections -fdata-sections'
--    AC_SUBST(SECTION_FLAGS)
-+    AC_SUBST(SECTION_FLAGS)
-     GLIBCXX_CHECK_LINKER_FEATURES
-     AC_DEFINE(HAVE_COSF)
-     AC_DEFINE(HAVE_COSL)
-@@ -269,6 +269,12 @@
-     GLIBCXX_CHECK_MATH_SUPPORT
-     GLIBCXX_CHECK_STDLIB_SUPPORT
-     ;;
-+  *-orionx*)
-+    GLIBCXX_CHECK_COMPILER_FEATURES
-+    GLIBCXX_CHECK_LINKER_FEATURES
-+    GLIBCXX_CHECK_MATH_SUPPORT
-+    GLIBCXX_CHECK_STDLIB_SUPPORT
-+    ;;
-   *-vxworks)
-     AC_DEFINE(HAVE_ACOSF)
-     AC_DEFINE(HAVE_ASINF)
+   *)
+-    as_fn_error "No support for this host/target combination." "$LINENO" 5
++    # as_fn_error "No support for this host/target combination." "$LINENO" 5
++    $as_echo "No support for this host/target combination, but continuing anyway!"
+    ;;
+ esac
+

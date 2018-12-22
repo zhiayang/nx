@@ -100,8 +100,8 @@ function main() {
 
 		mkdir -p $SETUP_DIR
 		pushd $SETUP_DIR > /dev/null
-			# build_libstdcpp || { echo "${_BOLD}${_RED}=> ${_NORMAL}${_BOLD}libstdc++ compilation failed!${_NORMAL}"; exit 1; }
-			# echo ""
+			build_libstdcpp || { echo "${_BOLD}${_RED}=> ${_NORMAL}${_BOLD}libstdc++ compilation failed!${_NORMAL}"; exit 1; }
+			echo ""
 		popd > /dev/null
 	fi
 
@@ -216,7 +216,7 @@ function build_libstdcpp() {
 
 	pushd build-gcc > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libstdc++)${_NORMAL}"
-		if [ ! $(make -j all-target-libstdc++-v3  | pv -t -i 0.5 --name "elapsed time (libstdc++)" > /dev/null) ]; then return 1; fi
+		if [ ! $(make all-target-libstdc++-v3 | pv -t -i 0.5 --name "elapsed time (libstdc++)" > /dev/null) ]; then return 1; fi
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		if [ ! $(make install-target-libstdc++-v3 | pv -t -i 0.5 --name "elapsed time (install)" > /dev/null) ]; then return 1; fi
