@@ -69,6 +69,7 @@ function main() {
 	if [ "$1" != "--skip-toolchain" ]; then
 		export SETUP_DIR=$PROJECT_DIR/toolchain-setup
 		build_toolchain $SETUP_DIR
+		echo ""
 	fi
 
 
@@ -85,6 +86,8 @@ function main() {
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}building libc${_NORMAL}"
 	make -C libs/libc > /dev/null
+
+	echo ""
 
 	unset CC
 	unset CXX
@@ -138,8 +141,8 @@ function build_binutils() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting binutils${_NORMAL}"
 
 	if [ ! -d "binutils-$BINUTILS_VERSION" ]; then
-		tar xf binutils-$BINUTILS_VERSION.tar.gz --checkpoint=.500
-		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching binutils${_NORMAL}"
+		tar xf binutils-$BINUTILS_VERSION.tar.gz --checkpoint=.250
+		echo "\n${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching binutils${_NORMAL}"
 		pushd binutils-$BINUTILS_VERSION > /dev/null
 			patch -p1 < $PROJECT_DIR/utils/patches/binutils-$BINUTILS_VERSION.patch
 		popd > /dev/null
@@ -154,14 +157,13 @@ function build_binutils() {
 	mkdir -p build-binutils
 	pushd build-binutils > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}configure${_NORMAL}"
-		if [ ! $(../binutils-$BINUTILS_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror \
-			| pv -t -i 0.5 --name "elapsed time (configure)" > /dev/null) ]; then return 1; fi
+		../binutils-$BINUTILS_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-configure.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make${_NORMAL}"
-		if [ ! $(make -j all | pv -t -i 0.5 --name "elapsed time (make)" > /dev/null) ]; then return 1; fi
+		make -j all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		if [ ! $(make install | pv -t -i 0.5 --name "elapsed time (install)" > /dev/null) ]; then return 1; fi
+		make install 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-install.log || { return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null
@@ -179,8 +181,8 @@ function build_gcc() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting gcc${_NORMAL}"
 
 	if [ ! -d "gcc-$GCC_VERSION" ]; then
-		tar xf gcc-$GCC_VERSION.tar.gz --checkpoint=.500
-		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching gcc${_NORMAL}"
+		tar xf gcc-$GCC_VERSION.tar.gz --checkpoint=.250
+		echo "\n${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching gcc${_NORMAL}"
 		pushd gcc-$GCC_VERSION > /dev/null
 			patch -p1 < $PROJECT_DIR/utils/patches/gcc-$GCC_VERSION.patch
 		popd > /dev/null
@@ -195,16 +197,16 @@ function build_gcc() {
 	mkdir -p build-gcc
 	pushd build-gcc > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}configure${_NORMAL}"
-		if [ ! $(../gcc-$GCC_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror --disable-libssp --enable-languages=c,c++ | pv -t -i 0.5 --name "elapsed time (configure)" > /dev/null) ]; then return 1; fi
+		../gcc-$GCC_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror --disable-libssp --enable-languages=c,c++ 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-configure.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (gcc)${_NORMAL}"
-		if [ ! $(make -j all-gcc | pv -t -i 0.5 --name "elapsed time (gcc)"  > /dev/null) ]; then return 1; fi
+		make -j all-gcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libgcc)${_NORMAL}"
-		if [ ! $(make -j all-target-libgcc | pv -t -i 0.5 --name "elapsed time (libgcc)"  > /dev/null) ]; then return 1; fi
+		make all-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		if [ ! $(make install-gcc install-target-libgcc | pv -t -i 0.5 --name "elapsed time (install)"  > /dev/null) ]; then return 1; fi
+		make install-gcc install-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-install.log || { return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null
@@ -216,10 +218,10 @@ function build_libstdcpp() {
 
 	pushd build-gcc > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libstdc++)${_NORMAL}"
-		if [ ! $(make all-target-libstdc++-v3 | pv -t -i 0.5 --name "elapsed time (libstdc++)" > /dev/null) ]; then return 1; fi
+		make all-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		if [ ! $(make install-target-libstdc++-v3 | pv -t -i 0.5 --name "elapsed time (install)" > /dev/null) ]; then return 1; fi
+		make install-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-install.log || { return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null

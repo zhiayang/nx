@@ -89,15 +89,6 @@ diff -urN gcc-8.2.0-backup/gcc/config/i386/t-x86_64-orionx gcc-8.2.0/gcc/config/
 diff -urN gcc-8.2.0-backup/gcc/config.gcc gcc-8.2.0/gcc/config.gcc
 --- gcc-8.2.0-backup/gcc/config.gcc	2018-12-21 16:43:39.143139600 +0800
 +++ gcc-8.2.0/gcc/config.gcc	2018-12-21 17:58:21.126930000 +0800
-@@ -174,7 +174,7 @@
- #			the --with-sysroot configure option or the
- #			--sysroot command line option is used this
- #			will be relative to the sysroot.
--# target_type_format_char
-+# target_type_format_char
- # 			The default character to be used for formatting
- #			the attribute in a
- #			.type symbol_name, ${t_t_f_c}<property>
 @@ -646,6 +646,11 @@
 
  # Common parts for widely ported systems.
@@ -127,15 +118,6 @@ diff -urN gcc-8.2.0-backup/gcc/config.gcc gcc-8.2.0/gcc/config.gcc
 diff -urN gcc-8.2.0-backup/libgcc/config.host gcc-8.2.0/libgcc/config.host
 --- gcc-8.2.0-backup/libgcc/config.host	2018-12-21 16:42:30.119536600 +0800
 +++ gcc-8.2.0/libgcc/config.host	2018-12-21 17:38:07.376587600 +0800
-@@ -99,7 +99,7 @@
- 	;;
- avr-*-*)
- 	cpu_type=avr
--	;;
-+	;;
- bfin*-*)
- 	cpu_type=bfin
- 	;;
 @@ -333,6 +333,15 @@
  esac
 
@@ -152,15 +134,6 @@ diff -urN gcc-8.2.0-backup/libgcc/config.host gcc-8.2.0/libgcc/config.host
  aarch64*-*-elf | aarch64*-*-rtems*)
  	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
  	extra_parts="$extra_parts crtfastmath.o"
-@@ -825,7 +834,7 @@
- lm32-*-uclinux*)
-         extra_parts="$extra_parts crtbegin.o crtendS.o crtbeginT.o"
-         tmake_file="lm32/t-lm32 lm32/t-uclinux t-libgcc-pic t-softfp-sfdf t-softfp"
--	;;
-+	;;
- m32r-*-elf*)
- 	tmake_file="$tmake_file m32r/t-m32r t-fdpbit"
- 	extra_parts="$extra_parts crtinit.o crtfini.o"
 diff -urN gcc-8.2.0-backup/libstdc++-v3/configure gcc-8.2.0/libstdc++-v3/configure
 --- gcc-8.2.0-backup/libstdc++-v3/configure	2018-12-21 16:43:24.539834700 +0800
 +++ gcc-8.2.0/libstdc++-v3/configure	2018-12-21 17:34:17.370755200 +0800
