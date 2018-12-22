@@ -125,6 +125,7 @@ function main() {
 
 
 	if [ $SKIP_SETUP_DISKIMAGE == false ]; then
+		chmod +x $PROJECT_DIR/utils/tools/create-diskimage.sh
 		$PROJECT_DIR/utils/tools/create-diskimage.sh || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}disk image creation failed!${_NORMAL}"; exit 1; }
 		echo ""
 	fi
@@ -135,6 +136,7 @@ function main() {
 		export SETUP_DIR=$PROJECT_DIR/toolchain-setup
 		mkdir -p $SETUP_DIR
 
+		chmod +x $PROJECT_DIR/utils/tools/bootstrap-efi.sh
 		$PROJECT_DIR/utils/tools/bootstrap-efi.sh || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}efi toolchain compilation failed!${_NORMAL}"; exit 1; }
 		echo ""
 	fi
