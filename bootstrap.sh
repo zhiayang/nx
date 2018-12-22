@@ -16,11 +16,13 @@ export TARGET=x86_64-orionx
 export BINUTILS_VERSION="2.31.1"
 export GCC_VERSION="8.2.0"
 
+export NUM_MAKE_JOBS=16
 
 SKIP_SETUP_LIBC=false
 SKIP_SETUP_SYSROOT=false
-SKIP_SETUP_TOOLCHAIN=false
 SKIP_SETUP_DISKIMAGE=false
+SKIP_SETUP_TOOLCHAIN=false
+SKIP_SETUP_EFI_TOOLCHAIN=false
 
 # setup colour codes
 _BOLD=`tput bold`
@@ -35,6 +37,7 @@ function main() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}bootstrapping development environment${_NORMAL}"
 	echo ""
 
+	exit
 
 	if [ ! -f "$PROJECT_DIR/utils/patches/binutils-$BINUTILS_VERSION.patch" ]; then
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils-$BINUTILS_VERSION is not supported!${_NORMAL} see utils/patches/ for a list of supported versions"
@@ -129,7 +132,17 @@ function main() {
 	fi
 
 
-	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}environment is set up!${_NORMAL}"
+	if [ $SKIP_SETUP_EFI_TOOLCHAIN == false ]; then
+
+		export SETUP_DIR=$PROJECT_DIR/toolchain-setup
+		mkdir -p $SETUP_DIR
+
+		$PROJECT_DIR/utils/tools/bootstrap-efi.sh || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}efi toolchain compilation failed!${_NORMAL}"; exit 1; }
+		echo ""
+	fi
+
+
+	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}environment is set up!${_NORMAL}"
 }
 
 
@@ -162,6 +175,7 @@ function build_binutils() {
 
 	if [ ! -d "binutils-$BINUTILS_VERSION" ]; then
 		tar xf binutils-$BINUTILS_VERSION.tar.gz --checkpoint=.250
+		echo ""
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching binutils${_NORMAL}"
 		echo ""
 		pushd binutils-$BINUTILS_VERSION > /dev/null
@@ -181,7 +195,7 @@ function build_binutils() {
 		../binutils-$BINUTILS_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-configure.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make${_NORMAL}"
-		make -j all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		make install 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-install.log || { return 1; }
@@ -203,6 +217,7 @@ function build_gcc() {
 
 	if [ ! -d "gcc-$GCC_VERSION" ]; then
 		tar xf gcc-$GCC_VERSION.tar.gz --checkpoint=.250
+		echo ""
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching gcc${_NORMAL}"
 		echo ""
 		pushd gcc-$GCC_VERSION > /dev/null
@@ -222,7 +237,7 @@ function build_gcc() {
 		../gcc-$GCC_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror --disable-libssp --enable-languages=c,c++ 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-configure.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (gcc)${_NORMAL}"
-		make -j all-gcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all-gcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libgcc)${_NORMAL}"
 		make all-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { return 1; }
@@ -250,11 +265,13 @@ function build_libstdcpp() {
 }
 
 
-
-for i in "$@" ; do [[ $i == "--skip-libc" ]] && SKIP_SETUP_LIBC=true && break ; done
-for i in "$@" ; do [[ $i == "--skip-sysroot" ]] && SKIP_SETUP_SYSROOT=true && break ; done
-for i in "$@" ; do [[ $i == "--skip-toolchain" ]] && SKIP_SETUP_TOOLCHAIN=true && break ; done
-for i in "$@" ; do [[ $i == "--skip-diskimage" ]] && SKIP_SETUP_DISKIMAGE=true && break ; done
+for i in "$@"; do
+	if [[ $i == "--skip-libc" ]]; then SKIP_SETUP_LIBC=true; break; fi
+	if [[ $i == "--skip-sysroot" ]]; then SKIP_SETUP_SYSROOT=true; break; fi
+	if [[ $i == "--skip-toolchain" ]]; then SKIP_SETUP_TOOLCHAIN=true; break; fi
+	if [[ $i == "--skip-diskimage" ]]; then SKIP_SETUP_DISKIMAGE=true; break; fi
+	if [[ $i == "--skip-efi-toolchain" ]]; then SKIP_SETUP_EFI_TOOLCHAIN=true; break; fi
+done
 
 main "$@"
 
