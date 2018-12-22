@@ -264,11 +264,11 @@ function build_libstdcpp() {
 
 
 for i in "$@"; do
-	if [[ $i == "--skip-libc" ]]; then SKIP_SETUP_LIBC=true; break; fi
-	if [[ $i == "--skip-sysroot" ]]; then SKIP_SETUP_SYSROOT=true; break; fi
-	if [[ $i == "--skip-toolchain" ]]; then SKIP_SETUP_TOOLCHAIN=true; break; fi
-	if [[ $i == "--skip-diskimage" ]]; then SKIP_SETUP_DISKIMAGE=true; break; fi
-	if [[ $i == "--skip-efi-toolchain" ]]; then SKIP_SETUP_EFI_TOOLCHAIN=true; break; fi
+	if [ $i == "--skip-libc" ]; then SKIP_SETUP_LIBC=true; fi
+	if [ $i == "--skip-sysroot" ]; then SKIP_SETUP_SYSROOT=true; fi
+	if [ $i == "--skip-toolchain" ]; then SKIP_SETUP_TOOLCHAIN=true; fi
+	if [ $i == "--skip-diskimage" ]; then SKIP_SETUP_DISKIMAGE=true; fi
+	if [ $i == "--skip-efi-toolchain" ]; then SKIP_SETUP_EFI_TOOLCHAIN=true; fi
 done
 
 main "$@"

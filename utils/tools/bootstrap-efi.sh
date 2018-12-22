@@ -7,13 +7,14 @@ _RED=`tput setaf 1`
 _BLUE=`tput setaf 4`
 _GREEN=`tput setaf 2`
 
-EFI_PREFIX=
-EFI_TARGET=x86_64-w64-mingw32
-
 if [[ $PROJECT_DIR == "" || $SETUP_DIR == "" ]]; then
 	echo "please set the project directory! (or invoke using './bootstrap --skip-toolchain --skip-libc --skip-sysroot' to only run this script"
 	exit 1
 fi
+
+export EFI_PREFIX=$PROJECT_DIR/build/efi/toolchain
+export EFI_SYSROOT=$PROJECT_DIR/build/efi/sysroot
+export EFI_TARGET=x86_64-w64-mingw32
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}building efi toolchain${_NORMAL}"
 echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}staging directory: $SETUP_DIR${_NORMAL}"
@@ -54,7 +55,7 @@ pushd $SETUP_DIR > /dev/null
 		../binutils-$BINUTILS_VERSION/configure --target=$EFI_TARGET --prefix=$EFI_PREFIX --with-sysroot=$EFI_SYSROOT --disable-nls --disable-werror 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-configure.log || { exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make${_NORMAL}"
-		make -j all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { exit 1; }
+		make -j$NUM_MAKE_JOBS all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		make install 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-install.log || { exit 1; }
@@ -101,10 +102,10 @@ pushd $SETUP_DIR > /dev/null
 		../gcc-$GCC_VERSION/configure --target=$EFI_TARGET --prefix=$EFI_PREFIX --with-sysroot=$EFI_SYSROOT --disable-nls --disable-werror --enable-languages=c,c++ --without-headers 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-configure.log || { exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (gcc)${_NORMAL}"
-		make -j all-gcc 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-make.log || { exit 1; }
+		make -j$NUM_MAKE_JOBS all-gcc 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-make.log || { exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libgcc)${_NORMAL}"
-		make all-target-libgcc 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-make.log || { exit 1; }
+		make -j$NUM_MAKE_JOBS all-target-libgcc 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-make.log || { exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
 		make install-gcc install-target-libgcc 2>1 | pv -t -i 0.5 --name 'elapsed' > gcc-install.log || { exit 1; }
