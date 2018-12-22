@@ -37,8 +37,6 @@ function main() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}bootstrapping development environment${_NORMAL}"
 	echo ""
 
-	exit
-
 	if [ ! -f "$PROJECT_DIR/utils/patches/binutils-$BINUTILS_VERSION.patch" ]; then
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils-$BINUTILS_VERSION is not supported!${_NORMAL} see utils/patches/ for a list of supported versions"
 		exit 1
