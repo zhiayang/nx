@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include "../stdint.h"
 
-#include "../defs/_pthreadstructs.h"
-
 #pragma once
 
 #ifndef __blkcnt_t
@@ -120,34 +118,10 @@ typedef uint64_t useconds_t;
 #endif
 
 
-
 #ifndef __err_t
 #define __err_t
 typedef int err_t;
 #endif
-
-
-// pthreads
-#ifndef __pthread_t
-#define __pthread_t
-typedef pid_t pthread_t;
-#endif
-
-#ifndef __pthread_attr_t
-#define __pthread_attr_t
-typedef struct Thread_attr pthread_attr_t;
-#endif
-
-#ifndef __pthread_mutex_t
-#define __pthread_mutex_t
-typedef uint64_t pthread_mutex_t;
-#endif
-
-#ifndef __pthread_mutexattr_t
-#define __pthread_mutexattr_t
-typedef struct Mutex_attr pthread_mutexattr_t;
-#endif
-
 
 
 

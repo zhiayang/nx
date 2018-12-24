@@ -11,10 +11,49 @@
 
 #include "efi/protocol/graphics-output.h"
 
+void efx_main()
+{
+	efi::printf("hello, world!?! %d\n", 10);
+	efi::printf("hello!\n");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern "C" efi_status efi_main(efi_handle imageHandle, efi_system_table* sysTable)
 {
-	sysTable->ConOut->OutputString(sysTable->ConOut, STR("hello, world!!!\r\n"));
-	// efiprintf("");
+	efi::init_systable(sysTable);
+
+	efx_main();
 
 	// efi_graphics_output_protocol* gop = 0;
 	// {
@@ -37,10 +76,8 @@ extern "C" efi_status efi_main(efi_handle imageHandle, efi_system_table* sysTabl
 	// 	}
 	// }
 
-
-	// sysTable->ConOut->OutputString(sysTable->ConOut, STR("hanging...\r\n"));
-	while(true) {
-	}
+	while(true)
+		;
 }
 
 

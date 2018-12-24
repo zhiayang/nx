@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Windows",
+            "name": "nx-windows",
             "includePath": [
                 "${workspaceRoot}/source/include",
                 "${workspaceRoot}/build/sysroot/usr/include"

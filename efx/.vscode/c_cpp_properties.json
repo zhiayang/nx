@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Windows",
+            "name": "efx-windows",
             "includePath": [
                 "${workspaceRoot}/include",
                 "${workspaceRoot}/../libs/zircon-efi",

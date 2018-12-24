@@ -28,7 +28,7 @@ COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DI
 CFLAGS      =  $(COMMONFLAGS) -std=c11
 CXXFLAGS    =  $(COMMONFLAGS) -std=c++17
 
-LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt -lkrt
+LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt
 
 LOADER      = $(SYSROOT)/boot/efxloader
 
@@ -39,7 +39,7 @@ all: $(LOADER)
 
 $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ)
 	echo "# $(notdir $@)"
-	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ)
+	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt
 	@$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 efxloader.tmp $@
 	@rm efxloader.tmp
 

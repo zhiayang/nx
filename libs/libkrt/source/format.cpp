@@ -23,11 +23,13 @@
 *******************************************************************************/
 
 
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <math.h>
+// #include <stdio.h>
+#include "krt.h"
+
+#include "limits.h"
+#include "string.h"
+#include "sys/types.h"
+
 
 static size_t convert_integer(char* destination, uintmax_t value, uintmax_t base, const char* digits)
 {
@@ -449,16 +451,12 @@ extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_
 				}
 			}
 		}
-		else if(*format == 'm' || *format == 's')
+		else if(*format == 's')
 		{
 			char conversion = *format++;
 
 			const char* string;
-			if(conversion == 'm')
-			{
-				string = strerror(errno), conversion = 's';
-			}
-			else if(length == LENGTH_DEFAULT)
+			if(length == LENGTH_DEFAULT)
 			{
 				string = va_arg(parameters, const char*);
 			}

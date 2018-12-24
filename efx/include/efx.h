@@ -8,7 +8,19 @@
 // fuck EFI
 #define STR(x) ((char16_t*) L ## x)
 
+struct efi_system_table;
+
+namespace efi
+{
+	void init_systable(efi_system_table* systable);
+	efi_system_table* systable();
+
+	int printf(const char* fmt, ...);
 
 
-extern "C" int efiprintf(const char* fmt, ...);
-extern "C" char16_t* efistr(char* inp, size_t len);
+
+
+
+
+	char16_t* convertstr(const char* inp, size_t len);
+}

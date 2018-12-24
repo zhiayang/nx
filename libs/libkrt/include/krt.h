@@ -12,6 +12,50 @@
 #define __max(a, b) ((a) > (b) ? (a) : (b))
 #define __abs(x)    ((x) < (0) ? (-x) : (x))
 
+
+// c++ stuff!!
+// #ifdef __cplusplus
+
+namespace krt
+{
+	namespace port
+	{
+		uint8_t read1b(uint16_t port);
+		uint16_t read2b(uint16_t port);
+		uint32_t read4b(uint16_t port);
+
+		void write1b(uint8_t value, uint16_t port);
+		void write2b(uint16_t value, uint16_t port);
+		void write4b(uint32_t value, uint16_t port);
+	}
+}
+
+// #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// c stuff!
 __BEGIN_DECLS
 
 int atoi(const char* nptr);
@@ -42,6 +86,10 @@ int print(const char* fmt, ...);
 
 
 __END_DECLS
+
+
+
+
 
 
 
