@@ -1,7 +1,19 @@
 {
 	"folders": [
 		{
+			"path": "efx"
+		},
+		{
+			"path": "libs\\libkrt"
+		},
+		{
 			"path": "."
+		},
+		{
+			"path": "libs\\libc"
+		},
+		{
+			"path": "libs\\libm"
 		}
 	],
 	"settings": {

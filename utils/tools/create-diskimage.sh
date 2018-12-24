@@ -9,19 +9,6 @@ _GREEN=`tput setaf 2`
 
 REFIND_VERSION=0.11.4
 
-# 100 mb.
-SECTOR_SIZE=512
-SECTOR_COUNT=204800
-
-ESP_PARTITION_START=2048
-ESP_PARTITION_END=102400
-
-ROOT_PARTITION_START=104448
-ROOT_PARTITION_END=204766
-
-ESP_PART_UUID="46B5A7DF-4FB2-4545-9C9E-AE54345868F5"
-ROOT_PART_UUID="871A56D0-2069-EE41-AC8E-0B67C148A150"
-
 OUTPUT_DISK=disk.img
 
 
@@ -51,6 +38,8 @@ if [ ! $(command -v mcopy) ]; then
 	exit 1
 fi
 
+
+source $PROJECT_DIR/utils/tools/disk-geometry.sh
 
 
 
@@ -127,27 +116,20 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 		exit 1
 	fi
 
-	# go back to os-agnostic things.
-
 	# copy refind to the ESP
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}installing rEFInd to ESP${_NORMAL}"
 
-	mmd -i esp-part.img ::/EFI
-	mmd -i esp-part.img ::/EFI/BOOT
-	mmd -i esp-part.img ::/EFI/BOOT/refind
+	mmd -D O -i esp-part.img ::/EFI
+	mmd -D O -i esp-part.img ::/EFI/BOOT
+	mmd -D O -i esp-part.img ::/EFI/BOOT/refind
 
-	mcopy -sQ -i esp-part.img $PROJECT_DIR/utils/refind.conf ::/EFI/BOOT/refind/refind.conf
-	mcopy -sQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/drivers_x64 ::/EFI/BOOT/refind/
-	mcopy -sQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/tools_x64 ::/EFI/BOOT/refind/
-	mcopy -sQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/refind_x64.efi ::/EFI/BOOT/bootx64.efi
+	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/drivers_x64 ::/EFI/BOOT/refind/
+	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/tools_x64 ::/EFI/BOOT/refind/
+	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/refind_x64.efi ::/EFI/BOOT/bootx64.efi
 
 
-	# join the two partitions together.
-	dd if=esp-part.img of=disk.img bs=$SECTOR_SIZE count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) seek=$ESP_PARTITION_START conv=notrunc status=none
-	dd if=root-part.img of=disk.img bs=$SECTOR_SIZE count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) seek=$ROOT_PARTITION_START conv=notrunc status=none
+	$PROJECT_DIR/utils/tools/update-diskimage.sh
 
-	# delete the temp files
-	rm esp-part.img root-part.img
 
 popd > /dev/null
 

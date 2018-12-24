@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceRoot}/include",
+                "${workspaceRoot}/../../build/sysroot/usr/include"
+            ],
+            "defines": [
+                "__orionx__",
+                "_DEBUG"
+            ],
+            "compilerPath": "${workspaceRoot}/../build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceRoot}/source"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

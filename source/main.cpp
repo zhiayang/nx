@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 
-int main()
+extern "C" int kernel_entry()
 {
+	return 0;
 }

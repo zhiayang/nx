@@ -16,10 +16,14 @@ SOBJ		= $(SSRC:.s=.s.o)
 
 NUMFILES	= $$(($(words $(CXXSRC)) + $(words $(CSRC)) + $(words $(SSRC))))
 
+.PHONY: all install
 
+headers:
+
+install: all headers
+	@cp -r include/* $(SYSROOT)/usr/include/
 
 all: $(SYSROOT)/usr/lib/libc.a
-	@#printf "\nlibc.a\n"
 
 $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o source/platform/syscall/helper.s.o

@@ -1,5 +1,9 @@
 *.exe
 *.o
+*.a
+*.so
+*.dll
+*.cpp.d
 
 build
 toolchain-setup

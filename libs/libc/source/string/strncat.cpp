@@ -1,15 +1,18 @@
 // strncat.cpp
-// Copyright (c) 2014 - 2016, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
 extern "C"
 
 #include "../../include/string.h"
-extern "C" char* strncat(char* s1, const char* s2, size_t n)
+extern "C" char* strncat(char* dest, const char* src, size_t n)
 {
-	size_t n2 = strlen(s2);
-	if(n2 > n) n2 = n;
-	strncpy(s1 + strlen(s1), s2, n2);
-	s1[strlen(s1) + n2] = '\0';
-	return s1;
+	size_t dest_len = strlen(dest);
+
+	size_t i = 0;
+	for(; i < n && src[i] != '\0'; i++)
+		dest[dest_len + i] = src[i];
+
+	dest[dest_len + i] = '\0';
+	return dest;
 }

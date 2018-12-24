@@ -4,14 +4,13 @@
             "name": "Windows",
             "includePath": [
                 "${workspaceRoot}/source/include",
-                "${workspaceRoot}/build/sysroot/usr/include",
-                "${workspaceRoot}/build/toolchain/lib/gcc/x86_64-orionx/8.2.0/include"
+                "${workspaceRoot}/build/sysroot/usr/include"
             ],
             "defines": [
                 "__orionx__",
                 "_DEBUG"
             ],
-            "compilerPath": "/mnt/d/Projects/nx/build/toolchain/bin/x86_64-orionx-g++",
+            "compilerPath": "${workspaceRoot}/build/toolchain/bin/x86_64-orionx-g++",
             "intelliSenseMode": "gcc-x64",
             "browse": {
                 "path": [

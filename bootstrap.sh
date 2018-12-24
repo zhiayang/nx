@@ -34,6 +34,23 @@ _GREEN=`tput setaf 2`
 
 function main() {
 
+	if [ "$1" == "clean" ]; then
+		# ! ACHTUNG !
+		# rm -rf with impunity is dangerous
+
+		echo "${_BOLD}${_RED}=> ${_NORMAL}${_BOLD}destroying development environment${_NORMAL}"
+		echo ""
+
+		if [ "$PROJECT_DIR" != "" ]; then
+			rm -rf $SYSROOT
+			rm -rf $PREFIX
+			rm -rf $PROJECT_DIR/build
+			rm -rf $PROJECT_DIR/toolchain-setup
+		fi
+		exit
+	fi
+
+
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}bootstrapping development environment${_NORMAL}"
 	echo ""
 
@@ -51,20 +68,6 @@ function main() {
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'pv' not found${_NORMAL}"
 		exit 1
 	fi
-
-
-	if [ "$1" == "clean" ]; then
-		# ! ACHTUNG !
-		# rm -rf with impunity is dangerous
-		if [ "$PROJECT_DIR" != "" ]; then
-			rm -rf $SYSROOT
-			rm -rf $PREFIX
-			rm -rf $PROJECT_DIR/build
-			rm -rf $PROJECT_DIR/toolchain-setup
-		fi
-		exit
-	fi
-
 
 
 	if [ $SKIP_SETUP_SYSROOT == false ]; then
@@ -97,10 +100,10 @@ function main() {
 		export AS=$PROJECT_DIR/build/toolchain/bin/x86_64-orionx-as
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}building libm${_NORMAL}"
-		make -C libs/libm install > /dev/null
+		make -C libs/libm install > /dev/null || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}libm compilation failed!${_NORMAL}"; exit 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}building libc${_NORMAL}"
-		make -C libs/libc > /dev/null
+		make -C libs/libc > /dev/null || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}libc compilation failed!${_NORMAL}"; exit 1; }
 
 		echo ""
 
@@ -154,7 +157,7 @@ function build_toolchain() {
 
 	mkdir -p $1
 	pushd $1 > /dev/null
-		build_binutils || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils compilation failed!${_NORMAL}"; exit 1; }
+		# build_binutils || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils compilation failed!${_NORMAL}"; exit 1; }
 		echo ""
 
 		export PATH="$PREFIX/bin:$PATH"
