@@ -3,24 +3,23 @@
         {
             "name": "efx-windows",
             "includePath": [
-                "${workspaceRoot}/include",
-                "${workspaceRoot}/../libs/zircon-efi",
-                "${workspaceRoot}/../libs/libkrt/include",
-                "${workspaceRoot}/../build/sysroot/usr/include"
+                "${workspaceFolder:efx}/include",
+                "${workspaceFolder:nx}/libs/zircon-efi",
+                "${workspaceFolder:nx}/libs/libkrt/include"
             ],
             "defines": [
                 "__orionx__",
                 "_DEBUG"
             ],
-            "compilerPath": "${workspaceRoot}/../build/toolchain/bin/x86_64-orionx-g++",
-            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "${workspaceRoot}/source",
-                    "${workspaceRoot}/../libs/libkrt",
-                    "${workspaceRoot}/../libs/zircon-efi"
+                    "${workspaceFolder:efx}",
+                    "${workspaceFolder:nx}/libs/libkrt",
+                    "${workspaceFolder:nx}/libs/zircon-efi"
                 ],
-                "limitSymbolsToIncludedHeaders": true,
+                "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""
             },
             "cStandard": "c11",

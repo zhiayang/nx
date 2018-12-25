@@ -25,8 +25,8 @@
 #ifndef INCLUDE____STDINT_H
 #define INCLUDE____STDINT_H
 
-#include <sys/cdefs.h>
-#include <bits/wordsize.h>
+#include "sys/cdefs.h"
+#include "bits/wordsize.h"
 
 __BEGIN_DECLS
 

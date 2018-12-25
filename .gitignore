@@ -4,6 +4,7 @@
 *.so
 *.dll
 *.cpp.d
+*.c.d
 
 build
 toolchain-setup

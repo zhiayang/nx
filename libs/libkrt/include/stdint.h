@@ -25,8 +25,8 @@
 #ifndef INCLUDE_STDINT_H
 #define INCLUDE_STDINT_H
 
-#include <sys/cdefs.h>
-#include <defs/_stdint.h>
+#include "sys/cdefs.h"
+#include "defs/_stdint.h"
 
 // todo: do something about this?
 #define __STDC_CONSTANT_MACROS

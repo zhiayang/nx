@@ -33,7 +33,7 @@ typedef struct {
 
 #define EFI_FILE_INFO_GUID \
     {0x09576e92, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b}}
-extern efi_guid FileInfoGuid;
+
 
 typedef struct {
     uint64_t Size;
@@ -48,7 +48,7 @@ typedef struct {
 
 #define EFI_FILE_SYSTEM_INFO_GUID \
     {0x09576e93, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b}}
-extern efi_guid FileSystemInfoGuid;
+
 
 typedef struct {
     uint64_t Size;

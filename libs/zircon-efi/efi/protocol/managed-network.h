@@ -9,7 +9,7 @@
 
 #define EFI_MANAGED_NETWORK_PROTOCOL_GUID \
     {0x7ab33a91, 0xace5, 0x4326,{0xb5, 0x72, 0xe7, 0xee, 0x33, 0xd3, 0x9f, 0x16}}
-extern efi_guid ManagedNetworkProtocol;
+
 
 typedef struct {
     efi_time  Timestamp;

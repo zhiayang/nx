@@ -1,7 +1,6 @@
 {
   "files.exclude": {
     "efx": true,
-    "libs": true,
     "toolchain-setup": true
   },
   "C_Cpp.loggingLevel": "Debug",

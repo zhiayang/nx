@@ -2,11 +2,12 @@
 // Copyright (c) 2011 - 2014, Jonas 'Sortie' Termansen
 // Licensed under the GNU LGPL.
 
-#include "../../include/stdlib.h"
-#include "../../include/stdint.h"
-#include "../../include/ctype.h"
-#include "../../include/limits.h"
-#include "../../include/assert.h"
+#include <stddef.h>
+
+#include "ctype.h"
+#include "stdint.h"
+#include "limits.h"
+#include "assert.h"
 
 
 #ifndef STRTOL

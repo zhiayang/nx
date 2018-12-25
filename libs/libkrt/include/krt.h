@@ -2,19 +2,15 @@
 // Copyright (c) 2018, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#pragma once
+
 #include <stddef.h>
-#include <stdint.h>
 #include <stdarg.h>
 
-#include "sys/cdefs.h"
-
-#define __min(a, b) ((a) > (b) ? (b) : (a))
-#define __max(a, b) ((a) > (b) ? (a) : (b))
-#define __abs(x)    ((x) < (0) ? (-x) : (x))
-
-
-// c++ stuff!!
-// #ifdef __cplusplus
+#include "stdint.h"
+#include "krt/meta.h"
+#include "krt/types.h"
+#include "krt/macros.h"
 
 namespace krt
 {
@@ -28,13 +24,17 @@ namespace krt
 		void write2b(uint16_t value, uint16_t port);
 		void write4b(uint32_t value, uint16_t port);
 	}
+
+	namespace heap
+	{
+		void init();
+
+		void* alloc(size_t sz);
+		void free(void* ptr);
+		void* realloc(void* ptr, size_t newsz);
+	}
+
 }
-
-// #endif
-
-
-
-
 
 
 

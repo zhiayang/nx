@@ -41,12 +41,13 @@ CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)
 
 CXXDEPS				= $(CXXOBJ:.o=.d)
 
+QEMU_FLAGS          = -bios utils/ovmf-x64/OVMF-pure-efi.fd -drive format=raw,file=build/disk.img
+QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 
 .DEFAULT_GOAL = all
 -include $(CXXDEPS)
 
 KERNEL				= $(SYSROOT)/boot/nxkernel64
-
 
 .PHONY: all clean build libraries diskimage loader qemu
 
@@ -57,7 +58,8 @@ build: libraries loader $(KERNEL)
 $(KERNEL): $(SOBJ) $(CXXOBJ)
 
 qemu: diskimage
-	@$(QEMU) -vga std -bios utils/ovmf-x64/OVMF-pure-efi.fd -drive format=raw,file=build/disk.img -net none -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
+	@echo -e "# starting qemu\n"
+	@$(QEMU) $(QEMU_FLAGS) -vga std $(QEMU_E9_PORT_STDIO)
 
 loader:
 	@make -s -C efx all

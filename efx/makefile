@@ -13,43 +13,52 @@ export EFI_OBJCOPY  := $(PROJECT_DIR)/build/toolchain/bin/x86_64-w64-mingw32-obj
 EFI_DIR     = $(PROJECT_DIR)/libs/zircon-efi
 EFI_INCS    = -I$(EFI_DIR)
 
-CXXSRC      = $(shell find . -name "*.cpp")
-CSRC        = $(shell find . -name "*.c") $(EFI_DIR)/platform/reloc_$(ARCH).c
-_SSRC       = $(shell find . -name "*.s") $(EFI_DIR)/platform/crt0-efi-$(ARCH).s
-SSRC        = $(_SSRC:.S=.s)
+CXXSRC      = $(shell find source -name "*.cpp")
+CSRC        = $(shell find source -name "*.c") $(EFI_DIR)/platform/reloc_$(ARCH).c
+SSRC        = $(shell find source -name "*.s") $(EFI_DIR)/platform/crt0-efi-$(ARCH).s
 
 COBJ        = $(CSRC:.c=.c.o)
 CXXOBJ      = $(CXXSRC:.cpp=.cpp.o)
 SOBJ        = $(SSRC:.s=.s.o)
 
 
-COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar
+COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar -MMD -MP
 
-CFLAGS      =  $(COMMONFLAGS) -std=c11
-CXXFLAGS    =  $(COMMONFLAGS) -std=c++17
+CFLAGS      = -std=c11 $(COMMONFLAGS)
+CXXFLAGS    = -std=c++17 $(COMMONFLAGS)
 
 LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt
 
 LOADER      = $(SYSROOT)/boot/efxloader
+LIBKRT      = $(PROJECT_DIR)/libs/libkrt/libkrt.a
+
+CXXDEPS     = $(CXXOBJ:.o=.d)
+CDEPS       = $(COBJ:.o=.d)
+
+-include $(CXXDEPS) $(CDEPS)
+
 
 .PHONY: all clean
 
 
 all: $(LOADER)
 
-$(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ)
+$(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT)
 	echo "# $(notdir $@)"
 	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt
 	@$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 efxloader.tmp $@
 	@rm efxloader.tmp
 
 %.c.o: %.c
-	@$(CC) $(CFLAGS) -c -DEFI_FUNCTION_WRAPPER -o $@ $<
+	echo "# $(notdir $@)"
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 %.cpp.o: %.cpp
-	@$(CXX) $(CXXFLAGS) -c -fshort-wchar -DEFI_FUNCTION_WRAPPER -o $@ $<
+	echo "# $(notdir $@)"
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.s.o: %.s
+	echo "# $(notdir $@)"
 	@$(AS) $< -o $@
 
 

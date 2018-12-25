@@ -1,9 +1,9 @@
 #ifndef _ELF_H
 #define _ELF_H
 
-#include <sys/cdefs.h>
+#include "stdint.h"
+#include "sys/cdefs.h"
 
-#include <stdint.h>
 
 typedef uint16_t Elf32_Half;
 typedef uint16_t Elf64_Half;

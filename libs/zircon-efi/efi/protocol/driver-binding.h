@@ -9,7 +9,6 @@
 
 #define EFI_DRIVER_BINDING_PROTOCOL_GUID \
     {0x18a031ab, 0xb443, 0x4d1a, {0xa5, 0xc0, 0x0c, 0x09, 0x26, 0x1e, 0x9f, 0x71}}
-extern efi_guid DriverBindingProtocol;
 
 typedef struct efi_driver_binding_protocol {
     efi_status (*Supported) (struct efi_driver_binding_protocol* self,

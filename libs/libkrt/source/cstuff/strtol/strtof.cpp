@@ -2,9 +2,6 @@
 // Copyright (c) 2011 - 2014, Jonas 'Sortie' Termansen
 // Licensed under the GNU LGPL.
 
-#include "../../include/stdlib.h"
-
-
 
 // TODO: This horribly hacky code is taken from sdlquake's common.c, which is
 //       licensed under the GPL. Since most Sortix software is GPL-compatible

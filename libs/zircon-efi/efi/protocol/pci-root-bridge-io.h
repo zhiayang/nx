@@ -9,7 +9,7 @@
 
 #define EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID \
     {0x2f707ebb, 0x4a1a, 0x11D4, {0x9a, 0x38, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d}}
-extern efi_guid PciRootBridgeIoProtocol;
+
 
 typedef enum {
     EfiPciWidthUint8,

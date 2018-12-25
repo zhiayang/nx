@@ -3,7 +3,8 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <stddef.h>
-#include <stdint.h>
+
+#include "stdint.h"
 
 extern "C" void* memccpy(void* dest_ptr, const void* src_ptr, int c, size_t n)
 {
