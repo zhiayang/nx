@@ -47,6 +47,18 @@ namespace efi
 		efi::systable()->BootServices->Exit(efi::image_handle(), EFI_UNSUPPORTED, 0, nullptr);
 	}
 
+	void abort_if_error(size_t st, const char* fmt, ...)
+	{
+		if(!EFI_ERROR(st)) return;
+
+		va_list args; va_start(args, fmt);
+		vabort(fmt, args);
+		println("error code: %d", st);
+		va_end(args);
+
+		efi::systable()->BootServices->Exit(efi::image_handle(), EFI_UNSUPPORTED, 0, nullptr);
+	}
+
 	int print(const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
@@ -78,7 +90,7 @@ namespace efi
 	char16_t* convertstr(char* inp, size_t len)
 	{
 		size_t i = 0;
-		for(; i < __min(len, BUFFER_LEN); i++, inp++)
+		for(; i < __min(len, BUFFER_LEN) && *inp; i++, inp++)
 		{
 			if(*inp == '\n')
 			{
@@ -99,7 +111,7 @@ namespace efi
 	char* convertstr(char16_t* inp, size_t len)
 	{
 		size_t i = 0;
-		for(; i < __min(len, BUFFER_LEN); i++, inp++)
+		for(; i < __min(len, BUFFER_LEN) && *inp; i++, inp++)
 		{
 			if(*inp == '\r')
 			{

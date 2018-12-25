@@ -25,13 +25,23 @@ void efx::init()
 	{
 		efi_loaded_image_protocol* lip = 0;
 		auto s = st->BootServices->HandleProtocol(efi::image_handle(), efi::guid::protoLoadedImage(), (void**) &lip);
-		if(EFI_ERROR(s))
-			efi::abort("could not find LoadedImageProtocol, required to parse boot options");
+		efi::abort_if_error(s, "could not find LoadedImageProtocol, required to parse boot options");
 
 		// try and print the options bah
 		auto loadopts = efx::string(efi::convertstr((char16_t*) lip->LoadOptions, lip->LoadOptionsSize));
 		options::parse(loadopts);
+
+		efi::println("");
 	}
+
+
+	{
+		// discover all volumes.
+		fs::discoverVolumes();
+	}
+
+
+
 
 	/*
 		things to do:

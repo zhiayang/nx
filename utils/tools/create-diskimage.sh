@@ -52,7 +52,9 @@ pushd $PROJECT_DIR/build > /dev/null
 
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}image size: $(expr $SECTOR_COUNT \* $SECTOR_SIZE / 1024 / 1024) mb${_NORMAL}"
 	echo ""
+
 	dd if=/dev/zero of=$OUTPUT_DISK bs=$SECTOR_SIZE count=$SECTOR_COUNT status=none
+
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading rEFInd${_NORMAL}"
 	if [ ! -d $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION ]; then
@@ -108,8 +110,8 @@ pushd $PROJECT_DIR/build > /dev/null
 		echo -e "g\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\nt\n1\n01\nt\n2\n11\nx\nu\n1\n\
 $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 
-		mkfs.vfat -n "EFI" -F 32 esp-part.img > /dev/null
-		mkfs.vfat -n "NX" -F 32 root-part.img > /dev/null
+		mkfs.vfat -n "EFIPART" -F 32 esp-part.img > /dev/null
+		mkfs.vfat -n "FOOFOO" -F 32 root-part.img > /dev/null
 
 	else
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}$(uname) is not a supported build platform!${_NORMAL}"
@@ -117,7 +119,6 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 	fi
 
 	# copy refind to the ESP
-	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}installing rEFInd to ESP${_NORMAL}"
 
 	mmd -D O -i esp-part.img ::/EFI
 	mmd -D O -i esp-part.img ::/EFI/BOOT
@@ -127,6 +128,9 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/tools_x64 ::/EFI/BOOT/refind/
 	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/refind_x64.efi ::/EFI/BOOT/bootx64.efi
 
+
+	dd if=esp-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$OUTPUT_DISK count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc status=none
+	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$OUTPUT_DISK count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc status=none
 
 	$PROJECT_DIR/utils/tools/update-diskimage.sh
 

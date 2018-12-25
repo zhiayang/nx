@@ -51,18 +51,13 @@ pushd $PROJECT_DIR/build > /dev/null
 		exit 1
 	fi
 
-	if [ $PROJECT_DIR/utils/refind.conf -nt esp-part.img ]; then
-		dd if=esp-part.img of=disk.img bs=$SECTOR_SIZE count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) seek=$ESP_PARTITION_START conv=notrunc status=none
-
-	fi
-
 	ESP_IMG_OFFSET=disk.img@@$(expr $ESP_PARTITION_START \* $SECTOR_SIZE)
 	ROOT_IMG_OFFSET=disk.img@@$(expr $ROOT_PARTITION_START \* $SECTOR_SIZE)
-
 
 	mcopy -D o -snQ -i $ESP_IMG_OFFSET $PROJECT_DIR/utils/refind.conf ::/EFI/BOOT/refind.conf
 
 	mdeltree -i $ROOT_IMG_OFFSET ::/*
+
 	mcopy -D o -snQ -i $ROOT_IMG_OFFSET $PROJECT_DIR/build/sysroot/* ::/
 
 popd > /dev/null

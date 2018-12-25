@@ -31,8 +31,14 @@ _RED=`tput setaf 1`
 _BLUE=`tput setaf 4`
 _GREEN=`tput setaf 2`
 
+TAR_CHECKPOINT_ARG="--checkpoint=.250"
 
 function main() {
+
+	if [ $(uname) == "Darwin" ]; then
+		# the tar on osx doesn't support --checkpoint
+		TAR_CHECKPOINT_ARG = ""
+	fi
 
 	if [ "$1" == "clean" ]; then
 		# ! ACHTUNG !
@@ -53,6 +59,12 @@ function main() {
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}bootstrapping development environment${_NORMAL}"
 	echo ""
+
+
+
+
+
+
 
 	if [ ! -f "$PROJECT_DIR/utils/patches/binutils-$BINUTILS_VERSION.patch" ]; then
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils-$BINUTILS_VERSION is not supported!${_NORMAL} see utils/patches/ for a list of supported versions"
@@ -157,7 +169,7 @@ function build_toolchain() {
 
 	mkdir -p $1
 	pushd $1 > /dev/null
-		# build_binutils || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils compilation failed!${_NORMAL}"; exit 1; }
+		build_binutils || { echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}binutils compilation failed!${_NORMAL}"; exit 1; }
 		echo ""
 
 		export PATH="$PREFIX/bin:$PATH"
@@ -177,7 +189,7 @@ function build_binutils() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting binutils${_NORMAL}"
 
 	if [ ! -d "binutils-$BINUTILS_VERSION" ]; then
-		tar xf binutils-$BINUTILS_VERSION.tar.gz --checkpoint=.250
+		tar xf binutils-$BINUTILS_VERSION.tar.gz $TAR_CHECKPOINT_ARG
 		echo ""
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching binutils${_NORMAL}"
 		echo ""
@@ -219,7 +231,7 @@ function build_gcc() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting gcc${_NORMAL}"
 
 	if [ ! -d "gcc-$GCC_VERSION" ]; then
-		tar xf gcc-$GCC_VERSION.tar.gz --checkpoint=.250
+		tar xf gcc-$GCC_VERSION.tar.gz $TAR_CHECKPOINT_ARG
 		echo ""
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}patching gcc${_NORMAL}"
 		echo ""

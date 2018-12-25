@@ -42,6 +42,11 @@ namespace efx
 	{
 		void parse(const string& opts);
 	}
+
+	namespace fs
+	{
+		void discoverVolumes();
+	}
 }
 
 namespace efi
@@ -59,7 +64,7 @@ namespace efi
 
 
 	void abort(const char* fmt, ...);
-
+	void abort_if_error(size_t st, const char* fmt, ...);
 
 
 	char16_t* convertstr(char* inp, size_t len);

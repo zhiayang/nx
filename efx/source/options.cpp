@@ -15,8 +15,6 @@ namespace options
 		// ok, we need to construct the global object, because efi does not call our constructors!
 		loadOptions = efx::array<efx::string>();
 
-		efi::println("option string: %s", opts.data());
-
 		efx::string currentOption;
 
 		// TODO: quotes!
