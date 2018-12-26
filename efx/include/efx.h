@@ -30,11 +30,12 @@ namespace efx
 		static void debuglog(const char* fmt, ...);
 	};
 
-	using string = krt::string<efi_allocator, efi_aborter>;
-
 	template<typename T>
 	using array = krt::array<T, efi_allocator, efi_aborter>;
 
+	using string = krt::string<efi_allocator, efi_aborter>;
+
+	efx::string humanSizedBytes(size_t bytes, bool thou = false);
 
 	void init();
 
@@ -46,7 +47,11 @@ namespace efx
 	namespace fs
 	{
 		void discoverVolumes();
+		void loadKernel();
 	}
+
+
+	efx::string sprint(const char* fmt, ...);
 }
 
 namespace efi
@@ -90,6 +95,9 @@ namespace efi
 		efi_guid* protoSimpleTextInput();
 		efi_guid* protoSimpleTextOutput();
 		efi_guid* protoDevicePathToText();
+		efi_guid* protoDevicePathUtilities();
+
+		efx::string tostring(efi_guid* guid);
 	}
 }
 

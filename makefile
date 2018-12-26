@@ -51,7 +51,7 @@ KERNEL				= $(SYSROOT)/boot/nxkernel64
 
 .PHONY: all clean build libraries diskimage loader qemu
 
-all: build diskimage qemu
+all: build qemu
 
 build: libraries loader $(KERNEL)
 
@@ -62,14 +62,14 @@ qemu: diskimage
 	@$(QEMU) $(QEMU_FLAGS) -vga std $(QEMU_E9_PORT_STDIO)
 
 loader:
-	@make -s -C efx all
+	@$(MAKE) -s -C efx all
 
 libraries:
-	@make -s -C libs/libc install
-	@make -s -C libs/libm install
-	@make -s -C libs/libkrt install
+	@$(MAKE) -s -C libs/libc install
+	@$(MAKE) -s -C libs/libm install
+	@$(MAKE) -s -C libs/libkrt install
 
-diskimage:
+diskimage: build
 	@utils/tools/update-diskimage.sh
 
 

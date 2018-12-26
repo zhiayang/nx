@@ -68,10 +68,17 @@ typedef struct {
 } efi_table_header;
 
 typedef struct efi_guid {
-    uint32_t data1;
-    uint16_t data2;
-    uint16_t data3;
-    uint8_t data4[8];
+    union {
+        struct {
+            uint32_t data1;
+            uint16_t data2;
+            uint16_t data3;
+            uint8_t data4[8];
+        };
+        struct {
+            uint8_t data[16];
+        };
+    };
 } efi_guid;
 
 typedef void* efi_handle;

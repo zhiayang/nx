@@ -132,6 +132,34 @@ namespace efi
 
 namespace efx
 {
+	efx::string humanSizedBytes(size_t bytes, bool thou)
+	{
+		return krt::util::humanSizedBytes<efi_allocator, efi_aborter>(bytes, thou);
+	}
+
+	static size_t cb_sprint(void* ctx, const char* s, size_t len)
+	{
+		// ctx is actually a pointer to efx::string ok
+		auto str = (efx::string*) ctx;
+		str->append(efx::string(s, len));
+
+		return len;
+	}
+
+	efx::string sprint(const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+
+		efx::string ret;
+		vcbprintf(&ret, cb_sprint, fmt, args);
+
+		va_end(args);
+		return ret;
+	}
+
+
+
+
 	void efi_aborter::abort(const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);

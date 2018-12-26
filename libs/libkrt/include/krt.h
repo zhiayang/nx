@@ -34,6 +34,18 @@ namespace krt
 		void* realloc(void* ptr, size_t newsz);
 	}
 
+	namespace util
+	{
+		size_t humanSizedBytes(char* buffer, size_t bytes, bool thousand = false);
+
+		template <typename allocator = kernel_allocator, typename aborter = kernel_aborter>
+		krt::string<allocator, aborter> humanSizedBytes(size_t bytes, bool thousand = false)
+		{
+			size_t len = 0; char buffer[256];
+			len = humanSizedBytes(&buffer[0], bytes, thousand);
+			return krt::string<allocator, aborter>(buffer, len);
+		}
+	}
 }
 
 
@@ -81,6 +93,7 @@ char* ltoa(long num, char* dest, int base);
 char* lltoa(long long num, char* dest, int base);
 
 
+int cbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, ...);
 int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, va_list parameters);
 int print(const char* fmt, ...);
 

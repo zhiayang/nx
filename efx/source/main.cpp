@@ -34,11 +34,11 @@ void efx::init()
 		efi::println("");
 	}
 
-
 	{
 		// discover all volumes.
 		fs::discoverVolumes();
 	}
+
 
 
 
@@ -67,6 +67,9 @@ void efx::init()
 
 		8. jump to the kernel!
 	 */
+
+
+	efi::println("\n\nnothing to do...\n");
 }
 
 

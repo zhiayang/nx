@@ -348,8 +348,8 @@ DESTDIR         := $(SYSROOT)
 INCLUDEDIR      := /usr/include/
 LIBDIR          := /usr/lib/
 
-CFLAG           := $(CFLAGS) -std=gnu99 -Wall -Wextra
-CPPFLAGS        := $(CPPFLAGS) -I include -I src -I $(ARCH_SUBDIR)
+CFLAG           := $(CFLAGS) -std=gnu99 -Wall -Wextra -fPIC
+CPPFLAGS        := $(CPPFLAGS) -fPIC -I include -I src -I $(ARCH_SUBDIR)
 
 # TODO: Figure out whether these are the defines that we want to pass.
 CPPFLAGS        := $(CPPFLAGS) -D_MULTI_LIBM -D_POSIX_MODE
@@ -380,12 +380,14 @@ arch/i387/s_modf.o: src/s_modf.c
 headers:
 
 libm.a: $(OBJS)
+	@echo "# libm"
 	@$(HOSTAR) rcs $@ $(OBJS)
 
 %.o: %.S
 	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 %.o: %.c
+	@echo "# $(notdir $<)"
 	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 clean:

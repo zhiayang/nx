@@ -399,11 +399,97 @@ extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_
 			else
 				goto incomprehensible_conversion;
 
-			// TODO: Implement floating-point printing.
-			(void) conversion;
-			(void) value;
 
-			goto unsupported_conversion;
+			bool use_precision = precision != SIZE_MAX;
+			bool use_zero_pad = zero_pad && field_width >= 0;
+			bool use_left_pad = !use_zero_pad && field_width >= 0;
+			bool use_right_pad = !use_zero_pad && field_width < 0;
+
+			// not gonna bother being efficient
+			if(value < 0)
+			{
+				if(callback(ctx, "-", 1) != 1)
+					return -1;
+
+				written++;
+			}
+
+			// default printf uses 6 decimal places
+			if(!use_precision)
+				precision = 6;
+
+			// ok what we gonna do is truncate the float
+			auto whole = (int64_t) value;
+
+			// the number of digits is floor of the log10 of the number + 1
+			int digits = (int) log10(whole) + 1;
+			int decims = precision;
+
+			int total_len = (value < 0 ? 1 : 0) + digits + 1 + decims;
+
+
+			if(use_left_pad)
+			{
+				for(size_t i = total_len; i < abs_field_width; i++)
+				{
+					if(callback(ctx, " ", 1) != 1)
+						return -1;
+
+					written++;
+				}
+			}
+
+			if(use_zero_pad)
+			{
+				for(size_t i = total_len - (value < 0 ? 1 : 0); i < abs_field_width; i++)
+				{
+					if(callback(ctx, "0", 1) != 1 )
+						return -1;
+
+					written++;
+				}
+			}
+
+			// print the digits
+			{
+				char wholes[24];
+				size_t cnt = convert_integer(&wholes[0], whole, 10, "0123456789");
+				if(callback(ctx, wholes, cnt) != cnt)
+					return -1;
+
+				// and the decimal
+				if(callback(ctx, ".", 1) != 1)
+					return -1;
+
+				written += cnt + 1;
+			}
+
+
+			{
+				long double val = value;
+
+				for(int k = 0; k < precision; k++)
+				{
+					val *= 10.0;
+
+					if(callback(ctx, &"0123456789"[((int) val) % 10], 1) != 1)
+						return -1;
+
+					written++;
+				}
+			}
+
+
+			if(use_right_pad)
+			{
+				for(size_t i = total_len; i < abs_field_width; i++ )
+				{
+					if(callback(ctx, " ", 1) != 1 )
+						return -1;
+
+					written++;
+				}
+			}
 		}
 		else if(*format == 'c' && (format++, true))
 		{

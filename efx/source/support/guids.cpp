@@ -39,6 +39,7 @@ namespace guid
 	static efi_guid DevicePathToTextProtocol;
 	static efi_guid SimpleFileSystemProtocol;
 	static efi_guid SimpleTextOutputProtocol;
+	static efi_guid DevicePathUtilitiesProtocol;
 
 	void init()
 	{
@@ -58,24 +59,36 @@ namespace guid
 		SimpleFileSystemProtocol = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 		SimpleTextOutputProtocol = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
 		DevicePathToTextProtocol = EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_GUID;
+		DevicePathUtilitiesProtocol = EFI_DEVICE_PATH_UTILITIES_PROTOCOL_GUID;
 	}
 
-	efi_guid* fileInfo()                { return &FileInfoGuid;              }
-	efi_guid* protoUSBIO()              { return &UsbIoProtocol;             }
-	efi_guid* protoDiskIO()             { return &DiskIoProtocol;            }
-	efi_guid* protoBlockIO()            { return &BlockIoProtocol;           }
-	efi_guid* filesystemInfo()          { return &FileSystemInfoGuid;        }
-	efi_guid* protoDevicePath()         { return &DevicePathProtocol;        }
-	efi_guid* protoLoadedImage()        { return &LoadedImageProtocol;       }
-	efi_guid* protoSimpleNetwork()      { return &SimpleNetworkProtocol;     }
-	efi_guid* protoDriverBinding()      { return &DriverBindingProtocol;     }
-	efi_guid* protoGraphicsOutput()     { return &GraphicsOutputProtocol;    }
-	efi_guid* protoManagedNetwork()     { return &ManagedNetworkProtocol;    }
-	efi_guid* protoPCIRootBrigeIO()     { return &PciRootBridgeIoProtocol;   }
-	efi_guid* protoSimpleFilesytem()    { return &SimpleFileSystemProtocol;  }
-	efi_guid* protoSimpleTextInput()    { return &SimpleTextInputProtocol;   }
-	efi_guid* protoSimpleTextOutput()   { return &SimpleTextOutputProtocol;  }
-	efi_guid* protoDevicePathToText()   { return &DevicePathToTextProtocol;  }
+	efi_guid* fileInfo()                    { return &FileInfoGuid;                 }
+	efi_guid* protoUSBIO()                  { return &UsbIoProtocol;                }
+	efi_guid* protoDiskIO()                 { return &DiskIoProtocol;               }
+	efi_guid* protoBlockIO()                { return &BlockIoProtocol;              }
+	efi_guid* filesystemInfo()              { return &FileSystemInfoGuid;           }
+	efi_guid* protoDevicePath()             { return &DevicePathProtocol;           }
+	efi_guid* protoLoadedImage()            { return &LoadedImageProtocol;          }
+	efi_guid* protoSimpleNetwork()          { return &SimpleNetworkProtocol;        }
+	efi_guid* protoDriverBinding()          { return &DriverBindingProtocol;        }
+	efi_guid* protoGraphicsOutput()         { return &GraphicsOutputProtocol;       }
+	efi_guid* protoManagedNetwork()         { return &ManagedNetworkProtocol;       }
+	efi_guid* protoPCIRootBrigeIO()         { return &PciRootBridgeIoProtocol;      }
+	efi_guid* protoSimpleFilesytem()        { return &SimpleFileSystemProtocol;     }
+	efi_guid* protoSimpleTextInput()        { return &SimpleTextInputProtocol;      }
+	efi_guid* protoSimpleTextOutput()       { return &SimpleTextOutputProtocol;     }
+	efi_guid* protoDevicePathToText()       { return &DevicePathToTextProtocol;     }
+	efi_guid* protoDevicePathUtilities()    { return &DevicePathUtilitiesProtocol;  }
+
+
+
+	efx::string tostring(efi_guid* guid)
+	{
+		return efx::sprint("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+			guid->data1, guid->data2, guid->data3, guid->data4[0], guid->data4[1],
+			guid->data4[2], guid->data4[3], guid->data4[4], guid->data4[5], guid->data4[6], guid->data4[7]
+		);
+	}
 }
 }
 

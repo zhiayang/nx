@@ -22,14 +22,15 @@ CXXOBJ      = $(CXXSRC:.cpp=.cpp.o)
 SOBJ        = $(SSRC:.s=.s.o)
 
 
-COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar -MMD -MP
+COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar -fno-strict-aliasing -MMD -MP
 
 CFLAGS      = -std=c11 $(COMMONFLAGS)
 CXXFLAGS    = -std=c++17 $(COMMONFLAGS)
 
-LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt
+LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt -L $(SYSROOT)/usr/lib
 
 LOADER      = $(SYSROOT)/boot/efxloader
+LIBM        = $(SYSROOT)/usr/lib/libm.a
 LIBKRT      = $(PROJECT_DIR)/libs/libkrt/libkrt.a
 
 CXXDEPS     = $(CXXOBJ:.o=.d)
@@ -43,22 +44,22 @@ CDEPS       = $(COBJ:.o=.d)
 
 all: $(LOADER)
 
-$(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT)
+$(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
 	echo "# $(notdir $@)"
-	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt
+	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lm
 	@$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 efxloader.tmp $@
 	@rm efxloader.tmp
 
 %.c.o: %.c
-	echo "# $(notdir $@)"
+	echo "# $(notdir $<)"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
 %.cpp.o: %.cpp
-	echo "# $(notdir $@)"
+	echo "# $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.s.o: %.s
-	echo "# $(notdir $@)"
+	echo "# $(notdir $<)"
 	@$(AS) $< -o $@
 
 
