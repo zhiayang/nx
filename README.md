@@ -23,3 +23,16 @@ The sixth rewrite of what never was, OrionOS.
 #### Building the kernel ####
 - Once the bootstrap script is done, you should be able to run 'make' in the root directory and have it run.
 - It currently does nothing.
+
+
+
+-----------------------
+
+## License ##
+
+The licenses for the various components of \[nx\] can be found in `LICENSE.md`, including those of our various libraries and dependencies.
+
+
+
+
+
