@@ -6,6 +6,19 @@
 
 namespace krt
 {
+	struct kernel_allocator
+	{
+		static void* allocate(size_t sz);
+		static void deallocate(void* pt);
+	};
+
+	struct kernel_aborter
+	{
+		static void abort(const char* fmt, ...);
+		static void debuglog(const char* fmt, ...);
+	};
+
+
 	// omg why the fuck are we doing this?!
 	template <typename T, T v>
 	struct integral_constant
@@ -26,6 +39,12 @@ namespace krt
 
 	template <typename T>
 	struct is_same<T, T> : true_type {};
+
+	template <typename T>
+	struct is_trivially_copyable
+	{
+		static constexpr bool value = __has_trivial_copy(T);
+	};
 
 	template <typename T> struct remove_reference      { typedef T type; };
 	template <typename T> struct remove_reference<T&>  { typedef T type; };

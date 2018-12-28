@@ -28,3 +28,8 @@ namespace efi
 		return system_table;
 	}
 }
+
+bool operator == (const efi_guid& a, const efi_guid& b)
+{
+	return memcmp(&a.data[0], &b.data[0], 16) == 0;
+}

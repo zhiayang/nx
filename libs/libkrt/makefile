@@ -22,9 +22,10 @@ CDEPS       = $(COBJ:.o=.d)
 
 headers:
 
-install: all
-
 all: libkrt.a
+
+install: all
+	@cp libkrt.a $(SYSROOT)/usr/lib/
 
 libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo "# libkrt"

@@ -10,7 +10,7 @@ export LD           := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
 
 export EFI_OBJCOPY  := $(PROJECT_DIR)/build/toolchain/bin/x86_64-w64-mingw32-objcopy
 
-EFI_DIR     = $(PROJECT_DIR)/libs/zircon-efi
+EFI_DIR     = zircon-efi
 EFI_INCS    = -I$(EFI_DIR)
 
 CXXSRC      = $(shell find source -name "*.cpp")
@@ -27,20 +27,23 @@ COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DI
 CFLAGS      = -std=c11 $(COMMONFLAGS)
 CXXFLAGS    = -std=c++17 $(COMMONFLAGS)
 
-LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(PROJECT_DIR)/libs/libkrt -L $(SYSROOT)/usr/lib
+LDFLAGS     = -nostdlib -Bsymbolic -shared -L $(SYSROOT)/usr/lib
 
-LOADER      = $(SYSROOT)/boot/efxloader
+LOADER      = efxloader
 LIBM        = $(SYSROOT)/usr/lib/libm.a
-LIBKRT      = $(PROJECT_DIR)/libs/libkrt/libkrt.a
+LIBKRT      = $(SYSROOT)/usr/lib/libkrt.a
 
 CXXDEPS     = $(CXXOBJ:.o=.d)
 CDEPS       = $(COBJ:.o=.d)
 
+
 -include $(CXXDEPS) $(CDEPS)
 
 
-.PHONY: all clean
+.PHONY: all clean install
 
+install: all
+	@cp $(LOADER) $(SYSROOT)/boot/$(LOADER)
 
 all: $(LOADER)
 
@@ -63,6 +66,11 @@ $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
 	@$(AS) $< -o $@
 
 
+$(LIBM):
+	@$(MAKE) -C $(PROJECT_DIR)/libs/libm install
+
+$(LIBKRT):
+	@$(MAKE) -C $(PROJECT_DIR)/libs/libkrt install
 
 
 clean:

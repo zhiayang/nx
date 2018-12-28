@@ -15,6 +15,8 @@
 struct efi_guid;
 struct efi_system_table;
 
+bool operator == (const efi_guid& a, const efi_guid& b);
+
 namespace efx
 {
 	struct efi_allocator
@@ -30,8 +32,8 @@ namespace efx
 		static void debuglog(const char* fmt, ...);
 	};
 
-	template<typename T>
-	using array = krt::array<T, efi_allocator, efi_aborter>;
+	template<typename T> using array = krt::array<T, efi_allocator, efi_aborter>;
+	template<typename T> using stack = krt::stack<T, efi_allocator, efi_aborter>;
 
 	using string = krt::string<efi_allocator, efi_aborter>;
 
@@ -42,12 +44,18 @@ namespace efx
 	namespace options
 	{
 		void parse(const string& opts);
+
+		bool has_option(const string& opt);
+		string get_option(const string& opt);
 	}
 
 	namespace fs
 	{
-		void discoverVolumes();
-		void loadKernel();
+		void discoverVolumes(void* currentHandle);
+		void setRootFilesystemFromOpts();
+
+		string readFile(const efx::string& path);
+		uint8_t* readFile(const efx::string& path, size_t* size);
 	}
 
 
@@ -97,7 +105,8 @@ namespace efi
 		efi_guid* protoDevicePathToText();
 		efi_guid* protoDevicePathUtilities();
 
-		efx::string tostring(efi_guid* guid);
+		efx::string tostring(const efi_guid& guid);
+		efi_guid parse(const efx::string& str);
 	}
 }
 

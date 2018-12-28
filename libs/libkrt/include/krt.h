@@ -46,6 +46,13 @@ namespace krt
 			return krt::string<allocator, aborter>(buffer, len);
 		}
 	}
+
+	namespace foo
+	{
+		void bar();
+	}
+
+		void qux(int m);
 }
 
 

@@ -31,12 +31,13 @@ void efx::init()
 		auto loadopts = efx::string(efi::convertstr((char16_t*) lip->LoadOptions, lip->LoadOptionsSize));
 		options::parse(loadopts);
 
-		efi::println("");
+		fs::discoverVolumes(lip->DeviceHandle);
+		fs::setRootFilesystemFromOpts();
 	}
 
 	{
-		// discover all volumes.
-		fs::discoverVolumes();
+		auto x = fs::readFile("/usr/include/assert.h");
+		efi::println("%s", x.cstr());
 	}
 
 
@@ -69,7 +70,7 @@ void efx::init()
 	 */
 
 
-	efi::println("\n\nnothing to do...\n");
+	efi::println("\nnothing to do...\n");
 }
 
 
