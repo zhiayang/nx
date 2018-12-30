@@ -47,12 +47,10 @@ namespace krt
 		}
 	}
 
-	namespace foo
+	namespace haha
 	{
-		void bar();
+		int aabb(char x);
 	}
-
-		void qux(int m);
 }
 
 

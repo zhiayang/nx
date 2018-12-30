@@ -11,12 +11,12 @@
                 "__orionx__",
                 "_DEBUG"
             ],
-            "compilerPath": "${workspaceFolder:root}/build/toolchain/bin/x86_64-orionx-gcc",
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
                     "${workspaceFolder:efx}",
-                    "${workspaceFolder:libkrt}/libs/libkrt"
+                    "${workspaceFolder:libkrt}"
                 ],
                 "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""

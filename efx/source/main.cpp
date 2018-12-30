@@ -33,11 +33,13 @@ void efx::init()
 
 		fs::discoverVolumes(lip->DeviceHandle);
 		fs::setRootFilesystemFromOpts();
+
+		graphics::setDisplayMode(800, 600);
 	}
 
 	{
 		auto x = fs::readFile("/usr/include/assert.h");
-		efi::println("%s", x.cstr());
+		// efi::println("%s", x.cstr());
 	}
 
 
@@ -51,9 +53,6 @@ void efx::init()
 			- since this file (efxloader) is on the root partition (not the ESP), it means that rEFInd managed
 			  to read the FS, meaning that it should have loaded the FS driver to EFI.
 			- figure out how to use EFI to read files.
-
-		4. potentially set a graphics mode
-			- probably not a high priority
 
 		5. start mapping virtual memory:
 			- load the kernel at a fixed physical address. add that to our memory map with an entry that says "yo this is you"

@@ -6,4 +6,4 @@
 
 #define __min(a, b) ((a) > (b) ? (b) : (a))
 #define __max(a, b) ((a) > (b) ? (a) : (b))
-#define __abs(x)    ((x) < (0) ? (-x) : (x))
+#define __abs(x)    ((x) < (0) ? (-(x)) : (x))

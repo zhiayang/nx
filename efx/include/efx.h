@@ -58,6 +58,16 @@ namespace efx
 		uint8_t* readFile(const efx::string& path, size_t* size);
 	}
 
+	namespace graphics
+	{
+		void setDisplayMode(int defaultX, int defaultY);
+		bool isGraphical();
+
+		int getX();
+		int getY();
+		int getPixelsPerScanline();
+	}
+
 
 	efx::string sprint(const char* fmt, ...);
 }
