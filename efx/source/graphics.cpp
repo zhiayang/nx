@@ -122,7 +122,7 @@ namespace graphics
 
 			// i think we can still print stuff right? efi should be smarter than this
 			efi::systable()->ConOut->ClearScreen(efi::systable()->ConOut);
-			efi::println("video mode set!");
+			efi::println("video mode set!\n");
 		}
 	}
 }

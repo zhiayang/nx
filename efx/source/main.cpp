@@ -37,9 +37,20 @@ void efx::init()
 		graphics::setDisplayMode(800, 600);
 	}
 
+
 	{
-		auto x = fs::readFile("/usr/include/assert.h");
-		// efi::println("%s", x.cstr());
+		auto kernelPath = options::get_option("kernel");
+		if(kernelPath.empty()) efi::abort("did not specify 'kernel' option!");
+
+		size_t len = 0;
+		auto buf = fs::readFile(kernelPath, &len);
+
+		// setup identity mapping first.
+		// the kernel loading will call the appropriate functions to create virtual mappings.
+		memory::setupCR3();
+
+		uint64_t kernelEntry = 0;
+		auto virts = loadKernel(buf, len, &kernelEntry);
 	}
 
 
@@ -49,23 +60,11 @@ void efx::init()
 	/*
 		things to do:
 
-		3. find the kernel
-			- since this file (efxloader) is on the root partition (not the ESP), it means that rEFInd managed
-			  to read the FS, meaning that it should have loaded the FS driver to EFI.
-			- figure out how to use EFI to read files.
-
-		5. start mapping virtual memory:
-			- load the kernel at a fixed physical address. add that to our memory map with an entry that says "yo this is you"
-			- map the physical kernel to the higher half
-			- both of these should be able to be done using efi boot services.
-			- the kernel can copy itself to a new physical location and re-map the virtual pages to point
-			  there, if we really want to.
-
 		6. create the memory map in a format that the kernel understands. we can probably stick to something rudimentary for now.
 
-		7. exit boot services.
-
 		8. jump to the kernel!
+
+		7. exit boot services.
 	 */
 
 

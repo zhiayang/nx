@@ -7,6 +7,9 @@
 			"path": "libs\\libkrt"
 		},
 		{
+			"path": "kernel"
+		},
+		{
 			"path": "."
 		},
 		{

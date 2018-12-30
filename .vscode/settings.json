@@ -1,5 +1,6 @@
 {
 	"files.exclude": {
-		"toolchain-setup": true
+		"toolchain-setup": true,
+		"kernel": true
 	}
 }

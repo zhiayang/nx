@@ -99,6 +99,8 @@ namespace options
 		efi::println("parsed %d option%s:", options.size(), options.size() == 1 ? "" : "s");
 		for(const auto& opt : loadOptions)
 			efi::println("%s = %s", opt.option.cstr(), opt.value.cstr());
+
+		efi::println("");
 	}
 
 	bool has_option(const string& name)

@@ -16,14 +16,10 @@ SOBJ		= $(SSRC:.s=.s.o)
 
 NUMFILES	= $$(($(words $(CXXSRC)) + $(words $(CSRC)) + $(words $(SSRC))))
 
-.PHONY: all install
-
-headers:
-
-install: all headers
-	@cp -r include/* $(SYSROOT)/usr/include/
+.PHONY: all
 
 all: $(SYSROOT)/usr/lib/libc.a
+	@cp -r include/* $(SYSROOT)/usr/include/
 
 $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo "# libc"

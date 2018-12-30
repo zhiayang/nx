@@ -16,20 +16,15 @@ CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS     = $(CXXOBJ:.o=.d)
 CDEPS       = $(COBJ:.o=.d)
 
--include $(CXXDEPS) $(CDEPS)
-
-.PHONY: all install
+.PHONY: all
 
 headers:
 
-all: libkrt.a
+all: $(SYSROOT)/usr/lib/libkrt.a
 
-install: all
-	@cp libkrt.a $(SYSROOT)/usr/lib/
-
-libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
+$(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo "# libkrt"
-	@$(AR) rcs libkrt.a $(COBJ) $(CXXOBJ)
+	@$(AR) rcs $(SYSROOT)/usr/lib/libkrt.a $(COBJ) $(CXXOBJ)
 
 %.c.o: %.c
 	@echo "# $(notdir $<)"
@@ -43,6 +38,7 @@ libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(AS) $< -o $@
 
 
+-include $(CXXDEPS) $(CDEPS)
 
 
 

@@ -368,7 +368,6 @@ BINS:=libm.a
 all: libs install
 
 libs: $(BINS)
-	@echo "libm.a"
 
 .PHONY: libs headers clean install install-include-dirs install-headers \
         install-libm-dirs install-libm install-libs
@@ -412,3 +411,11 @@ install-libm-dirs:
 
 install-libm: install-libm-dirs libm.a
 	@cp -P libm.a $(DESTDIR)$(LIBDIR)
+
+
+
+
+
+
+
+

@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 
-extern "C" int kernel_entry()
+extern "C" void kernel_entry()
 {
-	return 0;
+	while(true)
+	{
+	}
 }

@@ -68,6 +68,25 @@ namespace efx
 		int getPixelsPerScanline();
 	}
 
+	namespace memory
+	{
+		void markPhyiscalPagesUsed(uint64_t addr, size_t num);
+		void setupCR3();
+		void mapVirtual(uint64_t phys, uint64_t virt, size_t num);
+	}
+
+	struct KernelVirtMapping
+	{
+		uint64_t virt;
+		uint64_t phys;
+		uint64_t num;
+
+		bool read;
+		bool write;
+		bool execute;
+	};
+
+	efx::array<KernelVirtMapping> loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
 
 	efx::string sprint(const char* fmt, ...);
 }
