@@ -28,7 +28,6 @@ namespace efx
 	{
 		static void* allocate(size_t sz);
 		static void deallocate(void* pt);
-		static void* reallocate(void* ptr, size_t newsz);
 	};
 
 	struct efi_aborter

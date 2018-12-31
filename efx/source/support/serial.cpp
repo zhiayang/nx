@@ -7,11 +7,14 @@
 
 namespace serial
 {
-	constexpr uint16_t COM1_PORT = 0x3F8;
+	static void write1b(uint8_t value, uint16_t port)
+	{
+		asm volatile("outb %0, %1" :: "a"(value), "Nd"(port));
+	}
 
 	void print(char* s, size_t len)
 	{
 		for(size_t i = 0; i < len; i++)
-			krt::port::write1b(s[i], 0xE9);
+			write1b(s[i], 0xE9);
 	}
 }

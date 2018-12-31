@@ -2,9 +2,9 @@
 // Copyright (c) 2018, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "krt.h"
+#include "nx.h"
 
-namespace krt {
+namespace nx {
 namespace port
 {
 	uint8_t read1b(uint16_t port)
@@ -28,8 +28,6 @@ namespace port
 		return ret;
 	}
 
-
-
 	void write1b(uint8_t value, uint16_t port)
 	{
 		asm volatile("outb %0, %1" :: "a"(value), "Nd"(port));
@@ -46,24 +44,6 @@ namespace port
 	}
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -10,8 +10,11 @@ CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std
 
 MEMORY				= 1024
 
-SSRC				= $(shell find source -iname "*.s") $(shell find platform/$(ARCH) -iname "*.s")
-CXXSRC				= $(shell find source -iname "*.cpp") $(shell find platform/$(ARCH) -iname "*.cpp")
+SSRC				=  $(shell find source -name "platform" -prune -o -name "*.s" -print)
+SSRC                += $(shell find source/platform/$(ARCH) -iname "*.s")
+
+CXXSRC				=  $(shell find source -name "platform" -prune -o -name "*.cpp" -print)
+CXXSRC              += $(shell find source/platform/$(ARCH) -iname "*.cpp")
 
 SOBJ				= $(SSRC:.s=.s.o)
 CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)

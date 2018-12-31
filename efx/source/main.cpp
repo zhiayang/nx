@@ -29,6 +29,8 @@ void efx::init()
 		auto s = st->BootServices->HandleProtocol(efi::image_handle(), efi::guid::protoLoadedImage(), (void**) &lip);
 		efi::abort_if_error(s, "could not find LoadedImageProtocol, required to parse boot options");
 
+		efi::println("image base: %p\n", lip->ImageBase);
+
 		// try and print the options bah
 		auto loadopts = efx::string(efi::convertstr((char16_t*) lip->LoadOptions, lip->LoadOptionsSize));
 		options::parse(loadopts);

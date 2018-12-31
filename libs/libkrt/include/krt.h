@@ -9,8 +9,12 @@
 
 #include "stdint.h"
 #include "krt/meta.h"
-#include "krt/types.h"
 #include "krt/macros.h"
+
+// include the types.
+#include "krt/types/str.h"
+#include "krt/types/array.h"
+#include "krt/types/stack.h"
 
 namespace krt
 {
@@ -38,7 +42,7 @@ namespace krt
 	{
 		size_t humanSizedBytes(char* buffer, size_t bytes, bool thousand = false);
 
-		template <typename allocator = kernel_allocator, typename aborter = kernel_aborter>
+		template <typename allocator, typename aborter>
 		krt::string<allocator, aborter> humanSizedBytes(size_t bytes, bool thousand = false)
 		{
 			size_t len = 0; char buffer[256];
@@ -50,11 +54,6 @@ namespace krt
 		void memfill2b(uint16_t* ptr, uint16_t val, size_t count);
 		void memfill4b(uint32_t* ptr, uint32_t val, size_t count);
 		void memfill8b(uint64_t* ptr, uint64_t val, size_t count);
-	}
-
-	namespace haha
-	{
-		int aabb(char x);
 	}
 }
 
@@ -105,7 +104,6 @@ char* lltoa(long long num, char* dest, int base);
 
 int cbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, ...);
 int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, va_list parameters);
-int print(const char* fmt, ...);
 
 
 __END_DECLS

@@ -7,6 +7,14 @@
 #include <stddef.h>
 #include "stdint.h"
 
+#include "mm.h"
+#include "bootinfo.h"
+
+#include "devices/ports.h"
+#include "devices/serial.h"
+
+#include "krt.h"
+
 namespace nx
 {
 	namespace consts
@@ -16,64 +24,35 @@ namespace nx
 		constexpr uintptr_t KERNEL_FRAMEBUFFER_ADDRESS  = 0xFFFFFFFF'D0000000;
 	}
 
-	namespace vmm
+	struct allocator
 	{
-		struct pml_t
-		{
-			uint64_t entries[512];
-		};
-
-		static constexpr size_t indexPML4(uintptr_t addr)       { return ((((uintptr_t) addr) >> 39) & 0x1FF); }
-		static constexpr size_t indexPDPT(uintptr_t addr)       { return ((((uintptr_t) addr) >> 30) & 0x1FF); }
-		static constexpr size_t indexPageDir(uintptr_t addr)    { return ((((uintptr_t) addr) >> 21) & 0x1FF); }
-		static constexpr size_t indexPageTable(uintptr_t addr)  { return ((((uintptr_t) addr) >> 12) & 0x1FF); }
-
-		constexpr uint64_t PAGE_PRESENT     = 0x1;
-		constexpr uint64_t PAGE_WRITE       = 0x2;
-		constexpr uint64_t PAGE_USER        = 0x4;
-
-		constexpr uint64_t PAGE_NO_FLAGS    = ~0xFFF;
-	}
-
-	enum class MemoryType : uint64_t
-	{
-		Reserved,
-		Available,
-		ACPI,
-		MMIO,
-		Faulty,
-		NonVolatile,
-		LoaderSetup,
-		Framebuffer,
-
-		EFIRuntimeCode,
-		EFIRuntimeData,
+		static void* allocate(size_t sz);
+		static void deallocate(void* pt);
 	};
 
-	struct MemMapEntry
+	struct aborter
 	{
-		uint64_t address;
-		uint64_t numPages;
-		MemoryType memoryType;
-		uint64_t efiAttributes;
+		static void abort(const char* fmt, ...);
+		static void debuglog(const char* fmt, ...);
 	};
 
-	struct BootInfo
-	{
-		uint8_t ident[3];       // E, F, X
-		uint8_t version;        // 1
 
-		uint32_t fbHorz;        // horizontal resolution (in pixels)
-		uint32_t fbVert;        // vertical res
-		uint32_t fbScanWidth;   // 'actual width' -- number of pixels to go to the next vertical line.
-		uint64_t frameBuffer;   // pyhs address of the frame buffer
+	// re-export the krt types with our own stuff.
+	using string = krt::string<allocator, aborter>;
 
-		void* efiSysTable;      // pointer to EFI system table
-		bool canCallEFIRuntime; // whether or not we successfully called SetVirtualMemoryMap()
+	template<typename T> using array = krt::array<T, allocator, aborter>;
+	template<typename T> using stack = krt::stack<T, allocator, aborter>;
 
-		uint64_t mmEntryCount;
-		MemMapEntry* mmEntries;
-	};
+
+
+
+	void kernel_main(BootInfo* bootinfo);
+
+	// some misc stuff.
+	void print(const char* fmt, ...);
+	void println(const char* fmt, ...);
+
+	string sprint(const char* fmt, ...);
 }
 
 

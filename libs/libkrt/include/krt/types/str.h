@@ -12,7 +12,7 @@
 
 namespace krt
 {
-	template <typename allocator = kernel_allocator, typename aborter = kernel_aborter>
+	template <typename allocator, typename aborter>
 	struct string
 	{
 		using impl = arraylike_impl<string, char, allocator, aborter>;
