@@ -18,7 +18,6 @@ CDEPS       = $(COBJ:.o=.d)
 
 .PHONY: all
 
-headers:
 
 all: $(SYSROOT)/usr/lib/libkrt.a
 
@@ -38,7 +37,8 @@ $(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(AS) $< -o $@
 
 
--include $(CXXDEPS) $(CDEPS)
+-include $(CXXDEPS)
+-include $(CDEPS)
 
 
 

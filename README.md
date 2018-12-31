@@ -13,16 +13,17 @@ The sixth rewrite of what never was, OrionOS.
 - C++ compiler (that targets your own platform)
 - `pv`, `mtools`, `parted`, `fdisk`, `mkfs.vfat` (typically packaged as `dosfstools`), `unzip`
 - A Unix system -- OSX and Linux will work, Windows Subsystem for Linux will work as well. Unlikely to work on things like mingw/cygwin.
+- About 150 MB of free space.
 
 
-#### Building [mx]'s toolchain ####
-- Run the ./bootstrap.sh script
+#### Building the toolchain ####
+- Run the `./bootstrap.sh` script
 - Everything will be done automatically
 
 
 #### Building the kernel ####
 - Once the bootstrap script is done, you should be able to run 'make' in the root directory and have it run.
-- It currently does nothing.
+- It currently does nothing spectacular.
 
 
 

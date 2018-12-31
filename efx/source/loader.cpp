@@ -7,6 +7,7 @@
 #include "efi/system-table.h"
 
 #include "elf.h"
+#include "../../kernel/include/nx.h"
 
 namespace efx
 {
@@ -87,12 +88,205 @@ namespace efx
 				memset((void*) (buffer + progHdr->p_filesz), 0, (progHdr->p_memsz - progHdr->p_filesz));
 		}
 
-		efi::println("kernel loaded! entry point: %p", header->e_entry);
+		efi::println("kernel loaded! entry point: %p\n", header->e_entry);
 
 		*entry_out = header->e_entry;
 		return virtMappings;
 	}
+
+
+	nx::BootInfo* prepareKernelBootInfo()
+	{
+		auto bs = efi::systable()->BootServices;
+
+		// first, allocate 1 page for the boot info. we don't use pool cos we want to tell the OS that this memory is used.
+		nx::BootInfo* bi = 0;
+		{
+			auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, (uint64_t*) &bi);
+			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate page for boot info");
+
+			memory::markPhyiscalPagesUsed((uint64_t) bi, 1);
+		}
+
+
+		// then, fill in some stuff.
+		bi->ident[0]    = 'e';
+		bi->ident[1]    = 'f';
+		bi->ident[2]    = 'x';
+		bi->version     = 1;
+		bi->efiSysTable = (void*) efi::systable();
+
+		bi->fbHorz      = graphics::getX();
+		bi->fbVert      = graphics::getY();
+		bi->fbScanWidth = graphics::getPixelsPerScanline();
+		bi->frameBuffer = nx::consts::KERNEL_FRAMEBUFFER_ADDRESS;
+
+		bi->mmEntryCount = 0;
+
+		size_t descSz = 0;
+		size_t key = 0;
+		size_t totalBufSz = 0;
+		size_t numEntries = 0;
+		uint8_t* buffer = 0;
+		{
+			// get the memory map. because UEFI is dumb, we can't call getmemorymap with NULL to find out how large the thing
+			// would be, unlike with some POSIX functions. so we just give it a stupid 1 byte buffer and get the needed size.
+
+			size_t bufSz = 1;
+			uint32_t descVer = 0;
+
+			{
+				uint8_t buf = 0;
+
+				// this is a really poorly designed function interface.
+				auto stat = bs->GetMemoryMap(&bufSz, (efi_memory_descriptor*) &buf, &key, &descSz, &descVer);
+				if(stat != EFI_BUFFER_TOO_SMALL) efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to get memory map (1)");
+			}
+
+
+			// give me a 256 byte extra for the size, *just in case*.
+			buffer = (uint8_t*) efi::alloc(256 + bufSz);
+			bufSz += 256;
+
+			totalBufSz = bufSz;
+
+			// why the fuck do i need to pass pointers to these fucking things?? i don't care about their size or version,
+			// that's what sizeof is for??? ugh
+			auto stat = bs->GetMemoryMap(&bufSz, (efi_memory_descriptor*) buffer, &key, &descSz, &descVer);
+			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to get memory map (2)");
+
+			numEntries = bufSz / descSz;
+		}
+
+		size_t neededEntries = 0;
+		for(size_t i = 0; i < numEntries; i++)
+		{
+			// count the number of entries we need to forward to the kernel.
+			// here's the thing: we don't want to give the kernel duplicate ranges. things that we want the kernel
+			// to keep (right now just the kernel itself, the initial page tables, and the bootinfo struct) we allocated as EfiLoaderCode,
+			// while other stuff we allocated as EfiLoaderData. So, the idea is that we tell the kernel that all the LoaderData stuff
+			// is free to use, while the LoaderCode entries we will get from our usedPages list.
+
+			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
+
+			if(entry->Type == EfiLoaderData || entry->Type == EfiConventionalMemory
+				|| entry->Type == EfiBootServicesCode || entry->Type == EfiBootServicesData
+				|| entry->Type == EfiACPIMemoryNVS || entry->Type == EfiACPIReclaimMemory
+				|| entry->Type == EfiMemoryMappedIO || entry->Type == EfiMemoryMappedIOPortSpace
+				|| entry->Type == EfiPersistentMemory || entry->Type == EfiRuntimeServicesCode
+				|| entry->Type == EfiRuntimeServicesData)
+			{
+				neededEntries++;
+			}
+		}
+
+
+		auto usedPgs = memory::getUsedPages();
+		neededEntries += usedPgs.size();
+
+		// ok now, allocate and start to fill in.
+		nx::MemMapEntry* entries = 0;
+		{
+			size_t numPages = 1 + ((neededEntries * sizeof(nx::MemMapEntry)) + 0x1000) / 0x1000;
+			auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, numPages, (uint64_t*) &entries);
+			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate pages");
+
+			memset(entries, 0, 0x1000 * numPages);
+		}
+
+
+		// get the memory map one last fucking time, because EFI is fucking stupid!!!!!!
+		{
+			size_t descSz = 0;
+			uint32_t descVer = 0;
+
+			auto stat = bs->GetMemoryMap(&totalBufSz, (efi_memory_descriptor*) buffer, &key, &descSz, &descVer);
+			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to get memory map (3)");
+
+			numEntries = totalBufSz / descSz;
+		}
+
+
+		// finally, start adding things.
+		for(size_t i = 0; i < numEntries; i++)
+		{
+			bool skip = false;
+			auto efiEnt = (efi_memory_descriptor*) (buffer + (i * descSz));
+
+			auto k = bi->mmEntryCount;
+
+			switch(efiEnt->Type)
+			{
+				case EfiLoaderData:                 // fallthrough
+				case EfiConventionalMemory:         // fallthrough
+				case EfiBootServicesCode:           // fallthrough
+				case EfiBootServicesData:           entries[k].memoryType = nx::MemoryType::Available; break;
+
+				case EfiACPIMemoryNVS:              // fallthrough
+				case EfiACPIReclaimMemory:          entries[k].memoryType = nx::MemoryType::ACPI; break;
+
+				case EfiMemoryMappedIO:             // fallthrough
+				case EfiMemoryMappedIOPortSpace:    entries[k].memoryType = nx::MemoryType::MMIO; break;
+
+				case EfiPersistentMemory:           entries[k].memoryType = nx::MemoryType::NonVolatile; break;
+
+				case EfiRuntimeServicesCode:        entries[k].memoryType = nx::MemoryType::EFIRuntimeCode; break;
+				case EfiRuntimeServicesData:        entries[k].memoryType = nx::MemoryType::EFIRuntimeData; break;
+
+				default:                            skip = true; break; // do not include
+			}
+
+			if(skip) continue;
+
+			entries[k].address = efiEnt->PhysicalStart;
+			entries[k].numPages = efiEnt->NumberOfPages;
+			entries[k].efiAttributes = efiEnt->Attribute;
+
+			bi->mmEntryCount += 1;
+		}
+
+		// add the used pages also
+		for(const auto& p : usedPgs)
+		{
+			auto k = bi->mmEntryCount;
+
+			entries[k].address = p.first;
+			entries[k].numPages = p.second;
+			entries[k].memoryType = nx::MemoryType::LoaderSetup;
+
+			bi->mmEntryCount += 1;
+		}
+
+		// finally, the framebuffer.
+		entries[bi->mmEntryCount].address = graphics::getFramebufferAddress();
+		entries[bi->mmEntryCount].numPages = (graphics::getFramebufferSize() + 0x1000) / 0x1000;
+		entries[bi->mmEntryCount].memoryType = nx::MemoryType::Framebuffer;
+		bi->mmEntryCount++;
+
+		efi::println("loaded kernel BootInfo struct with %zu entries\n", bi->mmEntryCount);
+		bi->mmEntries = entries;
+		return bi;
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

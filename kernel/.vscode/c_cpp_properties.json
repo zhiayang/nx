@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "kernel-windows",
+            "includePath": [
+                "${workspaceFolder:kernel}/include",
+                "${workspaceFolder:libkrt}/include"
+            ],
+            "defines": [
+                "__orionx__",
+                "ORION_KERNEL",
+                "_DEBUG"
+            ],
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder:kernel}",
+                    "${workspaceFolder:libkrt}"
+                ],
+                "limitSymbolsToIncludedHeaders": false,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

@@ -74,7 +74,8 @@ $(LIBKRT):
 
 
 
--include $(CXXDEPS) $(CDEPS)
+-include $(CXXDEPS)
+-include $(CDEPS)
 
 
 

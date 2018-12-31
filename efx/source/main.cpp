@@ -12,6 +12,8 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
+#include "../../kernel/include/nx.h"
+
 #define EFX_VERSION_STRING "0.1.1"
 
 
@@ -37,7 +39,9 @@ void efx::init()
 		graphics::setDisplayMode(800, 600);
 	}
 
-
+	size_t bootSvcKey = 0;
+	uint64_t kernelEntry = 0;
+	nx::BootInfo* kernelBootInfo = 0;
 	{
 		auto kernelPath = options::get_option("kernel");
 		if(kernelPath.empty()) efi::abort("did not specify 'kernel' option!");
@@ -49,23 +53,33 @@ void efx::init()
 		// the kernel loading will call the appropriate functions to create virtual mappings.
 		memory::setupCR3();
 
-		uint64_t kernelEntry = 0;
 		auto virts = loadKernel(buf, len, &kernelEntry);
+
+		kernelBootInfo = prepareKernelBootInfo();
 	}
 
 
+	{
+		// before we go, allocate one last page for the efi memory map for runtime services.
+		uint64_t scratch = 0;
+		{
+			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &scratch);
+			efi::abort_if_error(stat, "failed to allocate page");
+		}
 
+		efi::println("exiting EFI boot services");
+		efi::println("jumping to kernel; good luck!\n\n");
 
+		memory::finaliseMappingExistingMemory();
+		exitBootServices();
 
-	/*
-		things to do:
+		memory::setEFIMemoryMap(kernelBootInfo, scratch);
+		memory::installNewCR3();
 
-		6. create the memory map in a format that the kernel understands. we can probably stick to something rudimentary for now.
+		auto kernel_entry = (void (*)(nx::BootInfo*)) kernelEntry;
+		kernel_entry(kernelBootInfo);
+	}
 
-		8. jump to the kernel!
-
-		7. exit boot services.
-	 */
 
 
 	efi::println("\nnothing to do...\n");
@@ -73,7 +87,24 @@ void efx::init()
 
 
 
+void efx::exitBootServices()
+{
+	auto bs = efi::systable()->BootServices;
 
+	size_t mmKey = 0;
+	{
+		uint8_t buf = 0;
+		size_t bufSz = 1;
+		size_t descSz = 0;
+		uint32_t descVer = 0;
+
+		auto stat = bs->GetMemoryMap(&bufSz, (efi_memory_descriptor*) &buf, &mmKey, &descSz, &descVer);
+		if(stat != EFI_BUFFER_TOO_SMALL) efi::abort_if_error(stat, "exitBootServices(): failed to get memory map");
+	}
+
+	auto stat = bs->ExitBootServices(efi::image_handle(), mmKey);
+	efi::abort_if_error(stat, "failed to exit boot services?!");
+}
 
 
 
@@ -106,7 +137,6 @@ void efx::init()
 extern "C" efi_status efi_main(efi_handle imageHandle, efi_system_table* sysTable)
 {
 	asm volatile("cli");
-
 
 	efi::guid::init();
 	efi::init(imageHandle, sysTable);

@@ -34,6 +34,34 @@ namespace krt
 	using true_type = integral_constant<bool, true>;
 	using false_type = integral_constant<bool, false>;
 
+
+	template <typename T, typename U>
+	struct pair
+	{
+		pair() { }
+		pair(const T& f, const U& s) : first(f), second(s) { }
+
+		T first;
+		U second;
+	};
+
+	template <typename T, typename U, typename V>
+	struct triple
+	{
+		triple() { }
+		triple(const T& f, const U& s, const V& t) : first(f), second(s), third(t) { }
+
+		T first;
+		U second;
+		V third;
+	};
+
+
+
+
+
+
+
 	template <typename T, typename U>
 	struct is_same : false_type {};
 

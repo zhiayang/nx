@@ -9,7 +9,7 @@
 #include "string.h"
 
 // for the vmm structs.
-#include "kernel.h"
+#include "../../kernel/include/nx.h"
 
 namespace efx
 {
@@ -21,37 +21,42 @@ namespace efx {
 namespace memory
 {
 	static bool didInitArray = false;
-	static efx::array<uint64_t> usedPages;
+	static efx::array<krt::pair<uint64_t, size_t>> usedPages;
 	void markPhyiscalPagesUsed(uint64_t addr, size_t num)
 	{
 		if(!didInitArray)
 		{
-			usedPages = efx::array<uint64_t>();
+			usedPages = efx::array<krt::pair<uint64_t, size_t>>();
 			didInitArray = true;
 		}
 
+		usedPages.append(krt::pair(addr, num));
+	}
 
-		for(uint64_t x = addr, i = 0; i < num; x += 0x1000, i++)
-			usedPages.append(x);
+	efx::array<krt::pair<uint64_t, size_t>> getUsedPages()
+	{
+		if(!didInitArray) efi::abort("did not init array");
+		return usedPages;
 	}
 
 	static uint64_t allocate_pagetab(uint64_t flags)
 	{
-		void* ret = 0;
+		uint64_t ret = 0;
 
 		auto bs = efi::systable()->BootServices;
-		auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, (uint64_t*) &ret);
+		auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &ret);
 		efi::abort_if_error(stat, "failed to allocate page!");
 
-		memset(ret, 0, 0x1000);
+		memset((void*) ret, 0, 0x1000);
 
-		markPhyiscalPagesUsed((uint64_t) ret, 1);
-		return (uint64_t) ret;
+		markPhyiscalPagesUsed(ret, 1);
+		return ret | flags;
 	}
 
-	static nx::vmm::pml4t_t* pml4t_addr = 0;
+	static nx::vmm::pml_t* pml4t_addr = 0;
 	void setupCR3()
 	{
+		efi::println("setting up kernel CR3");
 		using namespace nx::vmm;
 
 		// pml4:    256 tb
@@ -61,13 +66,13 @@ namespace memory
 		// pe:      4 kb
 
 		// identity map the first 4 mb -- requiring 2 page-table entries.
-		auto pml4 = (pml4t_t*) allocate_pagetab(0);
-		auto pdpt = (pml4->entries[0] = (pdpt_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE));
-		auto pagedir = (pdpt->entries[0] = (pagedir_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE));
+		auto pml4 = (pml_t*) allocate_pagetab(0);
+		auto pdpt = (pml_t*) ((pml4->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
+		auto pagedir = (pml_t*) ((pdpt->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
 
-		// we need 2 page tab;es.
-		auto pt1 = (pagedir->entries[0] = (pagetable_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE));
-		auto pt2 = (pagedir->entries[1] = (pagetable_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE));
+		// we need 2 page tables.
+		auto pt1 = (pml_t*) ((pagedir->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
+		auto pt2 = (pml_t*) ((pagedir->entries[1] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
 
 		// identity map them.
 		for(uint64_t i = 0; i < 512; i++) pt1->entries[i] = (i * 0x1000) | PAGE_PRESENT | PAGE_WRITE;
@@ -76,9 +81,104 @@ namespace memory
 		// also, recursively map.
 		// BUT! since we are using the top 2GB for our higher-half kernel, we do the recursive map in the second-last
 		// slot (index 510) instead of the last one (511).
-		pml4->entries[510] = (pdpt_t*) pml4;
+		pml4->entries[510] = ((uint64_t) pml4 | PAGE_PRESENT | PAGE_WRITE);
 
 		pml4t_addr = pml4;
+
+		// ok, map the framebuffer as well.
+		if(auto fbaddr = graphics::getFramebufferAddress(); fbaddr != 0)
+		{
+			mapVirtual(fbaddr, nx::consts::KERNEL_FRAMEBUFFER_ADDRESS,
+				(graphics::getFramebufferSize() + 0x1000) / 0x1000);
+		}
+	}
+
+	void finaliseMappingExistingMemory()
+	{
+		auto bs = efi::systable()->BootServices;
+
+		size_t key = 0;
+		size_t bufSz = 1;
+		size_t descSz = 0;
+		uint32_t descVer = 0;
+
+		size_t numEnts = 0;
+		uint8_t* buffer = 0;
+		{
+			uint8_t buf = 0;
+
+			// this is a really poorly designed function interface.
+			auto stat = bs->GetMemoryMap(&bufSz, (efi_memory_descriptor*) &buf, &key, &descSz, &descVer);
+			if(stat != EFI_BUFFER_TOO_SMALL) efi::abort_if_error(stat, "setupCR3(): failed to get memory map (1)");
+		}
+		{
+			buffer = (uint8_t*) efi::alloc(bufSz + 256);
+			bufSz += 256;
+
+			auto stat = bs->GetMemoryMap(&bufSz, (efi_memory_descriptor*) buffer, &key, &descSz, &descVer);
+			efi::abort_if_error(stat, "setupCR3(): failed to get memory map (2)");
+
+			numEnts = bufSz / descSz;
+		}
+
+		for(size_t i = 0; i < numEnts; i++)
+		{
+			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
+
+			if(entry->Type == EfiLoaderCode || entry->Type == EfiBootServicesCode || entry->Type == EfiBootServicesData)
+				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+
+			if(entry->Type == EfiRuntimeServicesCode || entry->Type == EfiRuntimeServicesData)
+			{
+				uint64_t v = nx::consts::EFI_RUNTIME_SERVICES_BASE + entry->PhysicalStart;
+				mapVirtual(entry->PhysicalStart, v, entry->NumberOfPages);
+				// efi::println("runtime svc: %p - %p", entry->PhysicalStart, entry->PhysicalStart + (0x1000 * entry->NumberOfPages));
+			}
+		}
+	}
+
+	void setEFIMemoryMap(nx::BootInfo* bi, uint64_t scratch)
+	{
+		// what we need to do is grab all the entries that are marked as EfiRuntimeServices,
+		// and mark them with the new base address. (which is just offset to EFI_RUNTIME_SERVICES_BASE)
+
+		// ok, we got 4k of scratch space for this new shitty memory map.
+		// but we only need to care about the stuff that's tagged as runtime services.
+
+
+		auto entries = (efi_memory_descriptor*) scratch;
+		for(size_t i = 0; i < bi->mmEntryCount; i++)
+		{
+			auto entry = &bi->mmEntries[i];
+			if(entry->memoryType == nx::MemoryType::EFIRuntimeCode)
+			{
+				entries->PhysicalStart  = entry->address;
+				entries->VirtualStart   = entry->address + nx::consts::EFI_RUNTIME_SERVICES_BASE;
+				entries->NumberOfPages  = entry->numPages;
+				entries->Attribute      = entry->efiAttributes;
+				entries->Type           = EfiRuntimeServicesCode;
+			}
+			else if(entry->memoryType == nx::MemoryType::EFIRuntimeData)
+			{
+				entries->PhysicalStart  = entry->address;
+				entries->VirtualStart   = entry->address + nx::consts::EFI_RUNTIME_SERVICES_BASE;
+				entries->NumberOfPages  = entry->numPages;
+				entries->Attribute      = entry->efiAttributes;
+				entries->Type           = EfiRuntimeServicesData;
+			}
+
+			entries++;
+		}
+
+		auto stat = efi::systable()->RuntimeServices->SetVirtualAddressMap((uint64_t) entries - scratch, sizeof(efi_memory_descriptor),
+			1, (efi_memory_descriptor*) scratch);
+
+		bi->canCallEFIRuntime = (stat == EFI_SUCCESS);
+	}
+
+	void installNewCR3()
+	{
+		asm volatile("mov %0, %%cr3" :: "r"(pml4t_addr));
 	}
 
 
@@ -102,21 +202,21 @@ namespace memory
 			if(p4idx == 510) efi::abort("mapVirtual(): cannot map to 510th PML4 entry!");
 
 			if(pml4t_addr->entries[p4idx] == 0)
-				pml4t_addr->entries[p4idx] = (pdpt_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
+				pml4t_addr->entries[p4idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto pdpt = pml4t_addr->entries[p4idx];
+			auto pdpt = (pml_t*) (pml4t_addr->entries[p4idx] & PAGE_NO_FLAGS);
 
 
 			if(pdpt->entries[p3idx] == 0)
-				pdpt->entries[p3idx] = (pagedir_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
+				pdpt->entries[p3idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto pdir = pdpt->entries[p3idx];
+			auto pdir = (pml_t*) (pdpt->entries[p3idx] & PAGE_NO_FLAGS);
 
 
 			if(pdir->entries[p2idx] == 0)
-				pdir->entries[p2idx] = (pagetable_t*) allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
+				pdir->entries[p2idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto ptable = pdir->entries[p2idx];
+			auto ptable = (pml_t*) (pdir->entries[p2idx] & PAGE_NO_FLAGS);
 
 			ptable->entries[p1idx] = p | PAGE_PRESENT | PAGE_WRITE;
 		}

@@ -103,7 +103,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## gnu-efi ##
 
-The support code under `libs/ziron-efi/platform` is not part of the Zircon project; The code was taken from the GNU-EFI project, but are licensed as such:
+The support code under `libs/ziron-efi/platform` is not part of the Zircon project; it was taken from the GNU-EFI project, licensed as such:
 
 ```
 Copyright (c) 1998-2000 Intel Corporation

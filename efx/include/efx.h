@@ -17,6 +17,11 @@ struct efi_system_table;
 
 bool operator == (const efi_guid& a, const efi_guid& b);
 
+namespace nx
+{
+	struct BootInfo;
+}
+
 namespace efx
 {
 	struct efi_allocator
@@ -66,13 +71,23 @@ namespace efx
 		int getX();
 		int getY();
 		int getPixelsPerScanline();
+
+		uint64_t getFramebufferAddress();
+		size_t getFramebufferSize();
 	}
 
 	namespace memory
 	{
-		void markPhyiscalPagesUsed(uint64_t addr, size_t num);
 		void setupCR3();
+		void markPhyiscalPagesUsed(uint64_t addr, size_t num);
 		void mapVirtual(uint64_t phys, uint64_t virt, size_t num);
+
+		void finaliseMappingExistingMemory();
+
+		void installNewCR3();
+		void setEFIMemoryMap(nx::BootInfo* bi, uint64_t scratch);
+
+		efx::array<krt::pair<uint64_t, size_t>> getUsedPages();
 	}
 
 	struct KernelVirtMapping
@@ -86,7 +101,10 @@ namespace efx
 		bool execute;
 	};
 
+
 	efx::array<KernelVirtMapping> loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
+	nx::BootInfo* prepareKernelBootInfo();
+	void exitBootServices();
 
 	efx::string sprint(const char* fmt, ...);
 }

@@ -29,7 +29,10 @@ CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-poin
 
 MEMORY				= 256
 
-QEMU_FLAGS          = -m $(MEMORY) -bios utils/ovmf-x64/OVMF-pure-efi.fd -drive format=raw,file=build/disk.img
+QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
+QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
+
+QEMU_FLAGS          = -m $(MEMORY) -no-shutdown -no-reboot  # -d cpu_reset -monitor stdio
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 
 
@@ -50,7 +53,7 @@ build:
 
 qemu: diskimage
 	@echo -e "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) -vga std $(QEMU_E9_PORT_STDIO)
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) $(QEMU_E9_PORT_STDIO) -vga std
 
 diskimage: build
 	@utils/tools/update-diskimage.sh

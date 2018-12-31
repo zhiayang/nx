@@ -45,6 +45,11 @@ namespace krt
 			len = humanSizedBytes(&buffer[0], bytes, thousand);
 			return krt::string<allocator, aborter>(buffer, len);
 		}
+
+		void memfill1b(uint8_t* ptr, uint8_t val, size_t count);
+		void memfill2b(uint16_t* ptr, uint16_t val, size_t count);
+		void memfill4b(uint32_t* ptr, uint32_t val, size_t count);
+		void memfill8b(uint64_t* ptr, uint64_t val, size_t count);
 	}
 
 	namespace haha

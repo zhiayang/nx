@@ -13,9 +13,15 @@ namespace graphics
 	static int yResolution = 0;
 	static int pixelsPerScanline = 0;
 
-	int getX()                  { return xResolution; }
-	int getY()                  { return yResolution; }
-	int getPixelsPerScanline()  { return pixelsPerScanline; }
+	static uint64_t fbAddress = 0;
+	static size_t frameBufferSize = 0;
+
+	int getX()                          { return xResolution; }
+	int getY()                          { return yResolution; }
+	int getPixelsPerScanline()          { return pixelsPerScanline; }
+
+	uint64_t getFramebufferAddress()    { return fbAddress; }
+	size_t getFramebufferSize()         { return frameBufferSize; }
 
 
 	void setDisplayMode(int defX, int defY)
@@ -113,6 +119,9 @@ namespace graphics
 			xResolution = bestmodeinfo->HorizontalResolution;
 			yResolution = bestmodeinfo->VerticalResolution;
 
+			fbAddress = gop->Mode->FrameBufferBase;
+			frameBufferSize = gop->Mode->FrameBufferSize;
+
 			efi::println("setting mode %u: %ux%u (scan line %u)", bestMode, xResolution, yResolution, pixelsPerScanline);
 
 
@@ -122,7 +131,7 @@ namespace graphics
 
 			// i think we can still print stuff right? efi should be smarter than this
 			efi::systable()->ConOut->ClearScreen(efi::systable()->ConOut);
-			efi::println("video mode set!\n");
+			efi::println("video mode set! framebuffer: %llx\n", fbAddress);
 		}
 	}
 }

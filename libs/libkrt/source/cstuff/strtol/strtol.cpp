@@ -162,8 +162,8 @@ extern "C" STRTOL_INT STRTOL(const STRTOL_CHAR* str, STRTOL_CHAR** endptr, int b
 		// else
 		{
 			STRTOL_INT new_result = result * (STRTOL_INT) base;
-			assert( negative || result <= new_result);
-			assert(!negative || result >= new_result);
+			// assert( negative || result <= new_result);
+			// assert(!negative || result >= new_result);
 			result = new_result;
 		}
 

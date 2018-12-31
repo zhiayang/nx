@@ -5,13 +5,13 @@
 
 WARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros
 
-CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(SYSROOT)/usr/include -DORION_KERNEL=1 -mcmodel=kernel -c
+CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -DORION_KERNEL=1 -mcmodel=kernel -c
 
 
 MEMORY				= 1024
 
-SSRC				= $(shell find source -iname "*.s")
-CXXSRC				= $(shell find source -iname "*.cpp")
+SSRC				= $(shell find source -iname "*.s") $(shell find platform/$(ARCH) -iname "*.s")
+CXXSRC				= $(shell find source -iname "*.cpp") $(shell find platform/$(ARCH) -iname "*.cpp")
 
 SOBJ				= $(SSRC:.s=.s.o)
 CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)
