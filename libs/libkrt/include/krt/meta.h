@@ -57,8 +57,23 @@ namespace krt
 	};
 
 
+	template <typename T>
+	bool match(const T& first)
+	{
+		return true;
+	}
 
+	template <typename T, typename U>
+	bool match(const T& first, const U& second)
+	{
+		return (first == second);
+	}
 
+	template <typename T, typename U, typename... Args>
+	bool match(const T& first, const U& second, const Args&... comps)
+	{
+		return (first == second) || match(first, comps...);
+	}
 
 
 

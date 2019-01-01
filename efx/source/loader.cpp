@@ -11,7 +11,7 @@
 
 namespace efx
 {
-	efx::array<KernelVirtMapping> loadKernel(uint8_t* input, size_t len, uint64_t* entry_out)
+	void loadKernel(uint8_t* input, size_t len, uint64_t* entry_out)
 	{
 		// assume 64-bit, duh
 		auto header = (Elf64_Ehdr*) input;
@@ -43,7 +43,6 @@ namespace efx
 		if(header->e_type != ET_EXEC)
 			efi::abort("ELF file is not executable!");
 
-		efx::array<KernelVirtMapping> virtMappings;
 		for(uint64_t k = 0; k < header->e_phnum; k++)
 		{
 			// program headers are contiguous, starting from e_phoff.
@@ -58,26 +57,12 @@ namespace efx
 			size_t numPages = (progHdr->p_memsz + 0x1000) / 0x1000;
 
 			uint64_t buffer = 0;
-			auto stat = efi::systable()->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderCode, numPages, &buffer);
+			auto stat = efi::systable()->BootServices->AllocatePages(AllocateAnyPages,
+				(efi_memory_type) efi::MemoryType_LoadedKernel, numPages, &buffer);
+
 			efi::abort_if_error(stat, "loadKernel(): failed to allocate memory for kernel (wanted %zu pages)", numPages);
 
-			// we need to mark these as 'used', so the kernel knows about them -- and doesn't mistakenly hand these
-			// pages out and overwrite itself :D
-			// note that we only do this when we allocate pages -- the EFI heap just contains junk that we can discard.
-			// notably, the bootinfo struct will also need to be marked, as well as the initial CR3.
-			memory::markPhyiscalPagesUsed(buffer, numPages);
-
-			KernelVirtMapping mp;
-			mp.virt = progHdr->p_vaddr;
-			mp.phys = buffer;
-			mp.num = numPages;
-
-			if(progHdr->p_flags & PF_R) mp.read = true;
-			if(progHdr->p_flags & PF_W) mp.write = true;
-			if(progHdr->p_flags & PF_X) mp.execute = true;
-
-			virtMappings.append(mp);
-			memory::mapVirtual(mp.phys, mp.virt, mp.num);
+			memory::mapVirtual(buffer, progHdr->p_vaddr, numPages);
 
 			memmove((void*) buffer, (input + progHdr->p_offset), progHdr->p_filesz);
 
@@ -91,7 +76,6 @@ namespace efx
 		efi::println("kernel loaded! entry point: %p\n", header->e_entry);
 
 		*entry_out = header->e_entry;
-		return virtMappings;
 	}
 
 
@@ -102,10 +86,8 @@ namespace efx
 		// first, allocate 1 page for the boot info. we don't use pool cos we want to tell the OS that this memory is used.
 		nx::BootInfo* bi = 0;
 		{
-			auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, (uint64_t*) &bi);
+			auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo, 1, (uint64_t*) &bi);
 			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate page for boot info");
-
-			memory::markPhyiscalPagesUsed((uint64_t) bi, 1);
 		}
 
 
@@ -119,7 +101,9 @@ namespace efx
 		bi->fbHorz      = graphics::getX();
 		bi->fbVert      = graphics::getY();
 		bi->fbScanWidth = graphics::getPixelsPerScanline();
-		bi->frameBuffer = nx::consts::KERNEL_FRAMEBUFFER_ADDRESS;
+		bi->frameBuffer = nx::addrs::KERNEL_FRAMEBUFFER;
+
+		bi->pml4Address = memory::getPML4Address();
 
 		bi->mmEntryCount = 0;
 
@@ -169,26 +153,20 @@ namespace efx
 
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(entry->Type == EfiLoaderData || entry->Type == EfiConventionalMemory
-				|| entry->Type == EfiBootServicesCode || entry->Type == EfiBootServicesData
-				|| entry->Type == EfiACPIMemoryNVS || entry->Type == EfiACPIReclaimMemory
-				|| entry->Type == EfiMemoryMappedIO || entry->Type == EfiMemoryMappedIOPortSpace
-				|| entry->Type == EfiPersistentMemory || entry->Type == EfiRuntimeServicesCode
-				|| entry->Type == EfiRuntimeServicesData)
+			if(krt::match(entry->Type, EfiLoaderData, EfiConventionalMemory, EfiBootServicesCode, EfiBootServicesData,
+				EfiACPIMemoryNVS, EfiACPIReclaimMemory, EfiMemoryMappedIO, EfiMemoryMappedIOPortSpace, EfiPersistentMemory,
+				EfiRuntimeServicesCode, EfiRuntimeServicesData, efi::MemoryType_LoadedKernel, efi::MemoryType_BootInfo,
+				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame))
 			{
 				neededEntries++;
 			}
 		}
 
-
-		auto usedPgs = memory::getUsedPages();
-		neededEntries += usedPgs.size();
-
 		// ok now, allocate and start to fill in.
 		nx::MemMapEntry* entries = 0;
 		{
 			size_t numPages = 1 + ((neededEntries * sizeof(nx::MemMapEntry)) + 0x1000) / 0x1000;
-			auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, numPages, (uint64_t*) &entries);
+			auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_MemoryMap, numPages, (uint64_t*) &entries);
 			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate pages");
 
 			memset(entries, 0, 0x1000 * numPages);
@@ -233,6 +211,10 @@ namespace efx
 				case EfiRuntimeServicesCode:        entries[k].memoryType = nx::MemoryType::EFIRuntimeCode; break;
 				case EfiRuntimeServicesData:        entries[k].memoryType = nx::MemoryType::EFIRuntimeData; break;
 
+				case efi::MemoryType_LoadedKernel:  entries[k].memoryType = nx::MemoryType::LoadedKernel; break;
+				case efi::MemoryType_MemoryMap:     entries[k].memoryType = nx::MemoryType::MemoryMap; break;
+				case efi::MemoryType_BootInfo:      entries[k].memoryType = nx::MemoryType::BootInfo; break;
+
 				default:                            skip = true; break; // do not include
 			}
 
@@ -245,17 +227,6 @@ namespace efx
 			bi->mmEntryCount += 1;
 		}
 
-		// add the used pages also
-		for(const auto& p : usedPgs)
-		{
-			auto k = bi->mmEntryCount;
-
-			entries[k].address = p.first;
-			entries[k].numPages = p.second;
-			entries[k].memoryType = nx::MemoryType::LoaderSetup;
-
-			bi->mmEntryCount += 1;
-		}
 
 		// finally, the framebuffer.
 		entries[bi->mmEntryCount].address = graphics::getFramebufferAddress();

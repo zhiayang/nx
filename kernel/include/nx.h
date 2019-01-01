@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <stddef.h>
-#include "stdint.h"
+#include "defs.h"
 
 #include "mm.h"
 #include "bootinfo.h"
@@ -17,20 +16,22 @@
 
 namespace nx
 {
-	namespace consts
+	constexpr size_t PAGE_SIZE                      = 0x1000;
+	namespace addrs
 	{
-		constexpr uintptr_t KERNEL_ENTRY                = 0xFFFFFFFF'80000000;
-		constexpr uintptr_t EFI_RUNTIME_SERVICES_BASE   = 0xFFFFFFFF'C0000000;
-		constexpr uintptr_t KERNEL_FRAMEBUFFER_ADDRESS  = 0xFFFFFFFF'D0000000;
+		constexpr addr_t KERNEL_ENTRY               = 0xFFFF'FFFF'8000'0000;
+		constexpr addr_t PMM_STACK_BASE             = 0xFFFF'FFFF'C000'0000;
+		constexpr addr_t EFI_RUNTIME_SERVICES_BASE  = 0xFFFF'FFFF'CE00'0000;
+		constexpr addr_t KERNEL_FRAMEBUFFER         = 0xFFFF'FFFF'D000'0000;
 	}
 
-	struct allocator
+	struct _allocator
 	{
 		static void* allocate(size_t sz);
 		static void deallocate(void* pt);
 	};
 
-	struct aborter
+	struct _aborter
 	{
 		static void abort(const char* fmt, ...);
 		static void debuglog(const char* fmt, ...);
@@ -38,11 +39,10 @@ namespace nx
 
 
 	// re-export the krt types with our own stuff.
-	using string = krt::string<allocator, aborter>;
+	using string = krt::string<_allocator, _aborter>;
 
-	template<typename T> using array = krt::array<T, allocator, aborter>;
-	template<typename T> using stack = krt::stack<T, allocator, aborter>;
-
+	template<typename T> using array = krt::array<T, _allocator, _aborter>;
+	template<typename T> using stack = krt::stack<T, _allocator, _aborter>;
 
 
 
@@ -53,6 +53,8 @@ namespace nx
 	void println(const char* fmt, ...);
 
 	string sprint(const char* fmt, ...);
+
+	[[noreturn]] void abort(const char* fmt, ...);
 }
 
 

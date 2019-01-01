@@ -17,8 +17,11 @@ namespace nx
 		MMIO,
 		Faulty,
 		NonVolatile,
-		LoaderSetup,
 		Framebuffer,
+
+		LoadedKernel,
+		BootInfo,
+		MemoryMap,
 
 		EFIRuntimeCode,
 		EFIRuntimeData,
@@ -41,6 +44,8 @@ namespace nx
 		uint32_t fbVert;        // vertical res
 		uint32_t fbScanWidth;   // 'actual width' -- number of pixels to go to the next vertical line.
 		uint64_t frameBuffer;   // pyhs address of the frame buffer
+
+		uint64_t pml4Address;   // physical address of the PML4T that was set up by the bootloader.
 
 		void* efiSysTable;      // pointer to EFI system table
 		bool canCallEFIRuntime; // whether or not we successfully called SetVirtualMemoryMap()

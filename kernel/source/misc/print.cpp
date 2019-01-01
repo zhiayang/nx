@@ -13,7 +13,7 @@ namespace nx
 	static size_t cb_print(void* ctx, const char* s, size_t len)
 	{
 		// mirror to the serial port as well.
-		nx::serial::debugprint((char*) s, len);
+		serial::debugprint((char*) s, len);
 		return len;
 	}
 
@@ -84,7 +84,7 @@ namespace nx
 		while(true);
 	}
 
-	void aborter::abort(const char* fmt, ...)
+	void _aborter::abort(const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
 		vabort(fmt, args);
@@ -93,7 +93,7 @@ namespace nx
 		while(true);
 	}
 
-	void aborter::debuglog(const char* fmt, ...)
+	void _aborter::debuglog(const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
 		vprint(fmt, args);

@@ -12,9 +12,9 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#include "../../kernel/include/nx.h"
+#include "../../kernel/include/bootinfo.h"
 
-#define EFX_VERSION_STRING "0.1.1"
+#define EFX_VERSION_STRING "0.2.0"
 
 
 void efx::init()
@@ -55,7 +55,7 @@ void efx::init()
 		// the kernel loading will call the appropriate functions to create virtual mappings.
 		memory::setupCR3();
 
-		auto virts = loadKernel(buf, len, &kernelEntry);
+		loadKernel(buf, len, &kernelEntry);
 
 		kernelBootInfo = prepareKernelBootInfo();
 	}

@@ -13,12 +13,7 @@ namespace nx
 		// clear the screen
 		// krt::util::memfill4b((uint32_t*) bootinfo->frameBuffer, 0, 800 * 600);
 
-		// tell the world (kinda)
-		serial::debugprint("[nx] kernel has control\n");
-
-
-		serial::debugprint("initialising pmm");
-		pmm::init(bootinfo->mmEntries, bootinfo->mmEntryCount);
+		pmm::init(bootinfo);
 	}
 }
 
@@ -42,6 +37,10 @@ namespace nx
 
 extern "C" void kernel_main(nx::BootInfo* bootinfo)
 {
+	nx::println("[nx] kernel has control");
+	nx::println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
+
+	// tell the world (kinda)
 	nx::kernel_main(bootinfo);
 
 	while(true)

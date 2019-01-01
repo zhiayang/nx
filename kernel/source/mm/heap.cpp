@@ -19,12 +19,12 @@ namespace nx
 
 
 
-	void* allocator::allocate(size_t cnt)
+	void* _allocator::allocate(size_t cnt)
 	{
 		return nullptr;
 	}
 
-	void allocator::deallocate(void* ptr)
+	void _allocator::deallocate(void* ptr)
 	{
 
 	}

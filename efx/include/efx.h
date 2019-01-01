@@ -78,30 +78,17 @@ namespace efx
 	namespace memory
 	{
 		void setupCR3();
-		void markPhyiscalPagesUsed(uint64_t addr, size_t num);
 		void mapVirtual(uint64_t phys, uint64_t virt, size_t num);
+
+		uint64_t getPML4Address();
 
 		void finaliseMappingExistingMemory();
 
 		void installNewCR3();
 		void setEFIMemoryMap(nx::BootInfo* bi, uint64_t scratch);
-
-		efx::array<krt::pair<uint64_t, size_t>> getUsedPages();
 	}
 
-	struct KernelVirtMapping
-	{
-		uint64_t virt;
-		uint64_t phys;
-		uint64_t num;
-
-		bool read;
-		bool write;
-		bool execute;
-	};
-
-
-	efx::array<KernelVirtMapping> loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
+	void loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
 	nx::BootInfo* prepareKernelBootInfo();
 	void exitBootServices();
 
@@ -110,6 +97,12 @@ namespace efx
 
 namespace efi
 {
+	static constexpr int MemoryType_LoadedKernel = 0x80000001;
+	static constexpr int MemoryType_BootInfo     = 0x80000002;
+	static constexpr int MemoryType_MemoryMap    = 0x80000003;
+	static constexpr int MemoryType_VMFrame      = 0x80000004;
+
+
 	void init(void* image_handle, efi_system_table* systable);
 
 	void* image_handle();

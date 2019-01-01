@@ -20,36 +20,15 @@ namespace efx
 namespace efx {
 namespace memory
 {
-	static bool didInitArray = false;
-	static efx::array<krt::pair<uint64_t, size_t>> usedPages;
-	void markPhyiscalPagesUsed(uint64_t addr, size_t num)
-	{
-		if(!didInitArray)
-		{
-			usedPages = efx::array<krt::pair<uint64_t, size_t>>();
-			didInitArray = true;
-		}
-
-		usedPages.append(krt::pair(addr, num));
-	}
-
-	efx::array<krt::pair<uint64_t, size_t>> getUsedPages()
-	{
-		if(!didInitArray) efi::abort("did not init array");
-		return usedPages;
-	}
-
 	static uint64_t allocate_pagetab(uint64_t flags)
 	{
 		uint64_t ret = 0;
 
 		auto bs = efi::systable()->BootServices;
-		auto stat = bs->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &ret);
+		auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_VMFrame, 1, &ret);
 		efi::abort_if_error(stat, "failed to allocate page!");
 
 		memset((void*) ret, 0, 0x1000);
-
-		markPhyiscalPagesUsed(ret, 1);
 		return ret | flags;
 	}
 
@@ -88,8 +67,7 @@ namespace memory
 		// ok, map the framebuffer as well.
 		if(auto fbaddr = graphics::getFramebufferAddress(); fbaddr != 0)
 		{
-			mapVirtual(fbaddr, nx::consts::KERNEL_FRAMEBUFFER_ADDRESS,
-				(graphics::getFramebufferSize() + 0x1000) / 0x1000);
+			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0x1000) / 0x1000);
 		}
 	}
 
@@ -125,14 +103,13 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(entry->Type == EfiLoaderCode || entry->Type == EfiBootServicesCode || entry->Type == EfiBootServicesData)
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap))
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 
 			if(entry->Type == EfiRuntimeServicesCode || entry->Type == EfiRuntimeServicesData)
 			{
-				uint64_t v = nx::consts::EFI_RUNTIME_SERVICES_BASE + entry->PhysicalStart;
+				uint64_t v = nx::addrs::EFI_RUNTIME_SERVICES_BASE + entry->PhysicalStart;
 				mapVirtual(entry->PhysicalStart, v, entry->NumberOfPages);
-				// efi::println("runtime svc: %p - %p", entry->PhysicalStart, entry->PhysicalStart + (0x1000 * entry->NumberOfPages));
 			}
 		}
 	}
@@ -153,7 +130,7 @@ namespace memory
 			if(entry->memoryType == nx::MemoryType::EFIRuntimeCode)
 			{
 				entries->PhysicalStart  = entry->address;
-				entries->VirtualStart   = entry->address + nx::consts::EFI_RUNTIME_SERVICES_BASE;
+				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE;
 				entries->NumberOfPages  = entry->numPages;
 				entries->Attribute      = entry->efiAttributes;
 				entries->Type           = EfiRuntimeServicesCode;
@@ -161,7 +138,7 @@ namespace memory
 			else if(entry->memoryType == nx::MemoryType::EFIRuntimeData)
 			{
 				entries->PhysicalStart  = entry->address;
-				entries->VirtualStart   = entry->address + nx::consts::EFI_RUNTIME_SERVICES_BASE;
+				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE;
 				entries->NumberOfPages  = entry->numPages;
 				entries->Attribute      = entry->efiAttributes;
 				entries->Type           = EfiRuntimeServicesData;
@@ -174,6 +151,11 @@ namespace memory
 			1, (efi_memory_descriptor*) scratch);
 
 		bi->canCallEFIRuntime = (stat == EFI_SUCCESS);
+	}
+
+	uint64_t getPML4Address()
+	{
+		return (uint64_t) pml4t_addr;
 	}
 
 	void installNewCR3()

@@ -32,17 +32,34 @@ MEMORY				= 256
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
 
-QEMU_FLAGS          = -m $(MEMORY) -no-shutdown -no-reboot  # -d cpu_reset -monitor stdio
+QEMU_FLAGS          = -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
+
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
+QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
 
 
 .DEFAULT_GOAL = all
 
 
 
-.PHONY: all clean build diskimage qemu
+.PHONY: all clean build diskimage qemu debug
 
-all: build qemu
+all: qemu
+
+debug: diskimage
+	@echo -e "# starting qemu\n"
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -vga std -d cpu_reset -monitor stdio
+
+qemu: diskimage
+	@echo -e "# starting qemu\n"
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO) -vga std
+
+
+
+
+diskimage: build
+	@utils/tools/update-diskimage.sh
+
 
 build:
 	@$(MAKE) -s -C libs/libc
@@ -50,13 +67,6 @@ build:
 	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
-
-qemu: diskimage
-	@echo -e "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) $(QEMU_E9_PORT_STDIO) -vga std
-
-diskimage: build
-	@utils/tools/update-diskimage.sh
 
 clean:
 	@find "efx" -name "*.o" -delete
