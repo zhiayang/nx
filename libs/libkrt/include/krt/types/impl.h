@@ -27,7 +27,7 @@ namespace krt
 			size_t newsz = __max(16, __max(atleast, (self->cap * 3) / 2));
 
 			// if T is like char16_t or some shit, we need to account for it
-			auto newptr = (ElmTy*) allocator::allocate(newsz * sizeof(ElmTy));
+			auto newptr = (ElmTy*) allocator::allocate(newsz * sizeof(ElmTy), alignof(ElmTy));
 			if(!newptr) aborter::abort("reserve(): alloc() returned null!");
 
 			copy_elements(self, newptr, self->ptr, self->cnt);

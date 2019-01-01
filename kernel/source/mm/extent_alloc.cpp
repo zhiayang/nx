@@ -1,0 +1,133 @@
+// extent_alloc.cpp
+// Copyright (c) 2019, zhiayang
+// Licensed under the Apache License Version 2.0.
+
+
+// this is an abstracted form of the 'extent' system that we use for our page allocators.
+
+#include "nx.h"
+
+namespace nx {
+namespace extmm
+{
+	struct extent_t
+	{
+		uint64_t addr;
+		uint64_t size;
+	};
+
+	static constexpr size_t extentsPerPage      = PAGE_SIZE / sizeof(extent_t);
+
+	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
+	static addr_t end(extent_t* ext)            { return ext->addr + (ext->size * PAGE_SIZE); }
+
+
+	static void extendExtentArray(State* st)
+	{
+		auto virt = (addr_t) st->extents + (st->numPages * PAGE_SIZE);
+		if(virt == st->maxAddress)
+			abort("extmm::extend(): reached expansion limit!");
+
+		auto phys = pmm::allocate(1);
+
+		vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+	}
+
+	static void addExtent(State* st, addr_t addr, size_t size)
+	{
+		extent_t ext;
+		ext.addr = addr;
+		ext.size = size;
+
+		st->extents[st->numExtents] = ext;
+		st->numExtents++;
+
+		if(st->numExtents % extentsPerPage == 0)
+			extendExtentArray(st);
+	}
+
+
+
+
+
+	void init(State* st, addr_t base, addr_t top)
+	{
+		st->extents = (extent_t*) base;
+
+		st->numPages = 1;
+		st->numExtents = 0;
+
+		st->maxAddress = top;
+	}
+
+
+	addr_t allocate(State* st, size_t num, bool (*satisfies)(addr_t, size_t))
+	{
+		if(num == 0) abort("extmm::allocate(): cannot allocate 0 pages!");
+
+		for(size_t i = 0; i < st->numExtents; i++)
+		{
+			auto ext = &st->extents[i];
+			if(ext->size >= num && satisfies(ext->addr, ext->size))
+			{
+				// return this.
+				// take from the bottom.
+
+				addr_t ret = ext->addr;
+				ext->addr += (num * PAGE_SIZE);
+				ext->size -= num;
+
+				return ret;
+			}
+		}
+
+		println("extmm::allocate(): out of pages!");
+		return 0;
+	}
+
+
+
+	void deallocate(State* st, addr_t addr, size_t num)
+	{
+		// loop through every extent. we can match in two cases:
+		// 1. 'addr' is 'num' pages *below* the base of the extent
+		// 2. 'addr' is *size* pages above the *base* of the extent
+
+		for(size_t i = 0; i < st->numExtents; i++)
+		{
+			auto ext = &st->extents[i];
+			if(end(addr, num) == ext->addr)
+			{
+				// we are below. decrease the addr of the extent by num pages.
+				ext->addr -= (PAGE_SIZE * num);
+				return;
+			}
+			else if(end(ext) == addr)
+			{
+				// increase the size only
+				ext->size += num;
+				return;
+			}
+		}
+
+		// oops. make a new extent.
+		addExtent(st, addr, num);
+	}
+
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

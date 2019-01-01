@@ -14,6 +14,7 @@ namespace nx
 		// krt::util::memfill4b((uint32_t*) bootinfo->frameBuffer, 0, 800 * 600);
 
 		pmm::init(bootinfo);
+		vmm::init(bootinfo);
 	}
 }
 

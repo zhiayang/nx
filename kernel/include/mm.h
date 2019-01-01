@@ -10,10 +10,31 @@ namespace nx
 {
 	struct BootInfo;
 
+	namespace extmm
+	{
+		struct extent_t;
+		struct State
+		{
+			extent_t* extents;
+			size_t numExtents;
+
+			size_t numPages;
+
+			addr_t maxAddress;
+		};
+
+		void init(State* st, addr_t baseAddr, addr_t maxAddr);
+
+		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
+		void deallocate(State* state, addr_t addr, size_t num);
+	}
+
 	namespace pmm
 	{
 		void init(BootInfo* bootinfo);
+
 		addr_t allocate(size_t num, bool below4G = false);
+		void deallocate(addr_t addr, size_t num);
 	}
 
 	namespace vmm
@@ -23,9 +44,15 @@ namespace nx
 			uint64_t entries[512];
 		};
 
+		void init(BootInfo* bootinfo);
 		void invalidate(addr_t addr);
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags);
 
+		// functions to allocate/free address space in higher half (kernel) and lower half (user)
+		enum class AddressSpace { Kernel, KernelHeap, User };
+
+		addr_t allocateAddrSpace(size_t num, AddressSpace type);
+		void deallocateAddrSpace(addr_t addr, size_t num);
 
 		static constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
 		static constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
@@ -38,6 +65,7 @@ namespace nx
 			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510),
 			0xFFFF'FF00'0000'0000ULL
 		};
+
 
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
 		constexpr uint64_t PAGE_WRITE       = 0x2;

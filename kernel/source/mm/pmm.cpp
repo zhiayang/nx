@@ -7,27 +7,13 @@
 namespace nx {
 namespace pmm
 {
-	struct extent_t
-	{
-		uint64_t addr;
-		uint64_t size;
-	};
-
-
 	// this is the number of pages that we'll use for our bootstrap of the memory manager.
 	static constexpr size_t NumReservedPages = 8;
-	static constexpr size_t extentsPerPage = (PAGE_SIZE / sizeof(extent_t));
 
-	static extent_t* extentArray = (extent_t*) addrs::PMM_STACK_BASE;
-	static size_t numExtents = 0;
-	static size_t extentArrayPages = 0;
-
-	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
-	static addr_t end(extent_t* ext)            { return ext->addr + (ext->size * PAGE_SIZE); }
-
-
-	static void extendExtentArray();
 	static void bootstrap(BootInfo* bootinfo, addr_t base);
+	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
+
+	static extmm::State extmmState;
 
 	void init(BootInfo* bootinfo)
 	{
@@ -54,82 +40,21 @@ namespace pmm
 
 		if(!bootstrapped) abort("failed to bootstrap pmm!!");
 
+		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
+		memset(&extmmState, 0, sizeof(extmm::State));
+		extmm::init(&extmmState, addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
 
 		// ok, now loop through each memory entry for real.
 		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
 		{
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == MemoryType::Available && entry->numPages >= NumReservedPages)
-			{
-				extent_t ext;
-				ext.addr = entry->address;
-				ext.size = entry->numPages;
-
-				extentArray[numExtents] = ext;
-				numExtents++;
-
-				if(numExtents % extentsPerPage == 0)
-				{
-					// time to expand.
-					extendExtentArray();
-				}
-			}
+				deallocate(entry->address, entry->numPages);
 		}
 
-		println("pmm initialised with %zu extents\n", numExtents);
+		println("pmm initialised with %zu extents", extmmState.numExtents);
 	}
 
-
-	addr_t allocate(size_t num, bool below4G)
-	{
-		if(num == 0) abort("pmm::allocate(): cannot allocate 0 pages!");
-
-		for(size_t i = 0; i < numExtents; i++)
-		{
-			auto ext = &extentArray[i];
-			if(ext->size >= num && (below4G ? end(ext) < 0xFFFF'FFFF : true))
-			{
-				// return this.
-				// take from the bottom.
-
-				addr_t ret = ext->addr;
-				ext->addr += (num * PAGE_SIZE);
-				ext->size -= num;
-
-				return ret;
-			}
-		}
-
-		abort("pmm::allocate(): failed to allocate page!");
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	static void extendExtentArray()
-	{
-		auto virt = addrs::PMM_STACK_BASE + (extentArrayPages * PAGE_SIZE);
-		auto phys = allocate(1);
-
-		vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
-	}
 
 
 
@@ -183,8 +108,23 @@ namespace pmm
 		// ok it should be set right now
 		// hopefully we do not triple fault!!!!
 		memset((void*) addrs::PMM_STACK_BASE, 0, 0x1000);
-		extentArrayPages = 1;
 	}
+
+
+	addr_t allocate(size_t num, bool below4G)
+	{
+		// lol. we can't have capturing lambdas without some kind of std::function
+		// and nobody knows how to implement that shit.
+		return extmm::allocate(&extmmState, num, below4G ? [](addr_t a, size_t l) -> bool {
+			return end(a, l) < 0xFFFF'FFFF;
+		} : [](addr_t, size_t) -> bool { return true; });
+	}
+
+	void deallocate(addr_t addr, size_t num)
+	{
+		extmm::deallocate(&extmmState, addr, num);
+	}
+
 }
 }
 

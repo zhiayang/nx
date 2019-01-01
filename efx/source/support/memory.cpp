@@ -13,7 +13,7 @@
 
 namespace efx
 {
-	void* efi_allocator::allocate(size_t sz)                { return efi::alloc(sz); }
+	void* efi_allocator::allocate(size_t sz, size_t align)  { return efi::alloc(sz); }
 	void efi_allocator::deallocate(void* ptr)               { return efi::free(ptr); }
 }
 

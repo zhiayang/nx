@@ -26,7 +26,7 @@ namespace efx
 {
 	struct efi_allocator
 	{
-		static void* allocate(size_t sz);
+		static void* allocate(size_t sz, size_t align);
 		static void deallocate(void* pt);
 	};
 
