@@ -26,9 +26,9 @@ namespace vmm
 		mapAddress(addrs::VMM_STACK1_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
 		mapAddress(addrs::VMM_STACK2_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
 
-		extmm::init(&extmmState[0], addrs::VMM_STACK0_BASE, addrs::VMM_STACK0_END);
-		extmm::init(&extmmState[1], addrs::VMM_STACK1_BASE, addrs::VMM_STACK1_END);
-		extmm::init(&extmmState[2], addrs::VMM_STACK2_BASE, addrs::VMM_STACK2_END);
+		extmm::init(&extmmState[0], "vmm/user", addrs::VMM_STACK0_BASE, addrs::VMM_STACK0_END);
+		extmm::init(&extmmState[1], "vmm/heap", addrs::VMM_STACK1_BASE, addrs::VMM_STACK1_END);
+		extmm::init(&extmmState[2], "vmm/kernel", addrs::VMM_STACK2_BASE, addrs::VMM_STACK2_END);
 
 		// add some extents, but by deallocating them.
 		// 0 is user, 1 is kernel_heap, 2 is kernel_general.
@@ -83,11 +83,14 @@ namespace vmm
 
 	addr_t allocate(size_t num, AddressSpace type)
 	{
-		auto addr = allocateAddrSpace(num, type);
-		if(addr == 0) return 0;
+		auto virt = allocateAddrSpace(num, type);
+		if(virt == 0) return 0;
 
-		mapAddress(addr, pmm::allocate(num), num, PAGE_WRITE | PAGE_PRESENT);
-		return addr;
+		auto phys = pmm::allocate(num);
+		if(phys == 0) return 0;
+
+		mapAddress(virt, phys, num, PAGE_WRITE | PAGE_PRESENT);
+		return virt;
 	}
 
 	void deallocate(addr_t addr, size_t num)

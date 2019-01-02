@@ -61,6 +61,20 @@ void efx::init()
 	}
 
 
+	if(auto path = options::get_option("initrd"); !path.empty())
+	{
+		// load an initrd!
+
+		size_t len = 0;
+		auto buf = fs::readFile(path, &len);
+
+		kernelBootInfo->initrdSize = len;
+		kernelBootInfo->initrdBuffer = buf;
+
+		efi::println("loaded initrd %s, %s", path.cstr(), humanSizedBytes(len).cstr());
+	}
+
+
 	{
 		// before we go, allocate one last page for the efi memory map for runtime services.
 		uint64_t scratch = 0;
@@ -69,7 +83,7 @@ void efx::init()
 			efi::abort_if_error(stat, "failed to allocate page");
 		}
 
-		efi::println("exiting EFI boot services");
+		efi::println("\nexiting EFI boot services");
 		efi::println("jumping to kernel; good luck!\n\n");
 
 		memory::finaliseMappingExistingMemory();

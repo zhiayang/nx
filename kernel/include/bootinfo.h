@@ -52,6 +52,9 @@ namespace nx
 
 		uint64_t mmEntryCount;
 		MemMapEntry* mmEntries;
+
+		uint64_t initrdSize;    // we only support one initrd right now!
+		void* initrdBuffer;     // physical address, but the loader will identity map it (since it is LoaderSetup memory)
 	};
 }
 

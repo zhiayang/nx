@@ -26,7 +26,7 @@ namespace extmm
 	{
 		auto virt = (addr_t) st->extents + (st->numPages * PAGE_SIZE);
 		if(virt == st->maxAddress)
-			abort("extmm::extend(): reached expansion limit!");
+			abort("extmm/%s::extend(): reached expansion limit!", st->owner);
 
 		auto phys = pmm::allocate(1);
 
@@ -50,7 +50,7 @@ namespace extmm
 
 
 
-	void init(State* st, addr_t base, addr_t top)
+	void init(State* st, const char* owner, addr_t base, addr_t top)
 	{
 		st->extents = (extent_t*) base;
 
@@ -58,12 +58,13 @@ namespace extmm
 		st->numExtents = 0;
 
 		st->maxAddress = top;
+		st->owner = owner;
 	}
 
 
 	addr_t allocate(State* st, size_t num, bool (*satisfies)(addr_t, size_t))
 	{
-		if(num == 0) abort("extmm::allocate(): cannot allocate 0 pages!");
+		if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
 
 		for(size_t i = 0; i < st->numExtents; i++)
 		{
@@ -81,7 +82,7 @@ namespace extmm
 			}
 		}
 
-		println("extmm::allocate(): out of pages!");
+		println("extmm/%s::allocate(): out of pages!", st->owner);
 		return 0;
 	}
 

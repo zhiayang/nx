@@ -2,22 +2,23 @@
 # Written in 2011
 # This makefile is licensed under the WTFPL
 
-export SYSROOT			:= $(shell pwd)/build/sysroot
-export TOOLCHAIN		:= $(shell pwd)/build/toolchain
-export CC				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-gcc
-export CXX				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-g++
-export AS				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-as
-export LD				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ld
-export OBJCOPY			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-objcopy
-export READELF			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-readelf
-export STRIP			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-strip
-export AR				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ar
-export RANLIB			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ranlib
+export PROJECT_DIR      := $(shell pwd)
+
+export SYSROOT			:= $(PROJECT_DIR)/build/sysroot
+export TOOLCHAIN		:= $(PROJECT_DIR)/build/toolchain
+export CC				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
+export CXX				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
+export AS				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-as
+export LD				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-readelf
+export STRIP			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-strip
+export AR				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
+export RANLIB			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
 
 export QEMU             := /mnt/d/programs/qemu/qemu-system-x86_64.exe
 
 export ARCH             := x86_64
-export PROJECT_DIR      := $(shell pwd)
 
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
@@ -35,6 +36,7 @@ QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -
 
 .DEFAULT_GOAL = all
 
+INITRD              = $(SYSROOT)/boot/initrd.tar.gz
 
 
 .PHONY: all clean build diskimage qemu debug
@@ -50,11 +52,8 @@ qemu: diskimage
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO) -vga std
 
 
-
-
-diskimage: build
+diskimage: build $(INITRD)
 	@utils/tools/update-diskimage.sh
-
 
 build:
 	@$(MAKE) -s -C libs/libc
@@ -62,6 +61,9 @@ build:
 	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
+
+$(INITRD): $(shell find $(PROJECT_DIR)/build/initrd -name "*")
+	@tar -zcvf $(INITRD) -C $(PROJECT_DIR)/build/initrd/ .
 
 clean:
 	@find "efx" -name "*.o" -delete

@@ -234,7 +234,7 @@ namespace efx
 		entries[bi->mmEntryCount].memoryType = nx::MemoryType::Framebuffer;
 		bi->mmEntryCount++;
 
-		efi::println("loaded kernel BootInfo struct with %zu entries\n", bi->mmEntryCount);
+		efi::println("loaded kernel BootInfo struct, with %zu memory map entries", bi->mmEntryCount);
 		bi->mmEntries = entries;
 		return bi;
 	}

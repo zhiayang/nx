@@ -42,17 +42,21 @@ namespace pmm
 
 		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
 		memset(&extmmState, 0, sizeof(extmm::State));
-		extmm::init(&extmmState, addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
+		extmm::init(&extmmState, "pmm", addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
 
 		// ok, now loop through each memory entry for real.
+		size_t totalMem = 0;
 		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
 		{
 			auto entry = &bootinfo->mmEntries[i];
-			if(entry->memoryType == MemoryType::Available && entry->numPages >= NumReservedPages)
+			if(entry->memoryType == MemoryType::Available)
+			{
 				deallocate(entry->address, entry->numPages);
+				totalMem += entry->numPages * 0x1000;
+			}
 		}
 
-		println("pmm initialised with %zu extents", extmmState.numExtents);
+		println("pmm initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
 	}
 
 

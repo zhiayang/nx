@@ -83,9 +83,10 @@ namespace nx
 			size_t numPages;
 
 			addr_t maxAddress;
+			const char* owner;
 		};
 
-		void init(State* st, addr_t baseAddr, addr_t maxAddr);
+		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);
 
 		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
 		void deallocate(State* state, addr_t addr, size_t num);
