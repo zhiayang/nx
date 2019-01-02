@@ -1,0 +1,2 @@
+#!/bin/sh
+cloc --exclude-ext=d,o,json kernel efx libs/libc

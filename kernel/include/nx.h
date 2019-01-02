@@ -78,7 +78,16 @@ namespace nx
 
 	string sprint(const char* fmt, ...);
 
+	[[noreturn]] void vabort(const char* fmt, va_list args);
 	[[noreturn]] void abort(const char* fmt, ...);
+
+	#ifdef assert
+	#undef assert
+	#endif
+
+	#define assert(x)   ((x) ? ((void) 0) : assert_fail(__FILE__, __LINE__, #x))
+
+	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
 }
 
 

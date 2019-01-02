@@ -17,6 +17,31 @@ namespace nx
 		vmm::init(bootinfo);
 
 		heap::init();
+
+		{
+			struct foo
+			{
+				int a;
+				int b;
+				int c;
+				int d;
+			};
+
+			auto f = (foo*) heap::allocate(sizeof(foo), alignof(foo));
+			println("f = %p (%zu, %zu)", f, sizeof(foo), alignof(foo));
+
+			heap::deallocate((addr_t) f);
+		}
+
+		{
+			auto x = heap::allocate(3 * PAGE_SIZE, 1);
+			println("x = %p", x);
+
+			heap::deallocate(x);
+		}
+
+
+		println("\nnothing to do...");
 	}
 }
 

@@ -69,19 +69,19 @@ namespace nx
 
 
 
-	static void vabort(const char* fmt, va_list args)
+	[[noreturn]] void vabort(const char* fmt, va_list args)
 	{
-		print("kernel abort! error: ");
+		print("\n\nkernel abort! error: ");
 		vprint(fmt, args);
-	}
-
-	void abort(const char* fmt, ...)
-	{
-		va_list args; va_start(args, fmt);
-		vabort(fmt, args);
 		va_end(args);
 
 		while(true);
+	}
+
+	[[noreturn]] void abort(const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		vabort(fmt, args);
 	}
 
 	void _aborter::abort(const char* fmt, ...)
