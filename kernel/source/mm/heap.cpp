@@ -303,7 +303,6 @@ namespace heap
 			// for allocations between 3072 and 4096 (where it would be wasteful to
 			// allocate a page for it
 
-
 			// the front of the chunk will be the size -- of the bucket!
 			// note that we might waste a fuckload of memory on alignment for size requests just
 			// very slightly above a page size! whatever.
@@ -352,12 +351,6 @@ namespace heap
 			// the front of the chunk will be the size -- of the bucket!
 			*((size_t*) ptr) = bucket->chunkSize;
 			ptr += sizeof(size_t);
-
-			// auto tmp = ptr;
-			// ptr = align_up(ptr + sizeof(alignment_offset_t), align);
-
-			// // store the offset we used to get the alignment
-			// *(((alignment_offset_t*) ptr) - 1) = (alignment_offset_t) (ptr - tmp);
 
 			return align_the_memory(ptr, align);
 		}

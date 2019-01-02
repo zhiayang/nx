@@ -3,7 +3,7 @@
 # This makefile is licensed under the WTFPL
 
 
-WARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros
+WARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros -pedantic-errors
 
 CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -DORION_KERNEL=1 -mcmodel=kernel -c
 

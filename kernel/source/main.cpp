@@ -18,33 +18,31 @@ namespace nx
 
 		heap::init();
 
+		struct foo { int a, b, c, d, e, f; };
+		struct bar { int x[64], y[32]; };
+
+		int num_foos = 0;
+		int num_bars = 0;
+
+		foo** foos = new foo*[10000 / 2];
+		bar** bars = new bar*[10000 / 2];
+
+		for(int i = 0; i < 10000; i++)
 		{
-			struct foo
-			{
-				int a;
-				int b;
-				int c;
-				int d;
-			};
-
-			auto f = (foo*) heap::allocate(sizeof(foo), alignof(foo));
-			println("f = %p (%zu, %zu)", f, sizeof(foo), alignof(foo));
-
-			heap::deallocate((addr_t) f);
+			print("%d ", i);
+			if(i % 2 == 0)  foos[num_foos] = new foo(), num_foos++;
+			else            bars[num_bars] = new bar(), num_bars++;
 		}
 
-		{
-			auto x = heap::allocate(3 * PAGE_SIZE, 1);
-			println("x = %p", x);
+		for(int i = 0; i < num_foos; i++) delete foos[i];
+		for(int i = 0; i < num_bars; i++) delete bars[i];
 
-			heap::deallocate(x);
-		}
-
+		delete[] foos;
+		delete[] bars;
 
 		println("\nnothing to do...");
 	}
 }
-
 
 
 
@@ -74,3 +72,20 @@ extern "C" void kernel_main(nx::BootInfo* bootinfo)
 	while(true)
 		;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
