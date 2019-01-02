@@ -2,8 +2,8 @@
 # Written in 2014
 
 
-CFLAGS		= -Wno-pragmas -O2 -fPIC -std=gnu11 -mno-red-zone -fno-exceptions -c
-CXXFLAGS	= -Wno-pragmas -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
+CFLAGS		= -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
+CXXFLAGS	= -Wno-pragmas -O2 -fPIC -std=c++17 -mno-red-zone -fno-exceptions -fno-rtti -c
 
 CSRC		= $(shell find . -name "*.c")
 CXXSRC		= $(shell find . -name "*.cpp")
@@ -12,9 +12,6 @@ SSRC		= $(shell find . -name "*.s")
 COBJ		= $(CSRC:.c=.c.o)
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 SOBJ		= $(SSRC:.s=.s.o)
-
-
-NUMFILES	= $$(($(words $(CXXSRC)) + $(words $(CSRC)) + $(words $(SSRC))))
 
 .PHONY: all
 

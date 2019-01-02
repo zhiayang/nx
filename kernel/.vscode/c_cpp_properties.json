@@ -4,7 +4,8 @@
             "name": "kernel-windows",
             "includePath": [
                 "${workspaceFolder:kernel}/include",
-                "${workspaceFolder:libkrt}/include"
+                "${workspaceFolder:libkrt}/include",
+                "${workspaceFolder:nx}/libs/miniz"
             ],
             "defines": [
                 "__orionx__",

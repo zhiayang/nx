@@ -1,0 +1,168 @@
+// fs.h
+// Copyright (c) 2019, zhiayang
+// Licensed under the Apache License Version 2.0.
+
+#pragma once
+
+#include "defs.h"
+#include <sys/types.h>
+
+namespace nx
+{
+	namespace vfs
+	{
+		enum class Flags
+		{
+			Writeable       = 0x1,
+			Folder          = 0x2,
+			MountPoint      = 0x4,
+		};
+
+		struct Node;
+		struct DriverInterface;
+
+		struct Filesystem
+		{
+			id_t filesystemId;
+			nx::string description;
+
+			bool readOnly;
+			nx::string mountpoint;
+
+			Node* rootNode;
+
+
+			void* fsDriverData;
+			DriverInterface* driver;
+		};
+
+		struct Node
+		{
+			nx::string name;
+			id_t nodeId;
+
+			Filesystem* filesystem;
+
+			size_t refcount;
+
+
+			Flags flags;
+			void* fsDriverData;
+
+			struct Child
+			{
+				nx::string name;
+				Flags flags;
+			};
+
+			Node* parent;
+			nx::array<Child> children;
+
+			// TODO:
+			// timestamps for stuff
+			// permissions
+		};
+
+		enum class Mode
+		{
+			Read,
+			Write,
+			Append
+		};
+
+		struct File
+		{
+			id_t descriptorId;
+
+			Node* node;
+			Mode openMode;
+
+			size_t fileSize;
+			size_t fileCursor;
+		};
+
+
+		enum class Status
+		{
+			Success,
+
+			ReadOnly,           // trying to modify a read-only thing
+			NonExistent,        // does not exist
+			InsufficientPerms,  // insufficient permissions
+
+		};
+
+		struct DriverInterface
+		{
+			// initialise the driver. it should not modify any of the existing fields except fsDriverData.
+			Status (*init)(Filesystem* fs);
+
+			// opens a file corresponding to the stuff in node, at the path specified.
+			Status (*open)(Node* node, const nx::string& path);
+
+			// closes the node. mainly to let the driver clean stuff up in fsDriverData.
+			Status (*close)(Node* node);
+
+
+
+
+			// opens a file for reading -- different from the thing above
+			File* (*openFile)(Node* node, Mode mode);
+
+			// closes the file.
+			Status (*closeFile)(File* file);
+
+			// reads a file. returns the number of bytes read.
+			size_t (*read)(File* file, void* buf, size_t count);
+
+			// writes to a file. returns the number of bytes written.
+			size_t (*write)(File* file, void* buf, size_t count);
+
+			// moves the cursor of a file -- relatively. returns the actual offset.
+			size_t (*seekRelative)(File* file, size_t ofs);
+
+			// same, but absolutely.
+			size_t (*seekAbsolute)(File* file, size_t ofs);
+
+			// TODO: create, delete, other stuff??
+		};
+
+
+
+
+		// ok, these are actual VFS functions now.
+
+		void init();
+
+		Status mount(DriverInterface* driver, const nx::string& mountpoint);
+
+		File* open(const nx::string& path, Mode mode);
+		void close(File* file);
+
+		size_t read(File* file, void* buf, size_t count);
+		size_t write(File* file, void* buf, size_t count);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,15 +10,18 @@ namespace nx
 {
 	void kernel_main(BootInfo* bootinfo)
 	{
-		// clear the screen
-		// krt::util::memfill4b((uint32_t*) bootinfo->frameBuffer, 0, 800 * 600);
-
+		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(bootinfo);
-
 		heap::init();
 
-		println("\nnothing to do...");
+		// initialise the vfs so we can read the initrd
+		vfs::init();
+
+		// read the aforementioned initrd
+		initrd::init(bootinfo);
+
+
 	}
 }
 
@@ -45,6 +48,9 @@ extern "C" void kernel_main(nx::BootInfo* bootinfo)
 	nx::println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
 
 	nx::kernel_main(bootinfo);
+
+
+	nx::println("\nnothing to do...");
 
 	while(true)
 		;

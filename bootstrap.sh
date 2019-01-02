@@ -159,10 +159,10 @@ function main() {
 
 
 	# tar & zip the fonts for our initrd.
-	mkdir -p $PROJECT_DIR/build/initrd
+	mkdir -p $PROJECT_DIR/build/initrd/fonts
 
-	cp $PROJECT_DIR/utils/fonts/deja-vu/DejaVuSansMono.ttf $PROJECT_DIR/build/initrd/mono.ttf
-	cp $PROJECT_DIR/utils/fonts/deja-vu/DejaVuSansMono-Bold.ttf $PROJECT_DIR/build/initrd/mono-bold.ttf
+	cp $PROJECT_DIR/utils/fonts/deja-vu/DejaVuSansMono.ttf $PROJECT_DIR/build/initrd/fonts/mono.ttf
+	cp $PROJECT_DIR/utils/fonts/deja-vu/DejaVuSansMono-Bold.ttf $PROJECT_DIR/build/initrd/fonts/mono-bold.ttf
 
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}environment is set up!${_NORMAL}"

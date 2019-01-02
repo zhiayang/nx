@@ -65,6 +65,7 @@ build:
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
+	@$(MAKE) -s -C libs/miniz
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
 
