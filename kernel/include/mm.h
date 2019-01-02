@@ -10,23 +10,11 @@ namespace nx
 {
 	struct BootInfo;
 
-	namespace extmm
+	namespace heap
 	{
-		struct extent_t;
-		struct State
-		{
-			extent_t* extents;
-			size_t numExtents;
-
-			size_t numPages;
-
-			addr_t maxAddress;
-		};
-
-		void init(State* st, addr_t baseAddr, addr_t maxAddr);
-
-		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
-		void deallocate(State* state, addr_t addr, size_t num);
+		void init();
+		addr_t allocate(size_t size, size_t align);
+		void deallocate(addr_t addr);
 	}
 
 	namespace pmm
@@ -46,13 +34,20 @@ namespace nx
 
 		void init(BootInfo* bootinfo);
 		void invalidate(addr_t addr);
+
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags);
+		void unmapAddress(addr_t virt, size_t num);
+		addr_t getPhysAddr(addr_t virt);
 
 		// functions to allocate/free address space in higher half (kernel) and lower half (user)
 		enum class AddressSpace { Kernel, KernelHeap, User };
 
 		addr_t allocateAddrSpace(size_t num, AddressSpace type);
 		void deallocateAddrSpace(addr_t addr, size_t num);
+
+		// these will allocate an address space, *AND* allocate a physical page *AND* map it!
+		addr_t allocate(size_t num, AddressSpace type);
+		void deallocate(addr_t addr, size_t num);
 
 		static constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
 		static constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
@@ -73,6 +68,29 @@ namespace nx
 
 		constexpr uint64_t PAGE_NO_FLAGS    = ~0xFFF;
 	}
+
+
+
+
+	namespace extmm
+	{
+		struct extent_t;
+		struct State
+		{
+			extent_t* extents;
+			size_t numExtents;
+
+			size_t numPages;
+
+			addr_t maxAddress;
+		};
+
+		void init(State* st, addr_t baseAddr, addr_t maxAddr);
+
+		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
+		void deallocate(State* state, addr_t addr, size_t num);
+	}
+
 }
 
 

@@ -41,7 +41,7 @@ namespace vmm
 		extmm::deallocate(&extmmState[2], addrs::KERNEL_VMM_ADDRSPACE_BASE,
 			(addrs::KERNEL_VMM_ADDRSPACE_END - addrs::KERNEL_VMM_ADDRSPACE_BASE) / PAGE_SIZE);
 
-		println("vmm initalised");
+		println("vmm initialised");
 	}
 
 
@@ -81,6 +81,21 @@ namespace vmm
 	}
 
 
+	addr_t allocate(size_t num, AddressSpace type)
+	{
+		auto addr = allocateAddrSpace(num, type);
+		mapAddress(addr, pmm::allocate(num), num, PAGE_WRITE | PAGE_PRESENT);
+		return addr;
+	}
+
+	void deallocate(addr_t addr, size_t num)
+	{
+		deallocateAddrSpace(addr, num);
+		for(size_t i = 0; i < num; i++)
+			pmm::deallocate(getPhysAddr(end(addr, i)), 1);
+
+		unmapAddress(addr, num);
+	}
 
 
 
@@ -130,6 +145,74 @@ namespace vmm
 			invalidate(ptab->entries[p1idx]);
 		}
 	}
+
+
+	void unmapAddress(addr_t virt, size_t num)
+	{
+		for(size_t i = 0; i < num; i++)
+		{
+			addr_t v = virt + (i * PAGE_SIZE);
+
+			// right.
+			auto p4idx = indexPML4(v);
+			auto p3idx = indexPDPT(v);
+			auto p2idx = indexPageDir(v);
+			auto p1idx = indexPageTable(v);
+
+			if(p4idx == 510) abort("cannot unmap PML4T at index 510!");
+
+			auto pml4 = (pml_t*) RecursiveAddrs[0];
+			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+				abort("%p was not mapped! (pdpt not present)", virt);
+
+			auto pdpt = (pml_t*) (RecursiveAddrs[1] + 0x1000ULL * p4idx);
+			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+				abort("%p was not mapped! (pdir not present)", virt);
+
+			auto pdir = (pml_t*) (RecursiveAddrs[2] + 0x20'0000ULL * p4idx + 0x1000ULL * p3idx);
+			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+				abort("%p was not mapped! (ptab not present)", virt);
+
+			auto ptab = (pml_t*) (RecursiveAddrs[3] + 0x4000'0000ULL * p4idx + 0x20'0000ULL * p3idx + 0x1000ULL * p2idx);
+			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
+				abort("%p was not mapped! (page not present)", virt);
+
+			ptab->entries[p1idx] = 0;
+			invalidate(ptab->entries[p1idx]);
+		}
+	}
+
+	addr_t getPhysAddr(addr_t virt)
+	{
+		// right.
+		auto p4idx = indexPML4(virt);
+		auto p3idx = indexPDPT(virt);
+		auto p2idx = indexPageDir(virt);
+		auto p1idx = indexPageTable(virt);
+
+		if(p4idx == 510) abort("cannot unmap PML4T at index 510!");
+
+		auto pml4 = (pml_t*) RecursiveAddrs[0];
+		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			abort("%p was not mapped! (pdpt not present)", virt);
+
+		auto pdpt = (pml_t*) (RecursiveAddrs[1] + 0x1000ULL * p4idx);
+		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			abort("%p was not mapped! (pdir not present)", virt);
+
+		auto pdir = (pml_t*) (RecursiveAddrs[2] + 0x20'0000ULL * p4idx + 0x1000ULL * p3idx);
+		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			abort("%p was not mapped! (ptab not present)", virt);
+
+		auto ptab = (pml_t*) (RecursiveAddrs[3] + 0x4000'0000ULL * p4idx + 0x20'0000ULL * p3idx + 0x1000ULL * p2idx);
+		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
+			abort("%p was not mapped! (page not present)", virt);
+
+		return ptab->entries[p1idx];
+	}
+
+
+
 
 	void invalidate(addr_t addr)
 	{

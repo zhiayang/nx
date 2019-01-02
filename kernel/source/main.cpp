@@ -15,6 +15,8 @@ namespace nx
 
 		pmm::init(bootinfo);
 		vmm::init(bootinfo);
+
+		heap::init();
 	}
 }
 
