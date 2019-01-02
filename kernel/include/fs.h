@@ -13,9 +13,11 @@ namespace nx
 	{
 		enum class Flags
 		{
-			Writeable       = 0x1,
-			Folder          = 0x2,
-			MountPoint      = 0x4,
+			File            = 0x01,
+			Folder          = 0x02,
+			Symlink         = 0x04,
+			RawDevice       = 0x08,
+			MountPoint      = 0x10,
 		};
 
 		struct Node;
@@ -49,14 +51,7 @@ namespace nx
 			Flags flags;
 			void* fsDriverData;
 
-			struct Child
-			{
-				nx::string name;
-				Flags flags;
-			};
-
 			Node* parent;
-			nx::array<Child> children;
 
 			// TODO:
 			// timestamps for stuff
@@ -81,6 +76,14 @@ namespace nx
 			size_t fileCursor;
 		};
 
+		struct Directory
+		{
+			id_t descriptorId;
+
+			Node* node;
+			nx::array<Node*> children;
+		};
+
 
 		enum class Status
 		{
@@ -88,9 +91,27 @@ namespace nx
 
 			ReadOnly,           // trying to modify a read-only thing
 			NonExistent,        // does not exist
-			InsufficientPerms,  // insufficient permissions
-
 		};
+
+
+		void init();
+
+		Status mount(DriverInterface* driver, const nx::string& mountpoint);
+
+		File* open(const nx::string& path, Mode mode);
+		void close(File* file);
+
+		size_t read(File* file, void* buf, size_t count);
+		size_t write(File* file, void* buf, size_t count);
+
+		Directory* openDir(const nx::string& path);
+		void closeDir(Directory* dir);
+
+		size_t seekAbs(File* file, size_t ofs);
+		size_t seekRel(File* file, size_t ofs);
+
+
+
 
 		struct DriverInterface
 		{
@@ -128,19 +149,6 @@ namespace nx
 		};
 
 
-
-
-		// ok, these are actual VFS functions now.
-
-		void init();
-
-		Status mount(DriverInterface* driver, const nx::string& mountpoint);
-
-		File* open(const nx::string& path, Mode mode);
-		void close(File* file);
-
-		size_t read(File* file, void* buf, size_t count);
-		size_t write(File* file, void* buf, size_t count);
 	}
 }
 
