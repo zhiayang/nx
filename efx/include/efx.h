@@ -90,6 +90,7 @@ namespace efx
 
 	void loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
 	nx::BootInfo* prepareKernelBootInfo();
+	void setKernelMemoryMap(nx::BootInfo* bootinfo);
 	void exitBootServices();
 
 	efx::string sprint(const char* fmt, ...);
@@ -97,10 +98,11 @@ namespace efx
 
 namespace efi
 {
-	static constexpr int MemoryType_LoadedKernel = 0x80000001;
-	static constexpr int MemoryType_BootInfo     = 0x80000002;
-	static constexpr int MemoryType_MemoryMap    = 0x80000003;
-	static constexpr int MemoryType_VMFrame      = 0x80000004;
+	static constexpr int MemoryType_LoadedKernel    = 0x80000001;
+	static constexpr int MemoryType_BootInfo        = 0x80000002;
+	static constexpr int MemoryType_MemoryMap       = 0x80000003;
+	static constexpr int MemoryType_VMFrame         = 0x80000004;
+	static constexpr int MemoryType_Initrd          = 0x80000005;
 
 
 	void init(void* image_handle, efi_system_table* systable);

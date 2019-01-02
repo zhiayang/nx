@@ -17,6 +17,7 @@ export AR				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
 
 export QEMU             := /mnt/d/programs/qemu/qemu-system-x86_64.exe
+export VIRTUALBOX       := '/mnt/c/Program\ Files/Oracle/VirtualBox/VBoxManage.exe'
 
 export ARCH             := x86_64
 
@@ -50,6 +51,11 @@ debug: diskimage
 qemu: diskimage
 	@echo -e "# starting qemu\n"
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO) -vga std
+
+vbox: diskimage
+	@echo -e "# starting virtualbox\n"
+	@/mnt/c/Program\ Files/Oracle/VirtualBox/VBoxManage.exe startvm "nx"
+
 
 
 diskimage: build $(INITRD)

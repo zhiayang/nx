@@ -105,6 +105,13 @@ namespace efx
 
 		bi->pml4Address = memory::getPML4Address();
 
+		return bi;
+	}
+
+	void setKernelMemoryMap(nx::BootInfo* bi)
+	{
+		auto bs = efi::systable()->BootServices;
+
 		bi->mmEntryCount = 0;
 
 		size_t descSz = 0;
@@ -156,7 +163,7 @@ namespace efx
 			if(krt::match(entry->Type, EfiLoaderData, EfiConventionalMemory, EfiBootServicesCode, EfiBootServicesData,
 				EfiACPIMemoryNVS, EfiACPIReclaimMemory, EfiMemoryMappedIO, EfiMemoryMappedIOPortSpace, EfiPersistentMemory,
 				EfiRuntimeServicesCode, EfiRuntimeServicesData, efi::MemoryType_LoadedKernel, efi::MemoryType_BootInfo,
-				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame))
+				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame, efi::MemoryType_Initrd))
 			{
 				neededEntries++;
 			}
@@ -214,6 +221,7 @@ namespace efx
 				case efi::MemoryType_LoadedKernel:  entries[k].memoryType = nx::MemoryType::LoadedKernel; break;
 				case efi::MemoryType_MemoryMap:     entries[k].memoryType = nx::MemoryType::MemoryMap; break;
 				case efi::MemoryType_BootInfo:      entries[k].memoryType = nx::MemoryType::BootInfo; break;
+				case efi::MemoryType_Initrd:        entries[k].memoryType = nx::MemoryType::Initrd; break;
 
 				default:                            skip = true; break; // do not include
 			}
@@ -234,9 +242,8 @@ namespace efx
 		entries[bi->mmEntryCount].memoryType = nx::MemoryType::Framebuffer;
 		bi->mmEntryCount++;
 
-		efi::println("loaded kernel BootInfo struct, with %zu memory map entries", bi->mmEntryCount);
+		efi::println("created kernel memory map, with %zu entries", bi->mmEntryCount);
 		bi->mmEntries = entries;
-		return bi;
 	}
 }
 

@@ -22,6 +22,7 @@ namespace nx
 		LoadedKernel,
 		BootInfo,
 		MemoryMap,
+		Initrd,
 
 		EFIRuntimeCode,
 		EFIRuntimeData,

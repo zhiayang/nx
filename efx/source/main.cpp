@@ -68,6 +68,18 @@ void efx::init()
 		size_t len = 0;
 		auto buf = fs::readFile(path, &len);
 
+		// we need to copy it out as pages, since readFile() uses the EFI pool!
+		{
+			uint64_t out = 0;
+			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_Initrd, (len + 0x1000) / 0x1000, &out);
+			efi::abort_if_error(stat, "failed to allocate memory for initrd!");
+
+			memmove((void*) out, buf, len);
+			st->BootServices->FreePool((void*) buf);
+
+			buf = (uint8_t*) out;
+		}
+
 		kernelBootInfo->initrdSize = len;
 		kernelBootInfo->initrdBuffer = buf;
 
@@ -82,6 +94,8 @@ void efx::init()
 			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &scratch);
 			efi::abort_if_error(stat, "failed to allocate page");
 		}
+
+		setKernelMemoryMap(kernelBootInfo);
 
 		efi::println("\nexiting EFI boot services");
 		efi::println("jumping to kernel; good luck!\n\n");

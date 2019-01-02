@@ -103,8 +103,11 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap))
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap,
+				efi::MemoryType_Initrd))
+			{
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+			}
 
 			if(entry->Type == EfiRuntimeServicesCode || entry->Type == EfiRuntimeServicesData)
 			{
