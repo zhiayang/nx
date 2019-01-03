@@ -17,22 +17,6 @@ if [ $PROJECT_DIR == "" ]; then
 	exit 1
 fi
 
-# check for requisite tools
-if [ ! $(command -v fdisk) ]; then
-	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'fdisk' not found${_NORMAL} (fdisk)"
-	exit 1
-fi
-
-if [ ! $(command -v mkfs.vfat) ]; then
-	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'mkfs.vfat' not found${_NORMAL} (dosfstools)"
-	exit 1
-fi
-
-if [ ! $(command -v unzip) ]; then
-	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'unzip' not found${_NORMAL} (unzip)"
-	exit 1
-fi
-
 if [ ! $(command -v mcopy) ]; then
 	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'mcopy' not found${_NORMAL} (mtools)"
 	exit 1
