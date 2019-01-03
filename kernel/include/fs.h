@@ -96,7 +96,7 @@ namespace nx
 
 		void init();
 
-		Status mount(DriverInterface* driver, const nx::string& mountpoint);
+		Status mount(DriverInterface* driver, const nx::string& mountpoint, bool readonly);
 
 		File* open(const nx::string& path, Mode mode);
 		void close(File* file);
@@ -119,6 +119,7 @@ namespace nx
 			Status (*init)(Filesystem* fs);
 
 			// opens a file corresponding to the stuff in node, at the path specified.
+			// it should not modify any of the existing fields except fsDriverData.
 			Status (*open)(Node* node, const nx::string& path);
 
 			// closes the node. mainly to let the driver clean stuff up in fsDriverData.
@@ -149,6 +150,9 @@ namespace nx
 		};
 
 
+
+		// helper functions
+		nx::array<nx::string> splitPathComponents(const nx::string& path);
 	}
 }
 

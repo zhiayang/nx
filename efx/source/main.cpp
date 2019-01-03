@@ -14,7 +14,7 @@
 
 #include "../../kernel/include/bootinfo.h"
 
-#define EFX_VERSION_STRING "0.2.0"
+#define EFX_VERSION_STRING "0.3.0"
 
 
 void efx::init()
