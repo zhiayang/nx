@@ -37,7 +37,7 @@ function main() {
 
 	if [ $(uname) == "Darwin" ]; then
 		# the tar on osx doesn't support --checkpoint
-		TAR_CHECKPOINT_ARG = ""
+		TAR_CHECKPOINT_ARG=""
 	fi
 
 	if [ "$1" == "clean" ]; then
@@ -59,6 +59,8 @@ function main() {
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}bootstrapping development environment${_NORMAL}"
 	echo ""
+
+	chmod +x $PROJECT_DIR/utils/tools/*.sh
 
 
 

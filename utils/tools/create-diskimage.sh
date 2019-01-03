@@ -17,15 +17,25 @@ if [ $PROJECT_DIR == "" ]; then
 	exit 1
 fi
 
-# check for requisite tools
-if [ ! $(command -v fdisk) ]; then
-	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'fdisk' not found${_NORMAL} (fdisk)"
-	exit 1
-fi
 
-if [ ! $(command -v mkfs.vfat) ]; then
-	echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'mkfs.vfat' not found${_NORMAL} (dosfstools)"
-	exit 1
+# check for requisite tools
+if [ $(uname) == "Darwin" ]; then
+	# on osx we need to use gdisk. homebrew has it as gptfdisk
+	# also, we come with newfs_msdos, so we don't need mkfs.vfat.
+	if [ ! $(command -v gdisk) ]; then
+		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'gdisk' not found${_NORMAL} (gptfdisk)"
+		exit 1
+	fi
+else
+	if [ ! $(command -v fdisk) ]; then
+		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'fdisk' not found${_NORMAL} (fdisk)"
+		exit 1
+	fi
+
+	if [ ! $(command -v mkfs.vfat) ]; then
+		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'mkfs.vfat' not found${_NORMAL} (dosfstools)"
+		exit 1
+	fi
 fi
 
 if [ ! $(command -v unzip) ]; then
@@ -41,6 +51,10 @@ fi
 
 source $PROJECT_DIR/utils/tools/disk-geometry.sh
 
+DD_STATUS="status=none"
+if [ $(uname) == "Darwin" ]; then
+	DD_STATUS=""
+fi
 
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating disk image${_NORMAL}"
@@ -53,7 +67,7 @@ pushd $PROJECT_DIR/build > /dev/null
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}image size: $(expr $SECTOR_COUNT \* $SECTOR_SIZE / 1024 / 1024) mb${_NORMAL}"
 	echo ""
 
-	dd if=/dev/zero of=$OUTPUT_DISK bs=$SECTOR_SIZE count=$SECTOR_COUNT status=none
+	dd if=/dev/zero of=$OUTPUT_DISK bs=$SECTOR_SIZE count=$SECTOR_COUNT $DD_STATUS
 
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading rEFInd${_NORMAL}"
@@ -71,15 +85,49 @@ pushd $PROJECT_DIR/build > /dev/null
 	if [ -e esp-part.img ]; then rm esp-part.img; fi
 	if [ -e root-part.img ]; then rm root-part.img; fi
 
-	dd if=/dev/zero of=esp-part.img bs=$SECTOR_SIZE count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) status=none
-	dd if=/dev/zero of=root-part.img bs=$SECTOR_SIZE count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) status=none
+	dd if=/dev/zero of=esp-part.img bs=$SECTOR_SIZE count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) $DD_STATUS
+	dd if=/dev/zero of=root-part.img bs=$SECTOR_SIZE count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) $DD_STATUS
 
+	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating GPT${_NORMAL}"
 	if [ $(uname) == "Darwin" ]; then
-		echo "osx"
+		# a transcript:
+		# 1. o                    - make a new guid partition table
+		# 2. y                    - confirm
+		# 3. n                    - make a new partition
+		# 4. 1                    - partition numero uno
+		# 5. ESP_PARTITION_START  - partition start
+		# 6. ESP_PARTITION_END    - partition end
+		# 7. ef00                 - EFI system
+		# 8. n                    - make a new partition
+		# 9. 2                    - partition numero dos
+		# 10. ROOT_PARTITION_START - partition start
+		# 11. ROOT_PARTITION_END  - partition end
+		# 12. 0700                - microsoft basic data (fat32)
+		# 13. x                   - expert mode
+		# 14. c                   - change partition uuid
+		# 15. 1                   - select partition 1
+		# 16. ESP_PART_UUID       - uuid
+		# 17. c                   - change partition uuid
+		# 18. 2                   - select partition 2
+		# 19. ROOT_PART_UUID      - uuid
+		# 20. w                   - write changes and quit
+		# 21. y                   - confirm
+
+
+		echo -e "o\ny\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nef00\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\n0700\nx\nc\n1\n$ESP_PART_UUID\nc\n2\n$ROOT_PART_UUID\nw\ny\n" | gdisk disk.img > /dev/null
+
+		ESP_IDENT=$(hdiutil attach -nomount esp-part.img)
+		newfs_msdos -F 32 -v "EFIPART" $ESP_IDENT > /dev/null
+
+		ROOT_IDENT=$(hdiutil attach -nomount root-part.img)
+		newfs_msdos -F 32 -v "NX" $ROOT_IDENT > /dev/null
+
+		hdiutil detach $ESP_IDENT
+		hdiutil detach $ROOT_IDENT
+
 	elif [ $(uname) == "Linux" ]; then
 
 		# make the filesystems -- this is os-specific so we drop back into the if-statement for a while
-		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating GPT${_NORMAL}"
 
 		# a transcript:
 		# 1. g                    - make a new guid partition table
@@ -111,7 +159,7 @@ pushd $PROJECT_DIR/build > /dev/null
 $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 
 		mkfs.vfat -n "EFIPART" -F 32 esp-part.img > /dev/null
-		mkfs.vfat -n "FOOFOO" -F 32 root-part.img > /dev/null
+		mkfs.vfat -n "NX" -F 32 root-part.img > /dev/null
 
 	else
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}$(uname) is not a supported build platform!${_NORMAL}"
@@ -120,6 +168,7 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 
 	# copy refind to the ESP
 
+	export MTOOLS_SKIP_CHECK=1
 	mmd -D O -i esp-part.img ::/EFI
 	mmd -D O -i esp-part.img ::/EFI/BOOT
 	mmd -D O -i esp-part.img ::/EFI/BOOT/refind
@@ -129,8 +178,8 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/refind_x64.efi ::/EFI/BOOT/bootx64.efi
 
 
-	dd if=esp-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$OUTPUT_DISK count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc status=none
-	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$OUTPUT_DISK count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc status=none
+	dd if=esp-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$OUTPUT_DISK count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc $DD_STATUS
+	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$OUTPUT_DISK count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc $DD_STATUS
 
 	$PROJECT_DIR/utils/tools/update-diskimage.sh
 
