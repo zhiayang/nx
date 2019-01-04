@@ -97,7 +97,7 @@ void efx::init()
 
 		setKernelMemoryMap(kernelBootInfo);
 
-		efi::println("\nexiting EFI boot services");
+		efi::println("\nexiting EFI boot services\n");
 		efi::println("jumping to kernel; good luck!\n\n");
 
 		memory::finaliseMappingExistingMemory();

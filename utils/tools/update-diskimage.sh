@@ -35,6 +35,7 @@ pushd $PROJECT_DIR/build > /dev/null
 		exit 1
 	fi
 
+	export MTOOLS_SKIP_CHECK=1
 	ESP_IMG_OFFSET=disk.img@@$(expr $ESP_PARTITION_START \* $SECTOR_SIZE)
 	ROOT_IMG_OFFSET=disk.img@@$(expr $ROOT_PARTITION_START \* $SECTOR_SIZE)
 

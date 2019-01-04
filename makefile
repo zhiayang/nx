@@ -4,27 +4,26 @@
 
 export PROJECT_DIR      := $(shell pwd)
 
-export SYSROOT			:= $(PROJECT_DIR)/build/sysroot
-export TOOLCHAIN		:= $(PROJECT_DIR)/build/toolchain
-export CC				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
-export CXX				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
-export AS				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-as
-export LD				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
-export OBJCOPY			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-objcopy
-export READELF			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-readelf
-export STRIP			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-strip
-export AR				:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
-export RANLIB			:= $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
+export SYSROOT          := $(PROJECT_DIR)/build/sysroot
+export TOOLCHAIN        := $(PROJECT_DIR)/build/toolchain
+export CC               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
+export CXX              := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
+export AS               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-as
+export LD               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY          := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF          := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-readelf
+export STRIP            := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-strip
+export AR               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
+export RANLIB           := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
 
-export QEMU             := /mnt/d/programs/qemu/qemu-system-x86_64.exe
-export VIRTUALBOX       := '/mnt/c/Program\ Files/Oracle/VirtualBox/VBoxManage.exe'
+export UNAME            := $(shell uname)
 
 export ARCH             := x86_64
 
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-MEMORY				= 256
+MEMORY              = 256
 
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img

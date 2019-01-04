@@ -26,7 +26,7 @@ namespace vfs
 		node->refcount = 1;
 
 		// by default the name of the node is the last thing in the path bah
-		if(path == "/") node->name == "/";
+		if(path == "/") node->name = "/";
 		else            node->name = splitPathComponents(path).back();
 	}
 

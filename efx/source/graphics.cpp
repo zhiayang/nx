@@ -131,7 +131,7 @@ namespace graphics
 
 			// i think we can still print stuff right? efi should be smarter than this
 			efi::systable()->ConOut->ClearScreen(efi::systable()->ConOut);
-			efi::println("video mode set! framebuffer: %llx\n", fbAddress);
+			efi::println("video mode set! framebuffer: %p\n", fbAddress);
 		}
 	}
 }

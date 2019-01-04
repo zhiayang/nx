@@ -1,0 +1,4 @@
+-Iinclude
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libkrt/include
+-ffreestanding
+-std=c++17
