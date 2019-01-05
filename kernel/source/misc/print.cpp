@@ -26,7 +26,7 @@ namespace nx
 		return len;
 	}
 
-	static int vprint(const char* fmt, va_list args)
+	int vprint(const char* fmt, va_list args)
 	{
 		return vcbprintf(nullptr, cb_print, fmt, args);
 	}

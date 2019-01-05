@@ -33,14 +33,12 @@ namespace nx
 
 			Node* rootNode;
 
-
-			void* fsDriverData;
 			DriverInterface* driver;
 		};
 
 		struct Node
 		{
-			nx::string name;
+			nx::string path;
 			id_t nodeId;
 
 			Filesystem* filesystem;
@@ -51,7 +49,7 @@ namespace nx
 			Flags flags;
 			void* fsDriverData;
 
-			Node* parent;
+			// Node* parent;
 
 			// TODO:
 			// timestamps for stuff
@@ -93,10 +91,19 @@ namespace nx
 			NonExistent,        // does not exist
 		};
 
+		static constexpr int FSCAP_READ     = 0x01;
+		static constexpr int FSCAP_WRITE    = 0x02;
+		static constexpr int FSCAP_SEEK     = 0x04;
+		static constexpr int FSCAP_DIR      = 0x08;
+		static constexpr int FSCAP_DELETE   = 0x10;
+
 
 		void init();
 
-		Status mount(DriverInterface* driver, const nx::string& mountpoint, bool readonly);
+		bool mount(DriverInterface* driver, const nx::string& mountpoint, bool readonly);
+
+		Node* openNode(const nx::string& path);
+		void closeNode(Node* node);
 
 		File* open(const nx::string& path, Mode mode);
 		void close(File* file);
@@ -115,36 +122,38 @@ namespace nx
 
 		struct DriverInterface
 		{
+			// returns the capabilities, as indicated by the FSCAP bitflags.
+			int (*getCapabilities)(Filesystem* fs);
+
+			const char* (*getDescription)(Filesystem* fs);
+
 			// initialise the driver. it should not modify any of the existing fields except fsDriverData.
-			Status (*init)(Filesystem* fs);
+			bool (*init)(Filesystem* fs);
 
 			// opens a file corresponding to the stuff in node, at the path specified.
 			// it should not modify any of the existing fields except fsDriverData.
-			Status (*open)(Node* node, const nx::string& path);
+			bool (*openNode)(Filesystem* fs, Node* node);
 
 			// closes the node. mainly to let the driver clean stuff up in fsDriverData.
-			Status (*close)(Node* node);
+			bool (*closeNode)(Filesystem* fs, Node* node);
 
 
 
 
-			// opens a file for reading -- different from the thing above
-			File* (*openFile)(Node* node, Mode mode);
+			// opens a file
+			File* (*openFile)(Filesystem* fs, Node* node, Mode mode);
 
 			// closes the file.
-			Status (*closeFile)(File* file);
+			bool (*closeFile)(Filesystem* fs, File* file);
 
 			// reads a file. returns the number of bytes read.
-			size_t (*read)(File* file, void* buf, size_t count);
+			size_t (*read)(Filesystem* fs, File* file, void* buf, size_t count);
 
 			// writes to a file. returns the number of bytes written.
-			size_t (*write)(File* file, void* buf, size_t count);
+			size_t (*write)(Filesystem* fs, File* file, void* buf, size_t count);
 
-			// moves the cursor of a file -- relatively. returns the actual offset.
-			size_t (*seekRelative)(File* file, size_t ofs);
 
-			// same, but absolutely.
-			size_t (*seekAbsolute)(File* file, size_t ofs);
+			void* driverData = 0;
 
 			// TODO: create, delete, other stuff??
 		};
@@ -153,6 +162,31 @@ namespace nx
 
 		// helper functions
 		nx::array<nx::string> splitPathComponents(const nx::string& path);
+
+
+		struct nodecache
+		{
+			nodecache() : count(0) { }
+
+			Node* fetch(const nx::string& path);
+			void insert(const nx::string& path, Node* node);
+
+			void evict(const nx::string& path);
+
+			size_t size();
+			void clear();
+
+
+			private:
+			size_t count;
+			nx::array<nx::treemap<nx::string, Node*>> store;
+		};
+
+
+		namespace tarfs
+		{
+			DriverInterface* create(uint8_t* buf, size_t sz);
+		}
 	}
 }
 

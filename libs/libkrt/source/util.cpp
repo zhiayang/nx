@@ -39,7 +39,7 @@ namespace util
 		ctx.ofs = 0;
 		ctx.buffer = buffer;
 
-		return cbprintf((void*) &ctx, callback, "%.2f %cB", bytes, "\0KMGTPY"[idx]);
+		return cbprintf((void*) &ctx, callback, "%.2f%s%cB", bytes, idx > 0 ? " " : "", " KMGTPY"[idx]);
 	}
 
 	void memfill1b(uint8_t* ptr, uint8_t val, size_t count)

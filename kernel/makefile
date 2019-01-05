@@ -5,7 +5,7 @@
 
 WARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros -pedantic-errors
 
-CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/miniz -DORION_KERNEL=1 -mcmodel=kernel -c
+CXXFLAGS			= -m64 -g -Wall -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -DORION_KERNEL=1 -mcmodel=kernel -c
 
 
 MEMORY				= 1024
@@ -28,16 +28,16 @@ KERNEL				= nxkernel64
 
 LIBM                = $(SYSROOT)/usr/lib/libm.a
 LIBKRT              = $(SYSROOT)/usr/lib/libkrt.a
-LIBMINIZ            = $(SYSROOT)/usr/lib/libminiz.a
+LIBTINFLATE         = $(SYSROOT)/usr/lib/libtinflate.a
 
 
 .PHONY: all
 
 all: $(SYSROOT)/boot/$(KERNEL)
 
-$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBMINIZ)
+$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINFLATE)
 	@echo "# nxkernel"
-	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(CXXOBJ) -lkrt -lm -lminiz
+	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(CXXOBJ) -lkrt -lm -ltinflate
 
 %.s.o: %.s
 	@echo "# $(notdir $<)"

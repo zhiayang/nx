@@ -64,12 +64,12 @@ build:
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
-	@$(MAKE) -s -C libs/miniz
+	@$(MAKE) -s -C libs/tinflate
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
 
 $(INITRD): $(shell find $(PROJECT_DIR)/build/initrd -name "*")
-	@tar -zcvf $(INITRD) -C $(PROJECT_DIR)/build/initrd/ .
+	@tar -cvf - -C $(PROJECT_DIR)/build/initrd/ . | gzip -9 - > $(INITRD)
 
 clean:
 	@find "efx" -name "*.o" -delete

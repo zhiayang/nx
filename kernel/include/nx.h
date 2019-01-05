@@ -67,11 +67,15 @@ namespace nx
 
 	void print(const char* fmt, ...);
 	void println(const char* fmt, ...);
+	int vprint(const char* fmt, va_list args);
 
 	string sprint(const char* fmt, ...);
+
+	static inline nx::string humanSizedBytes(size_t b, bool thou = false)
+	{
+		return krt::util::humanSizedBytes<_allocator, _aborter>(b, thou);
+	}
 }
-
-
 
 
 

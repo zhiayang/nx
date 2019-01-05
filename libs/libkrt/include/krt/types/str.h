@@ -8,7 +8,7 @@
 #include "stdint.h"
 #include "string.h"
 
-#include "krt/types/impl.h"
+#include "krt/types/impl/arraylike.h"
 
 namespace krt
 {

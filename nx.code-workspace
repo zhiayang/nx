@@ -22,7 +22,9 @@
 	"settings": {
 		"files.associations": {
 			"*.sty": "latex",
-			"string": "cpp"
+			"*.s": "gas",
+			"string": "cpp",
+			"string.h": "c"
 		},
 		"files.eol": "\n"
 	}

@@ -8,7 +8,7 @@
 #include "stdint.h"
 #include "string.h"
 
-#include "krt/types/impl.h"
+#include "krt/types/impl/arraylike.h"
 
 namespace krt
 {
@@ -110,6 +110,13 @@ namespace krt
 		using iterator = ptr_iterator<T>;
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
+
+		using const_iterator = const_ptr_iterator<T>;
+		const_iterator begin() const    { return const_iterator(this->ptr); }
+		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
+
+		const_iterator cbegin() const   { return this->begin(); }
+		const_iterator cend() const     { return this->end(); }
 
 		T* data()                                           { return this->ptr; }
 		const T* data() const                               { return (const T*) this->data; }
