@@ -31,8 +31,6 @@ namespace nx
 			bool readOnly;
 			nx::string mountpoint;
 
-			Node* rootNode;
-
 			DriverInterface* driver;
 		};
 
@@ -141,7 +139,7 @@ namespace nx
 
 
 			// opens a file
-			File* (*openFile)(Filesystem* fs, Node* node, Mode mode);
+			File* (*openFile)(Filesystem* fs, Node* node, id_t fd, Mode mode);
 
 			// closes the file.
 			bool (*closeFile)(Filesystem* fs, File* file);
@@ -162,7 +160,10 @@ namespace nx
 
 		// helper functions
 		nx::array<nx::string> splitPathComponents(const nx::string& path);
+		nx::string sanitise(const nx::string& path);
 
+		bool isPathSubset(const nx::array<nx::string>& total, const nx::array<nx::string>& subset);
+		nx::array<nx::string> getFSRelativePath(Filesystem* fs, const nx::array<nx::string>& components);
 
 		struct nodecache
 		{

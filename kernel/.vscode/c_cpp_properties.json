@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder:kernel}/include",
                 "${workspaceFolder:libkrt}/include",
-                "${workspaceFolder:nx}/libs/miniz"
+                "${workspaceFolder:nx}/libs/tinflate"
             ],
             "defines": [
                 "__orionx__",

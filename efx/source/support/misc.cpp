@@ -33,3 +33,11 @@ bool operator == (const efi_guid& a, const efi_guid& b)
 {
 	return memcmp(&a.data[0], &b.data[0], 16) == 0;
 }
+
+#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
+[[nodiscard]] void* operator new    (unsigned long long count, void* ptr)   { return ptr; }
+[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr)   { return ptr; }
+#else
+[[nodiscard]] void* operator new    (size_t count, void* ptr)   { return ptr; }
+[[nodiscard]] void* operator new[]  (size_t count, void* ptr)   { return ptr; }
+#endif

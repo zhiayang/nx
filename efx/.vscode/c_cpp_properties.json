@@ -9,7 +9,8 @@
             ],
             "defines": [
                 "__orionx__",
-                "_DEBUG"
+                "_DEBUG",
+                "FUCKIN_WSL_FIX_YOUR_SHIT"
             ],
             "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
             "intelliSenseMode": "clang-x64",

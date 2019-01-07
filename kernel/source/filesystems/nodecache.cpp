@@ -2,8 +2,7 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "fs.h"
-
+#include "nx.h"
 #include "krt.h"
 
 namespace nx {
@@ -35,7 +34,8 @@ namespace vfs
 		auto comps = splitPathComponents(path);
 
 		// pad to size
-		for(size_t i = 0; i < comps.size() - this->store.size(); i++)
+		auto d = comps.size() - this->store.size();
+		for(size_t i = 0; i < d; i++)
 			this->store.append(treemap<string, Node*>());
 
 		treemap<string, Node*>* map = 0;
@@ -43,7 +43,8 @@ namespace vfs
 			map = &this->store[i];
 
 		bool ret = map->insert(path, node);
-		if(ret) abort("something already exists at path!");
+
+		if(!ret) abort("something already exists at path!");
 	}
 
 	void nodecache::evict(const nx::string& path)

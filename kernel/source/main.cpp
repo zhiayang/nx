@@ -18,10 +18,19 @@ namespace nx
 		// initialise the vfs so we can read the initrd
 		vfs::init();
 
-		// read the aforementioned initrd
+		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
+		{
+			// test stuff!
+			auto f = vfs::open("/initrd/misc/LICENSE.md", vfs::Mode::Read);
 
+			auto buf = new uint8_t[5000];
+			auto r = vfs::read(f, buf, 5000);
+
+			println("read %zu bytes\n", r);
+			println("dump: %s\n", buf);
+		}
 	}
 }
 

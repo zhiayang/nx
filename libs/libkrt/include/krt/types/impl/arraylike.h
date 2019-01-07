@@ -85,7 +85,7 @@ namespace krt
 		{
 			self->reserve(self->cnt + 1);
 
-			self->ptr[self->cnt] = c;
+			new (&self->ptr[self->cnt]) ElmTy(c);
 			self->cnt++;
 
 			set_last_if_char(self);
@@ -96,7 +96,6 @@ namespace krt
 		{
 			self->reserve(self->cnt + s.cnt);
 
-			// copy_elements(self, self->ptr + self->cnt, s.ptr, s.cnt);
 			copy_elements(self, self->ptr + self->cnt, s.ptr, s.cnt);
 
 			self->cnt += s.cnt;
@@ -114,6 +113,9 @@ namespace krt
 			if(idx + num == self->cnt)
 			{
 				// very easy, just remove those from the back.
+				for(size_t i = idx; i < idx + num; i++)
+					self->ptr[i].~ElmTy();
+
 				self->cnt -= num;
 			}
 			else
@@ -123,14 +125,13 @@ namespace krt
 				// we might make an unord_array that can do self more efficiently (by moving items
 				// from the back to fill in the gap.)
 
+				// first destroy the stuff we wanted to destroy
 				for(size_t i = idx; i < idx + num; i++)
-				{
-					// first, call the destructor
 					self->ptr[i].~ElmTy();
 
-					// then move the element $num places ahead into here.
+				// then start moving stuff
+				for(size_t i = idx; i < self->cnt; i++)
 					self->ptr[i] = krt::move(self->ptr[i + num]);
-				}
 
 				// update the count
 				self->cnt -= num;

@@ -10,34 +10,26 @@ namespace vfs
 	static nodecache* NodeCache;
 	static array<Filesystem*> MountedFilesystems;
 
-	static id_t NodeIdCounter;
-	static id_t FilesystemIdCounter;
+	static id_t NodeIdCounter = 0;
+	static id_t FileDescCounter = 0;
+	static id_t FilesystemIdCounter = 0;
 
 	void init()
 	{
 		NodeCache = new nodecache();
 		MountedFilesystems = array<Filesystem*>();
-	}
 
-	static bool isPathSubset(const array<string>& total, const array<string>& subset)
-	{
-		if(subset.size() > total.size()) return false;
-
-		for(size_t i = 0; i < subset.size(); i++)
-		{
-			if(subset[i] != total[i])
-				return false;
-		}
-
-		return true;
+		FileDescCounter = 3;
 	}
 
 	static Filesystem* getFilesystemAtPath(const string& path)
 	{
 		auto bits = splitPathComponents(path);
+
 		for(auto fs : MountedFilesystems)
 		{
-			if(isPathSubset(bits, splitPathComponents(fs->mountpoint)))
+			auto fsm = splitPathComponents(fs->mountpoint);
+			if(isPathSubset(bits, fsm))
 				return fs;
 		}
 
@@ -52,8 +44,8 @@ namespace vfs
 		node->refcount = 1;
 
 		// by default the name of the node is the last thing in the path
-		node->path = path;
-		node->filesystem = getFilesystemAtPath(path);
+		node->path = sanitise(path);
+		node->filesystem = getFilesystemAtPath(node->path);
 
 		return node;
 	}
@@ -69,12 +61,11 @@ namespace vfs
 	{
 		auto fs = new Filesystem();
 		fs->driver = driver;
-		fs->mountpoint = mountpoint;
+		fs->mountpoint = sanitise(mountpoint);
 		fs->filesystemId = FilesystemIdCounter++;
 		fs->readOnly = readonly;
 
 		MountedFilesystems.append(fs);
-		fs->rootNode = createNode("/");
 
 		auto ret = driver->init(fs);
 		if(ret) println("mounted %s at %s", driver->getDescription(fs), mountpoint.cstr());
@@ -96,7 +87,13 @@ namespace vfs
 			n = createNode(path);
 			NodeCache->insert(path, n);
 
-			n->filesystem->driver->openNode(n->filesystem, n);
+			bool res = n->filesystem->driver->openNode(n->filesystem, n);
+			if(!res)
+			{
+				println("failed to open node at path '%s'!", path.cstr());
+				return nullptr;
+			}
+
 			return n;
 		}
 	}
@@ -120,15 +117,18 @@ namespace vfs
 		if(!fs) println("no filesystem mounted at path '%s'!", path.cstr());
 
 		// ok...
-		return fs->driver->openFile(fs, openNode(path), mode);
+		return fs->driver->openFile(fs, openNode(path), FileDescCounter++, mode);
 	}
 
 	void close(File* file)
 	{
-		file->node->filesystem->driver->closeFile(file->node->filesystem, file);
-		closeNode(file->node);
-	}
+		//* since fsdriver->openFile creates the File* for us,
+		//* fsdriver->closeFile will delete it! so we store the Node pointer first.
 
+		auto n = file->node;
+		n->filesystem->driver->closeFile(n->filesystem, file);
+		closeNode(n);
+	}
 
 	size_t read(File* file, void* buf, size_t count)
 	{

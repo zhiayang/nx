@@ -103,8 +103,11 @@ namespace krt
 
 		static void destroyNode(Node* n)
 		{
-			n->~Node();
-			allocator::deallocate((void*) n);
+			if(n)
+			{
+				n->~Node();
+				allocator::deallocate((void*) n);
+			}
 		}
 
 		static Node* createNode(const KeyTy& k, const ValueTy& v, Node* p)

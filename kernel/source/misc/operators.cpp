@@ -6,17 +6,26 @@
 #include "mm.h"
 
 
+#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
+[[nodiscard]] void* operator new    (unsigned long long count)              { return (void*) nx::heap::allocate(count, 1); }
+[[nodiscard]] void* operator new[]  (unsigned long long count)              { return (void*) nx::heap::allocate(count, 1); }
+[[nodiscard]] void* operator new    (unsigned long long count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
+[[nodiscard]] void* operator new[]  (unsigned long long count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
+[[nodiscard]] void* operator new    (unsigned long long count, void* ptr)   { return ptr; }
+[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr)   { return ptr; }
+#else
 [[nodiscard]] void* operator new    (size_t count)              { return (void*) nx::heap::allocate(count, 1); }
 [[nodiscard]] void* operator new[]  (size_t count)              { return (void*) nx::heap::allocate(count, 1); }
 [[nodiscard]] void* operator new    (size_t count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
 [[nodiscard]] void* operator new[]  (size_t count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
 [[nodiscard]] void* operator new    (size_t count, void* ptr)   { return ptr; }
 [[nodiscard]] void* operator new[]  (size_t count, void* ptr)   { return ptr; }
+#endif
 
 void operator delete    (void* ptr) noexcept                    { nx::heap::deallocate((addr_t) ptr); }
 void operator delete[]  (void* ptr) noexcept                    { nx::heap::deallocate((addr_t) ptr); }
-void operator delete    (void* ptr, size_t al)                  { }
-void operator delete[]  (void* ptr, size_t al)                  { }
+void operator delete    (void* ptr, size_t al)                  { nx::heap::deallocate((addr_t) ptr); }
+void operator delete[]  (void* ptr, size_t al)                  { nx::heap::deallocate((addr_t) ptr); }
 
 
 

@@ -158,7 +158,13 @@ namespace serial
 
 
 
-
+#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
+[[nodiscard]] void* operator new    (unsigned long long count, void* ptr);
+[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr);
+#else
+[[nodiscard]] void* operator new    (size_t count, void* ptr);
+[[nodiscard]] void* operator new[]  (size_t count, void* ptr);
+#endif
 
 
 

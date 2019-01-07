@@ -92,8 +92,14 @@ namespace tarfs
 			tarfile_t file;
 
 			auto ent = (tarent_t*) (dd->buffer + i);
-			file.name = /* string(ent->name_prefix) +  */string(ent->name);
+			file.name = string(ent->name_prefix) + string(ent->name);
 			file.size = octalToNumber(ent->size);
+			file.offset = i + 512;
+
+			if(file.name[0] == '.')
+				file.name.erase_at(0, 1);
+
+			if(file.size > 0) dd->files.append(file);
 
 			nx::println("filename: %s, size: %zu", file.name.cstr(), file.size);
 
@@ -106,29 +112,61 @@ namespace tarfs
 
 	static bool openNode(Filesystem* fs, Node* node)
 	{
-		// nor here.
+		auto dd = (driverdata_t*) fs->driver->driverData;
+		for(auto& f : dd->files)
+		{
+			println("[%s] - [%s]", f.name.cstr(), node->path.cstr());
+			if(f.name == node->path)
+			{
+				node->fsDriverData = &f;
+				return true;
+			}
+		}
+
 		return false;
 	}
 
 	static bool closeNode(Filesystem* fs, Node* node)
 	{
-		// or here.
-		return false;
+		// we don't need to do anything
+		return true;
 	}
 
-	static File* openFile(Filesystem* fs, Node* node, Mode mode)
+	static File* openFile(Filesystem* fs, Node* node, id_t fd, Mode mode)
 	{
-		return 0;
+		auto file = new File();
+		file->node = node;
+
+		file->fileCursor = 0;
+		file->openMode = mode;
+		file->descriptorId = fd;
+
+		assert(file->node->fsDriverData);
+		auto f = (tarfile_t*) file->node->fsDriverData;
+
+		file->fileSize = f->size;
+		return file;
 	}
 
 	static bool closeFile(Filesystem* fs, File* file)
 	{
-		return false;
+		delete file;
+		return true;
 	}
 
 	static size_t read(Filesystem* fs, File* file, void* buf, size_t count)
 	{
-		return 0;
+		auto dd = (driverdata_t*) fs->driver->driverData;
+		auto fe = (tarfile_t*) file->node->fsDriverData;
+
+		assert(dd);
+		assert(fe);
+
+		// ok, see how many bytes we can read from the file, taking into account the offset.
+		size_t toread = __min(count, fe->size - fe->offset);
+
+		memmove(buf, dd->buffer + fe->offset, toread);
+		return toread;
 	}
 
 
