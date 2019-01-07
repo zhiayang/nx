@@ -12,6 +12,7 @@
 
 #include "devices/ports.h"
 #include "devices/serial.h"
+#include "devices/console.h"
 
 namespace nx
 {

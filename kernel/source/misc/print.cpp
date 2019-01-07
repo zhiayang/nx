@@ -12,6 +12,10 @@ namespace nx
 {
 	static size_t cb_print(void* ctx, const char* s, size_t len)
 	{
+		// console::putchar(
+		for(size_t i = 0; i < len; i++)
+			console::putchar(s[i]);
+
 		// mirror to the serial port as well.
 		serial::debugprint((char*) s, len);
 		return len;

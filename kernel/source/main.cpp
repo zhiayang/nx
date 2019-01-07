@@ -4,12 +4,18 @@
 
 #include "nx.h"
 
-
-
 namespace nx
 {
 	void kernel_main(BootInfo* bootinfo)
 	{
+		// init the fallback console
+		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		console::fallback::foreground(0xFFE0E0E0);
+		console::fallback::background(0);
+
+		println("[nx] kernel has control");
+		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
+
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(bootinfo);
@@ -54,9 +60,6 @@ namespace nx
 
 extern "C" void kernel_main(nx::BootInfo* bootinfo)
 {
-	nx::println("[nx] kernel has control");
-	nx::println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
-
 	nx::kernel_main(bootinfo);
 
 
