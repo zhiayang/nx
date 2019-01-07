@@ -32,11 +32,17 @@ namespace krt
 
 			~Node()
 			{
-				this->left->~Node();
-				this->right->~Node();
+				if(this->left)
+				{
+					this->left->~Node();
+					allocator::deallocate((void*) this->left);
+				}
 
-				allocator::deallocate((void*) this->left);
-				allocator::deallocate((void*) this->right);
+				if(this->right)
+				{
+					this->right->~Node();
+					allocator::deallocate((void*) this->right);
+				}
 			}
 		};
 

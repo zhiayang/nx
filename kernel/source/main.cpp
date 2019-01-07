@@ -24,9 +24,10 @@ namespace nx
 		{
 			// test stuff!
 			auto f = vfs::open("/initrd/misc/LICENSE.md", vfs::Mode::Read);
+			assert(f);
 
-			auto buf = new uint8_t[5000];
-			auto r = vfs::read(f, buf, 5000);
+			auto buf = new uint8_t[8500];
+			auto r = vfs::read(f, buf, 8500);
 
 			println("read %zu bytes\n", r);
 			println("dump: %s\n", buf);

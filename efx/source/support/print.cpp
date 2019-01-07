@@ -173,9 +173,9 @@ namespace efx
 	{
 		va_list args; va_start(args, fmt);
 
-		efi::print("debug: ");
-		efi::vprint(fmt, args);
-		efi::print("\n");
+		// efi::print("debug: ");
+		// efi::vprint(fmt, args);
+		// efi::print("\n");
 
 		va_end(args);
 	}

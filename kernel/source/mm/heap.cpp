@@ -52,6 +52,8 @@ namespace heap
 		addr_t chunkBuffer = vmm::allocate(1, vmm::AddressSpace::KernelHeap);
 		if(chunkBuffer == 0) abort("heap::makeSpareChunks(): out of memory!");
 
+		// memset((void*) chunkBuffer, 0, 1 * PAGE_SIZE);
+
 		Chunk* next = 0;
 		for(size_t k = 0; k < ChunksPerPage; k++)
 		{
@@ -97,6 +99,7 @@ namespace heap
 	{
 		addr_t memoryBuffer = vmm::allocate(ExpansionFactor, vmm::AddressSpace::KernelHeap);
 		if(memoryBuffer == 0) abort("heap::expandBucket(): out of memory!");
+
 
 		size_t numBytes = ExpansionFactor * PAGE_SIZE;
 		size_t numChunks = numBytes / bucket->chunkSize;
@@ -204,6 +207,8 @@ namespace heap
 		addr_t chunkBuffer = vmm::allocate(numChunkPages, vmm::AddressSpace::KernelHeap);
 		addr_t memoryBuffer = vmm::allocate(BucketCount, vmm::AddressSpace::KernelHeap);
 
+		// memset((void*) chunkBuffer, 0, numChunkPages * PAGE_SIZE);
+
 		// set up the origin chunks
 		for(size_t i = BucketCount; i-- > 0;)
 		{
@@ -309,7 +314,7 @@ namespace heap
 		size_t total_size = req_size + extra_size;
 
 		addr_t return_ptr = 0;
-		if(req_size >= PAGE_SIZE)
+		if(total_size >= PAGE_SIZE)
 		{
 			// note: we do have a bucket for 4096-byte chunks, but that's mainly
 			// for allocations between 3072 and 4096 (where it would be wasteful to
@@ -336,23 +341,26 @@ namespace heap
 
 			// get the first one
 			auto chunk = bucket->chunks;
+			assert(chunk);
+			assert(chunk->memory);
 
 			bucket->chunks = chunk->next;
 			bucket->numFreeChunks -= 1;
-
-			insertUsedChunk(bucket, chunk);
 
 			addr_t ptr = chunk->memory;
 			chunk->memory = 0;
 			chunk->next = 0;
 
+			insertUsedChunk(bucket, chunk);
 			return_ptr = ptr;
 		}
 
 		*((size_t*) return_ptr) = total_size;
 		return_ptr += sizeof(size_t);
 
-		return align_the_memory(return_ptr, align);
+		auto ret = align_the_memory(return_ptr, align);
+
+		return ret;
 	}
 
 
@@ -385,6 +393,7 @@ namespace heap
 			// we should not run out of chunk!!!! the theory is obviously that every free() comes with an alloc(), and every
 			// alloc() puts a chunk into the UsedChunks list!
 			assert(bucket->numUsedChunks > 0);
+			assert(bucket->usedChunks);
 
 			auto chunk = bucket->usedChunks;
 			bucket->usedChunks = chunk->next;
@@ -393,9 +402,11 @@ namespace heap
 			chunk->next = 0;
 			chunk->memory = addr;
 
+
 			// put the chunk back into the free list.
 			{
 				auto old = bucket->chunks;
+
 				chunk->next = old;
 				bucket->chunks = chunk;
 

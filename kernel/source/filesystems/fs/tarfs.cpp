@@ -101,7 +101,7 @@ namespace tarfs
 
 			if(file.size > 0) dd->files.append(file);
 
-			nx::println("filename: %s, size: %zu", file.name.cstr(), file.size);
+			// nx::println("filename: %s, size: %zu", file.name.cstr(), file.size);
 
 			auto s = ((file.size + 511) & ~511);
 			i += __max(512, ((512 + s) / 512) * 512);
@@ -115,7 +115,6 @@ namespace tarfs
 		auto dd = (driverdata_t*) fs->driver->driverData;
 		for(auto& f : dd->files)
 		{
-			println("[%s] - [%s]", f.name.cstr(), node->path.cstr());
 			if(f.name == node->path)
 			{
 				node->fsDriverData = &f;
@@ -141,6 +140,7 @@ namespace tarfs
 		file->openMode = mode;
 		file->descriptorId = fd;
 
+		assert(file->node);
 		assert(file->node->fsDriverData);
 		auto f = (tarfile_t*) file->node->fsDriverData;
 

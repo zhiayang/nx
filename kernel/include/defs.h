@@ -33,10 +33,16 @@ namespace nx
 	template<typename T> using stack = krt::stack<T, _allocator, _aborter>;
 	template<typename K, typename V> using treemap = krt::treemap<K, V, _allocator, _aborter>;
 
+	[[noreturn]] void halt();
+
 	[[noreturn]] void vabort(const char* fmt, va_list args);
 	[[noreturn]] void abort(const char* fmt, ...);
 
+	void vabort_nohalt(const char* fmt, va_list args);
+	void abort_nohalt(const char* fmt, ...);
+
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
+	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
 }
 
 #ifdef FUCKIN_WSL_FIX_YOUR_SHIT
@@ -66,7 +72,8 @@ void operator delete[]  (void* ptr, size_t al);
 #undef assert
 #endif
 
-#define assert(x)   ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x))
+#define assert(x)               ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x))
+#define kassert(x, fmt, ...)    ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x, fmt, __VA_ARGS__))
 
 
 

@@ -160,6 +160,7 @@ namespace nx
 
 		// helper functions
 		nx::array<nx::string> splitPathComponents(const nx::string& path);
+		nx::string concatPath(const nx::array<nx::string>& components);
 		nx::string sanitise(const nx::string& path);
 
 		bool isPathSubset(const nx::array<nx::string>& total, const nx::array<nx::string>& subset);

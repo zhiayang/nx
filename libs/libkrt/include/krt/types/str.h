@@ -19,7 +19,7 @@ namespace krt
 		friend impl;
 
 		string() : string("", 0) { }
-		string(const char p[]) : string((char*) p, strlen(p)) { }
+		string(const char s[]) : string((char*) s, strlen(s)) { }
 		string(const char* s, size_t l) : string((char*) s, l) { }
 
 		string(char* s, size_t l)
@@ -30,7 +30,7 @@ namespace krt
 
 			if(s && l)
 			{
-				this->reserve(l + 1);
+				this->reserve(l);
 				this->cnt = l;
 
 				memmove(this->ptr, s, this->cnt);
@@ -71,6 +71,7 @@ namespace krt
 			return *this;
 		}
 
+
 		size_t find(char c) const
 		{
 			for(size_t i = 0; i < this->cnt; i++)
@@ -92,7 +93,6 @@ namespace krt
 			return -1;
 		}
 
-		// apparently we can't "using" members, so just make a new one that calls the old one.
 		string substring(size_t idx, size_t len = -1) const { return impl::subarray(this, idx, len); }
 		void reserve(size_t atleast)                        { impl::reserve(this, atleast); }
 		void clear()                                        { impl::clear(this); }
@@ -122,6 +122,9 @@ namespace krt
 		string& operator += (const string& other)           { this->append(other); return *this; }
 		string operator + (const string& other) const       { auto copy = *this; copy.append(other); return copy; }
 
+		string& operator += (char other)                    { this->append(string(&other, 1)); return *this; }
+		string operator + (char other) const                { auto copy = *this; copy.append(string(&other, 1)); return copy; }
+
 		using iterator = ptr_iterator<char>;
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
@@ -139,6 +142,12 @@ namespace krt
 		size_t cnt = 0;
 		size_t cap = 0;
 	};
+
+	template <typename al, typename ab>
+	string<al, ab> operator + (const string<al, ab>& a, const char* b) { return a + string<al, ab>(b); }
+
+	template <typename al, typename ab>
+	string<al, ab> operator + (const char* a, const string<al, ab>& b) { return string<al, ab>(a) + b; }
 }
 
 

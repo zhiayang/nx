@@ -64,6 +64,15 @@ namespace vfs
 		return components.subarray(fsm.size(), -1);
 	}
 
+	string concatPath(const array<string>& components)
+	{
+		string ret;
+		for(const auto& p : components)
+			ret += "/" + p;
+
+		return ret;
+	}
+
 	string sanitise(const string& path)
 	{
 		auto ret = path;

@@ -67,14 +67,30 @@ namespace nx
 
 
 
+	[[noreturn]] void halt()
+	{
+		print("\nhalting...");
+		while(true);
+	}
 
-
-	[[noreturn]] void vabort(const char* fmt, va_list args)
+	void vabort_nohalt(const char* fmt, va_list args)
 	{
 		print("\n\nkernel abort! error: ");
 		vprint(fmt, args);
 		va_end(args);
+	}
 
+	void abort_nohalt(const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		vabort_nohalt(fmt, args);
+	}
+
+
+
+	[[noreturn]] void vabort(const char* fmt, va_list args)
+	{
+		vabort_nohalt(fmt, args);
 		while(true);
 	}
 
@@ -89,8 +105,6 @@ namespace nx
 		va_list args; va_start(args, fmt);
 		vabort(fmt, args);
 		va_end(args);
-
-		while(true);
 	}
 
 	void _aborter::debuglog(const char* fmt, ...)

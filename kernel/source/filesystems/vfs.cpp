@@ -22,20 +22,17 @@ namespace vfs
 		FileDescCounter = 3;
 	}
 
-	static Filesystem* getFilesystemAtPath(const string& path)
+	static Filesystem* getFilesystemAtPath(const array<string>& pathcomps)
 	{
-		auto bits = splitPathComponents(path);
-
 		for(auto fs : MountedFilesystems)
 		{
 			auto fsm = splitPathComponents(fs->mountpoint);
-			if(isPathSubset(bits, fsm))
+			if(isPathSubset(pathcomps, fsm))
 				return fs;
 		}
 
 		return 0;
 	}
-
 
 	static Node* createNode(const string& path)
 	{
@@ -43,9 +40,10 @@ namespace vfs
 		node->nodeId = NodeIdCounter++;
 		node->refcount = 1;
 
-		// by default the name of the node is the last thing in the path
-		node->path = sanitise(path);
-		node->filesystem = getFilesystemAtPath(node->path);
+		auto comps = splitPathComponents(sanitise(path));
+
+		node->filesystem = getFilesystemAtPath(comps);
+		node->path = concatPath(getFSRelativePath(node->filesystem, comps));
 
 		return node;
 	}
@@ -85,6 +83,7 @@ namespace vfs
 		else
 		{
 			n = createNode(path);
+
 			NodeCache->insert(path, n);
 
 			bool res = n->filesystem->driver->openNode(n->filesystem, n);
@@ -113,11 +112,14 @@ namespace vfs
 	File* open(const string& path, Mode mode)
 	{
 		// get the filesystem.
-		auto fs = getFilesystemAtPath(path);
+		auto fs = getFilesystemAtPath(splitPathComponents(path));
 		if(!fs) println("no filesystem mounted at path '%s'!", path.cstr());
 
 		// ok...
-		return fs->driver->openFile(fs, openNode(path), FileDescCounter++, mode);
+		auto nd = openNode(path);
+		if(!nd) return nullptr;
+
+		return fs->driver->openFile(fs, nd, FileDescCounter++, mode);
 	}
 
 	void close(File* file)
@@ -132,12 +134,24 @@ namespace vfs
 
 	size_t read(File* file, void* buf, size_t count)
 	{
-		return 0;
+		if(!file) return 0;
+		if(!buf || !count) return 0;
+
+		assert(file->node);
+		assert(file->node->filesystem);
+
+		return file->node->filesystem->driver->read(file->node->filesystem, file, buf, count);
 	}
 
 	size_t write(File* file, void* buf, size_t count)
 	{
-		return 0;
+		if(!file) return 0;
+		if(!buf || !count) return 0;
+
+		assert(file->node);
+		assert(file->node->filesystem);
+
+		return file->node->filesystem->driver->write(file->node->filesystem, file, buf, count);
 	}
 
 	size_t seekAbs(File* file, size_t ofs)

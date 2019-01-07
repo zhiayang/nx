@@ -22,7 +22,6 @@ namespace krt
 			if constexpr (krt::is_same<ElmTy, char>())
 				atleast += 1;
 
-
 			if(self->cap >= atleast) return;
 			size_t newsz = __max(16, __max(atleast, (self->cap * 3) / 2));
 
@@ -72,7 +71,7 @@ namespace krt
 
 		static Container subarray(const Container* self, size_t idx, size_t len)
 		{
-			if(len == -1) len = self->cnt - idx;
+			if(len == (size_t) -1) len = self->cnt - idx;
 
 			if(idx >= self->cnt || idx + len > self->cnt)
 				aborter::abort("subarray(): out of range wanted (%zu, %zu), length is only %d", idx, len, self->cnt);
