@@ -4,15 +4,18 @@ The sixth rewrite of what never was, OrionOS.
 
 
 ## Current Features ##
-- nothing
-- half-finished EFI loader
+- EFI loader (efxloader)
+- Higher-half 64-bit kernel
+- PMM, VMM, heap allocator
+- tarfs initrd, basic VFS
 
 
 ## Trying out [nx] ##
 #### Required Software ####
 - C++ compiler (that targets your own platform)
 - `pv`, `mtools`, `parted`, `fdisk`, `mkfs.vfat` (typically packaged as `dosfstools`), `unzip`
-- A Unix system -- OSX and Linux will work, Windows Subsystem for Linux will work as well. Unlikely to work on things like mingw/cygwin.
+- On OS X, use [Homebrew](https://brew.sh) to install `gptfdisk` (the included `fdisk` only works for MBR disks, which is so 1990s)
+- A Unix system -- OS X and Linux will work, Windows Subsystem for Linux will work as well. Unlikely to work on things like mingw/cygwin.
 - About 150 MB of free space.
 
 
@@ -22,7 +25,7 @@ The sixth rewrite of what never was, OrionOS.
 
 
 #### Building the kernel ####
-- Once the bootstrap script is done, you should be able to run 'make' in the root directory and have it run.
+- Once the bootstrap script is done, you should be able to run 'make' in the root directory and have it run, using QEMU.
 - It currently does nothing spectacular.
 
 
