@@ -1,15 +1,18 @@
-// stb_truetype.cpp
+// stbtt.h
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#include <stddef.h>
+#include "stdint.h"
+
 #include "nx.h"
-#include "string.h"
 
 typedef uint8_t     stbtt_uint8;
-typedef int8_t      stbtt_int8;
 typedef uint16_t    stbtt_uint16;
-typedef int16_t     stbtt_int16;
 typedef uint32_t    stbtt_uint32;
+
+typedef int8_t      stbtt_int8;
+typedef int16_t     stbtt_int16;
 typedef int32_t     stbtt_int32;
 
 // we don't need to override the math functions -- we have libm.
@@ -23,6 +26,4 @@ typedef int32_t     stbtt_int32;
 #define STBTT_memcpy       memcpy
 #define STBTT_memset       memset
 
-
-#define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"

@@ -15,7 +15,7 @@ namespace fallback
 	static constexpr int CharWidth = 8;
 	static constexpr int CharHeight = 16;
 
-	static constexpr int Padding = 4;
+	static constexpr int Padding = 6;
 
 	static int FramebufferWidth = 0;
 	static int FramebufferHeight = 0;
@@ -32,21 +32,21 @@ namespace fallback
 	static uint32_t CurrentFGColour = 0;
 	static uint32_t CurrentBGColour = 0;
 
-	void init(int x, int y, int scany)
+	void init(int x, int y, int scanx)
 	{
 		FramebufferWidth = x;
 		FramebufferHeight = y;
 
-		FramebufferScanWidth = scany;
+		FramebufferScanWidth = scanx;
 
 		VT_Width = (FramebufferWidth - 2*Padding) / CharWidth;
 		VT_Height = (FramebufferHeight - 2*Padding) / CharHeight;
 
-		CurrentFGColour = 0xFFEEEEEE;
-		CurrentBGColour = 0x00000000;
+		CurrentFGColour = 0xE0E0E0;
+		CurrentBGColour = 0x101010;
 
 		// and clear!
-		krt::util::memfill4b((uint32_t*) Framebuffer, 0, FramebufferScanWidth * FramebufferHeight);
+		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
 	}
 
 
@@ -79,7 +79,7 @@ namespace fallback
 			for(data = TheFont[(int) c][row]; col < CharWidth; data <<= 1, col++)
 			{
 				if((data & 0x80) != 0)  *columnAddress = fg;
-				else                    *columnAddress = 0;
+				else                    *columnAddress = bg;
 
 				columnAddress++;
 			}

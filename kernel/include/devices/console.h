@@ -11,6 +11,7 @@ namespace nx
 {
 	namespace console
 	{
+		void init(int x, int y, int scany);
 		void putchar(char c);
 
 		namespace fallback

@@ -28,7 +28,7 @@ MEMORY              = 256
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
 
-QEMU_FLAGS          = -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
+QEMU_FLAGS          = -vga std -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
@@ -45,11 +45,11 @@ all: qemu
 
 debug: diskimage
 	@echo -e "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -vga std -d cpu_reset -monitor stdio
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -d cpu_reset -monitor stdio
 
 qemu: diskimage
 	@echo -e "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO) -vga std
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
 
 vbox: diskimage
 	@echo -e "# starting virtualbox\n"

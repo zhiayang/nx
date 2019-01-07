@@ -163,12 +163,22 @@ namespace tarfs
 		assert(fe);
 
 		// ok, see how many bytes we can read from the file, taking into account the offset.
-		size_t toread = __min(count, fe->size - fe->offset);
+		size_t toread = __min(count, fe->size - file->fileCursor);
 
 		memmove(buf, dd->buffer + fe->offset, toread);
 		return toread;
 	}
 
+	static bool stat(Filesystem* fs, File* file, Stat* st)
+	{
+		auto fe = (tarfile_t*) file->node->fsDriverData;
+
+		st->fileSize = fe->size;
+		st->inodeNumber = fe->offset;
+		st->fileSizeIn512bBlocks = (st->fileSize + 512) / 512;
+
+		return true;
+	}
 
 
 
@@ -186,7 +196,7 @@ namespace tarfs
 		ret->openFile           = openFile;
 		ret->closeFile          = closeFile;
 		ret->read               = read;
-		ret->write              = 0;
+		ret->stat               = stat;
 
 		auto dd = new driverdata_t();
 		dd->size = sz;

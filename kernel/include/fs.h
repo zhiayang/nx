@@ -34,6 +34,13 @@ namespace nx
 			DriverInterface* driver;
 		};
 
+		struct Stat
+		{
+			size_t fileSize;
+			size_t fileSizeIn512bBlocks;
+			ino_t inodeNumber;
+		};
+
 		struct Node
 		{
 			nx::string path;
@@ -43,15 +50,11 @@ namespace nx
 
 			size_t refcount;
 
-
 			Flags flags;
 			void* fsDriverData;
 
-			// Node* parent;
-
-			// TODO:
-			// timestamps for stuff
 			// permissions
+			// timestamps
 		};
 
 		enum class Mode
@@ -109,6 +112,8 @@ namespace nx
 		size_t read(File* file, void* buf, size_t count);
 		size_t write(File* file, void* buf, size_t count);
 
+		Stat stat(File* file);
+
 		Directory* openDir(const nx::string& path);
 		void closeDir(Directory* dir);
 
@@ -150,6 +155,8 @@ namespace nx
 			// writes to a file. returns the number of bytes written.
 			size_t (*write)(Filesystem* fs, File* file, void* buf, size_t count);
 
+			// gets some stats.
+			bool (*stat)(Filesystem* fs, File* file, Stat* out);
 
 			void* driverData = 0;
 

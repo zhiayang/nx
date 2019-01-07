@@ -10,8 +10,6 @@ namespace nx
 	{
 		// init the fallback console
 		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
-		console::fallback::foreground(0xFFE0E0E0);
-		console::fallback::background(0);
 
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
@@ -27,17 +25,9 @@ namespace nx
 		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
-		{
-			// test stuff!
-			auto f = vfs::open("/initrd/misc/LICENSE.md", vfs::Mode::Read);
-			assert(f);
-
-			auto buf = new uint8_t[8500];
-			auto r = vfs::read(f, buf, 8500);
-
-			println("read %zu bytes\n", r);
-			println("dump: %s\n", buf);
-		}
+		// ok now we can init the real console, which requires loading
+		// font files from the initrd.
+		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 	}
 }
 

@@ -154,6 +154,24 @@ namespace vfs
 		return file->node->filesystem->driver->write(file->node->filesystem, file, buf, count);
 	}
 
+	Stat stat(File* file)
+	{
+		Stat ret;
+		if(file)
+		{
+			assert(file->node);
+			assert(file->node->filesystem);
+
+			file->node->filesystem->driver->stat(file->node->filesystem, file, &ret);
+		}
+		else
+		{
+			println("file was null!");
+		}
+
+		return ret;
+	}
+
 	size_t seekAbs(File* file, size_t ofs)
 	{
 		return 0;
