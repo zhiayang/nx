@@ -43,7 +43,7 @@ namespace fallback
 		VT_Height = (FramebufferHeight - 2*Padding) / CharHeight;
 
 		CurrentFGColour = 0xE0E0E0;
-		CurrentBGColour = 0x101010;
+		CurrentBGColour = 0x080808;
 
 		// and clear!
 		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
@@ -97,7 +97,9 @@ namespace fallback
 
 			// copy.
 			memmove((void*) Framebuffer, (void*) (Framebuffer + (4 * FramebufferScanWidth * CharHeight)),
-				(VT_Height - 1) * CharHeight * FramebufferScanWidth * 4);
+				(Padding + (VT_Height - 0) * CharHeight) * FramebufferScanWidth * 4);
+
+			CursorY -= 1;
 		}
 	}
 
