@@ -8,8 +8,8 @@ namespace nx
 {
 	void kernel_main(BootInfo* bootinfo)
 	{
-		// init the fallback console
-		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		// init the console
+		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
@@ -19,16 +19,17 @@ namespace nx
 		vmm::init(bootinfo);
 		heap::init();
 
+		// init the console, but more efficiently.
+		console::init_stage2();
+
 		// initialise the vfs so we can read the initrd
 		vfs::init();
 
 		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
-		// the original plan was to initialise the 'real' console and use ttf fonts and stb_truetype to render
-		// a sweet looking terminal. unfortunately it looks like shit at small sizes even with SDF.
-		// TODO: maybe this? https://github.com/chrisy/fontem
-		// console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		for(int i = 0; i < 20; i++)
+			println("filler %d", i);
 	}
 }
 

@@ -49,9 +49,6 @@ namespace fallback
 		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
 	}
 
-	int getxpos()   { return Padding + (CursorX * CharWidth); }
-	int getypos()   { return Padding + (CursorY * CharHeight); }
-
 
 	// the x/y coords here are in pixel units!
 	static void draw(char c, int x, int y, uint32_t fg, uint32_t bg)
