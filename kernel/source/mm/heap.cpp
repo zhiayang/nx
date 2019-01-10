@@ -286,6 +286,8 @@ namespace heap
 	{
 		if(req_size == 0) return 0;
 
+		align = __max(align, alignof(std::max_align_t));
+
 		assert((align & (align - 1)) == 0);
 		assert(align <= 256);
 
@@ -324,8 +326,8 @@ namespace heap
 			// note that we might waste a fuckload of memory on alignment for size requests just
 			// very slightly above a page size! whatever.
 
-			return_ptr = vmm::allocate((total_size + PAGE_SIZE) / PAGE_SIZE, vmm::AddressSpace::KernelHeap);
-
+			size_t num = (total_size + PAGE_SIZE) / PAGE_SIZE;
+			return_ptr = vmm::allocate(num, vmm::AddressSpace::KernelHeap);
 		}
 		else
 		{

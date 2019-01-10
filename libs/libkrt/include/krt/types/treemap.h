@@ -73,7 +73,7 @@ namespace krt
 			if(it == this->end())
 				this->insert(k, V());
 
-			return this->find(k).value;
+			return this->find(k)->value;
 		}
 
 		bool insert(const K& k, const V& v)     { return impl::insert(this, k, v); }

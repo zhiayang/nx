@@ -66,6 +66,7 @@ namespace nx
 		constexpr uint64_t PAGE_WRITE       = 0x2;
 		constexpr uint64_t PAGE_USER        = 0x4;
 
+		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
 		constexpr uint64_t PAGE_NO_FLAGS    = ~0xFFF;
 	}
 

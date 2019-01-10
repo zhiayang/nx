@@ -25,17 +25,12 @@ namespace nx
 		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
-		// ok now we can init the real console, which requires loading
-		// font files from the initrd.
-		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		// the original plan was to initialise the 'real' console and use ttf fonts and stb_truetype to render
+		// a sweet looking terminal. unfortunately it looks like shit at small sizes even with SDF.
+		// TODO: maybe this? https://github.com/chrisy/fontem
+		// console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 	}
 }
-
-
-
-
-
-
 
 
 

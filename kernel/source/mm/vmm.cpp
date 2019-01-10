@@ -95,11 +95,11 @@ namespace vmm
 
 	void deallocate(addr_t addr, size_t num)
 	{
-		deallocateAddrSpace(addr, num);
 		for(size_t i = 0; i < num; i++)
 			pmm::deallocate(getPhysAddr(end(addr, i)), 1);
 
 		unmapAddress(addr, num);
+		deallocateAddrSpace(addr, num);
 	}
 }
 }

@@ -45,21 +45,26 @@ namespace nx
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
 }
 
-#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
-[[nodiscard]] void* operator new    (unsigned long long count);
-[[nodiscard]] void* operator new[]  (unsigned long long count);
-[[nodiscard]] void* operator new    (unsigned long long count, size_t al);
-[[nodiscard]] void* operator new[]  (unsigned long long count, size_t al);
-[[nodiscard]] void* operator new    (unsigned long long count, void* ptr);
-[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr);
-#else
-[[nodiscard]] void* operator new    (size_t count);
-[[nodiscard]] void* operator new[]  (size_t count);
-[[nodiscard]] void* operator new    (size_t count, size_t al);
-[[nodiscard]] void* operator new[]  (size_t count, size_t al);
-[[nodiscard]] void* operator new    (size_t count, void* ptr);
-[[nodiscard]] void* operator new[]  (size_t count, void* ptr);
-#endif
+// wow fucking c++ is so poorly designed
+namespace std
+{
+	#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
+	using size_t = unsigned long long;
+	#else
+	using size_t = ::size_t;
+	#endif
+
+	enum class align_val_t : size_t { };
+
+	using max_align_t = long double;
+}
+
+[[nodiscard]] void* operator new    (std::size_t count);
+[[nodiscard]] void* operator new[]  (std::size_t count);
+[[nodiscard]] void* operator new    (std::size_t count, std::align_val_t al);
+[[nodiscard]] void* operator new[]  (std::size_t count, std::align_val_t al);
+[[nodiscard]] void* operator new    (std::size_t count, void* ptr);
+[[nodiscard]] void* operator new[]  (std::size_t count, void* ptr);
 
 void operator delete    (void* ptr) noexcept;
 void operator delete[]  (void* ptr) noexcept;

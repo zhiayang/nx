@@ -5,22 +5,20 @@
 #include "defs.h"
 #include "mm.h"
 
+[[nodiscard]] void* operator new    (std::size_t count)              { return (void*) nx::heap::allocate(count, 1); }
+[[nodiscard]] void* operator new[]  (std::size_t count)              { return (void*) nx::heap::allocate(count, 1); }
+[[nodiscard]] void* operator new    (std::size_t count, void* ptr)   { return ptr; }
+[[nodiscard]] void* operator new[]  (std::size_t count, void* ptr)   { return ptr; }
 
-#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
-[[nodiscard]] void* operator new    (unsigned long long count)              { return (void*) nx::heap::allocate(count, 1); }
-[[nodiscard]] void* operator new[]  (unsigned long long count)              { return (void*) nx::heap::allocate(count, 1); }
-[[nodiscard]] void* operator new    (unsigned long long count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
-[[nodiscard]] void* operator new[]  (unsigned long long count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
-[[nodiscard]] void* operator new    (unsigned long long count, void* ptr)   { return ptr; }
-[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr)   { return ptr; }
-#else
-[[nodiscard]] void* operator new    (size_t count)              { return (void*) nx::heap::allocate(count, 1); }
-[[nodiscard]] void* operator new[]  (size_t count)              { return (void*) nx::heap::allocate(count, 1); }
-[[nodiscard]] void* operator new    (size_t count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
-[[nodiscard]] void* operator new[]  (size_t count, size_t al)   { return (void*) nx::heap::allocate(count, al); }
-[[nodiscard]] void* operator new    (size_t count, void* ptr)   { return ptr; }
-[[nodiscard]] void* operator new[]  (size_t count, void* ptr)   { return ptr; }
-#endif
+[[nodiscard]] void* operator new    (std::size_t count, std::align_val_t al)
+{
+	return (void*) nx::heap::allocate(count, (size_t) al);
+}
+
+[[nodiscard]] void* operator new[]  (std::size_t count, std::align_val_t al)
+{
+	return (void*) nx::heap::allocate(count, (size_t) al);
+}
 
 void operator delete    (void* ptr) noexcept                    { nx::heap::deallocate((addr_t) ptr); }
 void operator delete[]  (void* ptr) noexcept                    { nx::heap::deallocate((addr_t) ptr); }

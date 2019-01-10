@@ -39,13 +39,13 @@ QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -
 INITRD              = $(SYSROOT)/boot/initrd.tar.gz
 
 
-.PHONY: all clean build diskimage qemu debug
+.PHONY: all clean build diskimage qemu debug clean-kernel
 
 all: qemu
 
 debug: diskimage
 	@echo -e "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -d cpu_reset -monitor stdio
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
 
 qemu: diskimage
 	@echo -e "# starting qemu\n"
@@ -80,7 +80,15 @@ clean:
 	@find "libs" -name "*.cpp.d" -delete
 	@find "kernel" -name "*.cpp.d" -delete
 
+	@rm -f $(SYSROOT)/boot/efxloader
+	@rm -f $(SYSROOT)/boot/nxkernel64
+	@rm -f $(SYSROOT)/usr/lib/*.a
 
+clean-kernel:
+	@find "kernel" -name "*.o" -delete
+	@find "kernel" -name "*.cpp.d" -delete
+
+	@rm -f $(SYSROOT)/boot/nxkernel64
 
 
 

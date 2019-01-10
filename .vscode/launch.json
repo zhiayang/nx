@@ -1,0 +1,49 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Kernel",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "/mnt/d/Projects/nx/build/sysroot/boot/nxkernel64",
+			"cwd": "/mnt/d/Projects/nx",
+			"args": [],
+			"sourceFileMap": {
+				"/mnt/d/": "D:\\"
+			},
+			"targetArchitecture":"x64",
+			"MIMode": "gdb",
+			"pipeTransport": {
+				"pipeCwd": "",
+				"pipeProgram": "c:\\windows\\sysnative\\bash.exe",
+				"pipeArgs": ["-c"],
+				"debuggerPath": "/usr/bin/gdb"
+			},
+			"stopAtEntry": true,
+			"customLaunchSetupCommands": [
+				{
+					"text": "target remote localhost:1234",
+					"description": "Connect to QEMU remote debugger"
+				},
+				{
+					"text": "file /mnt/d/Projects/nx/build/sysroot/boot/nxkernel64",
+					"ignoreFailures": false
+				}
+			],
+			"setupCommands": [
+				{
+					"text": "set breakpoint pending on",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,39 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Launch QEMU",
+			"type": "shell",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe"
+				}
+			},
+			"dependsOn":[ "Build Kernel" ],
+			"windows": {
+				"command": "Start",
+				"args": [
+					"'D:\\Programs\\qemu\\qemu-system-x86_64.exe'",
+					"-ArgumentList",
+					"@('-S','-s','-no-shutdown','-no-reboot','-vga','std','-bios','utils\\ovmf-x64\\OVMF-pure-efi.fd','-drive','format=raw,file=build\\disk.img','-chardev','stdio,id=qemu-debug-out','-device','isa-debugcon,chardev=qemu-debug-out')"
+				]
+			}
+		},
+		{
+			"label": "Build Kernel",
+			"type": "shell",
+			"options": {
+				"shell": {
+					"executable": "wsl.exe"
+				}
+			},
+			"command": "make",
+			"args": [ "-j8", "diskimage" ]
+		}
+	]
+}
+
+
+

@@ -49,8 +49,8 @@ namespace fallback
 		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
 	}
 
-
-
+	int getxpos()   { return Padding + (CursorX * CharWidth); }
+	int getypos()   { return Padding + (CursorY * CharHeight); }
 
 
 	// the x/y coords here are in pixel units!
@@ -67,9 +67,7 @@ namespace fallback
 				krt::util::memfill4b((uint32_t*) (Framebuffer + (i * FramebufferScanWidth + x) * 4), bg, CharWidth);
 		}
 
-		uint32_t* rowAddress = 0;
-
-		rowAddress = (uint32_t *) Framebuffer + x + (y * FramebufferScanWidth);
+		uint32_t* rowAddress = (uint32_t *) Framebuffer + x + (y * FramebufferScanWidth);
 		for(int row = 0; row < CharHeight; row++)
 		{
 			uint8_t data = TheFont[(int) c][row];
@@ -92,12 +90,14 @@ namespace fallback
 	{
 		if(CursorY == VT_Height)
 		{
-			// memset the first row to 0.
-			krt::util::memfill4b((uint32_t*) Framebuffer, 0, FramebufferScanWidth * CharHeight);
-
 			// copy.
-			memmove((void*) Framebuffer, (void*) (Framebuffer + (4 * FramebufferScanWidth * CharHeight)),
-				(Padding + (VT_Height - 0) * CharHeight) * FramebufferScanWidth * 4);
+			memmove((void*) (Framebuffer + (4 * FramebufferScanWidth * Padding)),
+				(void*) (Framebuffer + (4 * FramebufferScanWidth * (Padding + CharHeight))),
+				((VT_Height - 1) * CharHeight) * FramebufferScanWidth * 4);
+
+			// memset the last row to 0.
+			krt::util::memfill4b((uint32_t*) (Framebuffer + (Padding + ((VT_Height - 1) * CharHeight)) * FramebufferScanWidth * 4),
+				CurrentBGColour, FramebufferScanWidth * CharHeight);
 
 			CursorY -= 1;
 		}
