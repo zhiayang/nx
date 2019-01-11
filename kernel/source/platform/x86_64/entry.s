@@ -20,14 +20,23 @@ kernel_entry:
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %gs
+	mov %ax, %ss
 
 	cli
 
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp
 
-	// call the kernel.
-	call kernel_main
+	// 'far return' to the kernel -- changing the code segment from whatever nonsense
+	// uefi set up to our proper one.
+
+	pushq $0x10
+	pushq %rsp
+	pushfq
+	pushq $0x08
+	pushq $kernel_main
+
+	iretq
 
 loop:
 	jmp loop
@@ -73,6 +82,7 @@ Stack:
 	// note: we fill with 0xCC, like on windows for unintialised stack memory.
 	// we might want to remove this eventually (if we get confident in the kernel's stability)
 	// for faster loading time, since it can be part of the BSS if it's zero.
+	.align 16
 	.space 0x8000, 0xCC
 StackEnd:
 
