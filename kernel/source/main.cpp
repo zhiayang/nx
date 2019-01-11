@@ -14,10 +14,18 @@ namespace nx
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
 
+		interrupts::init();
+
+
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(bootinfo);
 		heap::init();
+
+
+		*((int*) (0x8)) = 30;
+
+
 
 		// init the console, but more efficiently.
 		console::init_stage2();

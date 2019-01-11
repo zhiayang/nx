@@ -41,6 +41,9 @@ namespace vmm
 		extmm::deallocate(&extmmState[2], addrs::KERNEL_VMM_ADDRSPACE_BASE,
 			(addrs::KERNEL_VMM_ADDRSPACE_END - addrs::KERNEL_VMM_ADDRSPACE_BASE) / PAGE_SIZE);
 
+		// unmap the null page.
+		unmapAddress(0, 1);
+
 		println("vmm initialised");
 	}
 
