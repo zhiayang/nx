@@ -9,17 +9,9 @@
 
 namespace nx
 {
+	struct BootInfo;
 	namespace interrupts
 	{
-		// everybody needs an init
-		void init();
-
-		#ifdef __ARCH_x64__
-
-		void setInterruptGate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags);
-
-		#else
-
-		#endif
+		void init(BootInfo* bi);
 	}
 }

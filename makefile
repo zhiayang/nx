@@ -28,7 +28,7 @@ MEMORY              = 256
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
 
-QEMU_FLAGS          = -vga std -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
+QEMU_FLAGS          = -smp 2 -vga std -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
@@ -51,9 +51,13 @@ qemu: diskimage
 	@echo -e "# starting qemu\n"
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
 
+vbox-debug: diskimage
+	@echo -e "# starting virtualbox (debug)\n"
+	@/mnt/c/Program\ Files/Oracle/VirtualBox/VirtualBoxVM.exe --startvm "nx" --debug
+
 vbox: diskimage
 	@echo -e "# starting virtualbox\n"
-	@/mnt/c/Program\ Files/Oracle/VirtualBox/VBoxManage.exe startvm "nx"
+	@/mnt/c/Program\ Files/Oracle/VirtualBox/VirtualBoxVM.exe --startvm "nx"
 
 
 

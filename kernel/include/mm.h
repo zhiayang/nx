@@ -45,6 +45,8 @@ namespace nx
 		addr_t allocateAddrSpace(size_t num, AddressSpace type);
 		void deallocateAddrSpace(addr_t addr, size_t num);
 
+		addr_t allocateSpecific(addr_t addr, size_t num);
+
 		// these will allocate an address space, *AND* allocate a physical page *AND* map it!
 		addr_t allocate(size_t num, AddressSpace type);
 		void deallocate(addr_t addr, size_t num);
@@ -67,7 +69,6 @@ namespace nx
 		constexpr uint64_t PAGE_USER        = 0x4;
 
 		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
-		constexpr uint64_t PAGE_NO_FLAGS    = ~0xFFF;
 	}
 
 
@@ -90,6 +91,8 @@ namespace nx
 		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);
 
 		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
+		addr_t allocateSpecific(State* state, addr_t start, size_t num);
+
 		void deallocate(State* state, addr_t addr, size_t num);
 	}
 

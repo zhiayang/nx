@@ -86,6 +86,44 @@ namespace extmm
 		return 0;
 	}
 
+	addr_t allocateSpecific(State* st, addr_t start, size_t num)
+	{
+		for(size_t i = 0; i < st->numExtents; i++)
+		{
+			auto ext = &st->extents[i];
+			if(ext->addr <= start && ext->size >= num)
+			{
+				if(ext->addr == start)
+				{
+					// simple -- just move the pointer up
+					ext->addr += (num * PAGE_SIZE);
+					ext->size -= num;
+				}
+				else if(end(start, num) == end(ext))
+				{
+					// also simple -- just subtract the size.
+					ext->size -= num;
+				}
+				else
+				{
+					// bollocks, it's somewhere in the middle.
+					size_t front = (start - ext->addr) / PAGE_SIZE;
+					size_t back = (end(ext) - end(start, num)) / PAGE_SIZE;
+
+					// decrease the front block
+					ext->addr -= front;
+
+					// make a new block
+					deallocate(st, end(start, num), back);
+				}
+
+				return start;
+			}
+		}
+
+		println("extmm/%s::allocateSpecific(): could not fulfil request!", st->owner);
+		return 0;
+	}
 
 
 	void deallocate(State* st, addr_t addr, size_t num)

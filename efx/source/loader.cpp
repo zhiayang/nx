@@ -7,7 +7,8 @@
 #include "efi/system-table.h"
 
 #include "elf.h"
-#include "../../kernel/include/nx.h"
+#include "../../kernel/include/bootinfo.h"
+#include "../../kernel/include/misc/addrs.h"
 
 namespace efx
 {

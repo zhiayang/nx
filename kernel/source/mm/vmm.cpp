@@ -7,6 +7,9 @@
 namespace nx {
 namespace vmm
 {
+	using namespace addrs;
+
+
 	static addr_t physPML4Address = 0;
 
 	// we have one extmm for each address space we can allocate.
@@ -22,24 +25,24 @@ namespace vmm
 
 		memset(extmmState, 0, sizeof(extmm::State) * 3);
 
-		mapAddress(addrs::VMM_STACK0_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
-		mapAddress(addrs::VMM_STACK1_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
-		mapAddress(addrs::VMM_STACK2_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
+		mapAddress(VMM_STACK0_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
+		mapAddress(VMM_STACK1_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
+		mapAddress(VMM_STACK2_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
 
-		extmm::init(&extmmState[0], "vmm/user", addrs::VMM_STACK0_BASE, addrs::VMM_STACK0_END);
-		extmm::init(&extmmState[1], "vmm/heap", addrs::VMM_STACK1_BASE, addrs::VMM_STACK1_END);
-		extmm::init(&extmmState[2], "vmm/kernel", addrs::VMM_STACK2_BASE, addrs::VMM_STACK2_END);
+		extmm::init(&extmmState[0], "vmm/user", VMM_STACK0_BASE, VMM_STACK0_END);
+		extmm::init(&extmmState[1], "vmm/heap", VMM_STACK1_BASE, VMM_STACK1_END);
+		extmm::init(&extmmState[2], "vmm/kernel", VMM_STACK2_BASE, VMM_STACK2_END);
 
 		// add some extents, but by deallocating them.
 		// 0 is user, 1 is kernel_heap, 2 is kernel_general.
-		extmm::deallocate(&extmmState[0], addrs::USER_ADDRSPACE_BASE,
-			(addrs::USER_ADDRSPACE_END - addrs::USER_ADDRSPACE_BASE) / PAGE_SIZE);
+		extmm::deallocate(&extmmState[0], USER_ADDRSPACE_BASE,
+			(USER_ADDRSPACE_END - USER_ADDRSPACE_BASE) / PAGE_SIZE);
 
-		extmm::deallocate(&extmmState[1], addrs::KERNEL_HEAP_BASE,
-			(addrs::KERNEL_HEAP_END - addrs::KERNEL_HEAP_BASE) / PAGE_SIZE);
+		extmm::deallocate(&extmmState[1], KERNEL_HEAP_BASE,
+			(KERNEL_HEAP_END - KERNEL_HEAP_BASE) / PAGE_SIZE);
 
-		extmm::deallocate(&extmmState[2], addrs::KERNEL_VMM_ADDRSPACE_BASE,
-			(addrs::KERNEL_VMM_ADDRSPACE_END - addrs::KERNEL_VMM_ADDRSPACE_BASE) / PAGE_SIZE);
+		extmm::deallocate(&extmmState[2], KERNEL_VMM_ADDRSPACE_BASE,
+			(KERNEL_VMM_ADDRSPACE_END - KERNEL_VMM_ADDRSPACE_BASE) / PAGE_SIZE);
 
 		// unmap the null page.
 		unmapAddress(0, 1);
@@ -68,13 +71,13 @@ namespace vmm
 	{
 		extmm::State* st = 0;
 
-		if(addr >= addrs::USER_ADDRSPACE_BASE && end(addr, num) <= addrs::USER_ADDRSPACE_END)
+		if(addr >= USER_ADDRSPACE_BASE && end(addr, num) <= USER_ADDRSPACE_END)
 			st = &extmmState[0];
 
-		else if(addr >= addrs::KERNEL_HEAP_BASE && end(addr, num) <= addrs::KERNEL_HEAP_END)
+		else if(addr >= KERNEL_HEAP_BASE && end(addr, num) <= KERNEL_HEAP_END)
 			st = &extmmState[1];
 
-		else if(addr >= addrs::KERNEL_VMM_ADDRSPACE_BASE && end(addr, num) <= addrs::KERNEL_VMM_ADDRSPACE_END)
+		else if(addr >= KERNEL_VMM_ADDRSPACE_BASE && end(addr, num) <= KERNEL_VMM_ADDRSPACE_END)
 			st = &extmmState[2];
 
 		else
@@ -82,6 +85,19 @@ namespace vmm
 
 		return extmm::deallocate(st, addr, num);
 	}
+
+	addr_t allocateSpecific(addr_t addr, size_t num)
+	{
+		extmm::State* st = 0;
+		if(addr >= USER_ADDRSPACE_BASE && addr < USER_ADDRSPACE_END)                    st = &extmmState[0];
+		else if(addr >= KERNEL_HEAP_BASE && addr < KERNEL_HEAP_END)                     st = &extmmState[1];
+		else if(addr >= KERNEL_VMM_ADDRSPACE_BASE && addr < KERNEL_VMM_ADDRSPACE_END)   st = &extmmState[2];
+		else abort("allocateSpecific(): no address space to allocate address '%p'", addr);
+
+		return extmm::allocateSpecific(st, addr, num);
+	}
+
+
 
 
 	addr_t allocate(size_t num, AddressSpace type)

@@ -11,24 +11,35 @@ namespace nx
 		// init the console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
+		// basically sets up the IDT so we can print stuff when we fault
+		// (instead of seemingly hanging)
+		exceptions::init(bootinfo);
+
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
-
-		interrupts::init();
-
 
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(bootinfo);
 		heap::init();
 
-
-		*((int*) (0x8)) = 30;
-
-
-
 		// init the console, but more efficiently.
 		console::init_stage2();
+		println("");
+
+
+
+		// basically sets up some datastructures. nothing much.
+		scheduler::preinitProcs();
+
+		// read the acpi tables -- includes multiproc (MADT), timer (HPET), interrupts (LAPIC & IOAPIC)
+		acpi::init(bootinfo);
+
+		// start doing interrupt stuff
+		interrupts::init(bootinfo);
+		println("");
+
+
 
 		// initialise the vfs so we can read the initrd
 		vfs::init();
@@ -36,8 +47,8 @@ namespace nx
 		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
-		for(int i = 0; i < 20; i++)
-			println("filler %d", i);
+		// for(int i = 0; i < 20; i++)
+		// 	println("filler %d", i);
 	}
 }
 
@@ -55,7 +66,6 @@ namespace nx
 extern "C" void kernel_main(nx::BootInfo* bootinfo)
 {
 	nx::kernel_main(bootinfo);
-
 
 	nx::println("\nnothing to do...");
 

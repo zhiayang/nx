@@ -9,7 +9,24 @@
 #include "string.h"
 
 // for the vmm structs.
-#include "../../kernel/include/nx.h"
+#include "../../kernel/include/bootinfo.h"
+#include "../../kernel/include/misc/addrs.h"
+
+
+static constexpr uintptr_t PAGE_PRESENT = 0x1;
+static constexpr uintptr_t PAGE_WRITE   = 0x2;
+static constexpr uintptr_t PAGE_ALIGN   = ~0xFFF;
+
+struct pml_t
+{
+	uint64_t entries[512];
+};
+
+static constexpr size_t indexPML4(uintptr_t addr)       { return ((((uintptr_t) addr) >> 39) & 0x1FF); }
+static constexpr size_t indexPDPT(uintptr_t addr)       { return ((((uintptr_t) addr) >> 30) & 0x1FF); }
+static constexpr size_t indexPageDir(uintptr_t addr)    { return ((((uintptr_t) addr) >> 21) & 0x1FF); }
+static constexpr size_t indexPageTable(uintptr_t addr)  { return ((((uintptr_t) addr) >> 12) & 0x1FF); }
+
 
 namespace efx
 {
@@ -32,11 +49,10 @@ namespace memory
 		return ret | flags;
 	}
 
-	static nx::vmm::pml_t* pml4t_addr = 0;
+	static pml_t* pml4t_addr = 0;
 	void setupCR3()
 	{
 		efi::println("setting up kernel CR3");
-		using namespace nx::vmm;
 
 		// pml4:    256 tb
 		// pdpt:    512 gb
@@ -46,12 +62,12 @@ namespace memory
 
 		// identity map the first 4 mb -- requiring 2 page-table entries.
 		auto pml4 = (pml_t*) allocate_pagetab(0);
-		auto pdpt = (pml_t*) ((pml4->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
-		auto pagedir = (pml_t*) ((pdpt->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
+		auto pdpt = (pml_t*) ((pml4->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
+		auto pagedir = (pml_t*) ((pdpt->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
 
 		// we need 2 page tables.
-		auto pt1 = (pml_t*) ((pagedir->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
-		auto pt2 = (pml_t*) ((pagedir->entries[1] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_NO_FLAGS);
+		auto pt1 = (pml_t*) ((pagedir->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
+		auto pt2 = (pml_t*) ((pagedir->entries[1] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
 
 		// identity map them.
 		for(uint64_t i = 0; i < 512; i++) pt1->entries[i] = (i * 0x1000) | PAGE_PRESENT | PAGE_WRITE;
@@ -103,8 +119,7 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap,
-				efi::MemoryType_Initrd))
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap, efi::MemoryType_Initrd))
 			{
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 			}
@@ -169,8 +184,6 @@ namespace memory
 
 	void mapVirtual(uint64_t phys, uint64_t virt, size_t num)
 	{
-		using namespace nx::vmm;
-
 		if(!pml4t_addr) efi::abort("mapVirtual(): must call setupCR3() first!");
 
 		for(size_t i = 0; i < num; i++)
@@ -189,19 +202,19 @@ namespace memory
 			if(pml4t_addr->entries[p4idx] == 0)
 				pml4t_addr->entries[p4idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto pdpt = (pml_t*) (pml4t_addr->entries[p4idx] & PAGE_NO_FLAGS);
+			auto pdpt = (pml_t*) (pml4t_addr->entries[p4idx] & PAGE_ALIGN);
 
 
 			if(pdpt->entries[p3idx] == 0)
 				pdpt->entries[p3idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto pdir = (pml_t*) (pdpt->entries[p3idx] & PAGE_NO_FLAGS);
+			auto pdir = (pml_t*) (pdpt->entries[p3idx] & PAGE_ALIGN);
 
 
 			if(pdir->entries[p2idx] == 0)
 				pdir->entries[p2idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE);
 
-			auto ptable = (pml_t*) (pdir->entries[p2idx] & PAGE_NO_FLAGS);
+			auto ptable = (pml_t*) (pdir->entries[p2idx] & PAGE_ALIGN);
 
 			ptable->entries[p1idx] = p | PAGE_PRESENT | PAGE_WRITE;
 		}

@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder:kernel}/include",
                 "${workspaceFolder:libkrt}/include",
-                "${workspaceFolder:nx}/libs/tinflate"
+                "${workspaceFolder:nx}/libs/tinflate",
+                "${workspaceFolder:efx}/zircon-efi"
             ],
             "defines": [
                 "__orionx__",

@@ -9,6 +9,9 @@ namespace vmm
 {
 	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags)
 	{
+		virt &= PAGE_ALIGN;
+		phys &= PAGE_ALIGN;
+
 		for(size_t i = 0; i < num; i++)
 		{
 			addr_t v = virt + (i * PAGE_SIZE);
@@ -53,6 +56,8 @@ namespace vmm
 
 	void unmapAddress(addr_t virt, size_t num)
 	{
+		virt &= PAGE_ALIGN;
+
 		for(size_t i = 0; i < num; i++)
 		{
 			addr_t v = virt + (i * PAGE_SIZE);
@@ -88,6 +93,8 @@ namespace vmm
 
 	addr_t getPhysAddr(addr_t virt)
 	{
+		virt &= PAGE_ALIGN;
+
 		// right.
 		auto p4idx = indexPML4(virt);
 		auto p3idx = indexPDPT(virt);
@@ -112,7 +119,7 @@ namespace vmm
 		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
 			abort("%p was not mapped! (page not present)", virt);
 
-		return ptab->entries[p1idx] & PAGE_NO_FLAGS;
+		return ptab->entries[p1idx] & PAGE_ALIGN;
 	}
 
 

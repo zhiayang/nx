@@ -381,7 +381,7 @@ namespace heap
 		if(sz >= PAGE_SIZE)
 		{
 			// the size is still the size -- but we do some rounding to get the number of pages.
-			assert(addr == (addr & vmm::PAGE_NO_FLAGS));
+			assert(addr == (addr & vmm::PAGE_ALIGN));
 			vmm::deallocate(addr, (sz + PAGE_SIZE) / PAGE_SIZE);
 		}
 		else

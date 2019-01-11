@@ -3,11 +3,11 @@
 # This makefile is licensed under the WTFPL
 
 
-WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros -pedantic-errors
+WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros # -pedantic-errors
 
-CFLAGS          = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -std=c11 -ffreestanding -mno-red-zone -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -mcmodel=kernel -c
+CFLAGS          = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -std=c11 -ffreestanding -mno-red-zone -mcmodel=kernel -c
 
-CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -DORION_KERNEL=1 -mcmodel=kernel -c
+CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
 
 
 SSRC            =  $(shell find source -name "platform" -prune -o -name "*.s" -print)
@@ -30,7 +30,8 @@ CDEPS           = $(COBJ:.o=.d)
 DEBUG_FLAG      := -O0 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
-DEFINES         := -DORION_KERNEL=1 -D__ARCH_x64__=1
+DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1
+INCLUDES        = -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -I$(PROJECT_DIR)/efx/zircon-efi
 
 KERNEL          = nxkernel64
 
@@ -57,11 +58,11 @@ $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINF
 
 %.cpp.o: %.cpp
 	@echo "# $(notdir $<)"
-	@$(CXX) $(CXXFLAGS) $(WARNINGS) $(DEFINES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
+	@$(CXX) $(CXXFLAGS) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 
 %.c.o: %.c
 	@echo "# $(notdir $<)"
-	@$(CC) $(CFLAGS) $(WARNINGS) $(DEFINES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
+	@$(CC) $(CFLAGS) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 
 
 

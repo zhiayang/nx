@@ -6,7 +6,7 @@
 
 
 namespace nx {
-namespace interrupts
+namespace exceptions
 {
 	// note! corresponds to the order (in reverse) in handlers.s
 	struct RegState_t
@@ -144,7 +144,7 @@ namespace interrupts
 	extern "C" void EXC_Handler_32();
 
 
-	void init()
+	void init(BootInfo*)
 	{
 		idtp.limit = (sizeof(IDTEntry) * NumIDTEntries) - 1;
 		idtp.base = (uintptr_t) &idt;
@@ -201,7 +201,7 @@ namespace interrupts
 		port::write1b(PIC2_DATA, 0x0);
 
 		nx_x64_loadidt((uint64_t) &idtp);
-		println("x64 exceptions initialised");
+		// println("exceptions handlers initialised");
 	}
 
 
@@ -256,7 +256,7 @@ namespace interrupts
 			if(notPresent)          print(" not present");
 			if(access)              print(" read-only");
 			if(supervisor)          print(" supervisor");
-			if(reservedBits)        print(" reserved bits touched");
+			if(reservedBits)        print(" reserved write");
 			if(instructionFetch)    print(" instruction fetch");
 
 			println("");
