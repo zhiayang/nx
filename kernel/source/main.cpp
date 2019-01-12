@@ -8,6 +8,10 @@ namespace nx
 {
 	void kernel_main(BootInfo* bootinfo)
 	{
+		// open all hatches
+		// extend all flaps and drag fins
+
+
 		// init the console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
@@ -27,8 +31,6 @@ namespace nx
 		console::init_stage2();
 		println("");
 
-
-
 		// basically sets up some datastructures. nothing much.
 		scheduler::preinitProcs();
 
@@ -36,9 +38,12 @@ namespace nx
 		acpi::init(bootinfo);
 
 		// start doing interrupt stuff
-		interrupts::init(bootinfo);
-		println("");
+		interrupts::init();
+		interrupts::enable();
 
+
+
+		println("");
 
 
 		// initialise the vfs so we can read the initrd
@@ -47,8 +52,9 @@ namespace nx
 		// mount the tarfs at /initrd
 		initrd::init(bootinfo);
 
-		// for(int i = 0; i < 20; i++)
-		// 	println("filler %d", i);
+
+
+		// hopefully we are flying more than half a ship at this point
 	}
 }
 

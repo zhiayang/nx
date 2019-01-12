@@ -16,6 +16,29 @@ namespace nx
 
 	namespace apic
 	{
-		void init(acpi::MADTable* madt);
+		struct IOAPIC
+		{
+			int id;
+
+			// the selector is at the base address,
+			// the actual value register is at baseAddr + 0x10
+			addr_t baseAddr;
+
+			// no idea what this does.
+			addr_t gsiBase;
+
+			// the number of IRQs that this ioapic can handle
+			int maxRedirections;
+		};
+
+
+		void preinit();
+		void init();
+
+		void writeIOAPIC(IOAPIC* ioapic, uint32_t reg, uint32_t value);
+		uint32_t readIOAPIC(IOAPIC* ioapic, uint32_t reg);
+
+		void addIOAPIC(const IOAPIC& ioa);
+		size_t getNumIOAPICs();
 	}
 }

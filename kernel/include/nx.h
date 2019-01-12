@@ -19,6 +19,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/exceptions.h"
 
+#include "misc/util.h"
 #include "misc/addrs.h"
 
 #include "platform-specific.h"

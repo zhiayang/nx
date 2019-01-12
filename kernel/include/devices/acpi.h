@@ -120,6 +120,11 @@ namespace nx
 			uint64_t    lapicAddress;
 
 		} __attribute__((packed));
+
+
+
+
+		void readMADT(MADTable* table);
 	}
 }
 

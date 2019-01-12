@@ -12,6 +12,7 @@ namespace scheduler
 		int id;
 		int lApicId;
 
+		bool isBootstrap;
 		addr_t localApicAddr;
 	};
 
@@ -22,13 +23,19 @@ namespace scheduler
 		processors = array<Processor>();
 	}
 
-	void registerProcessor(int id, int lApicId, addr_t localApic)
+	size_t getNumProcessors()
+	{
+		return processors.size();
+	}
+
+	void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic)
 	{
 		Processor p;
 		p.id = id;
 		p.lApicId = lApicId;
 		p.localApicAddr = localApic;
 
+		p.isBootstrap = bsp;
 		processors.append(p);
 	}
 }

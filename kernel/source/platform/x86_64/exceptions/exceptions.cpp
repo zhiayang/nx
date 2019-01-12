@@ -251,6 +251,7 @@ namespace exceptions
 			uint8_t instructionFetch    = regs->ErrorCode & 0x10;   // Caused by an instruction fetch?
 
 			println("cr3:    %p", cr3);
+			println("addr:   %p", cr2);
 			print  ("reason:");
 
 			if(notPresent)          print(" not present");

@@ -18,6 +18,9 @@ namespace krt
 		using impl = arraylike_impl<array, T, allocator, aborter>;
 		friend impl;
 
+		using iterator = ptr_iterator<T>;
+		using const_iterator = const_ptr_iterator<T>;
+
 		array() : array(nullptr, 0) { }
 		array(T* p, size_t l)
 		{
@@ -68,7 +71,7 @@ namespace krt
 			return *this;
 		}
 
-		size_t find(const T& c) const
+		size_t indexOf(const T& c) const
 		{
 			for(size_t i = 0; i < this->cnt; i++)
 				if(this->ptr[i] == c)
@@ -76,6 +79,25 @@ namespace krt
 
 			return -1;
 		}
+
+		const_iterator find(const T& c) const
+		{
+			for(size_t i = 0; i < this->cnt; i++)
+				if(this->ptr[i] == c)
+					return this->begin() + i;
+
+			return this->end();
+		}
+
+		iterator find(const T& c)
+		{
+			for(size_t i = 0; i < this->cnt; i++)
+				if(this->ptr[i] == c)
+					return this->begin() + i;
+
+			return this->end();
+		}
+
 
 		// apparently we can't "using" members, so just make a new one that calls the old one.
 		array subarray(size_t idx, size_t len) const        { return impl::subarray(this, idx, len); }
@@ -107,11 +129,9 @@ namespace krt
 		array& operator += (const array& other)             { this->append(other); return *this; }
 		array operator + (const array& other) const         { auto copy = *this; copy.append(other); return copy; }
 
-		using iterator = ptr_iterator<T>;
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
 
-		using const_iterator = const_ptr_iterator<T>;
 		const_iterator begin() const    { return const_iterator(this->ptr); }
 		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
 

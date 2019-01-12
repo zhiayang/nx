@@ -12,7 +12,7 @@ namespace nx
 	namespace addrs
 	{
 		constexpr uintptr_t USER_ADDRSPACE_BASE         = 0x0040'0000;
-		constexpr uintptr_t USER_ADDRSPACE_END          = 0xFFFF'F000;
+		constexpr uintptr_t USER_ADDRSPACE_END          = 0xFFF8'0000;
 
 		// ASLR some day??
 

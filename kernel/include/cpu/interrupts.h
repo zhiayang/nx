@@ -9,9 +9,10 @@
 
 namespace nx
 {
-	struct BootInfo;
 	namespace interrupts
 	{
-		void init(BootInfo* bi);
+		void init();
+		void enable();
+		void disable();
 	}
 }

@@ -25,7 +25,7 @@ namespace acpi
 	{
 		if(strncmp(table->signature, "APIC", 4) == 0)
 		{
-			apic::init((MADTable*) table);
+			readMADT((MADTable*) table);
 		}
 	}
 

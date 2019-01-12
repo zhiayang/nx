@@ -14,6 +14,8 @@ namespace nx
 	namespace scheduler
 	{
 		void preinitProcs();
-		void registerProcessor(int id, int lApicId, addr_t localApic);
+		void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic);
+
+		size_t getNumProcessors();
 	};
 }
