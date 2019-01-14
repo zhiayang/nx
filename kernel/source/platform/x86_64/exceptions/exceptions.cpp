@@ -37,11 +37,6 @@ namespace exceptions
 		uint64_t base;
 	} __attribute__((packed));
 
-	static constexpr uint8_t PIC1_CMD  = 0x20;
-	static constexpr uint8_t PIC1_DATA = 0x21;
-	static constexpr uint8_t PIC2_CMD  = 0xA0;
-	static constexpr uint8_t PIC2_DATA = 0xA1;
-
 	static constexpr int NumIDTEntries = 256;
 
 	static constexpr const char* ExceptionMessages[] =
@@ -187,21 +182,14 @@ namespace exceptions
 		setInterruptGate(30, (uint64_t) EXC_Handler_30, 0x08, 0x8E);
 		setInterruptGate(31, (uint64_t) EXC_Handler_31, 0x08, 0x8E);
 
+		// note: on x86, we do not remap the IRQs on the PIC first,
+		// because we 'prefer' to use the APIC system. when we call
+		// interrupts::init(), we try to use the APIC unless it does not
+		// exist; if it doesn't, then we call pic8259::init(), which does
+		// the IRQ remapping. if not, we just mask all interrupts from the PIC.
 
-		// Remap the IRQs from 0 - 7 -> 8 - 15 to 32-47
-		port::write1b(PIC1_CMD, 0x11);
-		port::write1b(PIC2_CMD, 0x11);
-		port::write1b(PIC1_DATA, 0x20);
-		port::write1b(PIC2_DATA, 0x28);
-		port::write1b(PIC1_DATA, 0x04);
-		port::write1b(PIC2_DATA, 0x02);
-		port::write1b(PIC1_DATA, 0x01);
-		port::write1b(PIC2_DATA, 0x01);
-		port::write1b(PIC1_DATA, 0x0);
-		port::write1b(PIC2_DATA, 0x0);
-
+		// load the IDT
 		nx_x64_loadidt((uint64_t) &idtp);
-		// println("exceptions handlers initialised");
 	}
 
 

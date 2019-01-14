@@ -47,7 +47,7 @@ namespace vmm
 		// unmap the null page.
 		unmapAddress(0, 1);
 
-		println("vmm initialised");
+		log("vmm", "initialised with 3 addr spaces");
 	}
 
 

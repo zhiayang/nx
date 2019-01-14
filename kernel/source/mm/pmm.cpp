@@ -60,7 +60,7 @@ namespace pmm
 		auto s = krt::util::humanSizedBytes(&buf[0], totalMem);
 		buf[s] = 0;
 
-		println("pmm initialised with %zu extents, %s", extmmState.numExtents, buf);
+		log("pmm", "initialised with %zu extents, %s", extmmState.numExtents, buf);
 	}
 
 

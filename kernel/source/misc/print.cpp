@@ -10,15 +10,19 @@
 
 namespace nx
 {
+	static size_t cb_serialprint(void* ctx, const char* s, size_t len)
+	{
+		serial::debugprint((char*) s, len);
+		return len;
+	}
+
 	static size_t cb_print(void* ctx, const char* s, size_t len)
 	{
-		// console::putchar(
 		for(size_t i = 0; i < len; i++)
 			console::putchar(s[i]);
 
 		// mirror to the serial port as well.
-		serial::debugprint((char*) s, len);
-		return len;
+		return cb_serialprint(ctx, s, len);
 	}
 
 	static size_t cb_sprint(void* ctx, const char* s, size_t len)
@@ -64,6 +68,40 @@ namespace nx
 		va_end(args);
 		return ret;
 	}
+
+
+
+
+
+
+
+	void log(const char* sys, const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		cbprintf(nullptr, cb_serialprint, "info (%s): ", sys);
+		vcbprintf(nullptr, cb_serialprint, fmt, args);
+		cbprintf(nullptr, cb_serialprint, "\n");
+		va_end(args);
+	}
+
+
+	void warn(const char* sys, const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		cbprintf(nullptr, cb_serialprint, "warn (%s): ", sys);
+		vcbprintf(nullptr, cb_serialprint, fmt, args);
+		cbprintf(nullptr, cb_serialprint, "\n");
+		va_end(args);
+	}
+
+
+
+
+
+
+
+
+
 
 
 

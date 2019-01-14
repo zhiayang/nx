@@ -6,10 +6,12 @@
 
 #include "devices/acpi.h"
 #include "devices/x64/apic.h"
+#include "devices/x64/pic8259.h"
 
 #include "cpu/cpuid.h"
 
 namespace nx {
+namespace device {
 namespace apic
 {
 	static constexpr uint32_t IOAPIC_REG_ID             = 0;
@@ -18,8 +20,13 @@ namespace apic
 
 	static array<IOAPIC> IoApics;
 
-	void init()
+	// returns false if the system does not have an APIC!
+	bool init()
 	{
+		// if we do not have ioapics, then we do not have lapics or whatever.
+		// so, we return false -- falling back to the normal 8259 pic.
+		if(IoApics.empty()) return false;
+
 		// initialise all ioapics
 		// reference: https://pdos.csail.mit.edu/6.828/2006/readings/ia32/ioapic.pdf
 		// for the ioapic base address, the specs say FEC0 xy00h, where x is 0-F.
@@ -43,17 +50,22 @@ namespace apic
 				mappedBases.append(alignedBase);
 			}
 
+			// sanity check.
 			int id = (readIOAPIC(ioa, IOAPIC_REG_ID) & 0xF000000) >> 24;
 			if(id != ioa->id) abort("ioapic[%d]: mismatch in ioapic id! (found %d)", ioa->id, id);
 
-
+			// get the number of interrupts this guy handles.
 			{
 				uint32_t reg = readIOAPIC(ioa, IOAPIC_REG_VERSION);
 				ioa->maxRedirections = (reg & 0xFF0000) >> 16;
 
-				println("ioapic[%d]: ver %x, %d intrs", ioa->id, reg & 0xFF, ioa->maxRedirections);
+				log("ioapic", "[%d]: ver %x, %d intrs, gsi %d", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
 			}
+
+
 		}
+
+		return true;
 	}
 
 
@@ -100,7 +112,7 @@ namespace apic
 		return *((volatile uint32_t*) (ioapic->baseAddr + 0x10));
 	}
 }
-
+}
 
 
 
@@ -131,7 +143,17 @@ namespace interrupts
 	void init()
 	{
 		// TODO: probably do different stuff on different platforms
-		apic::init();
+		bool haveApic = device::apic::init();
+		if(!haveApic)
+		{
+			warn("apic", "system does not have apic; falling back to 8259 PIC");
+			device::pic8259::init();
+		}
+		else
+		{
+			// disable the legacy PIC by masking all interrupts.
+			device::pic8259::disable();
+		}
 	}
 
 	void enable()

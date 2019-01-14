@@ -13,9 +13,16 @@ namespace nx
 	namespace acpi
 	{
 		struct header_t;
+		struct MADTable;
 
 		void init(BootInfo* bi);
 		bool checkTable(header_t* table);
+
+		void readMADT(MADTable* table);
+
+
+
+
 
 		struct RSDPointer
 		{
@@ -123,8 +130,6 @@ namespace nx
 
 
 
-
-		void readMADT(MADTable* table);
 	}
 }
 

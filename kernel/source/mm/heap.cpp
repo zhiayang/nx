@@ -242,7 +242,7 @@ namespace heap
 			Buckets[i].bucketIdx = i;
 		}
 
-		println("heap initialised with %zu chunks in %zu buckets", numRequiredChunks, BucketCount);
+		log("heap", "initialised with %zu chunks in %zu buckets", numRequiredChunks, BucketCount);
 	}
 
 

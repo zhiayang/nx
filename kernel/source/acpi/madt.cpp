@@ -14,7 +14,6 @@ namespace acpi
 	static constexpr uint8_t MADT_ENTRY_TYPE_NMI        = 4;
 	static constexpr uint8_t MADT_ENTRY_TYPE_LAPIC_ADDR = 5;
 
-
 	void readMADT(MADTable* madt)
 	{
 		if(!cpu::hasFeature(cpu::Feature::LocalAPIC))
@@ -22,11 +21,11 @@ namespace acpi
 
 		if(!checkTable((header_t*) madt))
 		{
-			println("acpi/madt: invalid checksum, skipping");
+			warn("acpi/madt", "invalid checksum, skipping");
 			return;
 		}
 
-		apic::preinit();
+		device::apic::preinit();
 
 		size_t len = madt->header.length;
 		size_t ofs = sizeof(MADTable);
@@ -48,7 +47,7 @@ namespace acpi
 			}
 		}
 
-		println("acpi/madt: lapic at %p", lApicAddr);
+		log("acpi/madt", "lapic at %p", lApicAddr);
 
 		bool foundBsp = false;
 		while(ofs < len)
@@ -71,22 +70,28 @@ namespace acpi
 			{
 				auto ioapic = (MADT_IOAPIC*) rec;
 
-				apic::IOAPIC ioa;
+				device::apic::IOAPIC ioa;
 				ioa.id = ioapic->id;
 				ioa.baseAddr = (addr_t) ioapic->ioApicAddress;
 				ioa.gsiBase = (addr_t) ioapic->globalSysInterruptBase;
 
-				println("acpi/madt: ioapic[%d] at %p", ioa.id, ioa.baseAddr);
+				log("acpi/madt", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
 
-				apic::addIOAPIC(ioa);
+				device::apic::addIOAPIC(ioa);
+			}
+			else if(rec->type == MADT_ENTRY_TYPE_INT_SRC)
+			{
+				auto intsrc = (MADT_IntSourceOverride*) rec;
+
+				log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
 			}
 
 			ofs += rec->length;
 		}
 
 
-		println("acpi/madt: found %s, %s", util::plural("processor", scheduler::getNumProcessors()).cstr(),
-			util::plural("ioapic", apic::getNumIOAPICs()).cstr());
+		log("acpi/madt", "found %s, %s", util::plural("processor", scheduler::getNumProcessors()).cstr(),
+			util::plural("ioapic", device::apic::getNumIOAPICs()).cstr());
 
 		{
 			// confirm our suspicions. we can also get the local apic base address from an MSR (0x1B).

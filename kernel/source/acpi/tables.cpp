@@ -91,7 +91,7 @@ namespace acpi
 				auto xsdt = (XSDTable*) table->xsdtAddr;
 				size_t numHdrs = (xsdt->header.length - sizeof(header_t)) / sizeof(uint64_t);
 
-				println("acpi: reading xsdt (%zu tables)", numHdrs);
+				log("acpi", "reading xsdt (%zu tables)", numHdrs);
 				for(size_t i = 0; i < numHdrs; i++)
 					readTable((header_t*) xsdt->tables[i]);
 			}
@@ -104,7 +104,7 @@ namespace acpi
 				auto rsdt = (RSDTable*) (addr_t) table->rsdtAddr;
 				size_t numHdrs = (rsdt->header.length - sizeof(header_t)) / sizeof(uint32_t);
 
-				println("acpi: reading rsdt (%zu tables)", numHdrs);
+				log("acpi", "reading rsdt (%zu tables)", numHdrs);
 				for(size_t i = 0; i < numHdrs; i++)
 					readTable((header_t*) (addr_t) rsdt->tables[i]);
 			}
@@ -113,6 +113,8 @@ namespace acpi
 				abort("RSDP not found; system likely does not support ACPI!");
 			}
 		}
+
+		log("acpi", "finished parsing acpi tables\n");
 	}
 }
 }
