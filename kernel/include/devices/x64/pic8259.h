@@ -13,7 +13,10 @@ namespace nx
 			void init();
 			void disable();
 
-			void sendEOI(int num);
+			void sendEOI(uint8_t num);
+
+			void maskIRQ(uint8_t num);
+			void unmaskIRQ(uint8_t num);
 		}
 	}
 }

@@ -15,10 +15,23 @@ namespace nx
 		void enable();
 		void disable();
 
-		void maskIRQ(uint8_t num);
-		void unmaskIRQ(uint8_t num);
+		void maskIRQ(int num);
+		void unmaskIRQ(int num);
+	}
 
-		void setIDTEntry(uint8_t intr, addr_t fn, uint8_t codeSegment, uint8_t flags);
-		void clearIDTEntry(uint8_t intr);
+	namespace cpu
+	{
+		#ifdef __ARCH_x64__
+		namespace idt
+		{
+			void init();
+			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, uint8_t flags);
+			void clearEntry(uint8_t intr);
+
+			void enableGate(uint8_t intr);
+			void disableGate(uint8_t intr);
+		}
+		#else
+		#endif
 	}
 }

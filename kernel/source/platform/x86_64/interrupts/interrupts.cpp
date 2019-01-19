@@ -30,34 +30,33 @@ namespace interrupts
 	void init()
 	{
 		// TODO: probably do different stuff on different platforms
-		IsAPICPresent = device::apic::init();
-		if(!IsAPICPresent)
-		{
-			warn("apic", "system does not have apic; falling back to 8259 PIC");
-			device::pic8259::init();
-
-			setIDTEntry(32, (addr_t) IRQ_Handler_0, 0x08, 0x8E);
-			setIDTEntry(33, (addr_t) IRQ_Handler_1, 0x08, 0x8E);
-			setIDTEntry(34, (addr_t) IRQ_Handler_2, 0x08, 0x8E);
-			setIDTEntry(35, (addr_t) IRQ_Handler_3, 0x08, 0x8E);
-			setIDTEntry(36, (addr_t) IRQ_Handler_4, 0x08, 0x8E);
-			setIDTEntry(37, (addr_t) IRQ_Handler_5, 0x08, 0x8E);
-			setIDTEntry(38, (addr_t) IRQ_Handler_6, 0x08, 0x8E);
-			setIDTEntry(39, (addr_t) IRQ_Handler_7, 0x08, 0x8E);
-			setIDTEntry(40, (addr_t) IRQ_Handler_8, 0x08, 0x8E);
-			setIDTEntry(41, (addr_t) IRQ_Handler_9, 0x08, 0x8E);
-			setIDTEntry(42, (addr_t) IRQ_Handler_10, 0x08, 0x8E);
-			setIDTEntry(43, (addr_t) IRQ_Handler_11, 0x08, 0x8E);
-			setIDTEntry(44, (addr_t) IRQ_Handler_12, 0x08, 0x8E);
-			setIDTEntry(45, (addr_t) IRQ_Handler_13, 0x08, 0x8E);
-			setIDTEntry(46, (addr_t) IRQ_Handler_14, 0x08, 0x8E);
-			setIDTEntry(47, (addr_t) IRQ_Handler_15, 0x08, 0x8E);
-		}
-		else
+		if(IsAPICPresent = device::apic::init(); IsAPICPresent)
 		{
 			// disable the legacy PIC by masking all interrupts.
 			device::pic8259::disable();
 		}
+		else
+		{
+			warn("apic", "system does not have apic; falling back to 8259 PIC");
+			device::pic8259::init();
+		}
+
+		cpu::idt::setEntry(32, (addr_t) IRQ_Handler_0, 0x08, 0x8E);
+		cpu::idt::setEntry(33, (addr_t) IRQ_Handler_1, 0x08, 0x8E);
+		cpu::idt::setEntry(34, (addr_t) IRQ_Handler_2, 0x08, 0x8E);
+		cpu::idt::setEntry(35, (addr_t) IRQ_Handler_3, 0x08, 0x8E);
+		cpu::idt::setEntry(36, (addr_t) IRQ_Handler_4, 0x08, 0x8E);
+		cpu::idt::setEntry(37, (addr_t) IRQ_Handler_5, 0x08, 0x8E);
+		cpu::idt::setEntry(38, (addr_t) IRQ_Handler_6, 0x08, 0x8E);
+		cpu::idt::setEntry(39, (addr_t) IRQ_Handler_7, 0x08, 0x8E);
+		cpu::idt::setEntry(40, (addr_t) IRQ_Handler_8, 0x08, 0x8E);
+		cpu::idt::setEntry(41, (addr_t) IRQ_Handler_9, 0x08, 0x8E);
+		cpu::idt::setEntry(42, (addr_t) IRQ_Handler_10, 0x08, 0x8E);
+		cpu::idt::setEntry(43, (addr_t) IRQ_Handler_11, 0x08, 0x8E);
+		cpu::idt::setEntry(44, (addr_t) IRQ_Handler_12, 0x08, 0x8E);
+		cpu::idt::setEntry(45, (addr_t) IRQ_Handler_13, 0x08, 0x8E);
+		cpu::idt::setEntry(46, (addr_t) IRQ_Handler_14, 0x08, 0x8E);
+		cpu::idt::setEntry(47, (addr_t) IRQ_Handler_15, 0x08, 0x8E);
 	}
 
 	void enable()
@@ -70,18 +69,22 @@ namespace interrupts
 		asm volatile("cli");
 	}
 
-	void setIDTEntry(uint8_t intr, addr_t fn, uint8_t codeSegment, uint8_t flags)
+
+
+	//! ACHTUNG !
+	//* note! we expect the interrupt controller to handle the irq -> idt translation by itself!
+	//* meaning to say 'num' here will be 0-based -- it is the IRQ number after all, not the interrupt number.
+	void maskIRQ(int num)
 	{
-		exceptions::setInterruptGate(intr, fn, codeSegment, flags);
-		exceptions::enableGate(intr);
+		if(IsAPICPresent)   device::apic::maskIRQ(num);
+		else                device::pic8259::maskIRQ(num);
 	}
 
-	void clearIDTEntry(uint8_t intr)
+	void unmaskIRQ(int num)
 	{
-		exceptions::disableGate(intr);
+		if(IsAPICPresent)   device::apic::unmaskIRQ(num);
+		else                device::pic8259::unmaskIRQ(num);
 	}
-
-
 
 
 	static int x = 0;

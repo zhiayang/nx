@@ -20,25 +20,6 @@ namespace exceptions
 		uint64_t rip, cs, rflags, useresp, ss;
 	};
 
-	struct IDTEntry
-	{
-		uint16_t    base_low;
-		uint16_t    selector;
-		uint8_t     ist_offset;
-		uint8_t     flags;
-		uint16_t    base_mid;
-		uint32_t    base_high;
-		uint32_t    always0;
-	} __attribute__((packed));
-
-	struct IDTPointer
-	{
-		uint16_t limit;
-		uint64_t base;
-	} __attribute__((packed));
-
-	static constexpr int NumIDTEntries = 256;
-
 	static constexpr const char* ExceptionMessages[] =
 	{
 		"division by zero",
@@ -80,44 +61,6 @@ namespace exceptions
 
 
 
-	static IDTEntry idt[NumIDTEntries];
-	static IDTPointer idtp;
-
-	extern "C" void nx_x64_loadidt(uint64_t);
-
-
-	void setInterruptGate(uint8_t num, addr_t base, uint16_t sel, uint8_t flags)
-	{
-		assert(num < 256);
-
-		// The interrupt routine's base address
-		idt[num].base_low   = (base & 0xFFFF);
-		idt[num].base_mid   = (base >> 16) & 0xFFFF;
-		idt[num].base_high  = (base >> 32) & 0xFFFFFFFF;
-
-		// The segment or 'selector' that this IDT entry will use
-		// is set here, along with any access flags
-
-		idt[num].selector = sel;
-		if(num < 32)    idt[num].ist_offset = 0x0;		// ????? should be 1 or something.
-		else            idt[num].ist_offset = 0x0;
-
-		idt[num].always0 = 0;
-		idt[num].flags = flags;
-	}
-
-	void enableGate(uint8_t num)
-	{
-		assert(num < 256);
-		idt[num].flags |= 0x80;
-	}
-
-	void disableGate(uint8_t num)
-	{
-		assert(num < 256);
-		idt[num].flags &= ~0x80;
-	}
-
 	extern "C" void EXC_Handler_0();
 	extern "C" void EXC_Handler_1();
 	extern "C" void EXC_Handler_2();
@@ -154,55 +97,47 @@ namespace exceptions
 
 	void init()
 	{
-		idtp.limit = (sizeof(IDTEntry) * NumIDTEntries) - 1;
-		idtp.base = (uintptr_t) &idt;
+		cpu::idt::setEntry(0, (uint64_t) EXC_Handler_0, 0x08, 0x8E);
+		cpu::idt::setEntry(1, (uint64_t) EXC_Handler_1, 0x08, 0x8E);
+		cpu::idt::setEntry(2, (uint64_t) EXC_Handler_2, 0x08, 0x8E);
+		cpu::idt::setEntry(3, (uint64_t) EXC_Handler_3, 0x08, 0x8E);
+		cpu::idt::setEntry(4, (uint64_t) EXC_Handler_4, 0x08, 0x8E);
+		cpu::idt::setEntry(5, (uint64_t) EXC_Handler_5, 0x08, 0x8E);
+		cpu::idt::setEntry(6, (uint64_t) EXC_Handler_6, 0x08, 0x8E);
+		cpu::idt::setEntry(7, (uint64_t) EXC_Handler_7, 0x08, 0x8E);
 
-		memset(&idt, 0, NumIDTEntries * sizeof(IDTEntry));
+		cpu::idt::setEntry(8, (uint64_t) EXC_Handler_8, 0x08, 0x8E);
+		cpu::idt::setEntry(9, (uint64_t) EXC_Handler_9, 0x08, 0x8E);
+		cpu::idt::setEntry(10, (uint64_t) EXC_Handler_10, 0x08, 0x8E);
+		cpu::idt::setEntry(11, (uint64_t) EXC_Handler_11, 0x08, 0x8E);
+		cpu::idt::setEntry(12, (uint64_t) EXC_Handler_12, 0x08, 0x8E);
+		cpu::idt::setEntry(13, (uint64_t) EXC_Handler_13, 0x08, 0x8E);
+		cpu::idt::setEntry(14, (uint64_t) EXC_Handler_14, 0x08, 0x8E);
+		cpu::idt::setEntry(15, (uint64_t) EXC_Handler_15, 0x08, 0x8E);
 
-		setInterruptGate(0, (uint64_t) EXC_Handler_0, 0x08, 0x8E);
-		setInterruptGate(1, (uint64_t) EXC_Handler_1, 0x08, 0x8E);
-		setInterruptGate(2, (uint64_t) EXC_Handler_2, 0x08, 0x8E);
-		setInterruptGate(3, (uint64_t) EXC_Handler_3, 0x08, 0x8E);
-		setInterruptGate(4, (uint64_t) EXC_Handler_4, 0x08, 0x8E);
-		setInterruptGate(5, (uint64_t) EXC_Handler_5, 0x08, 0x8E);
-		setInterruptGate(6, (uint64_t) EXC_Handler_6, 0x08, 0x8E);
-		setInterruptGate(7, (uint64_t) EXC_Handler_7, 0x08, 0x8E);
+		cpu::idt::setEntry(16, (uint64_t) EXC_Handler_16, 0x08, 0x8E);
+		cpu::idt::setEntry(17, (uint64_t) EXC_Handler_17, 0x08, 0x8E);
+		cpu::idt::setEntry(18, (uint64_t) EXC_Handler_18, 0x08, 0x8E);
+		cpu::idt::setEntry(19, (uint64_t) EXC_Handler_19, 0x08, 0x8E);
+		cpu::idt::setEntry(20, (uint64_t) EXC_Handler_20, 0x08, 0x8E);
+		cpu::idt::setEntry(21, (uint64_t) EXC_Handler_21, 0x08, 0x8E);
+		cpu::idt::setEntry(22, (uint64_t) EXC_Handler_22, 0x08, 0x8E);
+		cpu::idt::setEntry(23, (uint64_t) EXC_Handler_23, 0x08, 0x8E);
 
-		setInterruptGate(8, (uint64_t) EXC_Handler_8, 0x08, 0x8E);
-		setInterruptGate(9, (uint64_t) EXC_Handler_9, 0x08, 0x8E);
-		setInterruptGate(10, (uint64_t) EXC_Handler_10, 0x08, 0x8E);
-		setInterruptGate(11, (uint64_t) EXC_Handler_11, 0x08, 0x8E);
-		setInterruptGate(12, (uint64_t) EXC_Handler_12, 0x08, 0x8E);
-		setInterruptGate(13, (uint64_t) EXC_Handler_13, 0x08, 0x8E);
-		setInterruptGate(14, (uint64_t) EXC_Handler_14, 0x08, 0x8E);
-		setInterruptGate(15, (uint64_t) EXC_Handler_15, 0x08, 0x8E);
-
-		setInterruptGate(16, (uint64_t) EXC_Handler_16, 0x08, 0x8E);
-		setInterruptGate(17, (uint64_t) EXC_Handler_17, 0x08, 0x8E);
-		setInterruptGate(18, (uint64_t) EXC_Handler_18, 0x08, 0x8E);
-		setInterruptGate(19, (uint64_t) EXC_Handler_19, 0x08, 0x8E);
-		setInterruptGate(20, (uint64_t) EXC_Handler_20, 0x08, 0x8E);
-		setInterruptGate(21, (uint64_t) EXC_Handler_21, 0x08, 0x8E);
-		setInterruptGate(22, (uint64_t) EXC_Handler_22, 0x08, 0x8E);
-		setInterruptGate(23, (uint64_t) EXC_Handler_23, 0x08, 0x8E);
-
-		setInterruptGate(24, (uint64_t) EXC_Handler_24, 0x08, 0x8E);
-		setInterruptGate(25, (uint64_t) EXC_Handler_25, 0x08, 0x8E);
-		setInterruptGate(26, (uint64_t) EXC_Handler_26, 0x08, 0x8E);
-		setInterruptGate(27, (uint64_t) EXC_Handler_27, 0x08, 0x8E);
-		setInterruptGate(28, (uint64_t) EXC_Handler_28, 0x08, 0x8E);
-		setInterruptGate(29, (uint64_t) EXC_Handler_29, 0x08, 0x8E);
-		setInterruptGate(30, (uint64_t) EXC_Handler_30, 0x08, 0x8E);
-		setInterruptGate(31, (uint64_t) EXC_Handler_31, 0x08, 0x8E);
+		cpu::idt::setEntry(24, (uint64_t) EXC_Handler_24, 0x08, 0x8E);
+		cpu::idt::setEntry(25, (uint64_t) EXC_Handler_25, 0x08, 0x8E);
+		cpu::idt::setEntry(26, (uint64_t) EXC_Handler_26, 0x08, 0x8E);
+		cpu::idt::setEntry(27, (uint64_t) EXC_Handler_27, 0x08, 0x8E);
+		cpu::idt::setEntry(28, (uint64_t) EXC_Handler_28, 0x08, 0x8E);
+		cpu::idt::setEntry(29, (uint64_t) EXC_Handler_29, 0x08, 0x8E);
+		cpu::idt::setEntry(30, (uint64_t) EXC_Handler_30, 0x08, 0x8E);
+		cpu::idt::setEntry(31, (uint64_t) EXC_Handler_31, 0x08, 0x8E);
 
 		// note: on x86, we do not remap the IRQs on the PIC first,
 		// because we 'prefer' to use the APIC system. when we call
 		// interrupts::init(), we try to use the APIC unless it does not
 		// exist; if it doesn't, then we call pic8259::init(), which does
 		// the IRQ remapping. if not, we just mask all interrupts from the PIC.
-
-		// load the IDT
-		nx_x64_loadidt((uint64_t) &idtp);
 	}
 
 

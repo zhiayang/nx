@@ -26,6 +26,8 @@ namespace apic
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
+		return false;
+
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
 		if(IoApics.empty()) return false;

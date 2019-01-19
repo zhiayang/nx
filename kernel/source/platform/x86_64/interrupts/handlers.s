@@ -9,97 +9,97 @@
 .global IRQ_Handler_0
 .type IRQ_Handler_0, @function
 IRQ_Handler_0:
-	pushq $32	// int_no
+	pushq $0	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_1
 .type IRQ_Handler_1, @function
 IRQ_Handler_1:
-	pushq $33	// int_no
+	pushq $1	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_2
 .type IRQ_Handler_2, @function
 IRQ_Handler_2:
-	pushq $34	// int_no
+	pushq $2	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_3
 .type IRQ_Handler_3, @function
 IRQ_Handler_3:
-	pushq $35	// int_no
+	pushq $3	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_4
 .type IRQ_Handler_4, @function
 IRQ_Handler_4:
-	pushq $36	// int_no
+	pushq $4	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_5
 .type IRQ_Handler_5, @function
 IRQ_Handler_5:
-	pushq $37	// int_no
+	pushq $5	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_6
 .type IRQ_Handler_6, @function
 IRQ_Handler_6:
-	pushq $38	// int_no
+	pushq $6	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_7
 .type IRQ_Handler_7, @function
 IRQ_Handler_7:
-	pushq $39	// int_no
+	pushq $7	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_8
 .type IRQ_Handler_8, @function
 IRQ_Handler_8:
-	pushq $40	// int_no
+	pushq $8	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_9
 .type IRQ_Handler_9, @function
 IRQ_Handler_9:
-	pushq $41	// int_no
+	pushq $9	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_10
 .type IRQ_Handler_10, @function
 IRQ_Handler_10:
-	pushq $42	// int_no
+	pushq $10	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_11
 .type IRQ_Handler_11, @function
 IRQ_Handler_11:
-	pushq $43	// int_no
+	pushq $11	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_12
 .type IRQ_Handler_12, @function
 IRQ_Handler_12:
-	pushq $44	// int_no
+	pushq $12	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_13
 .type IRQ_Handler_13, @function
 IRQ_Handler_13:
-	pushq $45	// int_no
+	pushq $13	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_14
 .type IRQ_Handler_14, @function
 IRQ_Handler_14:
-	pushq $46	// int_no
+	pushq $14	// int_no
 	jmp GlobalHandler
 
 .global IRQ_Handler_15
 .type IRQ_Handler_15, @function
 IRQ_Handler_15:
-	pushq $47	// int_no
+	pushq $15	// int_no
 	jmp GlobalHandler
 
 

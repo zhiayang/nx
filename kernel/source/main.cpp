@@ -18,6 +18,7 @@ namespace nx
 
 		// basically sets up the IDT so we can print stuff when we fault
 		// (instead of seemingly hanging)
+		cpu::idt::init();
 		exceptions::init();
 
 		println("[nx] kernel has control");
@@ -39,10 +40,11 @@ namespace nx
 
 		// start doing interrupt stuff
 		interrupts::init();
+		interrupts::enable();
 
 		{
 			device::pit8253::enable(1);
-			interrupts::enable();
+			interrupts::unmaskIRQ(0);
 		}
 
 

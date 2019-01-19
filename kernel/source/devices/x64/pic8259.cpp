@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "devices/x64/pic8259.h"
 
 namespace nx {
 namespace device {
@@ -26,6 +27,9 @@ namespace pic8259
 		port::write1b(PIC2_DATA, 0x01);
 		port::write1b(PIC1_DATA, 0x00);
 		port::write1b(PIC2_DATA, 0x00);
+
+		// disable all interrupts by default
+		disable();
 	}
 
 	void disable()
@@ -36,20 +40,31 @@ namespace pic8259
 		port::write1b(PIC2_DATA, 0xFF);
 	}
 
-	void maskIRQ(int num)
+	// these functions all take irq numbers!!
+	// meaning they start at 0, not 32.
+	void maskIRQ(uint8_t num)
 	{
-		num &= 0xFF;
+		uint16_t port = 0;
+		if(num < 8) { port = PIC1_DATA; }
+		else        { port = PIC2_DATA; num -= 8; }
+
+		auto oldmask = port::read1b(port);
+		port::write1b(port, oldmask | (1 << num));
 	}
 
-	void unmaskIRQ(int num)
+	void unmaskIRQ(uint8_t num)
 	{
-		num &= 0xFF;
+		uint16_t port = 0;
+		if(num < 8) { port = PIC1_DATA; }
+		else        { port = PIC2_DATA; num -= 8; unmaskIRQ(2); }   // unmask irq2 because we need the slave pic
+
+		auto oldmask = port::read1b(port);
+		port::write1b(port, oldmask & ~(1 << num));
 	}
 
-
-	void sendEOI(int num)
+	void sendEOI(uint8_t num)
 	{
-		if(num >= 40)
+		if(num >= 8)
 			port::write1b(PIC2_CMD, 0x20);
 
 		port::write1b(PIC1_CMD, 0x20);
