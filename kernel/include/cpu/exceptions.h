@@ -10,8 +10,13 @@
 namespace nx
 {
 	struct BootInfo;
+
 	namespace exceptions
 	{
-		void init(BootInfo* bi);
+		void init();
+		void setInterruptGate(uint8_t num, addr_t base, uint16_t sel, uint8_t flags);
+
+		void enableGate(uint8_t intr);
+		void disableGate(uint8_t intr);
 	}
 }

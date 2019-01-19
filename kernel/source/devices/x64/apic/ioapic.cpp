@@ -18,14 +18,20 @@ namespace apic
 	static constexpr uint32_t IOAPIC_REG_VERSION        = 1;
 	static constexpr uint32_t IOAPIC_REG_ARBITRATION    = 2;
 
+	static constexpr uint32_t IOAPIC_REG_IRQ_BASE       = 0x10;
+
+
 	static array<IOAPIC> IoApics;
 
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
+		return false;
+
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
 		if(IoApics.empty()) return false;
+
 
 		// initialise all ioapics
 		// reference: https://pdos.csail.mit.edu/6.828/2006/readings/ia32/ioapic.pdf
@@ -34,6 +40,9 @@ namespace apic
 		// but, because there can be more than one ioapic in one page, and there's no guarantee that
 		// we get them in any sorted order (eg. in increasing base address), we keep track of the physical
 		// pages that we have already mapped, so we do not double map them (because we can't!)
+
+		// note: "we can't" above refers to the fact that we need to allocate the virtual address space in the lower 4GB,
+		// so if we've already allocated it then we can't allocate it again! (duh)
 
 		array<addr_t> mappedBases;
 		for(auto& _ioa : IoApics)
@@ -67,6 +76,17 @@ namespace apic
 
 		return true;
 	}
+
+
+
+	void sendEOI(int num)
+	{
+	}
+
+
+
+
+
 
 
 
@@ -113,58 +133,30 @@ namespace apic
 	}
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace interrupts
-{
-	void init()
-	{
-		// TODO: probably do different stuff on different platforms
-		bool haveApic = device::apic::init();
-		if(!haveApic)
-		{
-			warn("apic", "system does not have apic; falling back to 8259 PIC");
-			device::pic8259::init();
-		}
-		else
-		{
-			// disable the legacy PIC by masking all interrupts.
-			device::pic8259::disable();
-		}
-	}
-
-	void enable()
-	{
-	}
-
-	void disable()
-	{
-	}
 }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

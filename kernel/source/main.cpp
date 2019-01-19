@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "devices/x64/pit8253.h"
 
 namespace nx
 {
@@ -17,7 +18,7 @@ namespace nx
 
 		// basically sets up the IDT so we can print stuff when we fault
 		// (instead of seemingly hanging)
-		exceptions::init(bootinfo);
+		exceptions::init();
 
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
@@ -29,7 +30,6 @@ namespace nx
 
 		// init the console, but more efficiently.
 		console::init_stage2();
-		println("");
 
 		// basically sets up some datastructures. nothing much.
 		scheduler::preinitProcs();
@@ -39,11 +39,11 @@ namespace nx
 
 		// start doing interrupt stuff
 		interrupts::init();
-		interrupts::enable();
 
-
-
-		println("");
+		{
+			device::pit8253::enable(1);
+			interrupts::enable();
+		}
 
 
 		// initialise the vfs so we can read the initrd

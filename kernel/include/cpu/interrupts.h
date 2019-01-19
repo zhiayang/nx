@@ -14,5 +14,8 @@ namespace nx
 		void init();
 		void enable();
 		void disable();
+
+		void setIDTEntry(uint8_t intr, addr_t fn, uint8_t codeSegment, uint8_t flags);
+		void clearIDTEntry(uint8_t intr);
 	}
 }

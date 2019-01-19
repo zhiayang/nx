@@ -1,4 +1,4 @@
-// pic.h
+// pit8253.h
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
@@ -8,12 +8,10 @@ namespace nx
 {
 	namespace device
 	{
-		namespace pic8259
+		namespace pit8253
 		{
-			void init();
+			void enable(int freq);
 			void disable();
-
-			void sendEOI(int num);
 		}
 	}
 }

@@ -86,8 +86,10 @@ namespace exceptions
 	extern "C" void nx_x64_loadidt(uint64_t);
 
 
-	void setInterruptGate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags)
+	void setInterruptGate(uint8_t num, addr_t base, uint16_t sel, uint8_t flags)
 	{
+		assert(num < 256);
+
 		// The interrupt routine's base address
 		idt[num].base_low   = (base & 0xFFFF);
 		idt[num].base_mid   = (base >> 16) & 0xFFFF;
@@ -102,6 +104,18 @@ namespace exceptions
 
 		idt[num].always0 = 0;
 		idt[num].flags = flags;
+	}
+
+	void enableGate(uint8_t num)
+	{
+		assert(num < 256);
+		idt[num].flags |= 0x80;
+	}
+
+	void disableGate(uint8_t num)
+	{
+		assert(num < 256);
+		idt[num].flags &= ~0x80;
 	}
 
 	extern "C" void EXC_Handler_0();
@@ -136,10 +150,9 @@ namespace exceptions
 	extern "C" void EXC_Handler_29();
 	extern "C" void EXC_Handler_30();
 	extern "C" void EXC_Handler_31();
-	extern "C" void EXC_Handler_32();
 
 
-	void init(BootInfo*)
+	void init()
 	{
 		idtp.limit = (sizeof(IDTEntry) * NumIDTEntries) - 1;
 		idtp.base = (uintptr_t) &idt;

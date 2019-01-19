@@ -23,6 +23,7 @@ namespace console
 
 	static int CursorX = 0;
 	static int CursorY = 0;
+	static int CursorTop = 0;
 
 	static int VT_Height = 0;
 
@@ -108,7 +109,7 @@ namespace console
 		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
 
 		CursorX = Padding;
-		CursorY = __max(Padding, LineAdv);
+		CursorY = CursorTop;
 	}
 
 	void init(int x, int y, int scanx)
@@ -119,6 +120,8 @@ namespace console
 
 		CurrentFGColour = 0xE0E0E0;
 		CurrentBGColour = 0x080808;
+
+		CursorTop = Padding + LineAdv;
 
 		clear();
 
@@ -189,11 +192,11 @@ namespace console
 
 	static void scrollIfNecessary()
 	{
-		if(CursorY + LineAdv + Padding >= FramebufferHeight)
+		if(CursorY + LineAdv >= FramebufferHeight)
 		{
 			// copy.
-			memmove((void*) (Framebuffer + (4 * FramebufferScanWidth * Padding)),
-				(void*) (Framebuffer + (4 * FramebufferScanWidth * (Padding + LineAdv))),
+			memmove((void*) (Framebuffer + (Padding * FramebufferScanWidth * 4)),
+				(void*) (Framebuffer + (4 * FramebufferScanWidth * (CursorTop))),
 				((VT_Height - 1) * LineAdv) * FramebufferScanWidth * 4);
 
 			// memset the last row to 0.
