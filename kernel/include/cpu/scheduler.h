@@ -13,9 +13,20 @@ namespace nx
 {
 	namespace scheduler
 	{
+		struct Processor
+		{
+			int id;
+			int lApicId;
+
+			bool isBootstrap;
+			addr_t localApicAddr;
+		};
+
 		void preinitProcs();
 		void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic);
 
 		size_t getNumProcessors();
+
+		Processor* getCurrentProcessor();
 	};
 }

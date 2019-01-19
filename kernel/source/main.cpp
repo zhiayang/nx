@@ -3,6 +3,8 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+
+#include "devices/x64/apic.h"
 #include "devices/x64/pit8253.h"
 
 namespace nx
@@ -44,7 +46,9 @@ namespace nx
 
 		{
 			device::pit8253::enable(1);
-			interrupts::unmaskIRQ(0);
+
+			device::apic::setInterrupt(2, 32, 0);
+			interrupts::unmaskIRQ(2);
 		}
 
 

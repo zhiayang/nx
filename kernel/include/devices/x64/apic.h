@@ -27,7 +27,7 @@ namespace nx
 				addr_t baseAddr;
 
 				// no idea what this does.
-				addr_t gsiBase;
+				int gsiBase;
 
 				// the number of IRQs that this ioapic can handle
 				int maxRedirections;
@@ -37,14 +37,14 @@ namespace nx
 			void preinit();
 			bool init();
 
-			void writeIOAPIC(IOAPIC* ioapic, uint32_t reg, uint32_t value);
-			uint32_t readIOAPIC(IOAPIC* ioapic, uint32_t reg);
-
 			void addIOAPIC(const IOAPIC& ioa);
 			size_t getNumIOAPICs();
 
 			void maskIRQ(int num);
 			void unmaskIRQ(int num);
+
+			// sets up the ioapic to trigger interrupt 'vector' on the cpu with id 'apicId', when it receives irq 'irq' from a device.
+			void setInterrupt(int irq, int vector, int apicId);
 
 			void sendEOI(int num);
 		}

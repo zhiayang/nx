@@ -23,10 +23,36 @@ namespace apic
 
 	static array<IOAPIC> IoApics;
 
+	static void writeIOAPIC(IOAPIC* ioapic, uint32_t reg, uint32_t value)
+	{
+		// write to the selector first.
+		*((volatile uint32_t*) ioapic->baseAddr) = reg & 0xFF;
+
+		// write to the register.
+		*((volatile uint32_t*) (ioapic->baseAddr + 0x10)) = value;
+	}
+
+	static uint32_t readIOAPIC(IOAPIC* ioapic, uint32_t reg)
+	{
+		// write to the selector first.
+		*((volatile uint32_t*) ioapic->baseAddr) = reg & 0xFF;
+
+		// return the value
+		return *((volatile uint32_t*) (ioapic->baseAddr + 0x10));
+	}
+
+
+
+
+
+
+
+
+
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
-		return false;
+		// return false;
 
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
@@ -76,23 +102,97 @@ namespace apic
 	}
 
 
+
+
+	static IOAPIC* getIoApicForIrq(int num)
+	{
+		// there should be a better way of doing this!!
+		for(auto& ioapic : IoApics)
+		{
+			if(num >= ioapic.gsiBase && num < ioapic.gsiBase + ioapic.maxRedirections)
+				return &ioapic;
+		}
+
+		warn("apic", "cannot handle irq %d because no ioapics handle it", num);
+		return nullptr;
+	}
+
+	void setInterrupt(int irq, int vector, int apicId)
+	{
+		assert(vector < 0xFF);
+		assert(apicId <= 0xF);
+
+		auto ioa = getIoApicForIrq(irq);
+		if(!ioa) return;
+
+		// we need to subtract gsiBase from irq, because the ioapic can only have 24 interrupt pins
+		// or something like that.
+
+		irq -= ioa->gsiBase;
+
+		// set all the flags first (but read that shit so we don't mess with the high/low level/edge stuff)
+		uint32_t low = readIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (irq * 2));
+
+		// save these so we can set them later.
+		uint32_t polarity   = low & (1 << 13);
+		uint32_t trigger    = low & (1 << 15);
+
+		// reuse it.
+		low = 0;
+
+		// [0:7]    - interrupt vector
+		// [8:10]   - delivery mode (0 for normal)
+		// [11]     - destination mode (0 for physical)
+		// [12]     - apic busy
+		// [13]     - polarity
+		// [14]     - ??
+		// [15]     - trigger
+		// [16]     - mask
+		// [56:59]  - destination (4 bit apic id)
+
+		low = (vector & 0xFF);
+		low |= polarity;
+		low |= trigger;
+		low |= (1 << 16);   //* we mask the interrupt by default!!
+
+		uint32_t high = (apicId & 0xF) << 24;
+
+
+		// write them back.
+		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (irq * 2) + 0, low);
+		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (irq * 2) + 1, high);
+
+		// ok we should be done.
+	}
+
 	void maskIRQ(int num)
 	{
+		// because there's a lot of stuff in the register, we only mask/unmask the irq, and do nothing else
+		// to the rest of the values.
+
+		auto ioa = getIoApicForIrq(num);
+		if(!ioa) return;
+
+		// we only care about the low 32-bits to mask/unmask
+		auto val = readIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2));
+		val |= (1 << 16);
+
+		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2), val);
+		log("apic", "irq %d was disabled", num);
 	}
 
 	void unmaskIRQ(int num)
 	{
+		auto ioa = getIoApicForIrq(num);
+		if(!ioa) return;
+
+		// we only care about the low 32-bits to mask/unmask
+		auto val = readIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2));
+		val &= ~(1 << 16);
+
+		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2), val);
+		log("apic", "irq %d was enabled", num);
 	}
-
-	void sendEOI(int num)
-	{
-	}
-
-
-
-
-
-
 
 
 
@@ -119,23 +219,6 @@ namespace apic
 		return IoApics.size();
 	}
 
-	void writeIOAPIC(IOAPIC* ioapic, uint32_t reg, uint32_t value)
-	{
-		// write to the selector first.
-		*((volatile uint32_t*) ioapic->baseAddr) = reg & 0xFF;
-
-		// write to the register.
-		*((volatile uint32_t*) (ioapic->baseAddr + 0x10)) = value;
-	}
-
-	uint32_t readIOAPIC(IOAPIC* ioapic, uint32_t reg)
-	{
-		// write to the selector first.
-		*((volatile uint32_t*) ioapic->baseAddr) = reg & 0xFF;
-
-		// return the value
-		return *((volatile uint32_t*) (ioapic->baseAddr + 0x10));
-	}
 }
 }
 }

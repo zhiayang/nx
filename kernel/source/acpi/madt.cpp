@@ -65,6 +65,8 @@ namespace acpi
 					scheduler::registerProcessor(!foundBsp, lapic->processorId, lapic->apicId, lApicAddr);
 					foundBsp = true;
 				}
+
+				log("acpi/madt", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_IOAPIC)
 			{
@@ -73,7 +75,7 @@ namespace acpi
 				device::apic::IOAPIC ioa;
 				ioa.id = ioapic->id;
 				ioa.baseAddr = (addr_t) ioapic->ioApicAddress;
-				ioa.gsiBase = (addr_t) ioapic->globalSysInterruptBase;
+				ioa.gsiBase = ioapic->globalSysInterruptBase;
 
 				log("acpi/madt", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
 
@@ -81,9 +83,8 @@ namespace acpi
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_INT_SRC)
 			{
-				auto intsrc = (MADT_IntSourceOverride*) rec;
-
-				log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
+				// auto intsrc = (MADT_IntSourceOverride*) rec;
+				// log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
 			}
 
 			ofs += rec->length;
@@ -118,6 +119,12 @@ namespace acpi
 
 			// note: this 'enabling' doesn't start accepting interrupts; it just means 'not disabled'.
 			// we actually enable it later.
+
+			// we need to actually map this to some virtual address -- just use the same one.
+			if(vmm::allocateSpecific(base & vmm::PAGE_ALIGN, 1) == 0)
+				abort("ioapic: failed to map base address %p", base & vmm::PAGE_ALIGN);
+
+			vmm::mapAddress(base & vmm::PAGE_ALIGN, base & vmm::PAGE_ALIGN, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 		}
 	}
 }

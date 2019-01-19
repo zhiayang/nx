@@ -7,17 +7,9 @@
 namespace nx {
 namespace scheduler
 {
-	struct Processor
-	{
-		int id;
-		int lApicId;
-
-		bool isBootstrap;
-		addr_t localApicAddr;
-	};
-
-
+	static bool InitialisedAPs = false;
 	static array<Processor> processors;
+
 	void preinitProcs()
 	{
 		processors = array<Processor>();
@@ -30,6 +22,10 @@ namespace scheduler
 
 	void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic)
 	{
+		// make sure the bsp is the first one on the list!!
+		// the MADT tables from ACPI guarantee this.
+		assert(!bsp || processors.empty());
+
 		Processor p;
 		p.id = id;
 		p.lApicId = lApicId;
@@ -37,6 +33,12 @@ namespace scheduler
 
 		p.isBootstrap = bsp;
 		processors.append(p);
+	}
+
+	Processor* getCurrentProcessor()
+	{
+		if(!InitialisedAPs) return &processors[0];
+		else                abort("!");
 	}
 }
 }
