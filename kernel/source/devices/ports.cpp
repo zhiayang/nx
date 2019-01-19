@@ -28,17 +28,17 @@ namespace port
 		return ret;
 	}
 
-	void write1b(uint8_t value, uint16_t port)
+	void write1b(uint16_t port, uint8_t value)
 	{
 		asm volatile("outb %0, %1" :: "a"(value), "Nd"(port));
 	}
 
-	void write2b(uint16_t value, uint16_t port)
+	void write2b(uint16_t port, uint16_t value)
 	{
 		asm volatile("outw %0, %1" :: "a"(value), "Nd"(port));
 	}
 
-	void write4b(uint32_t value, uint16_t port)
+	void write4b(uint16_t port, uint32_t value)
 	{
 		asm volatile("outl %0, %1" :: "a"(value), "Nd"(port));
 	}

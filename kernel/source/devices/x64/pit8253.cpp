@@ -22,17 +22,17 @@ namespace pit8253
 
 		uint16_t d = __max((uint16_t) 65536, (uint16_t) divisor);
 
-		port::write1b(0x36, PIT_COMMAND);
-		port::write1b(d & 0xFF, PIT_CHANNEL_0);
-		port::write1b((d & 0xFF00) >> 8, PIT_CHANNEL_0);
+		port::write1b(PIT_COMMAND, 0x36);
+		port::write1b(PIT_CHANNEL_0, d & 0xFF);
+		port::write1b(PIT_CHANNEL_0, (d & 0xFF00) >> 8);
 	}
 
 	void disable()
 	{
 		// set it to one-shot mode
-		port::write1b(0x30, PIT_COMMAND);
-		port::write1b(0xFF, PIT_CHANNEL_0);
-		port::write1b(0xFF, PIT_CHANNEL_0);
+		port::write1b(PIT_COMMAND, 0x30);
+		port::write1b(PIT_CHANNEL_0, 0xFF);
+		port::write1b(PIT_CHANNEL_0, 0xFF);
 	}
 }
 }

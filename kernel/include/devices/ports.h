@@ -15,8 +15,8 @@ namespace nx
 		uint16_t read2b(uint16_t port);
 		uint32_t read4b(uint16_t port);
 
-		void write1b(uint8_t value, uint16_t port);
-		void write2b(uint16_t value, uint16_t port);
-		void write4b(uint32_t value, uint16_t port);
+		void write1b(uint16_t port, uint8_t value);
+		void write2b(uint16_t port, uint16_t value);
+		void write4b(uint16_t port, uint32_t value);
 	}
 }

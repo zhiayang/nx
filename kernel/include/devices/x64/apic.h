@@ -43,6 +43,9 @@ namespace nx
 			void addIOAPIC(const IOAPIC& ioa);
 			size_t getNumIOAPICs();
 
+			void maskIRQ(int num);
+			void unmaskIRQ(int num);
+
 			void sendEOI(int num);
 		}
 	}

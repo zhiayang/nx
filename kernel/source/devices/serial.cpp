@@ -14,7 +14,7 @@ namespace serial
 
 	void debugprint(char c)
 	{
-		nx::port::write1b(c, QEMU_DEBUG_SERIAL_PORT);
+		nx::port::write1b(QEMU_DEBUG_SERIAL_PORT, c);
 	}
 
 	void debugprint(char* s, size_t l)

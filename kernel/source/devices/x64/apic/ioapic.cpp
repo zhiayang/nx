@@ -26,8 +26,6 @@ namespace apic
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
-		return false;
-
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
 		if(IoApics.empty()) return false;
@@ -70,14 +68,19 @@ namespace apic
 
 				log("ioapic", "[%d]: ver %x, %d intrs, gsi %d", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
 			}
-
-
 		}
 
 		return true;
 	}
 
 
+	void maskIRQ(int num)
+	{
+	}
+
+	void unmaskIRQ(int num)
+	{
+	}
 
 	void sendEOI(int num)
 	{
