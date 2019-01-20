@@ -43,10 +43,35 @@ namespace nx
 			void maskIRQ(int num);
 			void unmaskIRQ(int num);
 
-			// sets up the ioapic to trigger interrupt 'vector' on the cpu with id 'apicId', when it receives irq 'irq' from a device.
+			// sets up the ioapic to trigger interrupt 'vector' on the cpu with id 'apicId',
+			// when it receives 'irq' from a device.
 			void setInterrupt(int irq, int vector, int apicId);
 
 			void sendEOI(int num);
+
+			// sets the pin mapping from the legacy ISA interrupt number to the IOAPIC interrupt number.
+			// uses the intr source info in the MADT.
+			void addISAIRQMapping(int isa, int irq);
+
+			// same as the above, but getting the mapping. if there is no mapping, it returns -1
+			int getISAIRQMapping(int isa);
 		}
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

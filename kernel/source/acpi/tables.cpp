@@ -27,6 +27,10 @@ namespace acpi
 		{
 			readMADT((MADTable*) table);
 		}
+		else if(strncmp(table->signature, "HPET", 4) == 0)
+		{
+			println("found hpet");
+		}
 	}
 
 

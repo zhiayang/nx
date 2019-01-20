@@ -90,7 +90,7 @@ namespace interrupts
 	static int x = 0;
 	extern "C" void nx_x64_interrupt(int num)
 	{
-		if(x++ == 20)
+		if(x++ == 40)
 			x = 0, println("int %d", num);
 
 		// send the eoi.

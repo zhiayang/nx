@@ -83,8 +83,10 @@ namespace acpi
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_INT_SRC)
 			{
-				// auto intsrc = (MADT_IntSourceOverride*) rec;
-				// log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
+				auto intsrc = (MADT_IntSourceOverride*) rec;
+				log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
+
+				device::apic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
 			}
 
 			ofs += rec->length;

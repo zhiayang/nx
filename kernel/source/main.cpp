@@ -14,7 +14,6 @@ namespace nx
 		// open all hatches
 		// extend all flaps and drag fins
 
-
 		// init the console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
@@ -46,11 +45,8 @@ namespace nx
 
 		{
 			device::pit8253::enable(1);
-
-			device::apic::setInterrupt(2, 32, 0);
-			interrupts::unmaskIRQ(2);
+			device::apic::setInterrupt(device::apic::getISAIRQMapping(0), 0, 0);
 		}
-
 
 		// initialise the vfs so we can read the initrd
 		vfs::init();

@@ -20,8 +20,9 @@ namespace apic
 
 	static constexpr uint32_t IOAPIC_REG_IRQ_BASE       = 0x10;
 
-
 	static array<IOAPIC> IoApics;
+	static treemap<int, int> ISAIRQMapping;
+
 
 	static void writeIOAPIC(IOAPIC* ioapic, uint32_t reg, uint32_t value)
 	{
@@ -102,6 +103,23 @@ namespace apic
 	}
 
 
+	void addISAIRQMapping(int isa, int irq)
+	{
+		if(auto it = ISAIRQMapping.find(isa); it != ISAIRQMapping.end())
+			log("ioapic", "ISA IRQ %d already has a mapping to ioapic irq %d!", isa, irq);
+
+		else
+			ISAIRQMapping.insert(isa, irq);
+	}
+
+	int getISAIRQMapping(int isa)
+	{
+		if(auto it = ISAIRQMapping.find(isa); it != ISAIRQMapping.end())
+			return it->value;
+
+		else
+			return -1;
+	}
 
 
 	static IOAPIC* getIoApicForIrq(int num)
@@ -121,6 +139,14 @@ namespace apic
 	{
 		assert(vector < 0xFF);
 		assert(apicId <= 0xF);
+
+		// we add 32 to the vector, because we deal in irq-space -- not IDT space!
+		// the ioapic will send the cpu an interrupt in 'idt-space', meaning the first
+		// irq should send vector 32, not 0.
+
+		vector += 32;
+
+
 
 		auto ioa = getIoApicForIrq(irq);
 		if(!ioa) return;
@@ -153,10 +179,11 @@ namespace apic
 		low = (vector & 0xFF);
 		low |= polarity;
 		low |= trigger;
-		low |= (1 << 16);   //* we mask the interrupt by default!!
+
+		// TODO: should we mask it by default? right now we don't.
+		// low |= (1 << 16);
 
 		uint32_t high = (apicId & 0xF) << 24;
-
 
 		// write them back.
 		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (irq * 2) + 0, low);
@@ -207,6 +234,7 @@ namespace apic
 	void preinit()
 	{
 		IoApics = array<IOAPIC>();
+		ISAIRQMapping = treemap<int, int>();
 	}
 
 	void addIOAPIC(const IOAPIC& ioa)
