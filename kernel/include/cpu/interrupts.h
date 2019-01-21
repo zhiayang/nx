@@ -17,6 +17,8 @@ namespace nx
 
 		void maskIRQ(int num);
 		void unmaskIRQ(int num);
+
+
 	}
 
 	namespace cpu

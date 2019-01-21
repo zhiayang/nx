@@ -66,6 +66,7 @@ namespace acpi
 					foundBsp = true;
 				}
 
+				// TODO: set the spurious interrupt vector!!!!
 				log("acpi/madt", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_IOAPIC)

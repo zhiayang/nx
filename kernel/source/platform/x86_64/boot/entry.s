@@ -8,6 +8,8 @@
 
 .global kernel_entry
 kernel_entry:
+	cli
+
 	// Load Long Mode GDT
 	mov GDT64Pointer, %rax
 	lgdt GDT64Pointer
@@ -22,24 +24,19 @@ kernel_entry:
 	mov %ax, %gs
 	mov %ax, %ss
 
-	cli
-
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp
 
 	// 'far return' to the kernel -- changing the code segment from whatever nonsense
 	// uefi set up to our proper one.
 
-	pushq $0x10
-	pushq %rsp
-	pushfq
-	pushq $0x08
-	pushq $kernel_main
+	pushq $0x10         // stack segment
+	pushq %rsp          // stack pointer
+	pushfq              // flags
+	pushq $0x08         // code segment
+	pushq $kernel_main  // return address
 
 	iretq
-
-loop:
-	jmp loop
 
 
 

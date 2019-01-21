@@ -97,6 +97,8 @@ namespace apic
 
 				log("ioapic", "[%d]: ver %x, %d intrs, gsi %d", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
 			}
+
+			// set the spurious irq vector to 0xFF
 		}
 
 		return true;
@@ -143,9 +145,7 @@ namespace apic
 		// we add 32 to the vector, because we deal in irq-space -- not IDT space!
 		// the ioapic will send the cpu an interrupt in 'idt-space', meaning the first
 		// irq should send vector 32, not 0.
-
 		vector += 32;
-
 
 
 		auto ioa = getIoApicForIrq(irq);

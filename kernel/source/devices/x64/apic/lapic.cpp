@@ -30,8 +30,6 @@ namespace apic
 	}
 
 
-
-
 	// note: this is in lapic.cpp because we ack the interrupts on the local apic.
 	void sendEOI(int num)
 	{

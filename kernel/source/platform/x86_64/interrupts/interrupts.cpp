@@ -41,22 +41,22 @@ namespace interrupts
 			device::pic8259::init();
 		}
 
-		cpu::idt::setEntry(32, (addr_t) IRQ_Handler_0, 0x08, 0x8E);
-		cpu::idt::setEntry(33, (addr_t) IRQ_Handler_1, 0x08, 0x8E);
-		cpu::idt::setEntry(34, (addr_t) IRQ_Handler_2, 0x08, 0x8E);
-		cpu::idt::setEntry(35, (addr_t) IRQ_Handler_3, 0x08, 0x8E);
-		cpu::idt::setEntry(36, (addr_t) IRQ_Handler_4, 0x08, 0x8E);
-		cpu::idt::setEntry(37, (addr_t) IRQ_Handler_5, 0x08, 0x8E);
-		cpu::idt::setEntry(38, (addr_t) IRQ_Handler_6, 0x08, 0x8E);
-		cpu::idt::setEntry(39, (addr_t) IRQ_Handler_7, 0x08, 0x8E);
-		cpu::idt::setEntry(40, (addr_t) IRQ_Handler_8, 0x08, 0x8E);
-		cpu::idt::setEntry(41, (addr_t) IRQ_Handler_9, 0x08, 0x8E);
-		cpu::idt::setEntry(42, (addr_t) IRQ_Handler_10, 0x08, 0x8E);
-		cpu::idt::setEntry(43, (addr_t) IRQ_Handler_11, 0x08, 0x8E);
-		cpu::idt::setEntry(44, (addr_t) IRQ_Handler_12, 0x08, 0x8E);
-		cpu::idt::setEntry(45, (addr_t) IRQ_Handler_13, 0x08, 0x8E);
-		cpu::idt::setEntry(46, (addr_t) IRQ_Handler_14, 0x08, 0x8E);
-		cpu::idt::setEntry(47, (addr_t) IRQ_Handler_15, 0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 0,    (addr_t) IRQ_Handler_0,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 1,    (addr_t) IRQ_Handler_1,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 2,    (addr_t) IRQ_Handler_2,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 3,    (addr_t) IRQ_Handler_3,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 4,    (addr_t) IRQ_Handler_4,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 5,    (addr_t) IRQ_Handler_5,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 6,    (addr_t) IRQ_Handler_6,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 7,    (addr_t) IRQ_Handler_7,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 8,    (addr_t) IRQ_Handler_8,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 9,    (addr_t) IRQ_Handler_9,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 10,   (addr_t) IRQ_Handler_10,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 11,   (addr_t) IRQ_Handler_11,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 12,   (addr_t) IRQ_Handler_12,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 13,   (addr_t) IRQ_Handler_13,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 14,   (addr_t) IRQ_Handler_14,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 15,   (addr_t) IRQ_Handler_15,    0x08, 0x8E);
 	}
 
 	void enable()
