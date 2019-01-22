@@ -61,77 +61,74 @@ namespace exceptions
 
 
 
-	extern "C" void EXC_Handler_0();
-	extern "C" void EXC_Handler_1();
-	extern "C" void EXC_Handler_2();
-	extern "C" void EXC_Handler_3();
-	extern "C" void EXC_Handler_4();
-	extern "C" void EXC_Handler_5();
-	extern "C" void EXC_Handler_6();
-	extern "C" void EXC_Handler_7();
-	extern "C" void EXC_Handler_8();
-	extern "C" void EXC_Handler_9();
-	extern "C" void EXC_Handler_10();
-	extern "C" void EXC_Handler_11();
-	extern "C" void EXC_Handler_12();
-	extern "C" void EXC_Handler_13();
-	extern "C" void EXC_Handler_14();
-	extern "C" void EXC_Handler_15();
-	extern "C" void EXC_Handler_16();
-	extern "C" void EXC_Handler_17();
-	extern "C" void EXC_Handler_18();
-	extern "C" void EXC_Handler_19();
-	extern "C" void EXC_Handler_20();
-	extern "C" void EXC_Handler_21();
-	extern "C" void EXC_Handler_22();
-	extern "C" void EXC_Handler_23();
-	extern "C" void EXC_Handler_24();
-	extern "C" void EXC_Handler_25();
-	extern "C" void EXC_Handler_26();
-	extern "C" void EXC_Handler_27();
-	extern "C" void EXC_Handler_28();
-	extern "C" void EXC_Handler_29();
-	extern "C" void EXC_Handler_30();
-	extern "C" void EXC_Handler_31();
+	extern "C" void nx_x64_exception_handler_0();
+	extern "C" void nx_x64_exception_handler_1();
+	extern "C" void nx_x64_exception_handler_2();
+	extern "C" void nx_x64_exception_handler_3();
+	extern "C" void nx_x64_exception_handler_4();
+	extern "C" void nx_x64_exception_handler_5();
+	extern "C" void nx_x64_exception_handler_6();
+	extern "C" void nx_x64_exception_handler_7();
+	extern "C" void nx_x64_exception_handler_8();
+	extern "C" void nx_x64_exception_handler_9();
+	extern "C" void nx_x64_exception_handler_10();
+	extern "C" void nx_x64_exception_handler_11();
+	extern "C" void nx_x64_exception_handler_12();
+	extern "C" void nx_x64_exception_handler_13();
+	extern "C" void nx_x64_exception_handler_14();
+	extern "C" void nx_x64_exception_handler_15();
+	extern "C" void nx_x64_exception_handler_16();
+	extern "C" void nx_x64_exception_handler_17();
+	extern "C" void nx_x64_exception_handler_18();
+	extern "C" void nx_x64_exception_handler_19();
+	extern "C" void nx_x64_exception_handler_20();
+	extern "C" void nx_x64_exception_handler_21();
+	extern "C" void nx_x64_exception_handler_22();
+	extern "C" void nx_x64_exception_handler_23();
+	extern "C" void nx_x64_exception_handler_24();
+	extern "C" void nx_x64_exception_handler_25();
+	extern "C" void nx_x64_exception_handler_26();
+	extern "C" void nx_x64_exception_handler_27();
+	extern "C" void nx_x64_exception_handler_28();
+	extern "C" void nx_x64_exception_handler_29();
+	extern "C" void nx_x64_exception_handler_30();
+	extern "C" void nx_x64_exception_handler_31();
 
 
 	void init()
 	{
-		cpu::idt::setEntry(0, (uint64_t) EXC_Handler_0, 0x08, 0x8E);
-		cpu::idt::setEntry(1, (uint64_t) EXC_Handler_1, 0x08, 0x8E);
-		cpu::idt::setEntry(2, (uint64_t) EXC_Handler_2, 0x08, 0x8E);
-		cpu::idt::setEntry(3, (uint64_t) EXC_Handler_3, 0x08, 0x8E);
-		cpu::idt::setEntry(4, (uint64_t) EXC_Handler_4, 0x08, 0x8E);
-		cpu::idt::setEntry(5, (uint64_t) EXC_Handler_5, 0x08, 0x8E);
-		cpu::idt::setEntry(6, (uint64_t) EXC_Handler_6, 0x08, 0x8E);
-		cpu::idt::setEntry(7, (uint64_t) EXC_Handler_7, 0x08, 0x8E);
-
-		cpu::idt::setEntry(8, (uint64_t) EXC_Handler_8, 0x08, 0x8E);
-		cpu::idt::setEntry(9, (uint64_t) EXC_Handler_9, 0x08, 0x8E);
-		cpu::idt::setEntry(10, (uint64_t) EXC_Handler_10, 0x08, 0x8E);
-		cpu::idt::setEntry(11, (uint64_t) EXC_Handler_11, 0x08, 0x8E);
-		cpu::idt::setEntry(12, (uint64_t) EXC_Handler_12, 0x08, 0x8E);
-		cpu::idt::setEntry(13, (uint64_t) EXC_Handler_13, 0x08, 0x8E);
-		cpu::idt::setEntry(14, (uint64_t) EXC_Handler_14, 0x08, 0x8E);
-		cpu::idt::setEntry(15, (uint64_t) EXC_Handler_15, 0x08, 0x8E);
-
-		cpu::idt::setEntry(16, (uint64_t) EXC_Handler_16, 0x08, 0x8E);
-		cpu::idt::setEntry(17, (uint64_t) EXC_Handler_17, 0x08, 0x8E);
-		cpu::idt::setEntry(18, (uint64_t) EXC_Handler_18, 0x08, 0x8E);
-		cpu::idt::setEntry(19, (uint64_t) EXC_Handler_19, 0x08, 0x8E);
-		cpu::idt::setEntry(20, (uint64_t) EXC_Handler_20, 0x08, 0x8E);
-		cpu::idt::setEntry(21, (uint64_t) EXC_Handler_21, 0x08, 0x8E);
-		cpu::idt::setEntry(22, (uint64_t) EXC_Handler_22, 0x08, 0x8E);
-		cpu::idt::setEntry(23, (uint64_t) EXC_Handler_23, 0x08, 0x8E);
-
-		cpu::idt::setEntry(24, (uint64_t) EXC_Handler_24, 0x08, 0x8E);
-		cpu::idt::setEntry(25, (uint64_t) EXC_Handler_25, 0x08, 0x8E);
-		cpu::idt::setEntry(26, (uint64_t) EXC_Handler_26, 0x08, 0x8E);
-		cpu::idt::setEntry(27, (uint64_t) EXC_Handler_27, 0x08, 0x8E);
-		cpu::idt::setEntry(28, (uint64_t) EXC_Handler_28, 0x08, 0x8E);
-		cpu::idt::setEntry(29, (uint64_t) EXC_Handler_29, 0x08, 0x8E);
-		cpu::idt::setEntry(30, (uint64_t) EXC_Handler_30, 0x08, 0x8E);
-		cpu::idt::setEntry(31, (uint64_t) EXC_Handler_31, 0x08, 0x8E);
+		cpu::idt::setEntry(0,  (uint64_t) nx_x64_exception_handler_0, 0x08, 0x8E);
+		cpu::idt::setEntry(1,  (uint64_t) nx_x64_exception_handler_1, 0x08, 0x8E);
+		cpu::idt::setEntry(2,  (uint64_t) nx_x64_exception_handler_2, 0x08, 0x8E);
+		cpu::idt::setEntry(3,  (uint64_t) nx_x64_exception_handler_3, 0x08, 0x8E);
+		cpu::idt::setEntry(4,  (uint64_t) nx_x64_exception_handler_4, 0x08, 0x8E);
+		cpu::idt::setEntry(5,  (uint64_t) nx_x64_exception_handler_5, 0x08, 0x8E);
+		cpu::idt::setEntry(6,  (uint64_t) nx_x64_exception_handler_6, 0x08, 0x8E);
+		cpu::idt::setEntry(7,  (uint64_t) nx_x64_exception_handler_7, 0x08, 0x8E);
+		cpu::idt::setEntry(8,  (uint64_t) nx_x64_exception_handler_8, 0x08, 0x8E);
+		cpu::idt::setEntry(9,  (uint64_t) nx_x64_exception_handler_9, 0x08, 0x8E);
+		cpu::idt::setEntry(10, (uint64_t) nx_x64_exception_handler_10, 0x08, 0x8E);
+		cpu::idt::setEntry(11, (uint64_t) nx_x64_exception_handler_11, 0x08, 0x8E);
+		cpu::idt::setEntry(12, (uint64_t) nx_x64_exception_handler_12, 0x08, 0x8E);
+		cpu::idt::setEntry(13, (uint64_t) nx_x64_exception_handler_13, 0x08, 0x8E);
+		cpu::idt::setEntry(14, (uint64_t) nx_x64_exception_handler_14, 0x08, 0x8E);
+		cpu::idt::setEntry(15, (uint64_t) nx_x64_exception_handler_15, 0x08, 0x8E);
+		cpu::idt::setEntry(16, (uint64_t) nx_x64_exception_handler_16, 0x08, 0x8E);
+		cpu::idt::setEntry(17, (uint64_t) nx_x64_exception_handler_17, 0x08, 0x8E);
+		cpu::idt::setEntry(18, (uint64_t) nx_x64_exception_handler_18, 0x08, 0x8E);
+		cpu::idt::setEntry(19, (uint64_t) nx_x64_exception_handler_19, 0x08, 0x8E);
+		cpu::idt::setEntry(20, (uint64_t) nx_x64_exception_handler_20, 0x08, 0x8E);
+		cpu::idt::setEntry(21, (uint64_t) nx_x64_exception_handler_21, 0x08, 0x8E);
+		cpu::idt::setEntry(22, (uint64_t) nx_x64_exception_handler_22, 0x08, 0x8E);
+		cpu::idt::setEntry(23, (uint64_t) nx_x64_exception_handler_23, 0x08, 0x8E);
+		cpu::idt::setEntry(24, (uint64_t) nx_x64_exception_handler_24, 0x08, 0x8E);
+		cpu::idt::setEntry(25, (uint64_t) nx_x64_exception_handler_25, 0x08, 0x8E);
+		cpu::idt::setEntry(26, (uint64_t) nx_x64_exception_handler_26, 0x08, 0x8E);
+		cpu::idt::setEntry(27, (uint64_t) nx_x64_exception_handler_27, 0x08, 0x8E);
+		cpu::idt::setEntry(28, (uint64_t) nx_x64_exception_handler_28, 0x08, 0x8E);
+		cpu::idt::setEntry(29, (uint64_t) nx_x64_exception_handler_29, 0x08, 0x8E);
+		cpu::idt::setEntry(30, (uint64_t) nx_x64_exception_handler_30, 0x08, 0x8E);
+		cpu::idt::setEntry(31, (uint64_t) nx_x64_exception_handler_31, 0x08, 0x8E);
 
 		// note: on x86, we do not remap the IRQs on the PIC first,
 		// because we 'prefer' to use the APIC system. when we call
@@ -158,7 +155,7 @@ namespace exceptions
 	}
 
 
-	extern "C" void nx_x64_exception(RegState_t* regs)
+	extern "C" void nx_x64_handle_exception(RegState_t* regs)
 	{
 		uint64_t cr2;
 		uint64_t cr3;

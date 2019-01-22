@@ -54,7 +54,7 @@ $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINF
 
 %.s.o: %.s
 	@echo "# $(notdir $<)"
-	@$(AS) $< -o $@
+	@$(AS) -Isource/platform/$(ARCH)/include $< -o $@
 
 %.cpp.o: %.cpp
 	@echo "# $(notdir $<)"

@@ -2,103 +2,104 @@
 // Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-// Defines nice ISRs.
+.include "macros.s"
+
 
 .section .text
 
-.global IRQ_Handler_0
-.type IRQ_Handler_0, @function
-IRQ_Handler_0:
+.global nx_x64_irq_handler_0
+.type nx_x64_irq_handler_0, @function
+nx_x64_irq_handler_0:
 	pushq $0	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_1
-.type IRQ_Handler_1, @function
-IRQ_Handler_1:
+.global nx_x64_irq_handler_1
+.type nx_x64_irq_handler_1, @function
+nx_x64_irq_handler_1:
 	pushq $1	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_2
-.type IRQ_Handler_2, @function
-IRQ_Handler_2:
+.global nx_x64_irq_handler_2
+.type nx_x64_irq_handler_2, @function
+nx_x64_irq_handler_2:
 	pushq $2	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_3
-.type IRQ_Handler_3, @function
-IRQ_Handler_3:
+.global nx_x64_irq_handler_3
+.type nx_x64_irq_handler_3, @function
+nx_x64_irq_handler_3:
 	pushq $3	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_4
-.type IRQ_Handler_4, @function
-IRQ_Handler_4:
+.global nx_x64_irq_handler_4
+.type nx_x64_irq_handler_4, @function
+nx_x64_irq_handler_4:
 	pushq $4	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_5
-.type IRQ_Handler_5, @function
-IRQ_Handler_5:
+.global nx_x64_irq_handler_5
+.type nx_x64_irq_handler_5, @function
+nx_x64_irq_handler_5:
 	pushq $5	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_6
-.type IRQ_Handler_6, @function
-IRQ_Handler_6:
+.global nx_x64_irq_handler_6
+.type nx_x64_irq_handler_6, @function
+nx_x64_irq_handler_6:
 	pushq $6	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_7
-.type IRQ_Handler_7, @function
-IRQ_Handler_7:
+.global nx_x64_irq_handler_7
+.type nx_x64_irq_handler_7, @function
+nx_x64_irq_handler_7:
 	pushq $7	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_8
-.type IRQ_Handler_8, @function
-IRQ_Handler_8:
+.global nx_x64_irq_handler_8
+.type nx_x64_irq_handler_8, @function
+nx_x64_irq_handler_8:
 	pushq $8	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_9
-.type IRQ_Handler_9, @function
-IRQ_Handler_9:
+.global nx_x64_irq_handler_9
+.type nx_x64_irq_handler_9, @function
+nx_x64_irq_handler_9:
 	pushq $9	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_10
-.type IRQ_Handler_10, @function
-IRQ_Handler_10:
+.global nx_x64_irq_handler_10
+.type nx_x64_irq_handler_10, @function
+nx_x64_irq_handler_10:
 	pushq $10	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_11
-.type IRQ_Handler_11, @function
-IRQ_Handler_11:
+.global nx_x64_irq_handler_11
+.type nx_x64_irq_handler_11, @function
+nx_x64_irq_handler_11:
 	pushq $11	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_12
-.type IRQ_Handler_12, @function
-IRQ_Handler_12:
+.global nx_x64_irq_handler_12
+.type nx_x64_irq_handler_12, @function
+nx_x64_irq_handler_12:
 	pushq $12	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_13
-.type IRQ_Handler_13, @function
-IRQ_Handler_13:
+.global nx_x64_irq_handler_13
+.type nx_x64_irq_handler_13, @function
+nx_x64_irq_handler_13:
 	pushq $13	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_14
-.type IRQ_Handler_14, @function
-IRQ_Handler_14:
+.global nx_x64_irq_handler_14
+.type nx_x64_irq_handler_14, @function
+nx_x64_irq_handler_14:
 	pushq $14	// int_no
 	jmp GlobalHandler
 
-.global IRQ_Handler_15
-.type IRQ_Handler_15, @function
-IRQ_Handler_15:
+.global nx_x64_irq_handler_15
+.type nx_x64_irq_handler_15, @function
+nx_x64_irq_handler_15:
 	pushq $15	// int_no
 	jmp GlobalHandler
 
@@ -106,43 +107,15 @@ IRQ_Handler_15:
 
 
 GlobalHandler:
-	push %r15
-	push %r14
-	push %r13
-	push %r12
-	push %r11
-	push %r10
-	push %r9
-	push %r8
-	push %rdx
-	push %rcx
-	push %rbx
-	push %rax
-	push %rbp
-	push %rsi
-	push %rdi
+	push_all_regs
 
 	movq 120(%rsp), %rdi
-	call nx_x64_interrupt
+	call nx_x64_handle_irq
 
-	pop %rdi
-	pop %rsi
-	pop %rbp
-	pop %rax
-	pop %rbx
-	pop %rcx
-	pop %rdx
-	pop %r8
-	pop %r9
-	pop %r10
-	pop %r11
-	pop %r12
-	pop %r13
-	pop %r14
-	pop %r15
+	pop_all_regs
 
+	// remove the interrupt number
 	addq $8, %rsp
-	// Return to where we came from.
 
 	iretq
 

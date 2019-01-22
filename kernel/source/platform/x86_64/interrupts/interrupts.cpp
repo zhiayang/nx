@@ -5,22 +5,22 @@
 #include "nx.h"
 #include "devices/x64/pic8259.h"
 
-extern "C" void IRQ_Handler_0();
-extern "C" void IRQ_Handler_1();
-extern "C" void IRQ_Handler_2();
-extern "C" void IRQ_Handler_3();
-extern "C" void IRQ_Handler_4();
-extern "C" void IRQ_Handler_5();
-extern "C" void IRQ_Handler_6();
-extern "C" void IRQ_Handler_7();
-extern "C" void IRQ_Handler_8();
-extern "C" void IRQ_Handler_9();
-extern "C" void IRQ_Handler_10();
-extern "C" void IRQ_Handler_11();
-extern "C" void IRQ_Handler_12();
-extern "C" void IRQ_Handler_13();
-extern "C" void IRQ_Handler_14();
-extern "C" void IRQ_Handler_15();
+extern "C" void nx_x64_irq_handler_0();
+extern "C" void nx_x64_irq_handler_1();
+extern "C" void nx_x64_irq_handler_2();
+extern "C" void nx_x64_irq_handler_3();
+extern "C" void nx_x64_irq_handler_4();
+extern "C" void nx_x64_irq_handler_5();
+extern "C" void nx_x64_irq_handler_6();
+extern "C" void nx_x64_irq_handler_7();
+extern "C" void nx_x64_irq_handler_8();
+extern "C" void nx_x64_irq_handler_9();
+extern "C" void nx_x64_irq_handler_10();
+extern "C" void nx_x64_irq_handler_11();
+extern "C" void nx_x64_irq_handler_12();
+extern "C" void nx_x64_irq_handler_13();
+extern "C" void nx_x64_irq_handler_14();
+extern "C" void nx_x64_irq_handler_15();
 
 namespace nx {
 namespace interrupts
@@ -41,22 +41,22 @@ namespace interrupts
 			device::pic8259::init();
 		}
 
-		cpu::idt::setEntry(0x20 + 0,    (addr_t) IRQ_Handler_0,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 1,    (addr_t) IRQ_Handler_1,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 2,    (addr_t) IRQ_Handler_2,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 3,    (addr_t) IRQ_Handler_3,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 4,    (addr_t) IRQ_Handler_4,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 5,    (addr_t) IRQ_Handler_5,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 6,    (addr_t) IRQ_Handler_6,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 7,    (addr_t) IRQ_Handler_7,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 8,    (addr_t) IRQ_Handler_8,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 9,    (addr_t) IRQ_Handler_9,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 10,   (addr_t) IRQ_Handler_10,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 11,   (addr_t) IRQ_Handler_11,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 12,   (addr_t) IRQ_Handler_12,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 13,   (addr_t) IRQ_Handler_13,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 14,   (addr_t) IRQ_Handler_14,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 15,   (addr_t) IRQ_Handler_15,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 0,    (addr_t) nx_x64_irq_handler_0,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 1,    (addr_t) nx_x64_irq_handler_1,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 2,    (addr_t) nx_x64_irq_handler_2,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 3,    (addr_t) nx_x64_irq_handler_3,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 4,    (addr_t) nx_x64_irq_handler_4,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 5,    (addr_t) nx_x64_irq_handler_5,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 6,    (addr_t) nx_x64_irq_handler_6,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 7,    (addr_t) nx_x64_irq_handler_7,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 8,    (addr_t) nx_x64_irq_handler_8,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 9,    (addr_t) nx_x64_irq_handler_9,     0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 10,   (addr_t) nx_x64_irq_handler_10,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 11,   (addr_t) nx_x64_irq_handler_11,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 12,   (addr_t) nx_x64_irq_handler_12,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 13,   (addr_t) nx_x64_irq_handler_13,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 14,   (addr_t) nx_x64_irq_handler_14,    0x08, 0x8E);
+		cpu::idt::setEntry(0x20 + 15,   (addr_t) nx_x64_irq_handler_15,    0x08, 0x8E);
 	}
 
 	void enable()
@@ -87,15 +87,22 @@ namespace interrupts
 	}
 
 
-	static int x = 0;
-	extern "C" void nx_x64_interrupt(int num)
+	extern "C" void nx_x64_send_eoi(int num)
 	{
-		if(x++ == 40)
-			x = 0, println("int %d", num);
-
-		// send the eoi.
 		if(IsAPICPresent)   device::apic::sendEOI(num);
 		else                device::pic8259::sendEOI(num);
+	}
+
+
+
+
+	static int x = 0;
+	extern "C" void nx_x64_handle_irq(int num)
+	{
+		if(x++ == 300)
+			x = 0, println("int %d", num);
+
+		nx_x64_send_eoi(num);
 	}
 }
 }

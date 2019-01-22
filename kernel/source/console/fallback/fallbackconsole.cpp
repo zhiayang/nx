@@ -12,7 +12,10 @@ namespace fallback
 
 	static constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
 
-	static constexpr int CharWidth = 8;
+	static constexpr int FontWidth = 8;
+	static constexpr int FontHeight = 16;
+
+	static constexpr int CharWidth = 9;
 	static constexpr int CharHeight = 16;
 
 	static constexpr int Padding = 6;
@@ -65,13 +68,13 @@ namespace fallback
 		}
 
 		uint32_t* rowAddress = (uint32_t *) Framebuffer + x + (y * FramebufferScanWidth);
-		for(int row = 0; row < CharHeight; row++)
+		for(int row = 0; row < FontHeight; row++)
 		{
 			uint8_t data = TheFont[(int) c][row];
 			uint32_t* columnAddress = rowAddress;
 
 			int col = 0;
-			for(data = TheFont[(int) c][row]; col < CharWidth; data <<= 1, col++)
+			for(data = TheFont[(int) c][row]; col < FontWidth; data <<= 1, col++)
 			{
 				if((data & 0x80) != 0)  *columnAddress = fg;
 				else                    *columnAddress = bg;

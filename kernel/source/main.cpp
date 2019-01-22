@@ -16,9 +16,9 @@ namespace nx
 
 		// init the console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		// console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
-		// basically sets up the IDT so we can print stuff when we fault
-		// (instead of seemingly hanging)
+		// basically sets up the IDT so we can handle exceptions (instead of seemingly hanging)
 		cpu::idt::init();
 		exceptions::init();
 
@@ -36,10 +36,10 @@ namespace nx
 		// basically sets up some datastructures. nothing much.
 		scheduler::preinitProcs();
 
-		// read the acpi tables -- includes multiproc (MADT), timer (HPET), interrupts (LAPIC & IOAPIC)
+		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
 		acpi::init(bootinfo);
 
-		// start doing interrupt stuff
+		// initialise the interrupt controller -- either the IOAPIC/LAPIC, or the 8259 PIC (depending on the acpi tables)
 		interrupts::init();
 		interrupts::enable();
 
