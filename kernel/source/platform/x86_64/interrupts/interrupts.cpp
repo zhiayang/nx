@@ -93,9 +93,6 @@ namespace interrupts
 		else                device::pic8259::sendEOI(num);
 	}
 
-
-
-
 	static int x = 0;
 	extern "C" void nx_x64_handle_irq(int num)
 	{

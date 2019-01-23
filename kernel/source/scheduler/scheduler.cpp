@@ -7,11 +7,12 @@
 namespace nx {
 namespace scheduler
 {
+	static uint64_t ticks = 0;
 	extern "C" int nx_x64_scheduler_tick()
 	{
+		ticks += 1;
 		return 0;
 	}
-
 
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{

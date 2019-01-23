@@ -22,6 +22,24 @@ namespace nx
 			addr_t localApicAddr;
 		};
 
+		struct Thread;
+		struct Process
+		{
+			addr_t cr3;
+			nx::array<Thread*> threads;
+		};
+
+		struct Thread
+		{
+			addr_t userStack;
+			addr_t kernelStack;
+
+			Process* parent = 0;
+		};
+
+
+
+
 		void preinitProcs();
 		void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic);
 

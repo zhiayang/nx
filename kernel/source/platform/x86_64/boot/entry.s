@@ -38,6 +38,8 @@ kernel_entry:
 
 	iretq
 
+	// unreachable!
+	ud2
 
 
 .section .data
