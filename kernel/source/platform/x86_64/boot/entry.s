@@ -27,6 +27,13 @@ kernel_entry:
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp
 
+
+	// clear the wp bit in cr0 so ring0 can read/write all pages (without needing PAGE_WRITE)
+	mov %cr0, %eax
+	andl $0xfffeffff, %eax
+	mov %eax, %cr0
+
+
 	// 'far return' to the kernel -- changing the code segment from whatever nonsense
 	// uefi set up to our proper one.
 

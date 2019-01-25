@@ -96,8 +96,8 @@ namespace interrupts
 	static int x = 0;
 	extern "C" void nx_x64_handle_irq(int num)
 	{
-		if(x++ == 300)
-			x = 0, println("int %d", num);
+		if(++x % 120 == 0)
+			println("int %d (%d)", num, x);
 
 		nx_x64_send_eoi(num);
 	}

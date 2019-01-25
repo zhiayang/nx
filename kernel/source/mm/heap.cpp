@@ -357,6 +357,7 @@ namespace heap
 			return_ptr = ptr;
 		}
 
+		// asm volatile ("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "%rax");
 		*((size_t*) return_ptr) = total_size;
 		return_ptr += sizeof(size_t);
 
@@ -366,9 +367,11 @@ namespace heap
 	}
 
 
-	void deallocate(addr_t addr)
+	void deallocate(addr_t _addr)
 	{
-		if(addr == 0) return;
+		if(_addr == 0) return;
+
+		auto addr = _addr;
 
 		// grab the uint8_t offset right behind the addr
 		auto ofs = *(((uint8_t*) addr) - 1);
@@ -377,6 +380,7 @@ namespace heap
 		addr -= sizeof(size_t);
 
 		size_t sz = *((size_t*) addr);
+		assert(sz);
 
 		if(sz >= PAGE_SIZE)
 		{
@@ -392,7 +396,7 @@ namespace heap
 
 			auto bucket = getFittingBucket(sz);
 
-			// we should not run out of chunk!!!! the theory is obviously that every free() comes with an alloc(), and every
+			// we should not run out of chunks!!!! the theory is obviously that every free() comes with an alloc(), and every
 			// alloc() puts a chunk into the UsedChunks list!
 			assert(bucket->numUsedChunks > 0);
 			assert(bucket->usedChunks);

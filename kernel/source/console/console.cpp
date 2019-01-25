@@ -3,98 +3,89 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-
-//* fonts are generated using https://github.com/zhiayang/fontem
-//* aka https://github.com/chrisy/fontem, but forked in case something happens to the original
-//* no modifications are made in the fork though.
-#include "font/font-dejavu-mono-10.h"
-#define FONT_NAME font_dejavu_mono_10
-
+#include "misc/stb/stbtt.h"
 
 namespace nx {
 namespace console
 {
 	static constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
-	static constexpr int Padding = 6;
+
+	static constexpr int Padding = 4;
+
+	static bool Initialised = false;
 
 	static int FramebufferWidth = 0;
 	static int FramebufferHeight = 0;
 	static int FramebufferScanWidth = 0;
 
+	static int VT_Height = 0;
+
 	static int CursorX = 0;
 	static int CursorY = 0;
-	static int CursorTop = 0;
-
-	static int VT_Height = 0;
 
 	static uint32_t CurrentFGColour = 0;
 	static uint32_t CurrentBGColour = 0;
 
-	static constexpr int LineAdv = 16;
 
+	// font rendering stuff.
+	// refer to here: https://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html
+	// for how we (crudely) render the glyphs in the correct (ish) locations.
 
 	struct Glpyh
 	{
 		uint32_t codepoint;
+		int glyphIdx;
+
 		uint32_t* bitmap;
-
-		uint8_t* bitmap1b;
-
 		int width;
 		int height;
 
+		int topOffset;
+
 		int lsb;        // the offset from the left edge of the box to the left edge of the actual glyph
-		int ascent;     // how much the glyph pokes out above the baselane
 
 		int horzAdv;    // how much to advance to get from the left of one box to the left of the next.
-		int vertAdv;    // same but vertically
 	};
 
-	static int HeightAboveBaseline;
-	static int HeightBelowBaseline;
-
-	static Glpyh Glyphs[128];
-
-	static void (*draw_func)(Glpyh* g, int x, int y, uint32_t fg, uint32_t bg);
-
-
-	static uint32_t conv(uint8_t x)
+	struct Font
 	{
-		return 0xFF000000 | (x << 16) | (x << 8) | (x);
-	}
+		int vertAdv;    // line height, basically
+		int baseline;   // the offset from the top edge of the glyph's baseline
 
+		stbtt_fontinfo fontinfo;
+		treemap<uint32_t, Glpyh> glyphs;
+	};
 
-	// note: we have two versions, one that's 'pre' -- before we have a heap and and make an efficient bitmap, forcing us to convert the 8bpp on the fly
-	// and the non-pre, where we already created the 32bpp bitmap (after calling init_stage2())
+	static Font MainFont;
+	static float FontScale = 0;
 
-	template <bool pre>
-	static void draw(Glpyh* g, int x, int y, uint32_t fg, uint32_t bg)
+	// since we are working with fonts, (x, y) is the origin point of the glyph!
+	// it is *not* the top-left corner of the character.
+	static void draw(Glpyh* c, int x, int y, uint32_t fg, uint32_t bg)
 	{
-		if(g->codepoint == ' ' || g->codepoint > 126)
+		// start at the origin
+		uint32_t* ptr = (uint32_t*) (Framebuffer + (y * FramebufferScanWidth + x) * 4);
+
+		// ptr -= (c->ascent * FramebufferScanWidth);
+		ptr += ((MainFont.baseline + c->topOffset) * FramebufferScanWidth);
+
+		// move right by the left-side bearing
+		ptr += c->lsb;
+
+		if(c->codepoint == ' ' || c->codepoint > 126)
 		{
-			for(int i = y - HeightAboveBaseline; i < (y + HeightBelowBaseline); i++)
-				krt::util::memfill4b((uint32_t*) (Framebuffer + (i * FramebufferScanWidth + x) * 4), bg, g->width);
+			for(int i = y; i < (y + MainFont.vertAdv); i++)
+				krt::util::memfill4b((uint32_t*) (Framebuffer + (i * FramebufferScanWidth + x) * 4), bg, c->horzAdv);
 		}
 		else
 		{
-			// start at the origin
-			uint32_t* _ptr = (uint32_t*) (Framebuffer + (y * FramebufferScanWidth + x) * 4);
-
-			// move up by the ascent
-			auto ptr = _ptr - (g->ascent * FramebufferScanWidth);
-
-			// move right by the left-side bearing
-			ptr += g->lsb;
-
 			// now we are at the top-left of the glyph & we can start drawing.
-			for(int row = 0; row < g->height; row++)
+			for(int row = 0; row < c->height; row++)
 			{
 				auto xptr = ptr;
-				for(int col = 0; col < g->width; col++)
+				for(int col = 0; col < c->width; col++)
 				{
-					if constexpr (pre)  *xptr = conv(g->bitmap1b[row * g->width + col]) | bg;
-					else                *xptr = g->bitmap[row * g->width + col] | bg;
-
+					*xptr = c->bitmap[row * c->width + col] | bg;
 					xptr++;
 				}
 
@@ -104,112 +95,168 @@ namespace console
 	}
 
 
-	void clear()
-	{
-		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
-
-		CursorX = Padding;
-		CursorY = CursorTop;
-	}
-
 	void init(int x, int y, int scanx)
 	{
 		FramebufferWidth = x;
 		FramebufferHeight = y;
+
 		FramebufferScanWidth = scanx;
+
+		// VT_Width = (FramebufferWidth - 2*Padding) / CharWidth;
+		// VT_Height = (FramebufferHeight - 2*Padding) / CharHeight;
+
+		CursorX = Padding;
+		CursorY = Padding;
 
 		CurrentFGColour = 0xE0E0E0;
 		CurrentBGColour = 0x080808;
 
-		CursorTop = Padding + LineAdv;
-
-		clear();
-
-		memset(&Glyphs[0], 0, sizeof(Glpyh) * 128);
-
-		auto font = FONT_NAME;
-
-		HeightAboveBaseline = font.ascender;
-		HeightBelowBaseline = font.descender;
+		FontScale = 16;
 
 
-		for(int c = 32; c < 127; c++)
+		// load the font
 		{
-			auto glp = &Glyphs[c];
-			auto fg = font.glyphs[c - 32];
+			using namespace vfs;
+			File* f = open("/initrd/fonts/mono-bold.ttf", Mode::Read);
+			assert(f);
 
-			glp->codepoint = c;
-			glp->width = fg->cols;
-			glp->height = fg->rows;
-			glp->bitmap1b = (uint8_t*) fg->bitmap;
+			auto sz = stat(f).fileSize;
 
-			glp->lsb = fg->left;
-			glp->ascent = fg->top;
-			glp->horzAdv = fg->advance;
-			glp->vertAdv = LineAdv;
-		}
+			auto buf = new uint8_t[sz];
+			auto r = read(f, buf, sz);
+			if(r != sz) abort("failed to read font file! expected %zu bytes, only %zu were read", sz, r);
 
-		VT_Height = FramebufferHeight / LineAdv;
-		draw_func = draw<true>;
-	}
+			MainFont = Font();
 
-	void init_stage2()
-	{
-		for(int c = 32; c < 127; c++)
-		{
-			auto glp = &Glyphs[c];
+			if(!stbtt_InitFont(&MainFont.fontinfo, buf, 0))
+				abort("failed to initialise stb_truetype!");
 
-			glp->bitmap = new uint32_t[glp->width * glp->height];
+			auto fi = &MainFont.fontinfo;
 
-			for(int i = 0; i < glp->height; i++)
+			int oversample = 1;
+			float scale = stbtt_ScaleForPixelHeight(fi, FontScale) * oversample;
+
+			// get the font metrics
 			{
-				for(int j = 0; j < glp->width; j++)
+				int asc, dsc, gap;
+				stbtt_GetFontVMetrics(fi, &asc, &dsc, &gap);
+				MainFont.vertAdv = ((asc - dsc + gap) * scale) / oversample;
+				MainFont.baseline = (asc * scale) / oversample;
+			}
+
+
+
+			// preload the printable ascii region.
+			for(int i = 32; i < 127; i++)
+			{
+				auto g = Glpyh();
+
+				g.codepoint = i;
+				g.glyphIdx = stbtt_FindGlyphIndex(fi, i);
+
 				{
-					glp->bitmap[i * glp->width + j] = conv(glp->bitmap1b[i * glp->width + j]);
+					int x0, x1, y0, y1;
+					stbtt_GetGlyphBitmapBox(fi, g.glyphIdx, scale, scale, &x0, &y0, &x1, &y1);
+
+					int w = __abs(x1 - x0);
+					int h = __abs(y1 - y0);
+
+					g.width = w / oversample;
+					g.height = h / oversample;
+
+					auto bitmap = new uint8_t[w * h];
+
+					stbtt_MakeGlyphBitmap(fi, bitmap, w, h, w, scale, scale, g.glyphIdx);
+
+					// do some filtering... i guess.
+					auto filter = [](uint8_t* input, double u, double v, int w, int h) -> uint32_t {
+						assert(u >= 0 && u <= 1);
+						assert(v >= 0 && v <= 1);
+
+						auto lerp = [](double a, double b, double t) -> double {
+							return a + (b - a) * t;
+						};
+
+						auto blerp = [&lerp](double a, double b, double c, double d, double tx, double ty) -> double {
+							return lerp(lerp(a, b, tx), lerp(c, d, tx), ty);
+						};
+
+						u *= w;
+						v *= h;
+
+						int x = (int) u;
+						int y = (int) v;
+
+						if(x >= w) return 0;
+						if(y >= h) return 0;
+
+						auto a = input[(x + 0) + (y + 0) * w];
+						auto b = input[(x + 1) + (y + 0) * w];
+						auto c = input[(x + 0) + (y + 1) * w];
+						auto d = input[(x + 1) + (y + 1) * w];
+
+						auto val = blerp(a, b, c, d, u - x, v - y);
+						auto byte = (uint8_t) val;
+
+						return (0xFF000000 | (byte << 16) | (byte << 8) | byte);
+					};
+
+					g.bitmap = new uint32_t[g.width * g.height];
+					for(int x = 0; x < g.width; x++)
+					{
+						for(int y = 0; y < g.height; y++)
+						{
+							g.bitmap[x + (y * g.width)] = filter(bitmap, (double) x / (double) g.width, (double) y / (double) g.height, w, h);
+						}
+					}
+
+					delete[] bitmap;
+
+					g.topOffset = y0 / oversample;
 				}
+
+				{
+					int adv, lsb;
+					stbtt_GetGlyphHMetrics(fi, g.glyphIdx, &adv, &lsb);
+					g.horzAdv = (adv * scale) / oversample;
+					g.lsb = (lsb * scale) / oversample;
+				}
+
+				MainFont.glyphs.insert(i, g);
 			}
 		}
 
-		draw_func = draw<false>;
+		Initialised = true;
+		VT_Height = (FramebufferHeight - 2*Padding) / MainFont.vertAdv;
+
+		// clear it
+		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	static void scrollIfNecessary()
 	{
-		if(CursorY + LineAdv >= FramebufferHeight)
+		if(CursorY + Padding >= FramebufferHeight)
 		{
 			// copy.
 			memmove((void*) (Framebuffer + (Padding * FramebufferScanWidth * 4)),
-				(void*) (Framebuffer + (4 * FramebufferScanWidth * (CursorTop))),
-				((VT_Height - 1) * LineAdv) * FramebufferScanWidth * 4);
+				(void*) (Framebuffer + (4 * FramebufferScanWidth * (Padding + MainFont.vertAdv))),
+				((VT_Height - 1) * MainFont.vertAdv) * FramebufferScanWidth * 4);
 
 			// memset the last row to 0.
-			krt::util::memfill4b((uint32_t*) (Framebuffer + (Padding + ((VT_Height - 1) * LineAdv)) * FramebufferScanWidth * 4),
-				CurrentBGColour, FramebufferScanWidth * LineAdv);
+			krt::util::memfill4b((uint32_t*) (Framebuffer + (Padding + ((VT_Height - 1) * MainFont.vertAdv)) * FramebufferScanWidth * 4),
+				CurrentBGColour, FramebufferScanWidth * MainFont.vertAdv);
 
-			CursorY -= LineAdv;
+			CursorY -= MainFont.vertAdv;
 		}
 	}
 
 	void putchar(char c)
 	{
-		if(c < 32 || c > 126)
+		if(__unlikely(!Initialised))
+		{
+			fallback::putchar(c);
+		}
+		else
 		{
 			if(c == '\r')
 			{
@@ -218,24 +265,20 @@ namespace console
 			else if(c == '\n')
 			{
 				CursorX = Padding;
-				CursorY += LineAdv;
+				CursorY += MainFont.vertAdv;
 
 				scrollIfNecessary();
 			}
-		}
-		else
-		{
-			auto g = &Glyphs[(int) c];
-			draw_func(g, CursorX, CursorY, CurrentFGColour, CurrentBGColour);
-
-			CursorX += g->horzAdv;
-
-			// assume a monospace font.
-			if(CursorX + g->horzAdv + Padding >= FramebufferWidth)
+			else if(c >= 32 && c < 127)
 			{
-				// we need to scrooool
-				CursorX = Padding;
-				CursorY += LineAdv;
+
+				auto g = &MainFont.glyphs[c];
+				draw(g, CursorX, CursorY, CurrentFGColour, CurrentBGColour);
+
+				CursorX += g->horzAdv;
+
+				if(CursorX + Padding > FramebufferWidth)
+					CursorY += MainFont.vertAdv, CursorX = Padding;
 
 				scrollIfNecessary();
 			}
@@ -243,26 +286,4 @@ namespace console
 	}
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

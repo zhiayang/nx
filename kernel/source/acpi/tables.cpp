@@ -59,7 +59,7 @@ namespace acpi
 					abort("apic::init(): failed to map ACPI memory at %p", ent->address);
 
 				// ok, now just map it in an identity fashion.
-				vmm::mapAddress(ent->address, ent->address, ent->numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+				vmm::mapAddress(ent->address, ent->address, ent->numPages, vmm::PAGE_PRESENT);
 			}
 		}
 

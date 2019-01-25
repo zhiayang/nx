@@ -25,9 +25,9 @@ namespace vmm
 
 		memset(extmmState, 0, sizeof(extmm::State) * 3);
 
-		mapAddress(VMM_STACK0_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
-		mapAddress(VMM_STACK1_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
-		mapAddress(VMM_STACK2_BASE, pmm::allocate(1), 1, PAGE_PRESENT | PAGE_WRITE);
+		mapAddress(VMM_STACK0_BASE, pmm::allocate(1), 1, PAGE_PRESENT);
+		mapAddress(VMM_STACK1_BASE, pmm::allocate(1), 1, PAGE_PRESENT);
+		mapAddress(VMM_STACK2_BASE, pmm::allocate(1), 1, PAGE_PRESENT);
 
 		extmm::init(&extmmState[0], "vmm/user", VMM_STACK0_BASE, VMM_STACK0_END);
 		extmm::init(&extmmState[1], "vmm/heap", VMM_STACK1_BASE, VMM_STACK1_END);
@@ -45,7 +45,7 @@ namespace vmm
 			(KERNEL_VMM_ADDRSPACE_END - KERNEL_VMM_ADDRSPACE_BASE) / PAGE_SIZE);
 
 		// unmap the null page.
-		unmapAddress(0, 1);
+		unmapAddress(0, 1, /* freePhys: */ false);
 
 		log("vmm", "initialised with 3 addr spaces");
 	}
@@ -108,7 +108,7 @@ namespace vmm
 		auto phys = pmm::allocate(num);
 		if(phys == 0) return 0;
 
-		mapAddress(virt, phys, num, PAGE_WRITE | PAGE_PRESENT);
+		mapAddress(virt, phys, num, PAGE_PRESENT);
 		return virt;
 	}
 

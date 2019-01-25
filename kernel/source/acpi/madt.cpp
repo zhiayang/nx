@@ -127,7 +127,7 @@ namespace acpi
 			if(vmm::allocateSpecific(base & vmm::PAGE_ALIGN, 1) == 0)
 				abort("ioapic: failed to map base address %p", base & vmm::PAGE_ALIGN);
 
-			vmm::mapAddress(base & vmm::PAGE_ALIGN, base & vmm::PAGE_ALIGN, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+			vmm::mapAddress(base & vmm::PAGE_ALIGN, base & vmm::PAGE_ALIGN, 1, vmm::PAGE_PRESENT);
 		}
 	}
 }

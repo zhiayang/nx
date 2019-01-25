@@ -187,11 +187,11 @@ namespace exceptions
 			println("addr:   %p", cr2);
 			print  ("reason:");
 
-			if(notPresent)          print(" not present");
-			if(access)              print(" read-only");
-			if(supervisor)          print(" supervisor");
-			if(reservedBits)        print(" reserved write");
-			if(instructionFetch)    print(" instruction fetch");
+			if(notPresent)          print(" (not present)");
+			if(access)              print(" (read-only)");
+			if(supervisor)          print(" (supervisor)");
+			if(reservedBits)        print(" (reserved write)");
+			if(instructionFetch)    print(" (instruction fetch)");
 
 			println("");
 		}

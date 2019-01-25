@@ -81,7 +81,8 @@ void operator delete[]  (void* ptr, size_t al);
 #define kassert(x, fmt, ...)    ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x, fmt, __VA_ARGS__))
 
 
-
+#define __unlikely(x)           __builtin_expect((x), 0)
+#define __likely(x)             __builtin_expect((x), 1)
 
 
 

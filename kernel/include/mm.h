@@ -36,7 +36,7 @@ namespace nx
 		void invalidate(addr_t addr);
 
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags);
-		void unmapAddress(addr_t virt, size_t num);
+		void unmapAddress(addr_t virt, size_t num, bool freePhys = true);
 		addr_t getPhysAddr(addr_t virt);
 
 		// functions to allocate/free address space in higher half (kernel) and lower half (user)
@@ -56,13 +56,17 @@ namespace nx
 		static constexpr size_t indexPageDir(addr_t addr)    { return ((((addr_t) addr) >> 21) & 0x1FF); }
 		static constexpr size_t indexPageTable(addr_t addr)  { return ((((addr_t) addr) >> 12) & 0x1FF); }
 
+		static constexpr addr_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
+		{
+			return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
+		}
+
 		static constexpr addr_t RecursiveAddrs[] = {
 			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510) + (0x20'0000ULL * 510) + (0x1000 * 510),
 			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510) + (0x20'0000ULL * 510),
 			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510),
 			0xFFFF'FF00'0000'0000ULL
 		};
-
 
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
 		constexpr uint64_t PAGE_WRITE       = 0x2;

@@ -198,6 +198,8 @@ namespace efx
 		{
 			bool skip = false;
 			auto efiEnt = (efi_memory_descriptor*) (buffer + (i * descSz));
+			// efi::println("entry: %p - %p (%d)", efiEnt->PhysicalStart, efiEnt->PhysicalStart + (0x1000 * efiEnt->NumberOfPages),
+			// 	efiEnt->Type);
 
 			auto k = bi->mmEntryCount;
 

@@ -113,7 +113,7 @@ namespace vfs
 	{
 		// get the filesystem.
 		auto fs = getFilesystemAtPath(splitPathComponents(path));
-		if(!fs) println("no filesystem mounted at path '%s'!", path.cstr());
+		if(!fs) { println("no filesystem mounted at path '%s'!", path.cstr()); return nullptr; }
 
 		// ok...
 		auto nd = openNode(path);

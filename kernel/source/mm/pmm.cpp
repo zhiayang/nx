@@ -87,30 +87,21 @@ namespace pmm
 			auto p1idx = indexPageTable(v);
 
 			auto pml4 = (pml_t*) RecursiveAddrs[0];
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			{
-				pml4->entries[p4idx] = end(base, bootstrapUsed++) | PAGE_PRESENT | PAGE_WRITE;
-				invalidate(pml4->entries[p4idx]);
-			}
-
 			auto pdpt = (pml_t*) (RecursiveAddrs[1] + 0x1000ULL * p4idx);
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			{
-				pdpt->entries[p3idx] = end(base, bootstrapUsed++) | PAGE_PRESENT | PAGE_WRITE;
-				invalidate(pdpt->entries[p3idx]);
-			}
-
 			auto pdir = (pml_t*) (RecursiveAddrs[2] + 0x20'0000ULL * p4idx + 0x1000ULL * p3idx);
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			{
-				pdir->entries[p2idx] = end(base, bootstrapUsed++) | PAGE_PRESENT | PAGE_WRITE;
-				invalidate(pdir->entries[p2idx]);
-			}
-
 			auto ptab = (pml_t*) (RecursiveAddrs[3] + 0x4000'0000ULL * p4idx + 0x20'0000ULL * p3idx + 0x1000ULL * p2idx);
 
-			ptab->entries[p1idx] = end(base, bootstrapUsed++) | PAGE_PRESENT | PAGE_WRITE;
-			invalidate(ptab->entries[p1idx]);
+			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+				pml4->entries[p4idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
+
+			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+				pdpt->entries[p3idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
+
+			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+				pdir->entries[p2idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
+
+			ptab->entries[p1idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
+			invalidate(v);
 		}
 
 		// ok it should be set right now

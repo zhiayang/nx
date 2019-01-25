@@ -82,7 +82,7 @@ namespace apic
 				if(vmm::allocateSpecific(alignedBase, 1) == 0)
 					abort("ioapic: failed to map base address %p", ioa->baseAddr);
 
-				vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+				vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT);
 				mappedBases.append(alignedBase);
 			}
 

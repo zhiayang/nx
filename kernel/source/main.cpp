@@ -14,9 +14,8 @@ namespace nx
 		// open all hatches
 		// extend all flaps and drag fins
 
-		// init the console
-		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
-		// console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+		// init the fallback console
+		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
 		// basically sets up the IDT so we can handle exceptions (instead of seemingly hanging)
 		cpu::idt::init();
@@ -30,8 +29,15 @@ namespace nx
 		vmm::init(bootinfo);
 		heap::init();
 
-		// init the console, but more efficiently.
-		console::init_stage2();
+		// setup the vfs and the initrd
+		{
+			vfs::init();
+			initrd::init(bootinfo);
+		}
+
+		// init the real console
+		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+
 
 		// basically sets up some datastructures. nothing much.
 		scheduler::preinitProcs();
@@ -47,12 +53,6 @@ namespace nx
 			device::pit8253::enable(1);
 			device::apic::setInterrupt(device::apic::getISAIRQMapping(0), 0, 0);
 		}
-
-		// initialise the vfs so we can read the initrd
-		vfs::init();
-
-		// mount the tarfs at /initrd
-		initrd::init(bootinfo);
 
 
 

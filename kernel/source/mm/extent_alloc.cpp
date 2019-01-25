@@ -30,7 +30,7 @@ namespace extmm
 
 		auto phys = pmm::allocate(1);
 
-		vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+		vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT);
 	}
 
 	static void addExtent(State* st, addr_t addr, size_t size)
