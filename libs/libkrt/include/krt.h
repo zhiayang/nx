@@ -16,6 +16,7 @@
 #include "krt/types/array.h"
 #include "krt/types/stack.h"
 #include "krt/types/treemap.h"
+#include "krt/types/string_view.h"
 
 namespace krt
 {

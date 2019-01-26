@@ -31,7 +31,7 @@ namespace krt
 				this->cnt = l;
 
 				for(size_t i = 0; i < this->cnt; i++)
-					this->ptr[i] = p[i];
+					new (&this->ptr[i]) T(p[i]);
 			}
 		}
 

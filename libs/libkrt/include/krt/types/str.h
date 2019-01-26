@@ -130,7 +130,7 @@ namespace krt
 		iterator end()   { return iterator(this->ptr + this->cnt); }
 
 
-		char* data()                                        { return this->ptr; }
+		char* data() const                                  { return this->ptr; }
 		size_t size() const                                 { return this->cnt; }
 		size_t capacity() const                             { return this->cap; }
 		bool empty() const                                  { return this->cnt == 0; }

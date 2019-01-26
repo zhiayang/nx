@@ -31,7 +31,8 @@ namespace krt
 
 			copy_elements(self, newptr, self->ptr, self->cnt);
 
-			allocator::deallocate(self->ptr);
+			if(self->ptr) allocator::deallocate(self->ptr);
+
 
 			self->ptr = newptr;
 			self->cap = newsz;
@@ -202,7 +203,7 @@ namespace krt
 			else
 			{
 				for(size_t i = 0; i < num; i++)
-					dest[i] = src[i];
+					new (&dest[i]) ElmTy(src[i]);
 			}
 		}
 	};
