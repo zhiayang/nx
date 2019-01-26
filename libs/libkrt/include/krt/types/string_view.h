@@ -94,6 +94,7 @@ namespace krt
 		{
 			if(n > this->cnt) aborter::abort("remove_prefix(): not enough elements");
 			this->ptr += n;
+			this->cnt -= n;
 		}
 
 		void remove_suffix(size_t n)

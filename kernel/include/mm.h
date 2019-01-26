@@ -36,21 +36,21 @@ namespace nx
 		void init(scheduler::Process* proc);
 		void invalidate(addr_t addr);
 
-		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags);
-		void unmapAddress(addr_t virt, size_t num, bool freePhys);
-		addr_t getPhysAddr(addr_t virt);
+		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void unmapAddress(addr_t virt, size_t num, bool freePhys, scheduler::Process* proc = 0);
+		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
 
 		// functions to allocate/free address space in higher half (kernel) and lower half (user)
 		enum class AddressSpace { Kernel, KernelHeap, User };
 
-		addr_t allocateAddrSpace(size_t num, AddressSpace type);
-		void deallocateAddrSpace(addr_t addr, size_t num);
+		addr_t allocateAddrSpace(size_t num, AddressSpace type, scheduler::Process* proc = 0);
+		void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
-		addr_t allocateSpecific(addr_t addr, size_t num);
+		addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		// these will allocate an address space, *AND* allocate a physical page *AND* map it!
-		addr_t allocate(size_t num, AddressSpace type);
-		void deallocate(addr_t addr, size_t num);
+		addr_t allocate(size_t num, AddressSpace type, scheduler::Process* proc = 0);
+		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		static constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
 		static constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }

@@ -196,6 +196,8 @@ namespace exceptions
 			println("");
 		}
 
+		util::printStackTrace(regs->rbp);
+
 		abort("unrecoverable cpu exception");
 	}
 }

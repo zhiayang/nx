@@ -58,6 +58,20 @@ void efx::init()
 		loadKernel(buf, len, &kernelEntry);
 
 		kernelBootInfo = prepareKernelBootInfo();
+
+		// copy the kernel away.
+		{
+			uint64_t out = 0;
+			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_KernelElf,
+				(len + 0x1000) / 0x1000, &out);
+			efi::abort_if_error(stat, "failed to allocate memory for kernel!");
+
+			memmove((void*) out, buf, len);
+
+
+			kernelBootInfo->kernelElf = (void*) out;
+			kernelBootInfo->kernelElfSize = len;
+		}
 	}
 
 
@@ -71,7 +85,8 @@ void efx::init()
 		// we need to copy it out as pages, since readFile() uses the EFI pool!
 		{
 			uint64_t out = 0;
-			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_Initrd, (len + 0x1000) / 0x1000, &out);
+			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_Initrd,
+				(len + 0x1000) / 0x1000, &out);
 			efi::abort_if_error(stat, "failed to allocate memory for initrd!");
 
 			memmove((void*) out, buf, len);

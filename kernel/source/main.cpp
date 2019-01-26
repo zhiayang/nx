@@ -23,6 +23,31 @@ namespace nx
 		return 0;
 	}
 
+	static void one()
+	{
+		util::printStackTrace();
+	}
+
+	static void two()
+	{
+		one();
+	}
+
+	static void three()
+	{
+		two();
+	}
+
+	static void four()
+	{
+		three();
+	}
+
+	static void five()
+	{
+		four();
+	}
+
 	void kernel_main(BootInfo* bootinfo)
 	{
 		// open all hatches
@@ -38,12 +63,17 @@ namespace nx
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
 
+		if(bootinfo->version < 1)
+			abort("invalid bootloader version: %d; at least version %d is required!", bootinfo->version, 1);
+
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
 
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(scheduler::getKernelProcess());
 		heap::init();
+
+		util::initSymbols(bootinfo);
 
 		// setup the vfs and the initrd
 		{
@@ -74,7 +104,7 @@ namespace nx
 		// hopefully we are flying more than half a ship at this point
 		// setup an idle thread and a work thread.
 
-
+		five();
 	}
 }
 

@@ -23,6 +23,7 @@ namespace nx
 		BootInfo,
 		MemoryMap,
 		Initrd,
+		KernelElf,
 
 		EFIRuntimeCode,
 		EFIRuntimeData,
@@ -39,7 +40,7 @@ namespace nx
 	struct BootInfo
 	{
 		uint8_t ident[3];       // E, F, X
-		uint8_t version;        // 1
+		uint8_t version;
 
 		uint32_t fbHorz;        // horizontal resolution (in pixels)
 		uint32_t fbVert;        // vertical res
@@ -56,6 +57,11 @@ namespace nx
 
 		uint64_t initrdSize;    // we only support one initrd right now!
 		void* initrdBuffer;     // physical address, but the loader will identity map it (since it is LoaderSetup memory)
+
+
+		// from version 2:
+		void* kernelElf;        // the entire kernel executable
+		uint64_t kernelElfSize; // how large the thing is.
 	};
 }
 

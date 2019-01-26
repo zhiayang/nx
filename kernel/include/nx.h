@@ -33,22 +33,16 @@ namespace nx
 
 	void kernel_main(BootInfo* bootinfo);
 
-
-
 	namespace initrd
 	{
 		void init(BootInfo* bi);
 	}
 
 
-
-
-
-
-
 	// some misc stuff.
 	void log(const char* sys, const char* fmt, ...);
 	void warn(const char* sys, const char* fmt, ...);
+	void error(const char* sys, const char* fmt, ...);
 
 
 

@@ -94,6 +94,14 @@ namespace nx
 		va_end(args);
 	}
 
+	void error(const char* sys, const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		cbprintf(nullptr, cb_serialprint, "error (%s): ", sys);
+		vcbprintf(nullptr, cb_serialprint, fmt, args);
+		cbprintf(nullptr, cb_serialprint, "\n");
+		va_end(args);
+	}
 
 
 

@@ -40,7 +40,7 @@ namespace vmm
 
 
 
-	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags)
+	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		virt &= PAGE_ALIGN;
 		phys &= PAGE_ALIGN;
@@ -98,7 +98,7 @@ namespace vmm
 	}
 
 
-	void unmapAddress(addr_t virt, size_t num, bool freePhys)
+	void unmapAddress(addr_t virt, size_t num, bool freePhys, scheduler::Process* proc)
 	{
 		virt &= PAGE_ALIGN;
 
@@ -145,7 +145,7 @@ namespace vmm
 		}
 	}
 
-	addr_t getPhysAddr(addr_t virt)
+	addr_t getPhysAddr(addr_t virt, scheduler::Process* proc)
 	{
 		virt &= PAGE_ALIGN;
 

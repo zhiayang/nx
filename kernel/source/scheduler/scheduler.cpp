@@ -17,6 +17,44 @@ namespace scheduler
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	static int initPhase = 0;
+	int getCurrentInitialisationPhase()
+	{
+		return initPhase;
+	}
+
+	void initialisePhase(int p)
+	{
+		assert(p >= initPhase);
+		initPhase = p;
+	}
 }
 }
 

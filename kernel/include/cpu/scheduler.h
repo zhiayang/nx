@@ -34,6 +34,8 @@ namespace nx
 		{
 			addr_t cr3;
 			nx::array<Thread*> threads;
+
+			extmm::State vmmStates[vmm::NumAddressSpaces];
 		};
 
 		struct Thread
@@ -67,6 +69,9 @@ namespace nx
 		Process* getCurrentProcess();
 
 
+		// this is kinda dumb
+		int getCurrentInitialisationPhase();
+		void initialisePhase(int p);
 
 
 

@@ -12,6 +12,8 @@ namespace scheduler
 	{
 		KernelProcess = Process();
 		KernelProcess.cr3 = cr3;
+
+		initialisePhase(1);
 	}
 
 	Process* getKernelProcess()
@@ -21,7 +23,16 @@ namespace scheduler
 
 	Process* getCurrentProcess()
 	{
-		return getCurrentCPU()->currentProcess;
+		assert(getCurrentInitialisationPhase() > 0);
+
+		if(__unlikely(getCurrentInitialisationPhase() < 3))
+			return &KernelProcess;
+
+		auto cpu = getCurrentCPU();
+		if(__unlikely(!cpu->currentProcess))
+			return &KernelProcess;
+
+		return cpu->currentProcess;
 	}
 }
 }

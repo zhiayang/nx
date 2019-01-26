@@ -41,12 +41,22 @@ kernel_entry:
 	pushq %rsp          // stack pointer
 	pushfq              // flags
 	pushq $0x08         // code segment
-	pushq $kernel_main  // return address
+	pushq $kernel_premain  // return address
 
 	iretq
 
 	// unreachable!
 	ud2
+
+
+kernel_premain:
+	// setup a null return address
+	xor %rbp, %rbp
+	push %rbp
+	jmp kernel_main
+
+
+
 
 
 .section .data

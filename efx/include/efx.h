@@ -103,6 +103,7 @@ namespace efi
 	static constexpr int MemoryType_MemoryMap       = 0x80000003;
 	static constexpr int MemoryType_VMFrame         = 0x80000004;
 	static constexpr int MemoryType_Initrd          = 0x80000005;
+	static constexpr int MemoryType_KernelElf       = 0x80000006;
 
 
 	void init(void* image_handle, efi_system_table* systable);

@@ -119,7 +119,7 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap, efi::MemoryType_Initrd))
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
 			{
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 			}

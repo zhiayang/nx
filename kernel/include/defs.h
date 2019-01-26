@@ -28,6 +28,7 @@ namespace nx
 
 	// re-export the krt types with our own stuff.
 	using string = krt::string<_allocator, _aborter>;
+	using string_view = krt::string_view<_allocator, _aborter>;
 
 	template<typename T> using array = krt::array<T, _allocator, _aborter>;
 	template<typename T> using stack = krt::stack<T, _allocator, _aborter>;

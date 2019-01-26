@@ -29,7 +29,7 @@ namespace efx
 		if(header->e_ident[EI_MAG0] != ELFMAG0 || header->e_ident[EI_MAG1] != ELFMAG1
 			|| header->e_ident[EI_MAG2] != ELFMAG2 || header->e_ident[EI_MAG3] != ELFMAG3)
 		{
-			efi::abort("invalid ELF file! (header wrong)");
+			efi::abort("invalid ELF file! (wrong header)");
 		}
 
 		if(header->e_ident[EI_CLASS] != ELFCLASS64)
@@ -96,7 +96,7 @@ namespace efx
 		bi->ident[0]    = 'e';
 		bi->ident[1]    = 'f';
 		bi->ident[2]    = 'x';
-		bi->version     = 1;
+		bi->version     = 2;
 		bi->efiSysTable = (void*) efi::systable();
 
 		bi->fbHorz      = graphics::getX();
@@ -225,6 +225,7 @@ namespace efx
 				case efi::MemoryType_MemoryMap:     entries[k].memoryType = nx::MemoryType::MemoryMap; break;
 				case efi::MemoryType_BootInfo:      entries[k].memoryType = nx::MemoryType::BootInfo; break;
 				case efi::MemoryType_Initrd:        entries[k].memoryType = nx::MemoryType::Initrd; break;
+				case efi::MemoryType_KernelElf:     entries[k].memoryType = nx::MemoryType::KernelElf; break;
 
 				default:                            skip = true; break; // do not include
 			}

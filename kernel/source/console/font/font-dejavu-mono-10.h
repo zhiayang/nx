@@ -1,3 +1,5 @@
+#if 0
+
 /* AUTOMATICALLY GENERATED FILE! EDITING NOT RECOMMENDED!
  *
  * This file is distributed under the terms of the MIT License.
@@ -13,3 +15,6 @@
 extern const struct font font_dejavu_mono_10;
 
 #endif /* _FONTEM_dejavu_mono_10_H */
+
+
+#endif
