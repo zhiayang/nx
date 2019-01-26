@@ -34,7 +34,7 @@ namespace apic
 	void sendEOI(int num)
 	{
 		// get the current guy
-		auto proc = scheduler::getCurrentProcessor();
+		auto proc = scheduler::getCurrentCPU();
 		assert(proc);
 
 		// send an eoi by writing 0 to the eoi register.

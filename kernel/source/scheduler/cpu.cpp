@@ -8,25 +8,25 @@ namespace nx {
 namespace scheduler
 {
 	static bool InitialisedAPs = false;
-	static array<Processor> processors;
+	static array<CPU> processors;
 
-	void preinitProcs()
+	void preinitCPUs()
 	{
-		processors = array<Processor>();
+		processors = array<CPU>();
 	}
 
-	size_t getNumProcessors()
+	size_t getNumCPUs()
 	{
 		return processors.size();
 	}
 
-	void registerProcessor(bool bsp, int id, int lApicId, addr_t localApic)
+	void registerCPU(bool bsp, int id, int lApicId, addr_t localApic)
 	{
 		// make sure the bsp is the first one on the list!!
 		// the MADT tables from ACPI guarantee this.
 		assert(!bsp || processors.empty());
 
-		Processor p;
+		CPU p;
 		p.id = id;
 		p.lApicId = lApicId;
 		p.localApicAddr = localApic;
@@ -35,7 +35,7 @@ namespace scheduler
 		processors.append(p);
 	}
 
-	Processor* getCurrentProcessor()
+	CPU* getCurrentCPU()
 	{
 		if(!InitialisedAPs) return &processors[0];
 		else                abort("!");

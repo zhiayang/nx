@@ -43,6 +43,14 @@ namespace nx
 
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
+
+
+
+	namespace scheduler
+	{
+		struct Thread;
+		struct Process;
+	}
 }
 
 // wow fucking c++ is so poorly designed

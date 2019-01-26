@@ -62,7 +62,7 @@ namespace acpi
 				auto lapic = (MADT_LAPIC*) rec;
 				if(lapic->flags & 0x1)  // bit 0 is set if the processor is enabled.
 				{
-					scheduler::registerProcessor(!foundBsp, lapic->processorId, lapic->apicId, lApicAddr);
+					scheduler::registerCPU(!foundBsp, lapic->processorId, lapic->apicId, lApicAddr);
 					foundBsp = true;
 				}
 
@@ -94,7 +94,7 @@ namespace acpi
 		}
 
 
-		log("acpi/madt", "found %s, %s", util::plural("processor", scheduler::getNumProcessors()).cstr(),
+		log("acpi/madt", "found %s, %s", util::plural("processor", scheduler::getNumCPUs()).cstr(),
 			util::plural("ioapic", device::apic::getNumIOAPICs()).cstr());
 
 		{

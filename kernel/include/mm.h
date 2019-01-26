@@ -5,6 +5,7 @@
 #pragma once
 
 #include "defs.h"
+#include "misc/addrs.h"
 
 namespace nx
 {
@@ -32,11 +33,11 @@ namespace nx
 			uint64_t entries[512];
 		};
 
-		void init(BootInfo* bootinfo);
+		void init(scheduler::Process* proc);
 		void invalidate(addr_t addr);
 
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags);
-		void unmapAddress(addr_t virt, size_t num, bool freePhys = true);
+		void unmapAddress(addr_t virt, size_t num, bool freePhys);
 		addr_t getPhysAddr(addr_t virt);
 
 		// functions to allocate/free address space in higher half (kernel) and lower half (user)
@@ -67,6 +68,20 @@ namespace nx
 			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510),
 			0xFFFF'FF00'0000'0000ULL
 		};
+
+		static constexpr size_t NumAddressSpaces = 3;
+		static constexpr addr_t AddressSpaces[NumAddressSpaces][2] = {
+			{ addrs::USER_ADDRSPACE_BASE,       addrs::USER_ADDRSPACE_END       },
+			{ addrs::KERNEL_HEAP_BASE,          addrs::KERNEL_HEAP_END          },
+			{ addrs::KERNEL_VMM_ADDRSPACE_BASE, addrs::KERNEL_VMM_ADDRSPACE_END }
+		};
+
+		static constexpr addr_t VMMStackAddresses[NumAddressSpaces][2] = {
+			{ addrs::VMM_STACK0_BASE,   addrs::VMM_STACK0_END },
+			{ addrs::VMM_STACK1_BASE,   addrs::VMM_STACK1_END },
+			{ addrs::VMM_STACK2_BASE,   addrs::VMM_STACK2_END }
+		};
+
 
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
 		constexpr uint64_t PAGE_WRITE       = 0x2;

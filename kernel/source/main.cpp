@@ -9,6 +9,20 @@
 
 namespace nx
 {
+	int64_t idle_thread()
+	{
+		while(true) asm volatile ("hlt");
+
+		// how?!
+		return 1;
+	}
+
+	int64_t work_thread()
+	{
+
+		return 0;
+	}
+
 	void kernel_main(BootInfo* bootinfo)
 	{
 		// open all hatches
@@ -24,9 +38,11 @@ namespace nx
 		println("[nx] kernel has control");
 		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
 
+		scheduler::setupKernelProcess(bootinfo->pml4Address);
+
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
-		vmm::init(bootinfo);
+		vmm::init(scheduler::getKernelProcess());
 		heap::init();
 
 		// setup the vfs and the initrd
@@ -40,7 +56,7 @@ namespace nx
 
 
 		// basically sets up some datastructures. nothing much.
-		scheduler::preinitProcs();
+		scheduler::preinitCPUs();
 
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
 		acpi::init(bootinfo);
@@ -55,8 +71,10 @@ namespace nx
 		}
 
 
-
 		// hopefully we are flying more than half a ship at this point
+		// setup an idle thread and a work thread.
+
+
 	}
 }
 
