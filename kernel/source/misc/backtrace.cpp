@@ -59,8 +59,11 @@ namespace util
 		auto frames = getStackFrames(rbp);
 		for(auto frm : frames)
 		{
-			println("    %2d: %p   |   %s", counter, frm, getSymbolAtAddr(frm).cstr());
-			counter += 1;
+			if(frm != 0)
+			{
+				println("    %2d: %p   |   %s", counter, frm, getSymbolAtAddr(frm).cstr());
+				counter += 1;
+			}
 		}
 	}
 
