@@ -8,6 +8,7 @@
 
 #include "fs.h"
 #include "mm.h"
+#include "synchro.h"
 #include "bootinfo.h"
 
 #include "devices/acpi.h"
@@ -29,9 +30,6 @@
 namespace nx
 {
 	constexpr size_t PAGE_SIZE                      = 0x1000;
-
-
-	void kernel_main(BootInfo* bootinfo);
 
 	namespace initrd
 	{

@@ -27,7 +27,7 @@ CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS         = $(CXXOBJ:.o=.d)
 CDEPS           = $(COBJ:.o=.d)
 
-DEBUG_FLAG      := -O0 -g
+DEBUG_FLAG      := -O2 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1

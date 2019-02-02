@@ -39,7 +39,7 @@ namespace nx
 		};
 
 		static constexpr uint64_t FLAG_PREEMPTED    = 0x1;
-		static constexpr uint64_t FLAG_BLOCKING     = 0x2;
+		static constexpr uint64_t FLAG_MUTEX_BLOCK  = 0x2;
 
 		struct Thread
 		{
@@ -49,6 +49,7 @@ namespace nx
 			Process* parent = 0;
 
 			uint64_t flags = 0;
+			mutex* blockedMtx = 0;
 		};
 
 		using Fn0Args_t = int64_t (*)();
@@ -78,6 +79,10 @@ namespace nx
 
 		void init(Thread* idle_thread, Thread* work_thread);
 		void setTickIRQ(int irq);
+
+		void yield();
+		void block(mutex* mtx);
+		void unblock(mutex* mtx);
 
 		void add(Thread* t);
 		void add(Process* p);

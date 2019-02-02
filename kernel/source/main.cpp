@@ -9,42 +9,51 @@
 
 namespace nx
 {
-	int64_t idle_thread()
+	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
+
+	static spinlock s;
+	int64_t work_thread1()
 	{
+		size_t ctr = 0;
 		while(true)
 		{
-			asm volatile ("hlt");
+			if(++ctr % 10000000 == 0) print("1");
 		}
-
-		// how?!
 		return 1;
 	}
 
 	int64_t work_thread2()
 	{
-		println("start work2 thread");
-
-		uint64_t ctr = 0;
+		s.lock();
+		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 2000000 == 0) print("B");
-		}
+			if(++ctr % 10000000 == 0) print("2");
 
-		// how?!
+		}
 		return 1;
 	}
 
 
-	int64_t work_thread()
+
+	int64_t kernel_main()
 	{
-		println("start work thread");
+		log("kernel", "started main worker thread");
+
+		s = spinlock();
+		s.lock();
+
+		auto worker1 = scheduler::createThread(scheduler::getKernelProcess(), work_thread1);
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
+		scheduler::add(worker1);
 		scheduler::add(worker2);
 
+
 		uint64_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 2000000 == 0) print("A");
+			if(++ctr % 10000000 == 0) print("q");
+			if(ctr %   500000000 == 0) s.unlock();
 		}
 
 		// how?!
@@ -53,7 +62,22 @@ namespace nx
 
 
 
-	void kernel_main(BootInfo* bootinfo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void init(BootInfo* bootinfo)
 	{
 		// open all hatches
 		// extend all flaps and drag fins
@@ -74,7 +98,6 @@ namespace nx
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
 		auto kernelProc = scheduler::getKernelProcess();
 
-
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(kernelProc);
@@ -82,15 +105,12 @@ namespace nx
 
 		util::initSymbols(bootinfo);
 
-		// setup the vfs and the initrd
-		{
-			vfs::init();
-			initrd::init(bootinfo);
-		}
+		// setup the vfs and the initrd (for fonts)
+		vfs::init();
+		initrd::init(bootinfo);
 
 		// init the real console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
-
 
 		// basically sets up some datastructures. nothing much.
 		scheduler::preinitCPUs();
@@ -102,6 +122,9 @@ namespace nx
 		interrupts::init();
 		interrupts::enable();
 
+
+		// TODO: make this more robust?
+		// eg: find appropriate timer device automatically (HPET/LAPIC/PIT)
 		{
 			int irq = device::apic::getISAIRQMapping(0);
 
@@ -113,12 +136,14 @@ namespace nx
 
 
 		// hopefully we are flying more than half a ship at this point
-		// setup an idle thread and a work thread.
+		// initialise the scheduler with some threads -- this function will end!!
 		{
-			auto idle = scheduler::createThread(scheduler::getKernelProcess(), idle_thread);
-			auto worker = scheduler::createThread(scheduler::getKernelProcess(), work_thread);
+			auto idle = scheduler::createThread(kernelProc, idle_thread);
+			auto worker = scheduler::createThread(kernelProc, kernel_main);
 
 			scheduler::init(idle, worker);
+
+			// we are all done here: the worker thread will take care of the rest of kernel startup.
 		}
 	}
 }
@@ -132,17 +157,6 @@ namespace nx
 
 
 
-
-
-extern "C" void kernel_main(nx::BootInfo* bootinfo)
-{
-	nx::kernel_main(bootinfo);
-
-	nx::println("\nnothing to do...");
-
-	while(true)
-		;
-}
 
 
 

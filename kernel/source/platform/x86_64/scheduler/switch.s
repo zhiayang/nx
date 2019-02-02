@@ -12,6 +12,10 @@
 .global nx_x64_tick_handler
 .type nx_x64_tick_handler, @function
 
+.global nx_x64_yield_thread
+.type nx_x64_yield_thread, @function
+
+
 
 // parameters: new rsp (%rdi), new cr3 (%rsi)
 nx_x64_switch_to_thread:
@@ -29,10 +33,6 @@ restore_registers:
 	pop_all_regs
 
 	iretq
-
-
-
-
 
 
 
@@ -81,6 +81,32 @@ do_nothing:
 
 	// bye bye
 	iretq
+
+
+
+
+
+
+
+
+
+
+// this will be a software interrupt.
+nx_x64_yield_thread:
+	push_all_regs
+
+	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
+	// we just find the next thing, no issue.
+
+	movq %rsp, %rdi
+	call nx_x64_find_and_switch_thread
+
+	// find_and_switch will iret for us.
+	ud2
+
+
+
+
 
 
 

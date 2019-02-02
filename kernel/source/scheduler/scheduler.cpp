@@ -16,6 +16,7 @@ namespace scheduler
 
 	static uint64_t ticks = 0;
 
+	extern "C" void nx_x64_yield_thread();
 	extern "C" void nx_x64_tick_handler();
 	extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
 
@@ -24,7 +25,7 @@ namespace scheduler
 		// send eoi.
 		interrupts::sendEOI(TickIRQ);
 
-		return ticks++ % 250 == 0;
+		return ticks++ % 200 == 0;
 	}
 
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
@@ -51,18 +52,63 @@ namespace scheduler
 		threads = nx::array<Thread*>();
 		threads.append(work_thread);
 
-		// install the interrupt thing.
+		// install the tick handler
 		cpu::idt::setEntry(0x20, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
+
+		// install the yield handler
+		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
 
 		// switch to the idle thread.
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}
 
 
+	void yield()
+	{
+		asm volatile ("int $0xF0");
+	}
+
+	void block(mutex* mtx)
+	{
+		auto t = getCurrentThread();
+		assert(t);
+
+		t->flags |= FLAG_MUTEX_BLOCK;
+		t->blockedMtx = mtx;
+
+		yield();
+	}
+
+	void unblock(mutex* mtx)
+	{
+		// hmm.
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	Thread* getNextThread()
 	{
 		++idx %= threads.size();
+		println("(switch %zu)", idx);
 		return threads[idx];
 	}
 

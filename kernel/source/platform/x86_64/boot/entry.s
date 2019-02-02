@@ -53,7 +53,7 @@ kernel_premain:
 	// setup a null return address
 	xor %rbp, %rbp
 	push %rbp
-	jmp kernel_main
+	jmp _ZN2nx4initEPNS_8BootInfoE
 
 
 
