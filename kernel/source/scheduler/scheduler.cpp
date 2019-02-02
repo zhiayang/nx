@@ -7,15 +7,68 @@
 namespace nx {
 namespace scheduler
 {
+	static int TickIRQ = 0;
+	void setTickIRQ(int irq)
+	{
+		TickIRQ = irq;
+	}
+
+
 	static uint64_t ticks = 0;
+
+	extern "C" void nx_x64_tick_handler();
+	extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
+
 	extern "C" int nx_x64_scheduler_tick()
 	{
-		ticks += 1;
-		return 0;
+		// send eoi.
+		interrupts::sendEOI(TickIRQ);
+
+		return ticks++ % 250 == 0;
 	}
 
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
+		// save the current stack.
+		getCurrentThread()->kernelStack = stackPointer;
+
+		auto next = getNextThread();
+		nx_x64_switch_to_thread(next->kernelStack, 0);
+	}
+
+
+
+
+
+	static size_t idx = 0;
+	static Thread* IdleThread = 0;
+	static nx::array<Thread*> threads;
+
+	void init(Thread* idle_thread, Thread* work_thread)
+	{
+		IdleThread = idle_thread;
+
+		threads = nx::array<Thread*>();
+		threads.append(work_thread);
+
+		// install the interrupt thing.
+		cpu::idt::setEntry(0x20, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
+
+		// switch to the idle thread.
+		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
+	}
+
+
+
+	Thread* getNextThread()
+	{
+		++idx %= threads.size();
+		return threads[idx];
+	}
+
+	Thread* getCurrentThread()
+	{
+		return threads[idx];
 	}
 
 
@@ -25,9 +78,16 @@ namespace scheduler
 
 
 
+	void add(Thread* t)
+	{
+		threads.append(t);
+	}
 
-
-
+	void add(Process* p)
+	{
+		for(auto& t : p->threads)
+			add(&t);
+	}
 
 
 

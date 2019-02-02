@@ -20,16 +20,38 @@ namespace nx
 		return 1;
 	}
 
-	int64_t work_thread()
+	int64_t work_thread2()
 	{
+		println("start work2 thread");
+
+		uint64_t ctr = 0;
 		while(true)
 		{
-			asm volatile ("hlt");
+			if(++ctr % 2000000 == 0) print("B");
 		}
 
 		// how?!
 		return 1;
 	}
+
+
+	int64_t work_thread()
+	{
+		println("start work thread");
+		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
+		scheduler::add(worker2);
+
+		uint64_t ctr = 0;
+		while(true)
+		{
+			if(++ctr % 2000000 == 0) print("A");
+		}
+
+		// how?!
+		return 1;
+	}
+
+
 
 	void kernel_main(BootInfo* bootinfo)
 	{
@@ -81,24 +103,23 @@ namespace nx
 		interrupts::enable();
 
 		{
+			int irq = device::apic::getISAIRQMapping(0);
+
 			device::pit8253::enable(1);
-			device::apic::setInterrupt(device::apic::getISAIRQMapping(0), 0, 0);
+			device::apic::setInterrupt(irq, 0, 0);
+
+			scheduler::setTickIRQ(irq);
 		}
 
 
 		// hopefully we are flying more than half a ship at this point
 		// setup an idle thread and a work thread.
 		{
-			auto a = scheduler::createThread(scheduler::getKernelProcess(), idle_thread);
-			auto b = scheduler::createThread(scheduler::getKernelProcess(), work_thread);
+			auto idle = scheduler::createThread(scheduler::getKernelProcess(), idle_thread);
+			auto worker = scheduler::createThread(scheduler::getKernelProcess(), work_thread);
+
+			scheduler::init(idle, worker);
 		}
-
-
-		/*
-			TODO LIST
-
-			2. multithreading
-		 */
 	}
 }
 

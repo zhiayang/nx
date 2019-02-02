@@ -66,7 +66,7 @@ do_something:
 	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
 
 	// note: we need to pass the context via the stack pointer.
-	movq 120(%rsp), %rdi
+	movq %rsp, %rdi
 
 	// scheduler code that finds the next thread to run, and calls nx_x64_switch_to_thread (above)
 	// note: since this will result in an iretq, we do not have to handle its return or whatever.

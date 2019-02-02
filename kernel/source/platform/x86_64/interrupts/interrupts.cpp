@@ -86,11 +86,15 @@ namespace interrupts
 		else                device::pic8259::unmaskIRQ(num);
 	}
 
-
-	extern "C" void nx_x64_send_eoi(int num)
+	void sendEOI(int num)
 	{
 		if(IsAPICPresent)   device::apic::sendEOI(num);
 		else                device::pic8259::sendEOI(num);
+	}
+
+	extern "C" void nx_x64_send_eoi(int num)
+	{
+		sendEOI(num);
 	}
 
 	static int x = 0;

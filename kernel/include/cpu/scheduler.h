@@ -38,12 +38,17 @@ namespace nx
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 		};
 
+		static constexpr uint64_t FLAG_PREEMPTED    = 0x1;
+		static constexpr uint64_t FLAG_BLOCKING     = 0x2;
+
 		struct Thread
 		{
 			addr_t userStack;
 			addr_t kernelStack;
 
 			Process* parent = 0;
+
+			uint64_t flags = 0;
 		};
 
 		using Fn0Args_t = int64_t (*)();
@@ -67,6 +72,15 @@ namespace nx
 
 		Process* getKernelProcess();
 		Process* getCurrentProcess();
+
+		Thread* getNextThread();
+		Thread* getCurrentThread();
+
+		void init(Thread* idle_thread, Thread* work_thread);
+		void setTickIRQ(int irq);
+
+		void add(Thread* t);
+		void add(Process* p);
 
 
 		// this is kinda dumb

@@ -81,8 +81,6 @@ namespace scheduler
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
 			thr->userStack = virt;
-
-			println("usr stack done");
 		}
 
 
@@ -96,19 +94,15 @@ namespace scheduler
 			// map it in the target address space
 			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)));
 
-			println("kern stack done");
-
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
 			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpace::User);
 
 			vmm::mapAddress(scratch, phys, n, vmm::PAGE_PRESENT);
 
-			println("kern stack done");
-
-			auto kstk = (uint64_t*) scratch;
+			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
 			*--kstk     = (isKernProc ? RING0_STACK_SEGMENT : RING3_STACK_SEGMENT);     // stack segment
-			*--kstk     = thr->userStack;                                               // stack pointer
+			*--kstk     = thr->userStack + USER_STACK_SIZE;                             // stack pointer
 			*--kstk     = 0x202;                                                        // flags
 			*--kstk     = (isKernProc ? RING0_CODE_SEGMENT : RING3_CODE_SEGMENT);       // code segment
 			*--kstk     = (addr_t) fn;                                                  // return addr
@@ -132,10 +126,14 @@ namespace scheduler
 			*--kstk     = (uint64_t) a; // rdi
 
 			// should be 160
-			assert((addr_t) kstk + 160 == scratch);
+			assert((addr_t) kstk + 160 == (scratch + KERNEL_STACK_SIZE));
 
 			// ok. set the stack.
-			thr->kernelStack = virt - 160;
+			thr->kernelStack = (virt + KERNEL_STACK_SIZE) - 160;
+
+			// clear the temp mapping
+			vmm::unmapAddress(scratch, n, /* freePhys: */ false);
+			vmm::deallocateAddrSpace(scratch, n);
 		}
 
 		return thr;

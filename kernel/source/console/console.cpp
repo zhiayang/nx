@@ -271,13 +271,12 @@ namespace console
 			}
 			else if(c >= 32 && c < 127)
 			{
-
 				auto g = &MainFont.glyphs[c];
 				draw(g, CursorX, CursorY, CurrentFGColour, CurrentBGColour);
 
 				CursorX += g->horzAdv;
 
-				if(CursorX + Padding > FramebufferWidth)
+				if(CursorX + Padding >= FramebufferWidth)
 					CursorY += MainFont.vertAdv, CursorX = Padding;
 
 				scrollIfNecessary();

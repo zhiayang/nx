@@ -47,6 +47,7 @@ namespace nx
 			// when it receives 'irq' from a device.
 			void setInterrupt(int irq, int vector, int apicId);
 
+			// send an EOI for the irq.
 			void sendEOI(int num);
 
 			// sets the pin mapping from the legacy ISA interrupt number to the IOAPIC interrupt number.
