@@ -82,7 +82,7 @@ namespace krt
 		void erase(const iterator& it)
 		{
 			if(it != this->end())
-				impl::deleteNode(this, it->node);
+				impl::deleteNode(this, impl::getNode(it));
 		}
 
 		iterator find(const K& k)               { auto n = impl::find(this, k); return iterator(n, this); }
@@ -105,26 +105,21 @@ namespace krt
 }
 
 
-#if 0
-// haphazardly taken from http://sidsen.azurewebsites.net/papers/rb-trees-talg.pdf
-
-public class map<K, V>
-{
-	struct node
-	{
-	}
-
-	var root: &node
-	var size: int
-
-	init()
-	{
-		root = null
-		size = 0
-	}
 
 
 
 
-}
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+

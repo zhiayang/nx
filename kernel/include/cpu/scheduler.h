@@ -43,6 +43,8 @@ namespace nx
 
 		struct Thread
 		{
+			pid_t threadId;
+
 			addr_t userStack;
 			addr_t kernelStack;
 

@@ -18,6 +18,9 @@ namespace krt
 		using impl = arraylike_impl<stack, T, allocator, aborter>;
 		friend impl;
 
+		using iterator = ptr_iterator<T>;
+		using const_iterator = const_ptr_iterator<T>;
+
 		stack() : stack(nullptr, 0) { }
 		stack(T* p, size_t l)
 		{
@@ -96,9 +99,14 @@ namespace krt
 		stack& operator += (const stack& other)             { this->append(other); return *this; }
 		stack operator + (const stack& other) const         { auto copy = *this; copy.append(other); return copy; }
 
-		using iterator = ptr_iterator<T>;
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
+
+		const_iterator begin() const    { return const_iterator(this->ptr); }
+		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
+
+		const_iterator cbegin() const   { return this->begin(); }
+		const_iterator cend() const     { return this->end(); }
 
 
 

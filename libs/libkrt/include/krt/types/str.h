@@ -18,6 +18,9 @@ namespace krt
 		using impl = arraylike_impl<string, char, allocator, aborter>;
 		friend impl;
 
+		using iterator = ptr_iterator<char>;
+		using const_iterator = const_ptr_iterator<char>;
+
 		string() : string("", 0) { }
 		string(const char s[]) : string((char*) s, strlen(s)) { }
 		string(const char* s, size_t l) : string((char*) s, l) { }
@@ -125,9 +128,15 @@ namespace krt
 		string& operator += (char other)                    { this->append(string(&other, 1)); return *this; }
 		string operator + (char other) const                { auto copy = *this; copy.append(string(&other, 1)); return copy; }
 
-		using iterator = ptr_iterator<char>;
+
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
+
+		const_iterator begin() const    { return const_iterator(this->ptr); }
+		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
+
+		const_iterator cbegin() const   { return this->begin(); }
+		const_iterator cend() const     { return this->end(); }
 
 
 		char* data() const                                  { return this->ptr; }

@@ -29,7 +29,7 @@ namespace acpi
 		}
 		else if(strncmp(table->signature, "HPET", 4) == 0)
 		{
-			println("found hpet");
+			// println("found hpet");
 		}
 	}
 

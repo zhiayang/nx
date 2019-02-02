@@ -47,6 +47,7 @@ namespace scheduler
 	static constexpr size_t KERNEL_STACK_SIZE           = 0x2000;
 	static constexpr size_t USER_STACK_SIZE             = 0x4000;
 
+	static pid_t ThreadIdCounter = 0;
 	Thread* createThread(Process* proc, Fn6Args_t fn, void* a, void* b, void* c, void* d, void* e, void* f)
 	{
 		bool isKernProc = (proc == scheduler::getKernelProcess());
@@ -58,6 +59,8 @@ namespace scheduler
 
 		auto thr = &proc->threads.back();
 		thr->parent = proc;
+
+		thr->threadId = ThreadIdCounter++;
 
 
 		// allocate the user and kernel stacks, but in the address space of the process.

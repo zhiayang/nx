@@ -48,7 +48,7 @@ namespace krt
 
 		struct iterator
 		{
-			iterator& operator ++ ()        { self->node = successor(self, node); return *this; }
+			iterator& operator ++ ()        { this->node = successor(self, node); return *this; }
 			iterator operator ++ (int)      { iterator copy(*this); ++(*this); return copy; }
 
 			bool operator == (const iterator& other) const { return other.node == this->node; }
@@ -69,7 +69,7 @@ namespace krt
 
 		struct const_iterator
 		{
-			const_iterator& operator ++ ()      { self->node = successor(self, node); return *this; }
+			const_iterator& operator ++ ()      { this->node = successor(self, node); return *this; }
 			const_iterator operator ++ (int)    { const_iterator copy(*this); ++(*this); return copy; }
 
 			bool operator == (const const_iterator& other) const { return other.node == this->node; }
@@ -105,7 +105,8 @@ namespace krt
 
 
 
-
+		static Node* getNode(const iterator& it)        { return it.node; }
+		static Node* getNode(const const_iterator& it)  { return it.node; }
 
 		static void destroyNode(Node* n)
 		{

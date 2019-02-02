@@ -19,6 +19,9 @@ namespace krt
 		using impl = arraylike_impl<string_view, const char, allocator, aborter>;
 		friend impl;
 
+		using iterator = ptr_iterator<char>;
+		using const_iterator = const_ptr_iterator<char>;
+
 		string_view() : string_view("", 0) { }
 
 		string_view(const char s[]) : string_view((char*) s, strlen(s)) { }
@@ -121,9 +124,14 @@ namespace krt
 
 		const char& operator [] (size_t idx) const          { return impl::op_subscript_const(this, idx); }
 
-		using iterator = ptr_iterator<char>;
 		iterator begin() { return iterator(this->ptr); }
 		iterator end()   { return iterator(this->ptr + this->cnt); }
+
+		const_iterator begin() const    { return const_iterator(this->ptr); }
+		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
+
+		const_iterator cbegin() const   { return this->begin(); }
+		const_iterator cend() const     { return this->end(); }
 
 		const char* data() const                            { return this->ptr; }
 		size_t size() const                                 { return this->cnt; }

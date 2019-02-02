@@ -19,8 +19,7 @@ namespace nx
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("1");
-			if(ctr % 30000007 == 0) print("x");
+			if(++ctr % 10000000 == 0) print("2");
 
 		}
 		return 1;
@@ -33,7 +32,6 @@ namespace nx
 		while(true)
 		{
 			if(++ctr % 10000000 == 0) print("1");
-			if(ctr % 30000007 == 0) print("y");
 		}
 		return 1;
 	}
