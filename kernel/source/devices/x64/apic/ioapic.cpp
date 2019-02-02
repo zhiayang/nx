@@ -88,7 +88,15 @@ namespace apic
 
 			// sanity check.
 			int id = (readIOAPIC(ioa, IOAPIC_REG_ID) & 0xF000000) >> 24;
-			if(id != ioa->id) abort("ioapic[%d]: mismatch in ioapic id! (found %d)", ioa->id, id);
+			if(id != ioa->id)
+			{
+				// under normal circumstances I would make this an error, BUT the virtualbox people aren't very smart
+				// they set the IOAPIC's id in the MADT to the number of cpus in the system!!!
+				// which wouldn't be so bad if the id register of the IOAPIC matched, but it doesn't!!
+				// https://www.virtualbox.org/browser/vbox/trunk/src/VBox/Devices/PC/DevACPI.cpp#L2993
+
+				warn("ioapic", "mismatch in ioapic id! MADT reported %d, actual value is %d", ioa->id, id);
+			}
 
 			// get the number of interrupts this guy handles.
 			{

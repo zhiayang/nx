@@ -12,28 +12,31 @@ namespace nx
 	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
 
 	static spinlock s;
+
+	int64_t work_thread2()
+	{
+		// s.lock();
+		size_t ctr = 0;
+		while(true)
+		{
+			if(++ctr % 10000000 == 0) print("1");
+			if(ctr % 30000007 == 0) print("x");
+
+		}
+		return 1;
+	}
+
+
 	int64_t work_thread1()
 	{
 		size_t ctr = 0;
 		while(true)
 		{
 			if(++ctr % 10000000 == 0) print("1");
+			if(ctr % 30000007 == 0) print("y");
 		}
 		return 1;
 	}
-
-	int64_t work_thread2()
-	{
-		s.lock();
-		size_t ctr = 0;
-		while(true)
-		{
-			if(++ctr % 10000000 == 0) print("2");
-
-		}
-		return 1;
-	}
-
 
 
 	int64_t kernel_main()
