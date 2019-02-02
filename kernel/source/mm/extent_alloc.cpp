@@ -107,14 +107,14 @@ namespace extmm
 				else
 				{
 					// bollocks, it's somewhere in the middle.
-					size_t front = (start - ext->addr) / PAGE_SIZE;
-					size_t back = (end(ext) - end(start, num)) / PAGE_SIZE;
+					size_t numFrontPages = (start - ext->addr) / PAGE_SIZE;
+					size_t numBackPages = (end(ext) - end(start, num)) / PAGE_SIZE;
 
 					// decrease the front block
-					ext->addr -= front;
+					ext->size -= numFrontPages;
 
 					// make a new block
-					deallocate(st, end(start, num), back);
+					deallocate(st, end(start, num), numBackPages);
 				}
 
 				return start;

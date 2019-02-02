@@ -11,7 +11,10 @@ namespace nx
 {
 	int64_t idle_thread()
 	{
-		while(true) asm volatile ("hlt");
+		while(true)
+		{
+			asm volatile ("hlt");
+		}
 
 		// how?!
 		return 1;
@@ -19,33 +22,13 @@ namespace nx
 
 	int64_t work_thread()
 	{
+		while(true)
+		{
+			asm volatile ("hlt");
+		}
 
-		return 0;
-	}
-
-	static void one()
-	{
-		util::printStackTrace();
-	}
-
-	static void two()
-	{
-		one();
-	}
-
-	static void three()
-	{
-		two();
-	}
-
-	static void four()
-	{
-		three();
-	}
-
-	static void five()
-	{
-		four();
+		// how?!
+		return 1;
 	}
 
 	void kernel_main(BootInfo* bootinfo)
@@ -67,10 +50,12 @@ namespace nx
 			abort("invalid bootloader version: %d; at least version %d is required!", bootinfo->version, 1);
 
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
+		auto kernelProc = scheduler::getKernelProcess();
+
 
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
-		vmm::init(scheduler::getKernelProcess());
+		vmm::init(kernelProc);
 		heap::init();
 
 		util::initSymbols(bootinfo);
@@ -103,8 +88,17 @@ namespace nx
 
 		// hopefully we are flying more than half a ship at this point
 		// setup an idle thread and a work thread.
+		{
+			auto a = scheduler::createThread(scheduler::getKernelProcess(), idle_thread);
+			auto b = scheduler::createThread(scheduler::getKernelProcess(), work_thread);
+		}
 
-		five();
+
+		/*
+			TODO LIST
+
+			2. multithreading
+		 */
 	}
 }
 

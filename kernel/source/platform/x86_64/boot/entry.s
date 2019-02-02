@@ -93,13 +93,16 @@ GDT64Pointer:
 	.quad GDT64                     // Base
 
 
-// give us a nice 32k stack for now
+// temp stack for use before we set up threading
+// note: we fill with 0xCC, like on windows for unintialised stack memory.
+// we might want to remove this eventually (if we get confident in the kernel's stability)
+// for faster loading time, since it can be part of the BSS if it's zero.
+
 Stack:
-	// note: we fill with 0xCC, like on windows for unintialised stack memory.
-	// we might want to remove this eventually (if we get confident in the kernel's stability)
-	// for faster loading time, since it can be part of the BSS if it's zero.
+
 	.align 16
 	.space 0x8000, 0xCC
+
 StackEnd:
 
 

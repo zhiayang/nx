@@ -33,8 +33,11 @@ namespace nx
 			uint64_t entries[512];
 		};
 
+		void bootstrap(addr_t physBase, addr_t virt);
 		void init(scheduler::Process* proc);
+
 		void invalidate(addr_t addr);
+		void invalidateAll();
 
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 		void unmapAddress(addr_t virt, size_t num, bool freePhys, scheduler::Process* proc = 0);
@@ -61,13 +64,6 @@ namespace nx
 		{
 			return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
 		}
-
-		static constexpr addr_t RecursiveAddrs[] = {
-			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510) + (0x20'0000ULL * 510) + (0x1000 * 510),
-			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510) + (0x20'0000ULL * 510),
-			0xFFFF'FF00'0000'0000ULL + (0x4000'0000ULL * 510),
-			0xFFFF'FF00'0000'0000ULL
-		};
 
 		static constexpr size_t NumAddressSpaces = 3;
 		static constexpr addr_t AddressSpaces[NumAddressSpaces][2] = {

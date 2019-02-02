@@ -10,7 +10,6 @@ namespace pmm
 	// this is the number of pages that we'll use for our bootstrap of the memory manager.
 	static constexpr size_t NumReservedPages = 8;
 
-	static void bootstrap(BootInfo* bootinfo, addr_t base);
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
 	static extmm::State extmmState;
@@ -31,7 +30,7 @@ namespace pmm
 					bootinfo->mmEntries[i].numPages -= NumReservedPages;
 
 					// bootstrap!
-					bootstrap(bootinfo, base);
+					vmm::bootstrap(base, addrs::PMM_STACK_BASE);
 					bootstrapped = true;
 					break;
 				}
@@ -63,51 +62,6 @@ namespace pmm
 		log("pmm", "initialised with %zu extents, %s", extmmState.numExtents, buf);
 	}
 
-
-
-
-	// we will get NumReservedPages of memory, starting at 'base'.
-	static void bootstrap(BootInfo* bootinfo, addr_t base)
-	{
-		// we will do a very manual allocation of the first page.
-		// in the worst case scenario we will need 4 pages to map one virtual page.
-
-		// map exactly ONE page for the bootstrap.
-		{
-			size_t bootstrapUsed = 0;
-
-			using namespace vmm;
-
-			addr_t v = addrs::PMM_STACK_BASE;
-
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
-
-			auto pml4 = (pml_t*) RecursiveAddrs[0];
-			auto pdpt = (pml_t*) (RecursiveAddrs[1] + 0x1000ULL * p4idx);
-			auto pdir = (pml_t*) (RecursiveAddrs[2] + 0x20'0000ULL * p4idx + 0x1000ULL * p3idx);
-			auto ptab = (pml_t*) (RecursiveAddrs[3] + 0x4000'0000ULL * p4idx + 0x20'0000ULL * p3idx + 0x1000ULL * p2idx);
-
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-				pml4->entries[p4idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
-
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-				pdpt->entries[p3idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
-
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-				pdir->entries[p2idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
-
-			ptab->entries[p1idx] = end(base, bootstrapUsed++) | PAGE_PRESENT;
-			invalidate(v);
-		}
-
-		// ok it should be set right now
-		// hopefully we do not triple fault!!!!
-		memset((void*) addrs::PMM_STACK_BASE, 0, 0x1000);
-	}
 
 
 	addr_t allocate(size_t num, bool below4G)

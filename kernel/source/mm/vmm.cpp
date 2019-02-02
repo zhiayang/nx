@@ -51,9 +51,9 @@ namespace vmm
 
 
 	// these are the address spaces that we can hand out:
-	// USER_ADDRSPACE_BASE - USER_ADDRSPACE_END
-    // KERNEL_HEAP_BASE - KERNEL_HEAP_END
-	// KERNEL_VMM_ADDRSPACE_BASE - KERNEL_VMM_ADDRSPACE_END
+	// USER_ADDRSPACE_BASE          ->      USER_ADDRSPACE_END
+    // KERNEL_HEAP_BASE             ->      KERNEL_HEAP_END
+	// KERNEL_VMM_ADDRSPACE_BASE    ->      KERNEL_VMM_ADDRSPACE_END
 
 	addr_t allocateAddrSpace(size_t num, AddressSpace type, scheduler::Process* proc)
 	{

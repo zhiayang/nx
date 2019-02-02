@@ -120,7 +120,9 @@ namespace nx
 	[[noreturn]] void halt()
 	{
 		print("\nhalting...");
-		while(true);
+
+		asm volatile ("cli");
+		while(true) asm volatile ("hlt");
 	}
 
 	void vabort_nohalt(const char* fmt, va_list args)

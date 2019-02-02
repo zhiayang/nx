@@ -33,7 +33,7 @@ namespace nx
 		struct Process
 		{
 			addr_t cr3;
-			nx::array<Thread*> threads;
+			nx::array<Thread> threads;
 
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 		};
