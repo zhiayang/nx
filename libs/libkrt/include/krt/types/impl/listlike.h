@@ -39,11 +39,11 @@ namespace krt
 			bool operator == (const iterator& other) const { return other.node == this->node; }
 			bool operator != (const iterator& other) const { return other.node != this->node; }
 
-			Node& operator * ()             { return this->node->value; }
-			const Node& operator * () const { return this->node->value; }
+			ElmTy& operator * ()             { return this->node->value; }
+			const ElmTy& operator * () const { return this->node->value; }
 
-			Node* operator -> () { return this->node; }
-			const Node* operator -> () const { return this->node; }
+			ElmTy operator -> () { return this->node->value; }
+			ElmTy operator -> () const { return this->node->value; }
 
 			iterator(const iterator& other) : node(other.node), self(other.self) { }
 			iterator(Node* n, Container* c) : node(n), self(c) { }
@@ -66,8 +66,8 @@ namespace krt
 			bool operator == (const const_iterator& other) const { return other.node == this->node; }
 			bool operator != (const const_iterator& other) const { return other.node != this->node; }
 
-			const Node& operator * () const { return this->node->value; }
-			const Node* operator -> () const { return (const Node*) this->node; }
+			const ElmTy& operator * () const { return this->node->value; }
+			ElmTy operator -> () const { return this->node->value; }
 
 			const_iterator(const const_iterator& other) : node(other.node), self(other.self) { }
 			const_iterator(Node* n, Container* c) : node(n), self(c) { }

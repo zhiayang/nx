@@ -29,23 +29,28 @@ namespace scheduler
 
 	static Thread* IdleThread = 0;
 	static Thread* CurrentThread = 0;
+
 	static nx::list<Thread*> ThreadList;
+	static nx::list<Thread*> BlockedThreads;
 
 	void init(Thread* idle_thread, Thread* work_thread)
 	{
-		IdleThread = idle_thread;
-
-		ThreadList = nx::list<Thread*>();
-		ThreadList.append(work_thread);
-
 		// install the tick handler
 		cpu::idt::setEntry(0x20, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
 
 		// install the yield handler
 		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
 
-		// switch to the idle thread.
+
+		IdleThread = idle_thread;
+
+		ThreadList = nx::list<Thread*>();
+		BlockedThreads = nx::list<Thread*>();
+
+
 		CurrentThread = work_thread;
+		ThreadList.append(work_thread);
+
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}
 
@@ -55,13 +60,21 @@ namespace scheduler
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
 		// save the current stack.
-		getCurrentThread()->kernelStack = stackPointer;
+		CurrentThread->kernelStack = stackPointer;
 
-		auto next = getNextThread();
-		CurrentThread = next;
+		if(CurrentThread->state == ThreadState::Running)
+			ThreadList.append(CurrentThread);
+
+		// else we blocked or smth, don't put it back in the runqueue.
+
+
+
+
+		CurrentThread = getNextThread();
+		CurrentThread->state = ThreadState::Running;
 
 		// println("(switch %ld) (%p)", next->threadId, next->kernelStack);
-		nx_x64_switch_to_thread(next->kernelStack, 0);
+		nx_x64_switch_to_thread(CurrentThread->kernelStack, 0);
 	}
 
 
@@ -75,8 +88,10 @@ namespace scheduler
 		auto t = getCurrentThread();
 		assert(t);
 
-		t->flags |= FLAG_MUTEX_BLOCK;
 		t->blockedMtx = mtx;
+		t->state = ThreadState::BlockedOnMutex;
+
+		BlockedThreads.append(t);
 
 		yield();
 	}
@@ -84,15 +99,22 @@ namespace scheduler
 	void unblock(mutex* mtx)
 	{
 		// hmm.
+		for(auto thr : BlockedThreads)
+		{
+			if(thr->blockedMtx == mtx)
+			{
+				thr->blockedMtx = 0;
+				thr->state = ThreadState::Stopped;
+
+				ThreadList.prepend(thr);
+			}
+		}
 	}
 
 
 	Thread* getNextThread()
 	{
-		auto ret = ThreadList.popFront();
-		ThreadList.append(ret);
-
-		return ret;
+		return ThreadList.popFront();
 	}
 
 

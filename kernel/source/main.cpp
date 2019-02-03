@@ -11,15 +11,15 @@ namespace nx
 {
 	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
 
-	static spinlock s;
+	static mutex s;
 
 	int64_t work_thread2()
 	{
-		// s.lock();
+		s.lock();
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("2");
+			if(++ctr % 5000000 == 0) print("2");
 
 		}
 		return 1;
@@ -31,7 +31,7 @@ namespace nx
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("1");
+			if(++ctr % 5000000 == 0) print("1");
 		}
 		return 1;
 	}
@@ -41,7 +41,7 @@ namespace nx
 	{
 		log("kernel", "started main worker thread");
 
-		s = spinlock();
+		s = mutex();
 		s.lock();
 
 		auto worker1 = scheduler::createThread(scheduler::getKernelProcess(), work_thread1);
@@ -53,8 +53,8 @@ namespace nx
 		uint64_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("q");
-			if(ctr %   500000000 == 0) s.unlock();
+			if(++ctr % 5000000 == 0) print("q");
+			if(ctr %   1000000000 == 0) { print("!"); s.unlock(); }
 		}
 
 		// how?!

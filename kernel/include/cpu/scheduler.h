@@ -38,8 +38,12 @@ namespace nx
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 		};
 
-		static constexpr uint64_t FLAG_PREEMPTED    = 0x1;
-		static constexpr uint64_t FLAG_MUTEX_BLOCK  = 0x2;
+		enum class ThreadState
+		{
+			Stopped         = 0,
+			Running         = 1,
+			BlockedOnMutex  = 2,
+		};
 
 		struct Thread
 		{
@@ -50,7 +54,8 @@ namespace nx
 
 			Process* parent = 0;
 
-			uint64_t flags = 0;
+			ThreadState state = ThreadState::Stopped;
+
 			mutex* blockedMtx = 0;
 		};
 
