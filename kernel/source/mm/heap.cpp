@@ -30,12 +30,14 @@ namespace heap
 		return (((ptr) + ((align) - 1)) & ~((align) - 1));
 	}
 
-	static constexpr size_t BucketSizes[] = {
+	constexpr size_t BucketSizes[] = {
 		24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096
 	};
 
-	static constexpr size_t BucketCount = sizeof(BucketSizes) / sizeof(BucketSizes[0]);
-	static constexpr size_t ChunksPerPage = PAGE_SIZE / sizeof(Chunk);
+	constexpr size_t ExpansionFactor = 2;
+	constexpr size_t BucketCount = sizeof(BucketSizes) / sizeof(BucketSizes[0]);
+	constexpr size_t ChunksPerPage = PAGE_SIZE / sizeof(Chunk);
+
 
 	// we always have a fixed number of buckets!
 	static Bucket Buckets[BucketCount];
@@ -43,7 +45,6 @@ namespace heap
 	static size_t NumSpareChunks = 0;
 	static Chunk* SpareChunks = 0;
 
-	static constexpr size_t ExpansionFactor = 2;
 
 
 	static void makeSpareChunks()

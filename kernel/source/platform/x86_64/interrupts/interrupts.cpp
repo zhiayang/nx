@@ -3,8 +3,12 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+
 #include "devices/x64/pit8253.h"
 #include "devices/x64/pic8259.h"
+#include "devices/x64/apic.h"
+
+#include "cpu/cpuid.h"
 
 extern "C" void nx_x64_irq_handler_0();
 extern "C" void nx_x64_irq_handler_1();
@@ -28,37 +32,74 @@ namespace interrupts
 {
 	static bool IsAPICPresent = false;
 
+	bool hasIOAPIC()
+	{
+		return IsAPICPresent;
+	}
+
 	void init()
 	{
-		// TODO: probably do different stuff on different platforms
-		if(IsAPICPresent = device::apic::init(); IsAPICPresent)
+		if constexpr (getArchitecture() == Architecture::x64)
 		{
-			// disable the legacy PIC by masking all interrupts.
-			device::pic8259::disable();
+			if(IsAPICPresent = device::ioapic::init(); IsAPICPresent)
+			{
+				// disable the legacy PIC by masking all interrupts.
+				device::pic8259::disable();
+			}
+			else
+			{
+				warn("apic", "system does not have an ioapic; falling back to 8259 PIC");
+				device::pic8259::init();
+			}
+
+			// check for local apic
+			if(!cpu::hasFeature(cpu::Feature::LocalAPIC) || scheduler::getCurrentCPU()->localApicAddr == 0)
+				abort("no local apic detected!");
+
+
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0,     (addr_t) nx_x64_irq_handler_0,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 1,     (addr_t) nx_x64_irq_handler_1,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 2,     (addr_t) nx_x64_irq_handler_2,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 3,     (addr_t) nx_x64_irq_handler_3,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 4,     (addr_t) nx_x64_irq_handler_4,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 5,     (addr_t) nx_x64_irq_handler_5,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 6,     (addr_t) nx_x64_irq_handler_6,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 7,     (addr_t) nx_x64_irq_handler_7,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 8,     (addr_t) nx_x64_irq_handler_8,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 9,     (addr_t) nx_x64_irq_handler_9,  0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 10,    (addr_t) nx_x64_irq_handler_10, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 11,    (addr_t) nx_x64_irq_handler_11, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 12,    (addr_t) nx_x64_irq_handler_12, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 13,    (addr_t) nx_x64_irq_handler_13, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 14,    (addr_t) nx_x64_irq_handler_14, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 15,    (addr_t) nx_x64_irq_handler_15, 0x08, 0x8E);
 		}
 		else
 		{
-			warn("apic", "system does not have apic; falling back to 8259 PIC");
-			device::pic8259::init();
+			abort("architecture not supported!");
 		}
-
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0,     (addr_t) nx_x64_irq_handler_0,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 1,     (addr_t) nx_x64_irq_handler_1,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 2,     (addr_t) nx_x64_irq_handler_2,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 3,     (addr_t) nx_x64_irq_handler_3,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 4,     (addr_t) nx_x64_irq_handler_4,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 5,     (addr_t) nx_x64_irq_handler_5,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 6,     (addr_t) nx_x64_irq_handler_6,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 7,     (addr_t) nx_x64_irq_handler_7,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 8,     (addr_t) nx_x64_irq_handler_8,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 9,     (addr_t) nx_x64_irq_handler_9,  0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 10,    (addr_t) nx_x64_irq_handler_10, 0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 11,    (addr_t) nx_x64_irq_handler_11, 0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 12,    (addr_t) nx_x64_irq_handler_12, 0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 13,    (addr_t) nx_x64_irq_handler_13, 0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 14,    (addr_t) nx_x64_irq_handler_14, 0x08, 0x8E);
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 15,    (addr_t) nx_x64_irq_handler_15, 0x08, 0x8E);
 	}
+
+
+	void mapIRQVector(int irq, int vector, int apicId)
+	{
+		if constexpr (getArchitecture() == Architecture::x64)
+		{
+			if(hasIOAPIC())     device::ioapic::setInterrupt(irq, vector, apicId);
+			else                error("intr", "IRQs cannot be re-mapped without an IOAPIC");
+		}
+		else
+		{
+			abort("architecture not supported!");
+		}
+	}
+
+
+
+
+
+
+
 
 	void enable()
 	{
@@ -77,20 +118,26 @@ namespace interrupts
 	//* meaning to say 'num' here will be 0-based -- it is the IRQ number after all, not the interrupt number.
 	void maskIRQ(int num)
 	{
-		if(IsAPICPresent)   device::apic::maskIRQ(num);
+		if(IsAPICPresent)   device::ioapic::maskIRQ(num);
 		else                device::pic8259::maskIRQ(num);
 	}
 
 	void unmaskIRQ(int num)
 	{
-		if(IsAPICPresent)   device::apic::unmaskIRQ(num);
+		if(IsAPICPresent)   device::ioapic::unmaskIRQ(num);
 		else                device::pic8259::unmaskIRQ(num);
 	}
 
 	void sendEOI(int num)
 	{
-		if(IsAPICPresent)   device::apic::sendEOI(num);
-		else                device::pic8259::sendEOI(num);
+		// note: eois are sent to the local apic!
+		// to handle cases where we have lapics but no ioapics, we will always send an EOI to the lapic
+		// if there's no ioapic, we will send an EOI to the 8259 pic also.
+
+		device::apic::sendEOI(num);
+
+		if(!IsAPICPresent)
+			device::pic8259::sendEOI(num);
 	}
 
 	extern "C" void nx_x64_send_eoi(int num)

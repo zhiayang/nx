@@ -16,30 +16,23 @@ namespace nx
 
 	namespace device
 	{
+		// LAPIC stuff
 		namespace apic
 		{
-			bool present();
-
-
-			// LAPIC stuff
-
 			// send an EOI for the irq.
 			void sendEOI(int num);
 
 			// setup and calibrate the local apic timer
-			void initLAPICTimer();
+			void calibrateLAPICTimer();
+
+			// does basic setup
+			void initLAPIC();
+		}
 
 
-
-
-
-
-
-
-
-
-
-			// IOAPIC stuff
+		// IOAPIC stuff
+		namespace ioapic
+		{
 			struct IOAPIC
 			{
 				int id;

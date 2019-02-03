@@ -4,12 +4,22 @@
 
 #pragma once
 
-#ifdef __ARCH_x64__
+namespace nx
+{
+	enum class Platform         { PC };
+	enum class Architecture     { x64 };
 
-	#include "devices/x64/apic.h"
+	#ifdef __ARCH_x64__
 
-	static constexpr int IRQ_BASE_VECTOR    = 32;
+		constexpr Platform getPlatform()            { return Platform::PC; }
+		constexpr Architecture getArchitecture()    { return Architecture::x64; }
 
-#else
 
-#endif
+		constexpr int IRQ_BASE_VECTOR               = 32;
+
+	#else
+
+	#endif
+}
+
+

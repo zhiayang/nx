@@ -5,14 +5,16 @@
 #include "nx.h"
 #include "cpu/cpuid.h"
 
+#include "devices/x64/apic.h"
+
 namespace nx {
 namespace acpi
 {
-	static constexpr uint8_t MADT_ENTRY_TYPE_LAPIC      = 0;
-	static constexpr uint8_t MADT_ENTRY_TYPE_IOAPIC     = 1;
-	static constexpr uint8_t MADT_ENTRY_TYPE_INT_SRC    = 2;
-	static constexpr uint8_t MADT_ENTRY_TYPE_NMI        = 4;
-	static constexpr uint8_t MADT_ENTRY_TYPE_LAPIC_ADDR = 5;
+	constexpr uint8_t MADT_ENTRY_TYPE_LAPIC      = 0;
+	constexpr uint8_t MADT_ENTRY_TYPE_IOAPIC     = 1;
+	constexpr uint8_t MADT_ENTRY_TYPE_INT_SRC    = 2;
+	constexpr uint8_t MADT_ENTRY_TYPE_NMI        = 4;
+	constexpr uint8_t MADT_ENTRY_TYPE_LAPIC_ADDR = 5;
 
 	void readMADT(MADTable* madt)
 	{
@@ -25,7 +27,7 @@ namespace acpi
 			return;
 		}
 
-		device::apic::preinit();
+		device::ioapic::preinit();
 
 		size_t len = madt->header.length;
 		size_t ofs = sizeof(MADTable);
@@ -66,28 +68,27 @@ namespace acpi
 					foundBsp = true;
 				}
 
-				// TODO: set the spurious interrupt vector!!!!
 				log("acpi/madt", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_IOAPIC)
 			{
 				auto ioapic = (MADT_IOAPIC*) rec;
 
-				device::apic::IOAPIC ioa;
+				device::ioapic::IOAPIC ioa;
 				ioa.id = ioapic->id;
 				ioa.baseAddr = (addr_t) ioapic->ioApicAddress;
 				ioa.gsiBase = ioapic->globalSysInterruptBase;
 
 				log("acpi/madt", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
 
-				device::apic::addIOAPIC(ioa);
+				device::ioapic::addIOAPIC(ioa);
 			}
 			else if(rec->type == MADT_ENTRY_TYPE_INT_SRC)
 			{
 				auto intsrc = (MADT_IntSourceOverride*) rec;
 				log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
 
-				device::apic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
+				device::ioapic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
 			}
 
 			ofs += rec->length;
@@ -95,7 +96,7 @@ namespace acpi
 
 
 		log("acpi/madt", "found %s, %s", util::plural("processor", scheduler::getNumCPUs()).cstr(),
-			util::plural("ioapic", device::apic::getNumIOAPICs()).cstr());
+			util::plural("ioapic", device::ioapic::getNumIOAPICs()).cstr());
 
 		{
 			// confirm our suspicions. we can also get the local apic base address from an MSR (0x1B).

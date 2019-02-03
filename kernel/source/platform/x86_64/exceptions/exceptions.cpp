@@ -20,7 +20,7 @@ namespace exceptions
 		uint64_t rip, cs, rflags, useresp, ss;
 	};
 
-	static constexpr const char* ExceptionMessages[] =
+	constexpr const char* ExceptionMessages[] =
 	{
 		"division by zero",
 		"debug",

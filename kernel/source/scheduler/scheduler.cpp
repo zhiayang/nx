@@ -4,6 +4,8 @@
 
 #include "nx.h"
 
+#include "devices/x64/apic.h"
+
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
@@ -12,8 +14,8 @@ extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
 namespace nx {
 namespace scheduler
 {
-	static constexpr uint64_t NS_PER_TICK           = time::milliseconds(10).ns();
-	static constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(50).ns();
+	constexpr uint64_t NS_PER_TICK           = time::milliseconds(10).ns();
+	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(50).ns();
 
 	static_assert(NS_PER_TICK <= TIMESLICE_DURATION_NS);
 	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary
@@ -36,12 +38,26 @@ namespace scheduler
 		CurrentThread = work_thread;
 		ThreadList.append(work_thread);
 
+		if constexpr (getArchitecture() == Architecture::x64)
+		{
+			// setup stuff
+			device::apic::initLAPIC();
+
+			// calibrate the local apic timer for our scheduler ticks
+			device::apic::calibrateLAPICTimer();
+		}
+		else
+		{
+			abort("unsupported architecture!");
+		}
+
+
+
 		// install the tick handler
 		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
 
 		// install the yield handler
 		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
-
 
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}

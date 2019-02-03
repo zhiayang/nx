@@ -7,7 +7,7 @@
 namespace nx {
 namespace scheduler
 {
-	static constexpr size_t KernelStackSize = 0x4000;
+	constexpr size_t KernelStackSize = 0x4000;
 
 	Thread* createThread(Process* p, Fn0Args_t fn)
 	{
@@ -36,16 +36,16 @@ namespace scheduler
 
 
 
-	static constexpr uint64_t RING0_CODE_SEGMENT        = 0x08;
-	static constexpr uint64_t RING0_STACK_SEGMENT       = 0x10;
+	constexpr uint64_t RING0_CODE_SEGMENT        = 0x08;
+	constexpr uint64_t RING0_STACK_SEGMENT       = 0x10;
 
-	static constexpr uint64_t RING3_CODE_SEGMENT        = 0x23;     // 0x20 | 0x3
-	static constexpr uint64_t RING3_STACK_SEGMENT       = 0x1B;     // 0x18 | 0x3
+	constexpr uint64_t RING3_CODE_SEGMENT        = 0x23;     // 0x20 | 0x3
+	constexpr uint64_t RING3_STACK_SEGMENT       = 0x1B;     // 0x18 | 0x3
 
 	//* note: we don't bother rounding this up, we just divide by PAGE_SIZE
 	//* so don't be stupid; set these to a multiple of 0x1000, thanks.
-	static constexpr size_t KERNEL_STACK_SIZE           = 0x2000;
-	static constexpr size_t USER_STACK_SIZE             = 0x4000;
+	constexpr size_t KERNEL_STACK_SIZE           = 0x2000;
+	constexpr size_t USER_STACK_SIZE             = 0x4000;
 
 	static pid_t ThreadIdCounter = 0;
 	Thread* createThread(Process* proc, Fn6Args_t fn, void* a, void* b, void* c, void* d, void* e, void* f)

@@ -16,7 +16,7 @@ namespace extmm
 		uint64_t size;
 	};
 
-	static constexpr size_t extentsPerPage      = PAGE_SIZE / sizeof(extent_t);
+	constexpr size_t ExtentsPerPage             = PAGE_SIZE / sizeof(extent_t);
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 	static addr_t end(extent_t* ext)            { return ext->addr + (ext->size * PAGE_SIZE); }
@@ -42,7 +42,7 @@ namespace extmm
 		st->extents[st->numExtents] = ext;
 		st->numExtents++;
 
-		if(st->numExtents % extentsPerPage == 0)
+		if(st->numExtents % ExtentsPerPage == 0)
 			extendExtentArray(st);
 	}
 

@@ -16,8 +16,8 @@
 namespace nx {
 namespace console
 {
-	static constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
-	static constexpr int Padding = 6;
+	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
+	constexpr int Padding = 6;
 
 	static int FramebufferWidth = 0;
 	static int FramebufferHeight = 0;
@@ -32,7 +32,7 @@ namespace console
 	static uint32_t CurrentFGColour = 0;
 	static uint32_t CurrentBGColour = 0;
 
-	static constexpr int LineAdv = 16;
+	constexpr int LineAdv = 16;
 
 
 	struct Glpyh

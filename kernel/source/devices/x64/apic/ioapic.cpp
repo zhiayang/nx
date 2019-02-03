@@ -12,13 +12,13 @@
 
 namespace nx {
 namespace device {
-namespace apic
+namespace ioapic
 {
-	static constexpr uint32_t IOAPIC_REG_ID             = 0;
-	static constexpr uint32_t IOAPIC_REG_VERSION        = 1;
-	static constexpr uint32_t IOAPIC_REG_ARBITRATION    = 2;
+	constexpr uint32_t IOAPIC_REG_ID             = 0;
+	constexpr uint32_t IOAPIC_REG_VERSION        = 1;
+	constexpr uint32_t IOAPIC_REG_ARBITRATION    = 2;
 
-	static constexpr uint32_t IOAPIC_REG_IRQ_BASE       = 0x10;
+	constexpr uint32_t IOAPIC_REG_IRQ_BASE       = 0x10;
 
 	static array<IOAPIC> IoApics;
 	static treemap<int, int> ISAIRQMapping;
@@ -44,23 +44,19 @@ namespace apic
 
 
 
-
-
-
-
-	static bool APIC_Present = false;
-	bool present()
-	{
-		return APIC_Present;
-	}
-
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
-		if(IoApics.empty()) return false;
-		else                APIC_Present = true;
+		if(IoApics.empty())
+		{
+			// but first, we need to setup a fake processor.
+			scheduler::registerCPU(true, 0, 0, 0);
+			return false;
+		}
+
+		return false;
 
 		// initialise all ioapics
 		// reference: https://pdos.csail.mit.edu/6.828/2006/readings/ia32/ioapic.pdf
@@ -107,8 +103,6 @@ namespace apic
 
 				log("ioapic", "[%d]: ver %x, %d intrs, gsi %d", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
 			}
-
-			// set the spurious irq vector to 0xFF
 		}
 
 		return true;

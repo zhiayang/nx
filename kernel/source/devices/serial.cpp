@@ -10,8 +10,8 @@
 namespace nx {
 namespace serial
 {
-	static constexpr uint16_t COM1_SERIAL_PORT          = 0x3F8;
-	static constexpr uint16_t QEMU_DEBUG_SERIAL_PORT    = 0xE9;
+	constexpr uint16_t COM1_SERIAL_PORT          = 0x3F8;
+	constexpr uint16_t QEMU_DEBUG_SERIAL_PORT    = 0xE9;
 
 	void debugprint(char c)
 	{

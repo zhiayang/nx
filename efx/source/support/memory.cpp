@@ -13,19 +13,19 @@
 #include "../../kernel/include/misc/addrs.h"
 
 
-static constexpr uintptr_t PAGE_PRESENT = 0x1;
-static constexpr uintptr_t PAGE_WRITE   = 0x2;
-static constexpr uintptr_t PAGE_ALIGN   = ~0xFFF;
+constexpr uintptr_t PAGE_PRESENT = 0x1;
+constexpr uintptr_t PAGE_WRITE   = 0x2;
+constexpr uintptr_t PAGE_ALIGN   = ~0xFFF;
 
 struct pml_t
 {
 	uint64_t entries[512];
 };
 
-static constexpr size_t indexPML4(uintptr_t addr)       { return ((((uintptr_t) addr) >> 39) & 0x1FF); }
-static constexpr size_t indexPDPT(uintptr_t addr)       { return ((((uintptr_t) addr) >> 30) & 0x1FF); }
-static constexpr size_t indexPageDir(uintptr_t addr)    { return ((((uintptr_t) addr) >> 21) & 0x1FF); }
-static constexpr size_t indexPageTable(uintptr_t addr)  { return ((((uintptr_t) addr) >> 12) & 0x1FF); }
+constexpr size_t indexPML4(uintptr_t addr)       { return ((((uintptr_t) addr) >> 39) & 0x1FF); }
+constexpr size_t indexPDPT(uintptr_t addr)       { return ((((uintptr_t) addr) >> 30) & 0x1FF); }
+constexpr size_t indexPageDir(uintptr_t addr)    { return ((((uintptr_t) addr) >> 21) & 0x1FF); }
+constexpr size_t indexPageTable(uintptr_t addr)  { return ((((uintptr_t) addr) >> 12) & 0x1FF); }
 
 
 namespace efx

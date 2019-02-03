@@ -19,6 +19,11 @@ namespace nx
 		void unmaskIRQ(int num);
 
 		void sendEOI(int num);
+
+		bool hasIOAPIC();
+
+		// note: 'vector' is in IDT space! (please use vectors >= 32)
+		void mapIRQVector(int irq, int vector, int apicId);
 	}
 
 	namespace cpu

@@ -7,11 +7,11 @@
 namespace nx {
 namespace vmm
 {
-	static constexpr addr_t HIGHER_HALF_BASE = 0xFFFF'0000'0000'0000ULL;
+	constexpr addr_t HIGHER_HALF_BASE = 0xFFFF'0000'0000'0000ULL;
 
-	static constexpr size_t PDPT_SIZE = 0x80'0000'0000ULL;
-	static constexpr size_t PDIR_SIZE = 0x4000'0000ULL;
-	static constexpr size_t PTAB_SIZE = 0x20'0000ULL;
+	constexpr size_t PDPT_SIZE = 0x80'0000'0000ULL;
+	constexpr size_t PDIR_SIZE = 0x4000'0000ULL;
+	constexpr size_t PTAB_SIZE = 0x20'0000ULL;
 
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }

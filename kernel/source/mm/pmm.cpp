@@ -8,7 +8,7 @@ namespace nx {
 namespace pmm
 {
 	// this is the number of pages that we'll use for our bootstrap of the memory manager.
-	static constexpr size_t NumReservedPages = 8;
+	constexpr size_t NumReservedPages = 8;
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 

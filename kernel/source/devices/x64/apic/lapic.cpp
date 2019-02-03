@@ -14,16 +14,16 @@ namespace nx {
 namespace device {
 namespace apic
 {
-	static constexpr int REG_EOI            = 0xB0;
-	static constexpr int REG_SPURIOUS       = 0xF0;
+	constexpr int REG_EOI            = 0xB0;
+	constexpr int REG_SPURIOUS       = 0xF0;
 
-	static constexpr int REG_LVT_TIMER      = 0x320;
-	static constexpr int REG_LVT_LINT0      = 0x350;
-	static constexpr int REG_LVT_LINT1      = 0x360;
+	constexpr int REG_LVT_TIMER      = 0x320;
+	constexpr int REG_LVT_LINT0      = 0x350;
+	constexpr int REG_LVT_LINT1      = 0x360;
 
-	static constexpr int REG_TIMER_INITIAL  = 0x380;
-	static constexpr int REG_TIMER_CURRENT  = 0x390;
-	static constexpr int REG_TIMER_DIVISOR  = 0x3E0;
+	constexpr int REG_TIMER_INITIAL  = 0x380;
+	constexpr int REG_TIMER_CURRENT  = 0x390;
+	constexpr int REG_TIMER_DIVISOR  = 0x3E0;
 
 
 	static void writeLAPIC(addr_t base, int reg, uint32_t value)
@@ -48,7 +48,16 @@ namespace apic
 		writeLAPIC(proc->localApicAddr, REG_EOI, 0);
 	}
 
-	void initLAPICTimer()
+	void initLAPIC()
+	{
+		auto base = scheduler::getCurrentCPU()->localApicAddr;
+		assert(base);
+
+		// set the spurious vector to 0xFF, and set the LAPIC enable bit.
+		writeLAPIC(base, REG_SPURIOUS, 0x100 | 0xFF);
+	}
+
+	void calibrateLAPICTimer()
 	{
 		auto base = scheduler::getCurrentCPU()->localApicAddr;
 		assert(base);
@@ -62,13 +71,17 @@ namespace apic
 
 
 		// setup the PIT
+		device::pit8253::enable();
+
+		if(interrupts::hasIOAPIC())
 		{
-			int irq = device::apic::getISAIRQMapping(0);
-
-			device::pit8253::enable();
-			device::apic::setInterrupt(irq, IRQ_BASE_VECTOR, 0);
+			device::ioapic::setInterrupt(device::ioapic::getISAIRQMapping(0),
+				IRQ_BASE_VECTOR, 0);
 		}
-
+		else
+		{
+			interrupts::unmaskIRQ(0);
+		}
 
 		double nanosecondsPerTimerTick = 0;
 		{
@@ -88,7 +101,7 @@ namespace apic
 				while((end = device::pit8253::getTicks()) - start < waitingTicks)
 					asm volatile ("pause");
 
-				// read the LAPIC current.
+				// read the current counter
 				auto diff = init - readLAPIC(base, REG_TIMER_CURRENT);
 
 				// lapic ticked 'timerDiff' times in 'diff' nanoseconds
@@ -131,8 +144,8 @@ namespace apic
 		config |= (IRQ_BASE_VECTOR + 0) & 0xFF;     // vector
 		config |= 0x20000;                          // timer mode
 
-
 		writeLAPIC(base, REG_LVT_TIMER, config);
+
 		scheduler::setTickIRQ(0);
 		sendEOI(0);
 	}

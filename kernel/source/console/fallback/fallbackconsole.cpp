@@ -10,15 +10,15 @@ namespace fallback
 {
 	extern const uint8_t TheFont[256][16];
 
-	static constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
+	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
 
-	static constexpr int FontWidth = 8;
-	static constexpr int FontHeight = 16;
+	constexpr int FontWidth = 8;
+	constexpr int FontHeight = 16;
 
-	static constexpr int CharWidth = 9;
-	static constexpr int CharHeight = 16;
+	constexpr int CharWidth = 9;
+	constexpr int CharHeight = 16;
 
-	static constexpr int Padding = 6;
+	constexpr int Padding = 6;
 
 	static int FramebufferWidth = 0;
 	static int FramebufferHeight = 0;

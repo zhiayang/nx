@@ -11,8 +11,6 @@ namespace nx
 {
 	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
 
-	static mutex s;
-
 	int64_t work_thread2()
 	{
 		// s.lock();
@@ -24,7 +22,6 @@ namespace nx
 		}
 		return 1;
 	}
-
 
 	int64_t work_thread1()
 	{
@@ -42,7 +39,6 @@ namespace nx
 		}
 		return 1;
 	}
-
 
 	int64_t kernel_main()
 	{
@@ -122,27 +118,9 @@ namespace nx
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
 		acpi::init(bootinfo);
 
-		// initialise the interrupt controller -- either the IOAPIC/LAPIC, or the 8259 PIC (depending on the acpi tables)
+		// initialise the interrupt controller (IOAPIC/LAPIC)
 		interrupts::init();
 		interrupts::enable();
-
-
-		if(device::apic::present())
-		{
-			// this call will enable the PIT, calibrate the LAPIC timer, disable the PIT,
-			// and arm the scheduler.
-			device::apic::initLAPICTimer();
-		}
-		else
-		{
-			device::pit8253::enable();
-
-			int irq = device::apic::getISAIRQMapping(0);
-			device::apic::setInterrupt(irq, IRQ_BASE_VECTOR, 0);
-
-			scheduler::setTickIRQ(irq);
-		}
-
 
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!

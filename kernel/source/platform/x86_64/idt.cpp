@@ -25,7 +25,7 @@ namespace idt
 		uint64_t base;
 	} __attribute__((packed));
 
-	static constexpr int NumIDTEntries = 256;
+	constexpr int NumIDTEntries = 256;
 
 	static IDTEntry idt[NumIDTEntries];
 	static IDTPointer idtp;

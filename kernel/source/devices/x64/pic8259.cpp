@@ -9,22 +9,36 @@ namespace nx {
 namespace device {
 namespace pic8259
 {
-	static constexpr uint8_t PIC1_CMD   = 0x20;
-	static constexpr uint8_t PIC1_DATA  = 0x21;
-	static constexpr uint8_t PIC2_CMD   = 0xA0;
-	static constexpr uint8_t PIC2_DATA  = 0xA1;
+	constexpr uint8_t PIC1_CMD   = 0x20;
+	constexpr uint8_t PIC1_DATA  = 0x21;
+	constexpr uint8_t PIC2_CMD   = 0xA0;
+	constexpr uint8_t PIC2_DATA  = 0xA1;
 
 	void init()
 	{
 		// Remap the IRQs from 0 - 7 -> 8 - 15 to 32-47
+
+		// 0x11 is initialise
 		port::write1b(PIC1_CMD, 0x11);
 		port::write1b(PIC2_CMD, 0x11);
+
+		// 0x20 = IRQ_BASE = vector offset. we can't individually remap irqs like we can with the IOAPIC; the PIC will always use
+		// 8 sequential vectors, starting at the offset. 0x20 = 32, so we start after the cpu exceptions.
+		// we set the offset s 0x28 (40) for the slave pic.
 		port::write1b(PIC1_DATA, 0x20);
 		port::write1b(PIC2_DATA, 0x28);
+
+		// tell the master pic that there is a slave wired to the 3rd pin ie irq2 (0x4 == 1 << 2)
 		port::write1b(PIC1_DATA, 0x04);
+
+		// no fucking clue
 		port::write1b(PIC2_DATA, 0x02);
+
+		// set 8086 mode for both
 		port::write1b(PIC1_DATA, 0x01);
 		port::write1b(PIC2_DATA, 0x01);
+
+		// unmask all interrupts.
 		port::write1b(PIC1_DATA, 0x00);
 		port::write1b(PIC2_DATA, 0x00);
 

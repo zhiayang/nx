@@ -13,14 +13,14 @@ namespace pit8253
 {
 	// channel 1 probably doesn't exist, and channel 2 is usually wired to the speaker
 	// leaving us with channel 0 to actually time stuff.
-	static constexpr int PIT_CHANNEL_0          = 0x40;
-	static constexpr int PIT_COMMAND            = 0x43;
+	constexpr int PIT_CHANNEL_0          = 0x40;
+	constexpr int PIT_COMMAND            = 0x43;
 
-	static constexpr int BASE_FREQUENCY_HZ      = 1193182;  // 1.1931816666 MHz
-	static constexpr int FREQUENCY_DIVISOR      = 8000;
+	constexpr int BASE_FREQUENCY_HZ      = 1193182;  // 1.1931816666 MHz
+	constexpr int FREQUENCY_DIVISOR      = 8000;
 
-	static constexpr int TICK_FREQUENCY         = BASE_FREQUENCY_HZ / FREQUENCY_DIVISOR;
-	static constexpr uint64_t NS_PER_TICK       = 1'000'000'000.0 / TICK_FREQUENCY;
+	constexpr int TICK_FREQUENCY         = BASE_FREQUENCY_HZ / FREQUENCY_DIVISOR;
+	constexpr uint64_t NS_PER_TICK       = 1'000'000'000.0 / TICK_FREQUENCY;
 
 	void enable()
 	{

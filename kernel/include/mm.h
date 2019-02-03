@@ -55,24 +55,24 @@ namespace nx
 		addr_t allocate(size_t num, AddressSpace type, scheduler::Process* proc = 0);
 		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
-		static constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
-		static constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
-		static constexpr size_t indexPageDir(addr_t addr)    { return ((((addr_t) addr) >> 21) & 0x1FF); }
-		static constexpr size_t indexPageTable(addr_t addr)  { return ((((addr_t) addr) >> 12) & 0x1FF); }
+		constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
+		constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
+		constexpr size_t indexPageDir(addr_t addr)    { return ((((addr_t) addr) >> 21) & 0x1FF); }
+		constexpr size_t indexPageTable(addr_t addr)  { return ((((addr_t) addr) >> 12) & 0x1FF); }
 
-		static constexpr addr_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
+		constexpr addr_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
 		{
 			return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
 		}
 
-		static constexpr size_t NumAddressSpaces = 3;
-		static constexpr addr_t AddressSpaces[NumAddressSpaces][2] = {
+		constexpr size_t NumAddressSpaces = 3;
+		constexpr addr_t AddressSpaces[NumAddressSpaces][2] = {
 			{ addrs::USER_ADDRSPACE_BASE,       addrs::USER_ADDRSPACE_END       },
 			{ addrs::KERNEL_HEAP_BASE,          addrs::KERNEL_HEAP_END          },
 			{ addrs::KERNEL_VMM_ADDRSPACE_BASE, addrs::KERNEL_VMM_ADDRSPACE_END }
 		};
 
-		static constexpr addr_t VMMStackAddresses[NumAddressSpaces][2] = {
+		constexpr addr_t VMMStackAddresses[NumAddressSpaces][2] = {
 			{ addrs::VMM_STACK0_BASE,   addrs::VMM_STACK0_END },
 			{ addrs::VMM_STACK1_BASE,   addrs::VMM_STACK1_END },
 			{ addrs::VMM_STACK2_BASE,   addrs::VMM_STACK2_END }

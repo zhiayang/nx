@@ -9,9 +9,9 @@ namespace nx
 {
 	namespace time
 	{
-		static constexpr uint64_t NS_PER_S  = 1'000'000'000ULL;
-		static constexpr uint64_t US_PER_S  = 1'000'000ULL;
-		static constexpr uint64_t MS_PER_S  = 1'000ULL;
+		constexpr uint64_t NS_PER_S  = 1'000'000'000ULL;
+		constexpr uint64_t US_PER_S  = 1'000'000ULL;
+		constexpr uint64_t MS_PER_S  = 1'000ULL;
 
 		// record in nanoseconds.
 		template <typename T = uint64_t>

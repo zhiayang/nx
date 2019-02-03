@@ -92,11 +92,11 @@ namespace nx
 			NonExistent,        // does not exist
 		};
 
-		static constexpr int FSCAP_READ     = 0x01;
-		static constexpr int FSCAP_WRITE    = 0x02;
-		static constexpr int FSCAP_SEEK     = 0x04;
-		static constexpr int FSCAP_DIR      = 0x08;
-		static constexpr int FSCAP_DELETE   = 0x10;
+		constexpr int FSCAP_READ     = 0x01;
+		constexpr int FSCAP_WRITE    = 0x02;
+		constexpr int FSCAP_SEEK     = 0x04;
+		constexpr int FSCAP_DIR      = 0x08;
+		constexpr int FSCAP_DELETE   = 0x10;
 
 
 		void init();
