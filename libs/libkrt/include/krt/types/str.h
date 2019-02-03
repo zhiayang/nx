@@ -12,10 +12,10 @@
 
 namespace krt
 {
-	template <typename allocator, typename aborter>
+	template <typename allocator, typename aborter, size_t sso_buf_size = 32>
 	struct string
 	{
-		using impl = arraylike_impl<string, char, allocator, aborter>;
+		using impl = arraylike_impl<string, char, allocator, aborter, sso_buf_size>;
 		friend impl;
 
 		using iterator = ptr_iterator<char>;
@@ -27,9 +27,9 @@ namespace krt
 
 		string(char* s, size_t l)
 		{
-			this->ptr = 0;
 			this->cnt = 0;
-			this->cap = 0;
+			this->cap = sso_buf_size;
+			this->ptr = (sso_buf_size ? this->inline_buffer : nullptr);
 
 			if(s && l)
 			{
@@ -41,15 +41,39 @@ namespace krt
 			}
 		}
 
-		~string() { if(this->ptr) allocator::deallocate(this->ptr); }
+		~string() { if(this->ptr && this->ptr != this->inline_buffer) allocator::deallocate(this->ptr); }
 		string(const string& other) : string(other.ptr, other.cnt) { }
+
+
+		private:
+		static inline void move_contents(string* dst, string* src)
+		{
+			dst->cnt = src->cnt; src->cnt = 0;
+			if(dst->cnt < sso_buf_size)
+			{
+				// we need to copy it to our own buffer.
+				dst->ptr = dst->inline_buffer;
+				memmove(dst->ptr, src->ptr, dst->cnt);
+
+				dst->ptr[dst->cnt] = 0;
+
+				src->ptr = src->inline_buffer;
+				src->cap = sso_buf_size;
+			}
+			else
+			{
+				dst->cap = src->cap; src->cap = sso_buf_size;
+				dst->ptr = src->ptr; src->ptr = (sso_buf_size ? src->inline_buffer : nullptr);
+			}
+		}
+
+		public:
+
 
 		// move
 		string(string&& other)
 		{
-			this->ptr = other.ptr; other.ptr = 0;
-			this->cnt = other.cnt; other.cnt = 0;
-			this->cap = other.cap; other.cap = 0;
+			move_contents(this, &other);
 		}
 
 		// copy assign
@@ -64,11 +88,9 @@ namespace krt
 		{
 			if(this != &other)
 			{
-				if(this->ptr) allocator::deallocate(this->ptr);
+				if(this->ptr && this->ptr != this->inline_buffer) allocator::deallocate(this->ptr);
 
-				this->ptr = other.ptr; other.ptr = 0;
-				this->cnt = other.cnt; other.cnt = 0;
-				this->cap = other.cap; other.cap = 0;
+				move_contents(this, &other);
 			}
 
 			return *this;
@@ -96,8 +118,16 @@ namespace krt
 			return -1;
 		}
 
+		void reserve(size_t atleast)
+		{
+			auto oldptr = this->ptr;
+
+			bool dealloc = impl::reserve(this, atleast);
+			if(dealloc && oldptr && oldptr != this->inline_buffer)
+				allocator::deallocate(oldptr);
+		}
+
 		string substring(size_t idx, size_t len = -1) const { return impl::subarray(this, idx, len); }
-		void reserve(size_t atleast)                        { impl::reserve(this, atleast); }
 		void clear()                                        { impl::clear(this); }
 
 		string& append(const char& c)                       { return impl::append_element(this, c); }
@@ -150,6 +180,8 @@ namespace krt
 		char* ptr = 0;
 		size_t cnt = 0;
 		size_t cap = 0;
+
+		char inline_buffer[sso_buf_size] = { };
 	};
 
 	template <typename al, typename ab>

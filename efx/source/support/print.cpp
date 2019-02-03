@@ -172,11 +172,7 @@ namespace efx
 	void efi_aborter::debuglog(const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-
-		// efi::print("debug: ");
-		// efi::vprint(fmt, args);
-		// efi::print("\n");
-
+		efi::vprint(fmt, args);
 		va_end(args);
 	}
 

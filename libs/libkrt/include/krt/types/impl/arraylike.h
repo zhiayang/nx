@@ -14,28 +14,30 @@
 
 namespace krt
 {
-	template <typename Container, typename ElmTy, typename allocator, typename aborter>
+	template <typename Container, typename ElmTy, typename allocator, typename aborter, size_t sso_buf_size = 0>
 	struct arraylike_impl
 	{
-		static void reserve(Container* self, size_t atleast)
+		static bool reserve(Container* self, size_t atleast)
 		{
 			if constexpr (krt::is_same<ElmTy, char>())
 				atleast += 1;
 
-			if(self->cap >= atleast) return;
+			if(self->cap >= atleast) return false;
 			size_t newsz = __max(16, __max(atleast, (self->cap * 3) / 2));
 
-			// if T is like char16_t or some shit, we need to account for it
+
 			auto newptr = (ElmTy*) allocator::allocate(newsz * sizeof(ElmTy), alignof(ElmTy));
 			if(!newptr) aborter::abort("reserve(): alloc() returned null!");
 
 			copy_elements(self, newptr, self->ptr, self->cnt);
 
-			if(self->ptr) allocator::deallocate(self->ptr);
-
-
 			self->ptr = newptr;
 			self->cap = newsz;
+
+			// lets the actual impl know that we allocated a new buffer.
+			// up to them to free the memory, because i don't want to care too much about the small-string/vector-opt
+			// details here.
+			return true;
 		}
 
 		static ElmTy& front(Container* self)

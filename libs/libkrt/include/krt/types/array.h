@@ -98,10 +98,17 @@ namespace krt
 			return this->end();
 		}
 
+		void reserve(size_t atleast)
+		{
+			auto oldptr = this->ptr;
+
+			bool dealloc = impl::reserve(this, atleast);
+			if(dealloc && oldptr)
+				allocator::deallocate(oldptr);
+		}
 
 		// apparently we can't "using" members, so just make a new one that calls the old one.
 		array subarray(size_t idx, size_t len) const        { return impl::subarray(this, idx, len); }
-		void reserve(size_t atleast)                        { impl::reserve(this, atleast); }
 		void clear()                                        { impl::clear(this); }
 
 		array& append(const T& c)                           { return impl::append_element(this, c); }

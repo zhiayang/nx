@@ -71,7 +71,15 @@ namespace krt
 			return *this;
 		}
 
-		void reserve(size_t atleast)                        { impl::reserve(this, atleast); }
+		void reserve(size_t atleast)
+		{
+			auto oldptr = this->ptr;
+
+			bool dealloc = impl::reserve(this, atleast);
+			if(dealloc && oldptr)
+				allocator::deallocate(oldptr);
+		}
+
 		void clear()                                        { impl::clear(this); }
 
 		stack& push(const T& c)                             { return impl::append_element(this, c); }
