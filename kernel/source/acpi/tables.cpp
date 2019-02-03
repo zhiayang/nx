@@ -118,7 +118,7 @@ namespace acpi
 			}
 		}
 
-		log("acpi", "finished parsing acpi tables\n");
+		log("acpi", "finished parsing acpi tables");
 	}
 }
 }

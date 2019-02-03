@@ -5,26 +5,36 @@
 #include "nx.h"
 #include "devices/x64/pit8253.h"
 
+#include "math.h"
+
 namespace nx {
 namespace device {
 namespace pit8253
 {
 	// channel 1 probably doesn't exist, and channel 2 is usually wired to the speaker
 	// leaving us with channel 0 to actually time stuff.
-	static constexpr int PIT_CHANNEL_0      = 0x40;
-	static constexpr int PIT_COMMAND        = 0x43;
+	static constexpr int PIT_CHANNEL_0          = 0x40;
+	static constexpr int PIT_COMMAND            = 0x43;
 
-	void enable(int freq)
+	// 1.1931816666 MHz
+	static constexpr int BASE_FREQUENCY_HZ      = 1193182;
+	static constexpr int FREQUENCY_DIVISOR      = 82;       // 1193182 / 82 = 14551
+
+	static constexpr int TICK_FREQUENCY         = BASE_FREQUENCY_HZ / FREQUENCY_DIVISOR;
+	static constexpr double SECONDS_PER_TICK    = 1.0 / (double) TICK_FREQUENCY;
+
+	static constexpr double NS_PER_TICK         = SECONDS_PER_TICK * 1.0e9;
+
+	void enable()
 	{
-		auto divisor = (1193180 / freq);
-		if(divisor > UINT16_MAX)
-			warn("pit8253", "frequency of '%d' results in divisor value > 65536", freq);
-
-		uint16_t d = __max((uint16_t) 65536, (uint16_t) divisor);
+		// we just let this sit at a fixed (high-ish) frequency, then use that to keep time accurate to the ms.
+		auto d = (uint16_t) FREQUENCY_DIVISOR;
 
 		port::write1b(PIT_COMMAND, 0x36);
 		port::write1b(PIT_CHANNEL_0, d & 0xFF);
 		port::write1b(PIT_CHANNEL_0, (d & 0xFF00) >> 8);
+
+		log("pit8253", "enabled PIT with %.2f ns per tick", NS_PER_TICK);
 	}
 
 	void disable()
@@ -33,6 +43,11 @@ namespace pit8253
 		port::write1b(PIT_COMMAND, 0x30);
 		port::write1b(PIT_CHANNEL_0, 0xFF);
 		port::write1b(PIT_CHANNEL_0, 0xFF);
+	}
+
+	uint64_t getNanosecondsPerTick()
+	{
+		return (uint64_t) round(NS_PER_TICK);
 	}
 }
 }

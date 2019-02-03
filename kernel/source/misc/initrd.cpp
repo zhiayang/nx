@@ -66,7 +66,7 @@ namespace initrd
 				abort("failed to decompress initrd!");
 		}
 
-		println("decompressed initrd: %s", humanSizedBytes(uncompressedSize).cstr());
+		log("initrd", "decompressed initrd: %s", humanSizedBytes(uncompressedSize).cstr());
 
 		auto tarfs = vfs::tarfs::create((uint8_t*) buf, uncompressedSize);
 		vfs::mount(tarfs, "/initrd", true);

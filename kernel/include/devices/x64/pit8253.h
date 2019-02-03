@@ -10,8 +10,10 @@ namespace nx
 	{
 		namespace pit8253
 		{
-			void enable(int freq);
+			void enable();
 			void disable();
+
+			uint64_t getNanosecondsPerTick();
 		}
 	}
 }

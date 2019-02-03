@@ -39,7 +39,7 @@ namespace nx
 
 	int64_t kernel_main()
 	{
-		log("kernel", "started main worker thread");
+		log("kernel", "started main worker thread\n");
 
 		s = mutex();
 		s.lock();
@@ -129,9 +129,8 @@ namespace nx
 		{
 			int irq = device::apic::getISAIRQMapping(0);
 
-			device::pit8253::enable(1);
+			device::pit8253::enable();
 			device::apic::setInterrupt(irq, 0, 0);
-
 			scheduler::setTickIRQ(irq);
 		}
 
