@@ -43,6 +43,7 @@ namespace nx
 			Stopped         = 0,
 			Running         = 1,
 			BlockedOnMutex  = 2,
+			BlockedOnSleep  = 3,
 		};
 
 		struct Thread
@@ -57,6 +58,7 @@ namespace nx
 			ThreadState state = ThreadState::Stopped;
 
 			mutex* blockedMtx = 0;
+			uint64_t wakeUpTimestamp = 0;
 		};
 
 		using Fn0Args_t = int64_t (*)();
@@ -81,7 +83,6 @@ namespace nx
 		Process* getKernelProcess();
 		Process* getCurrentProcess();
 
-		Thread* getNextThread();
 		Thread* getCurrentThread();
 
 		void init(Thread* idle_thread, Thread* work_thread);
@@ -94,6 +95,7 @@ namespace nx
 		void yield();
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);
+		void sleep(uint64_t ns);
 
 		void add(Thread* t);
 		void add(Process* p);

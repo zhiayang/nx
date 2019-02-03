@@ -8,8 +8,6 @@
 #include "devices/x64/apic.h"
 #include "devices/x64/pit8253.h"
 
-#include "misc/timekeeping.h"
-
 #include "math.h"
 
 namespace nx {
@@ -72,48 +70,49 @@ namespace apic
 		}
 
 
-		constexpr uint64_t measurementPeriodNS = time::milliseconds(50).ns();
-		auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
-
-		// println("pit: %zu ns per tick (waiting %zu ticks)", device::pit8253::getNanosecondsPerTick(), waitingTicks);
-
-
-		// repeat the experiment 5 times
-		double results[5] = { };
-		uint32_t timerDiffs[5] = { };
-
-		for(int i = 0; i < 5; i++)
+		double nanosecondsPerTimerTick = 0;
 		{
-			// set the initial count to something big
-			auto init = readLAPIC(base, REG_TIMER_CURRENT);
+			auto measurementPeriodNS = scheduler::getNanosecondsPerTick();
+			auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
 
-			uint64_t start = device::pit8253::getTicks();
-			uint64_t end = 0;
-			while((end = device::pit8253::getTicks()) - start < waitingTicks)
-				asm volatile ("pause");
+			constexpr int repeats = 5;
 
-			// read the LAPIC current.
-			auto curr = readLAPIC(base, REG_TIMER_CURRENT);
-			timerDiffs[i] = init - curr;
+			// repeat the experiment 5 times
+			double resultSum = 0;
+			for(int i = 0; i < repeats; i++)
+			{
+				auto init = readLAPIC(base, REG_TIMER_CURRENT);
 
-			// lapic ticked 'timerDiff' times in 'diff' nanoseconds
-			auto elapsed = (end - start) * device::pit8253::getNanosecondsPerTick();
+				uint64_t start = device::pit8253::getTicks();
+				uint64_t end = 0;
+				while((end = device::pit8253::getTicks()) - start < waitingTicks)
+					asm volatile ("pause");
 
-			results[i] = (double) elapsed / (double) timerDiffs[i];
+				// read the LAPIC current.
+				auto diff = init - readLAPIC(base, REG_TIMER_CURRENT);
+
+				// lapic ticked 'timerDiff' times in 'diff' nanoseconds
+				auto elapsed = (end - start) * device::pit8253::getNanosecondsPerTick();
+
+				resultSum += (double) elapsed / (double) diff;
+			}
+
+			nanosecondsPerTimerTick = resultSum / (double) repeats;
+
+			// kill the old PIT
+			device::pit8253::disable();
 		}
 
-		auto nsPerTick = (results[0] + results[1] + results[2] + results[3] + results[4]) / 5.0;
-		log("lapic", "calibrated lapic timer: %.2f ns per tick", nsPerTick);
 
-		// kill the old PIT
-		device::pit8253::disable();
+
+		log("lapic", "calibrated lapic timer: %.2f ns per tick", nanosecondsPerTimerTick);
+
 
 		// arm the timer.
 		{
-			auto timerTicks = (timerDiffs[0] + timerDiffs[1] + timerDiffs[2] + timerDiffs[3] + timerDiffs[4]) / 5;
-			timerTicks *= (scheduler::getNanosecondsPerTick() / measurementPeriodNS);
+			auto timerTicks = (uint32_t) (scheduler::getNanosecondsPerTick() / nanosecondsPerTimerTick);
 
-			assert(timerTicks <= 0xFFFFFFFF);
+			log("lapic", "timer set to %u ticks", timerTicks);
 
 			writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
 			writeLAPIC(base, REG_TIMER_INITIAL, timerTicks);

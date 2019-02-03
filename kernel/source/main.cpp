@@ -19,7 +19,7 @@ namespace nx
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 5000000 == 0) print("2");
+			if(++ctr % 10000000 == 0) print("2");
 
 		}
 		return 1;
@@ -28,10 +28,17 @@ namespace nx
 
 	int64_t work_thread1()
 	{
+		scheduler::sleep(time::milliseconds(1000).ns());
+
+		println("preparing to sleep for 5000 ms...");
+		scheduler::sleep(time::milliseconds(5000).ns());
+
+		println("*yawn*");
+
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 5000000 == 0) print("1");
+			if(++ctr % 10000000 == 0) print("1");
 		}
 		return 1;
 	}
@@ -40,9 +47,6 @@ namespace nx
 	int64_t kernel_main()
 	{
 		log("kernel", "started main worker thread\n");
-
-		// s = mutex();
-		// s.lock();
 
 		auto worker1 = scheduler::createThread(scheduler::getKernelProcess(), work_thread1);
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
@@ -53,8 +57,7 @@ namespace nx
 		uint64_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 5000000 == 0) print("q");
-			// if(ctr %   1000000000 == 0) { print("!"); s.unlock(); }
+			if(++ctr % 10000000 == 0) print("q");
 		}
 
 		// how?!

@@ -17,7 +17,7 @@ namespace pit8253
 	static constexpr int PIT_COMMAND            = 0x43;
 
 	static constexpr int BASE_FREQUENCY_HZ      = 1193182;  // 1.1931816666 MHz
-	static constexpr int FREQUENCY_DIVISOR      = 14551;
+	static constexpr int FREQUENCY_DIVISOR      = 8000;
 
 	static constexpr int TICK_FREQUENCY         = BASE_FREQUENCY_HZ / FREQUENCY_DIVISOR;
 	static constexpr uint64_t NS_PER_TICK       = 1'000'000'000.0 / TICK_FREQUENCY;

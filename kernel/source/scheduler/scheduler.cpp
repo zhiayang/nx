@@ -12,6 +12,13 @@ extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
 namespace nx {
 namespace scheduler
 {
+	static constexpr uint64_t NS_PER_TICK           = time::milliseconds(10).ns();
+	static constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(50).ns();
+
+	static_assert(NS_PER_TICK <= TIMESLICE_DURATION_NS);
+	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary
+
+
 	static Thread* IdleThread = 0;
 	static Thread* CurrentThread = 0;
 
@@ -47,15 +54,16 @@ namespace scheduler
 		// save the current stack.
 		CurrentThread->kernelStack = stackPointer;
 
+		// only put it back in the runqueue if we didn't block or sleep
 		if(CurrentThread->state == ThreadState::Running)
 			ThreadList.append(CurrentThread);
 
-		// else we blocked or smth, don't put it back in the runqueue.
 
-		CurrentThread = getNextThread();
+		if(ThreadList.empty())  CurrentThread = IdleThread;
+		else                    CurrentThread = ThreadList.popFront();
+
 		CurrentThread->state = ThreadState::Running;
 
-		// println("(switch %ld) (%p)", next->threadId, next->kernelStack);
 		nx_x64_switch_to_thread(CurrentThread->kernelStack, 0);
 	}
 
@@ -83,7 +91,7 @@ namespace scheduler
 		// hmm.
 		for(auto thr : BlockedThreads)
 		{
-			if(thr->blockedMtx == mtx)
+			if(thr->state == ThreadState::BlockedOnMutex && thr->blockedMtx == mtx)
 			{
 				thr->blockedMtx = 0;
 				thr->state = ThreadState::Stopped;
@@ -94,9 +102,35 @@ namespace scheduler
 	}
 
 
-	Thread* getNextThread()
+	void sleep(uint64_t ns)
 	{
-		return ThreadList.popFront();
+		auto t = getCurrentThread();
+		assert(t);
+
+		t->wakeUpTimestamp = getElapsedNanoseconds() + ns;
+		t->state = ThreadState::BlockedOnSleep;
+
+		BlockedThreads.append(t);
+
+		yield();
+	}
+
+	static void wakeUpThreads()
+	{
+		// checks for sleeping threads and wakes them up if necessary.
+		// TODO: optimise this!!!!
+
+		auto now = getElapsedNanoseconds();
+		for(auto thr : BlockedThreads)
+		{
+			if(thr->state == ThreadState::BlockedOnSleep && now >= thr->wakeUpTimestamp)
+			{
+				thr->wakeUpTimestamp = 0;
+				thr->state = ThreadState::Stopped;
+
+				ThreadList.prepend(thr);
+			}
+		}
 	}
 
 
@@ -104,16 +138,6 @@ namespace scheduler
 	{
 		return CurrentThread;
 	}
-
-
-
-
-
-
-
-
-
-
 
 	void add(Thread* t)
 	{
@@ -128,6 +152,45 @@ namespace scheduler
 
 
 
+
+
+
+	// tick-related stuff
+
+	static int TickIRQ = 0;
+	void setTickIRQ(int irq)
+	{
+		TickIRQ = irq;
+	}
+
+	static uint64_t ElapsedNanoseconds = 0;
+	uint64_t getElapsedNanoseconds()
+	{
+		return ElapsedNanoseconds;
+	}
+
+	uint64_t getNanosecondsPerTick()
+	{
+		return NS_PER_TICK;
+	}
+
+
+	// returns true if it's time to preempt somebody
+	static uint64_t TickCounter = 0;
+	extern "C" int nx_x64_scheduler_tick()      // note: this is called from asm-land
+	{
+		interrupts::sendEOI(TickIRQ);
+
+		TickCounter += 1;
+		ElapsedNanoseconds += NS_PER_TICK;
+
+		wakeUpThreads();
+
+		bool ret = (TickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
+		if(ret) TickCounter = 0;
+
+		return ret;
+	}
 
 
 
