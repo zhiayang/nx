@@ -26,7 +26,7 @@ namespace extmm
 	{
 		auto virt = (addr_t) st->extents + (st->numPages * PAGE_SIZE);
 		if(virt == st->maxAddress)
-			abort("1 extmm/%s::extend(): reached expansion limit!", st->owner);
+			abort("extmm/%s::extend(): reached expansion limit!", st->owner);
 
 		auto phys = pmm::allocate(1);
 
@@ -64,7 +64,9 @@ namespace extmm
 
 	addr_t allocate(State* st, size_t num, bool (*satisfies)(addr_t, size_t))
 	{
-		if(num == 0) abort("2 extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
+		if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
+
+		// println("alloc: %p: %zu", st, st->numExtents);
 
 		for(size_t i = 0; i < st->numExtents; i++)
 		{
@@ -82,7 +84,7 @@ namespace extmm
 			}
 		}
 
-		println("3 extmm/%s::allocate(): out of pages!", st->owner);
+		println("extmm/%s::allocate(): out of pages!", st->owner);
 		return 0;
 	}
 
@@ -121,13 +123,15 @@ namespace extmm
 			}
 		}
 
-		println("4 extmm/%s::allocateSpecific(): could not fulfil request!", st->owner);
+		println("extmm/%s::allocateSpecific(): could not fulfil request!", st->owner);
 		return 0;
 	}
 
 
 	void deallocate(State* st, addr_t addr, size_t num)
 	{
+		// println("dealloc: %p: %zu", st, st->numExtents);
+
 		// loop through every extent. we can match in two cases:
 		// 1. 'addr' is 'num' pages *below* the base of the extent
 		// 2. 'addr' is *size* pages above the *base* of the extent

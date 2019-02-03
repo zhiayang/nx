@@ -27,7 +27,7 @@ namespace nx
 			bool isBootstrap;
 			addr_t localApicAddr;
 
-			Process* currentProcess;
+			Process* currentProcess = 0;
 		};
 
 		struct Process

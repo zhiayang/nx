@@ -15,7 +15,7 @@ namespace nx
 
 	int64_t work_thread2()
 	{
-		s.lock();
+		// s.lock();
 		size_t ctr = 0;
 		while(true)
 		{
@@ -41,8 +41,8 @@ namespace nx
 	{
 		log("kernel", "started main worker thread\n");
 
-		s = mutex();
-		s.lock();
+		// s = mutex();
+		// s.lock();
 
 		auto worker1 = scheduler::createThread(scheduler::getKernelProcess(), work_thread1);
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
@@ -54,7 +54,7 @@ namespace nx
 		while(true)
 		{
 			if(++ctr % 5000000 == 0) print("q");
-			if(ctr %   1000000000 == 0) { print("!"); s.unlock(); }
+			// if(ctr %   1000000000 == 0) { print("!"); s.unlock(); }
 		}
 
 		// how?!
@@ -124,7 +124,7 @@ namespace nx
 		interrupts::enable();
 
 
-		if(false && device::apic::present())
+		if(device::apic::present())
 		{
 			// this call will enable the PIT, calibrate the LAPIC timer, disable the PIT,
 			// and arm the scheduler.

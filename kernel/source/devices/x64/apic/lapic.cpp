@@ -52,6 +52,17 @@ namespace apic
 
 	void initLAPICTimer()
 	{
+		auto base = scheduler::getCurrentCPU()->localApicAddr;
+		assert(base);
+
+		// 001b divides by 4 -- so we'll just use that. the rest are reserved.
+		writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
+
+		// set a big initial value
+		writeLAPIC(base, REG_TIMER_INITIAL, 0xFFFFFFFF);
+		writeLAPIC(base, REG_TIMER_CURRENT, 0xFFFFFFFF);
+
+
 		// setup the PIT
 		{
 			int irq = device::apic::getISAIRQMapping(0);
@@ -61,24 +72,20 @@ namespace apic
 		}
 
 
-		auto base = scheduler::getCurrentCPU()->localApicAddr;
-		assert(base);
+		constexpr uint64_t measurementPeriodNS = time::milliseconds(50).ns();
+		auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
 
-		// 001b divides by 4 -- so we'll just use that. the rest are reserved.
-		writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
+		// println("pit: %zu ns per tick (waiting %zu ticks)", device::pit8253::getNanosecondsPerTick(), waitingTicks);
 
 
 		// repeat the experiment 5 times
 		double results[5] = { };
 		uint32_t timerDiffs[5] = { };
 
-		constexpr uint64_t measurementPeriodNS = time::milliseconds(2).ns();
-		auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
-
 		for(int i = 0; i < 5; i++)
 		{
 			// set the initial count to something big
-			writeLAPIC(base, REG_TIMER_INITIAL, 0xFFFFFFFF);
+			auto init = readLAPIC(base, REG_TIMER_CURRENT);
 
 			uint64_t start = device::pit8253::getTicks();
 			uint64_t end = 0;
@@ -87,16 +94,16 @@ namespace apic
 
 			// read the LAPIC current.
 			auto curr = readLAPIC(base, REG_TIMER_CURRENT);
-			timerDiffs[i] = 0xFFFFFFFF - curr;
+			timerDiffs[i] = init - curr;
 
 			// lapic ticked 'timerDiff' times in 'diff' nanoseconds
-			auto diff = (end - start) * device::pit8253::getNanosecondsPerTick();
+			auto elapsed = (end - start) * device::pit8253::getNanosecondsPerTick();
 
-			results[i] = (double) diff / (double) timerDiffs[i];
+			results[i] = (double) elapsed / (double) timerDiffs[i];
 		}
 
 		auto nsPerTick = (results[0] + results[1] + results[2] + results[3] + results[4]) / 5.0;
-		log("lapic", "lapic timer: %.2f ns per tick", nsPerTick);
+		log("lapic", "calibrated lapic timer: %.2f ns per tick", nsPerTick);
 
 		// kill the old PIT
 		device::pit8253::disable();
@@ -107,11 +114,9 @@ namespace apic
 			timerTicks *= (scheduler::getNanosecondsPerTick() / measurementPeriodNS);
 
 			assert(timerTicks <= 0xFFFFFFFF);
-			println("timer ticks = %u", timerTicks);
 
 			writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
 			writeLAPIC(base, REG_TIMER_INITIAL, timerTicks);
-			writeLAPIC(base, REG_TIMER_CURRENT, 0);
 		}
 
 
@@ -127,7 +132,10 @@ namespace apic
 		config |= (IRQ_BASE_VECTOR + 0) & 0xFF;     // vector
 		config |= 0x20000;                          // timer mode
 
+
 		writeLAPIC(base, REG_LVT_TIMER, config);
+		scheduler::setTickIRQ(0);
+		sendEOI(0);
 	}
 }
 }

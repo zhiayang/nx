@@ -94,13 +94,13 @@ namespace nx
 		struct extent_t;
 		struct State
 		{
-			extent_t* extents;
-			size_t numExtents;
+			extent_t* extents = 0;
+			size_t numExtents = 0;
 
-			size_t numPages;
+			size_t numPages = 0;
 
-			addr_t maxAddress;
-			const char* owner;
+			addr_t maxAddress = 0;
+			const char* owner = 0;
 		};
 
 		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);

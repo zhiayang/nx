@@ -16,37 +16,33 @@ namespace pit8253
 	static constexpr int PIT_CHANNEL_0          = 0x40;
 	static constexpr int PIT_COMMAND            = 0x43;
 
-	// 1.1931816666 MHz
-	static constexpr int BASE_FREQUENCY_HZ      = 1193182;
-	static constexpr int FREQUENCY_DIVISOR      = 82;       // 1193182 / 82 = 14551
+	static constexpr int BASE_FREQUENCY_HZ      = 1193182;  // 1.1931816666 MHz
+	static constexpr int FREQUENCY_DIVISOR      = 14551;
 
 	static constexpr int TICK_FREQUENCY         = BASE_FREQUENCY_HZ / FREQUENCY_DIVISOR;
-	static constexpr double SECONDS_PER_TICK    = 1.0 / (double) TICK_FREQUENCY;
-
-	static constexpr double NS_PER_TICK         = SECONDS_PER_TICK * 1.0e9;
+	static constexpr uint64_t NS_PER_TICK       = 1'000'000'000.0 / TICK_FREQUENCY;
 
 	void enable()
 	{
 		// we just let this sit at a fixed (high-ish) frequency, then use that to keep time accurate to the ms.
 		auto d = (uint16_t) FREQUENCY_DIVISOR;
 
-		port::write1b(PIT_COMMAND, 0x36);
-		port::write1b(PIT_CHANNEL_0, d & 0xFF);
-		port::write1b(PIT_CHANNEL_0, (d & 0xFF00) >> 8);
+		port::write1b(PIT_COMMAND, 0x34);
+		port::write1b(PIT_CHANNEL_0, (d >> 0 & 0xFE));  // use even divisors
+		port::write1b(PIT_CHANNEL_0, (d >> 8 & 0xFF));
 	}
 
 	void disable()
 	{
 		// set it to one-shot mode
-		port::write1b(PIT_COMMAND, 0x30);
-		port::write1b(PIT_CHANNEL_0, 0xFF);
-		port::write1b(PIT_CHANNEL_0, 0xFF);
+		port::write1b(PIT_COMMAND, 0x28);
+		port::write1b(PIT_CHANNEL_0, 0);
 	}
 
 	static uint64_t TickCounter = 0;
-	void tick()                         { TickCounter += 1; }
+	void tick()                         { TickCounter++; }
 	uint64_t getTicks()                 { return TickCounter; }
-	uint64_t getNanosecondsPerTick()    { return (uint64_t) round(NS_PER_TICK); }
+	uint64_t getNanosecondsPerTick()    { return NS_PER_TICK; }
 }
 }
 }

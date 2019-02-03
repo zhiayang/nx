@@ -45,7 +45,6 @@ namespace scheduler
 		bool ret = (TickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 		if(ret) TickCounter = 0;
 
-		print("(tick %d)", ret);
 		return ret;
 	}
 }
