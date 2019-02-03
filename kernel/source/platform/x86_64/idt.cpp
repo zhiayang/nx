@@ -62,8 +62,8 @@ namespace idt
 		// is set here, along with any access flags
 
 		idt[num].selector = codeSegment;
-		if(num < 32)    idt[num].ist_offset = 0x0;		// ????? should be 1 or something.
-		else            idt[num].ist_offset = 0x0;
+		if(num < IRQ_BASE_VECTOR)   idt[num].ist_offset = 0x0;		// ????? should be 1 or something.
+		else                        idt[num].ist_offset = 0x0;
 
 		idt[num].always0 = 0;
 		idt[num].flags = flags;

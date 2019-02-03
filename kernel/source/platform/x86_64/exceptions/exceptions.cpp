@@ -196,6 +196,9 @@ namespace exceptions
 			println("");
 		}
 
+		println("\nfault location:");
+		println("%p   |   %s", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
+
 		util::printStackTrace(regs->rbp);
 
 		abort("unrecoverable cpu exception");

@@ -124,13 +124,19 @@ namespace nx
 		interrupts::enable();
 
 
-		// TODO: make this more robust?
-		// eg: find appropriate timer device automatically (HPET/LAPIC/PIT)
+		if(false && device::apic::present())
 		{
-			int irq = device::apic::getISAIRQMapping(0);
-
+			// this call will enable the PIT, calibrate the LAPIC timer, disable the PIT,
+			// and arm the scheduler.
+			device::apic::initLAPICTimer();
+		}
+		else
+		{
 			device::pit8253::enable();
-			device::apic::setInterrupt(irq, 0, 0);
+
+			int irq = device::apic::getISAIRQMapping(0);
+			device::apic::setInterrupt(irq, IRQ_BASE_VECTOR, 0);
+
 			scheduler::setTickIRQ(irq);
 		}
 

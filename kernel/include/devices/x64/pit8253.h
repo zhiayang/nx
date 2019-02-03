@@ -13,6 +13,9 @@ namespace nx
 			void enable();
 			void disable();
 
+			void tick();
+			uint64_t getTicks();
+
 			uint64_t getNanosecondsPerTick();
 		}
 	}

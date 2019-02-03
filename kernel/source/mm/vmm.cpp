@@ -66,7 +66,10 @@ namespace vmm
 		else if(type == AddressSpace::Kernel)       st = &proc->vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
-		return extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
+		auto ret = extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
+		println("alloc %p / %zu", ret, num);
+
+		return ret;
 	}
 
 	void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc)
@@ -92,6 +95,7 @@ namespace vmm
 		extmm::State* st = getAddrSpace(addr, num, proc->vmmStates);
 		if(!st) abort("allocateSpecific(): no address space to allocate address '%p'", addr);
 
+		println("alloc specific (%p) %p / %zu", st, addr, num);
 		return extmm::allocateSpecific(st, addr, num);
 	}
 

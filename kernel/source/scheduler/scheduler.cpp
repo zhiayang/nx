@@ -4,52 +4,37 @@
 
 #include "nx.h"
 
+
+extern "C" void nx_x64_yield_thread();
+extern "C" void nx_x64_tick_handler();
+extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
+
 namespace nx {
 namespace scheduler
 {
-	static int TickIRQ = 0;
-	void setTickIRQ(int irq)
-	{
-		TickIRQ = irq;
-	}
-
-
-	static uint64_t ticks = 0;
-
-	extern "C" void nx_x64_yield_thread();
-	extern "C" void nx_x64_tick_handler();
-	extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
-
-	extern "C" int nx_x64_scheduler_tick()
-	{
-		interrupts::sendEOI(TickIRQ);
-
-		return ++ticks % 200 == 0;
-	}
-
 	static Thread* IdleThread = 0;
 	static Thread* CurrentThread = 0;
 
 	static nx::list<Thread*> ThreadList;
 	static nx::list<Thread*> BlockedThreads;
 
+
 	void init(Thread* idle_thread, Thread* work_thread)
 	{
-		// install the tick handler
-		cpu::idt::setEntry(0x20, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
-
-		// install the yield handler
-		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
-
-
 		IdleThread = idle_thread;
 
 		ThreadList = nx::list<Thread*>();
 		BlockedThreads = nx::list<Thread*>();
 
-
 		CurrentThread = work_thread;
 		ThreadList.append(work_thread);
+
+		// install the tick handler
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
+
+		// install the yield handler
+		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
+
 
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}
@@ -66,9 +51,6 @@ namespace scheduler
 			ThreadList.append(CurrentThread);
 
 		// else we blocked or smth, don't put it back in the runqueue.
-
-
-
 
 		CurrentThread = getNextThread();
 		CurrentThread->state = ThreadState::Running;

@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "devices/x64/pit8253.h"
 #include "devices/x64/pic8259.h"
 
 extern "C" void nx_x64_irq_handler_0();
@@ -41,22 +42,22 @@ namespace interrupts
 			device::pic8259::init();
 		}
 
-		cpu::idt::setEntry(0x20 + 0,    (addr_t) nx_x64_irq_handler_0,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 1,    (addr_t) nx_x64_irq_handler_1,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 2,    (addr_t) nx_x64_irq_handler_2,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 3,    (addr_t) nx_x64_irq_handler_3,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 4,    (addr_t) nx_x64_irq_handler_4,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 5,    (addr_t) nx_x64_irq_handler_5,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 6,    (addr_t) nx_x64_irq_handler_6,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 7,    (addr_t) nx_x64_irq_handler_7,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 8,    (addr_t) nx_x64_irq_handler_8,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 9,    (addr_t) nx_x64_irq_handler_9,     0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 10,   (addr_t) nx_x64_irq_handler_10,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 11,   (addr_t) nx_x64_irq_handler_11,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 12,   (addr_t) nx_x64_irq_handler_12,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 13,   (addr_t) nx_x64_irq_handler_13,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 14,   (addr_t) nx_x64_irq_handler_14,    0x08, 0x8E);
-		cpu::idt::setEntry(0x20 + 15,   (addr_t) nx_x64_irq_handler_15,    0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0,     (addr_t) nx_x64_irq_handler_0,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 1,     (addr_t) nx_x64_irq_handler_1,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 2,     (addr_t) nx_x64_irq_handler_2,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 3,     (addr_t) nx_x64_irq_handler_3,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 4,     (addr_t) nx_x64_irq_handler_4,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 5,     (addr_t) nx_x64_irq_handler_5,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 6,     (addr_t) nx_x64_irq_handler_6,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 7,     (addr_t) nx_x64_irq_handler_7,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 8,     (addr_t) nx_x64_irq_handler_8,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 9,     (addr_t) nx_x64_irq_handler_9,  0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 10,    (addr_t) nx_x64_irq_handler_10, 0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 11,    (addr_t) nx_x64_irq_handler_11, 0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 12,    (addr_t) nx_x64_irq_handler_12, 0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 13,    (addr_t) nx_x64_irq_handler_13, 0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 14,    (addr_t) nx_x64_irq_handler_14, 0x08, 0x8E);
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + 15,    (addr_t) nx_x64_irq_handler_15, 0x08, 0x8E);
 	}
 
 	void enable()
@@ -97,11 +98,9 @@ namespace interrupts
 		sendEOI(num);
 	}
 
-	static int x = 0;
 	extern "C" void nx_x64_handle_irq(int num)
 	{
-		if(++x % 120 == 0)
-			println("int %d (%d)", num, x);
+		if(num == 0) device::pit8253::tick();
 
 		nx_x64_send_eoi(num);
 	}

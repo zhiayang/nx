@@ -48,17 +48,19 @@ namespace apic
 
 
 
-
+	static bool APIC_Present = false;
+	bool present()
+	{
+		return APIC_Present;
+	}
 
 	// returns false if the system does not have an APIC!
 	bool init()
 	{
-		// return false;
-
 		// if we do not have ioapics, then we do not have lapics or whatever.
 		// so, we return false -- falling back to the normal 8259 pic.
 		if(IoApics.empty()) return false;
-
+		else                APIC_Present = true;
 
 		// initialise all ioapics
 		// reference: https://pdos.csail.mit.edu/6.828/2006/readings/ia32/ioapic.pdf
@@ -150,11 +152,7 @@ namespace apic
 		assert(vector < 0xFF);
 		assert(apicId <= 0xF);
 
-		// we add 32 to the vector, because we deal in irq-space -- not IDT space!
-		// the ioapic will send the cpu an interrupt in 'idt-space', meaning the first
-		// irq should send vector 32, not 0.
-		vector += 32;
-
+		assert(vector >= IRQ_BASE_VECTOR);
 
 		auto ioa = getIoApicForIrq(irq);
 		if(!ioa) return;

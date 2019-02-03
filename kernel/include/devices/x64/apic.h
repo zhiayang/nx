@@ -18,6 +18,28 @@ namespace nx
 	{
 		namespace apic
 		{
+			bool present();
+
+
+			// LAPIC stuff
+
+			// send an EOI for the irq.
+			void sendEOI(int num);
+
+			// setup and calibrate the local apic timer
+			void initLAPICTimer();
+
+
+
+
+
+
+
+
+
+
+
+			// IOAPIC stuff
 			struct IOAPIC
 			{
 				int id;
@@ -44,11 +66,8 @@ namespace nx
 			void unmaskIRQ(int num);
 
 			// sets up the ioapic to trigger interrupt 'vector' on the cpu with id 'apicId',
-			// when it receives 'irq' from a device.
+			// when it receives 'irq' from a device. note: 'vector' is in IDT space! (please use vectors >= 32)
 			void setInterrupt(int irq, int vector, int apicId);
-
-			// send an EOI for the irq.
-			void sendEOI(int num);
 
 			// sets the pin mapping from the legacy ISA interrupt number to the IOAPIC interrupt number.
 			// uses the intr source info in the MADT.

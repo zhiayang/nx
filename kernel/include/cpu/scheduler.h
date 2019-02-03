@@ -87,6 +87,10 @@ namespace nx
 		void init(Thread* idle_thread, Thread* work_thread);
 		void setTickIRQ(int irq);
 
+		uint64_t getElapsedNanoseconds();
+		uint64_t getNanosecondsPerTick();
+
+
 		void yield();
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);

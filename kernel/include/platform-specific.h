@@ -8,6 +8,8 @@
 
 	#include "devices/x64/apic.h"
 
+	static constexpr int IRQ_BASE_VECTOR    = 32;
+
 #else
 
 #endif

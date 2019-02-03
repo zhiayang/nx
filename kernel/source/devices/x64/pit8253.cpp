@@ -33,8 +33,6 @@ namespace pit8253
 		port::write1b(PIT_COMMAND, 0x36);
 		port::write1b(PIT_CHANNEL_0, d & 0xFF);
 		port::write1b(PIT_CHANNEL_0, (d & 0xFF00) >> 8);
-
-		log("pit8253", "enabled PIT with %.2f ns per tick", NS_PER_TICK);
 	}
 
 	void disable()
@@ -45,10 +43,10 @@ namespace pit8253
 		port::write1b(PIT_CHANNEL_0, 0xFF);
 	}
 
-	uint64_t getNanosecondsPerTick()
-	{
-		return (uint64_t) round(NS_PER_TICK);
-	}
+	static uint64_t TickCounter = 0;
+	void tick()                         { TickCounter += 1; }
+	uint64_t getTicks()                 { return TickCounter; }
+	uint64_t getNanosecondsPerTick()    { return (uint64_t) round(NS_PER_TICK); }
 }
 }
 }

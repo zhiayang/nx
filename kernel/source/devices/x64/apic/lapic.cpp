@@ -6,17 +6,26 @@
 
 #include "devices/acpi.h"
 #include "devices/x64/apic.h"
+#include "devices/x64/pit8253.h"
+
+#include "misc/timekeeping.h"
+
+#include "math.h"
 
 namespace nx {
 namespace device {
 namespace apic
 {
-	static constexpr int LAPIC_REG_EOI      = 0xB0;
-	static constexpr int LAPIC_REG_SPURIOUS = 0xF0;
+	static constexpr int REG_EOI            = 0xB0;
+	static constexpr int REG_SPURIOUS       = 0xF0;
 
-	static constexpr int LAPIC_REG_TIMER    = 0x320;
-	static constexpr int LAPIC_REG_LINT0    = 0x350;
-	static constexpr int LAPIC_REG_LINT1    = 0x360;
+	static constexpr int REG_LVT_TIMER      = 0x320;
+	static constexpr int REG_LVT_LINT0      = 0x350;
+	static constexpr int REG_LVT_LINT1      = 0x360;
+
+	static constexpr int REG_TIMER_INITIAL  = 0x380;
+	static constexpr int REG_TIMER_CURRENT  = 0x390;
+	static constexpr int REG_TIMER_DIVISOR  = 0x3E0;
 
 
 	static void writeLAPIC(addr_t base, int reg, uint32_t value)
@@ -38,8 +47,118 @@ namespace apic
 		assert(proc);
 
 		// send an eoi by writing 0 to the eoi register.
-		writeLAPIC(proc->localApicAddr, LAPIC_REG_EOI, 0);
+		writeLAPIC(proc->localApicAddr, REG_EOI, 0);
+	}
+
+	void initLAPICTimer()
+	{
+		// setup the PIT
+		{
+			int irq = device::apic::getISAIRQMapping(0);
+
+			device::pit8253::enable();
+			device::apic::setInterrupt(irq, IRQ_BASE_VECTOR, 0);
+		}
+
+
+		auto base = scheduler::getCurrentCPU()->localApicAddr;
+		assert(base);
+
+		// 001b divides by 4 -- so we'll just use that. the rest are reserved.
+		writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
+
+
+		// repeat the experiment 5 times
+		double results[5] = { };
+		uint32_t timerDiffs[5] = { };
+
+		constexpr uint64_t measurementPeriodNS = time::milliseconds(2).ns();
+		auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
+
+		for(int i = 0; i < 5; i++)
+		{
+			// set the initial count to something big
+			writeLAPIC(base, REG_TIMER_INITIAL, 0xFFFFFFFF);
+
+			uint64_t start = device::pit8253::getTicks();
+			uint64_t end = 0;
+			while((end = device::pit8253::getTicks()) - start < waitingTicks)
+				asm volatile ("pause");
+
+			// read the LAPIC current.
+			auto curr = readLAPIC(base, REG_TIMER_CURRENT);
+			timerDiffs[i] = 0xFFFFFFFF - curr;
+
+			// lapic ticked 'timerDiff' times in 'diff' nanoseconds
+			auto diff = (end - start) * device::pit8253::getNanosecondsPerTick();
+
+			results[i] = (double) diff / (double) timerDiffs[i];
+		}
+
+		auto nsPerTick = (results[0] + results[1] + results[2] + results[3] + results[4]) / 5.0;
+		log("lapic", "lapic timer: %.2f ns per tick", nsPerTick);
+
+		// kill the old PIT
+		device::pit8253::disable();
+
+		// arm the timer.
+		{
+			auto timerTicks = (timerDiffs[0] + timerDiffs[1] + timerDiffs[2] + timerDiffs[3] + timerDiffs[4]) / 5;
+			timerTicks *= (scheduler::getNanosecondsPerTick() / measurementPeriodNS);
+
+			assert(timerTicks <= 0xFFFFFFFF);
+			println("timer ticks = %u", timerTicks);
+
+			writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
+			writeLAPIC(base, REG_TIMER_INITIAL, timerTicks);
+			writeLAPIC(base, REG_TIMER_CURRENT, 0);
+		}
+
+
+		// set the interrupt to trigger on IRQ0, periodic mode, and unmask it.
+		uint32_t config = 0;
+
+		// 0:7      -- vector
+		// 8:11     -- delivery mode (000 for normal ie fixed)
+		// ...
+		// 16       -- set to mask
+		// 17:18    -- timer mode (00 = one-shot, 01 = periodic, 10 = tsc deadline)
+
+		config |= (IRQ_BASE_VECTOR + 0) & 0xFF;     // vector
+		config |= 0x20000;                          // timer mode
+
+		writeLAPIC(base, REG_LVT_TIMER, config);
 	}
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
