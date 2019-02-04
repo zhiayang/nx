@@ -5,6 +5,10 @@
 #include "nx.h"
 #include "tinf.h"
 
+#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#include "bootinfo.h"
+
+
 extern "C" void printline(const char* s, ...)
 {
 	va_list args; va_start(args, s);
@@ -70,6 +74,10 @@ namespace initrd
 
 		auto tarfs = vfs::tarfs::create((uint8_t*) buf, uncompressedSize);
 		vfs::mount(tarfs, "/initrd", true);
+
+
+		// free the old buffer.
+		pmm::freeEarlyMemory(bi, MemoryType::Initrd);
 	}
 }
 }

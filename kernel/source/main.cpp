@@ -7,6 +7,13 @@
 #include "devices/x64/apic.h"
 #include "devices/x64/pit8253.h"
 
+
+#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#include "bootinfo.h"
+
+
+
+
 namespace nx
 {
 	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
@@ -90,10 +97,19 @@ namespace nx
 		exceptions::init();
 
 		println("[nx] kernel has control");
-		println("bootloader ident: '%c%c%c'\n", bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2]);
+		println("bootloader ident: '%c%c%c', version: %d\n",
+			bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2], bootinfo->version);
 
-		if(bootinfo->version < 1)
-			abort("invalid bootloader version: %d; at least version %d is required!", bootinfo->version, 1);
+		if(bootinfo->version < NX_SUPPORTED_BOOTINFO_VERSION)
+		{
+			abort("invalid bootloader version: %d; at least version %d is required!",
+				bootinfo->version, NX_SUPPORTED_BOOTINFO_VERSION);
+		}
+		else if(bootinfo->version > NX_SUPPORTED_BOOTINFO_VERSION)
+		{
+			warn("kernel", "bootloader version %d is newer than supported version %d",
+				bootinfo->version, NX_SUPPORTED_BOOTINFO_VERSION);
+		}
 
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
 		auto kernelProc = scheduler::getKernelProcess();
@@ -116,7 +132,10 @@ namespace nx
 		scheduler::preinitCPUs();
 
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
-		// acpi::init(bootinfo);
+		acpi::init(bootinfo);
+
+		// we should be done with the bootinfo now.
+		pmm::freeAllEarlyMemory(bootinfo);
 
 		// initialise the interrupt controller (IOAPIC/LAPIC)
 		interrupts::init();

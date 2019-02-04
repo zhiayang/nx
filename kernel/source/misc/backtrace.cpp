@@ -5,6 +5,11 @@
 #include "nx.h"
 #include "elf.h"
 
+
+#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#include "bootinfo.h"
+
+
 namespace nx {
 namespace util
 {
@@ -176,6 +181,8 @@ namespace util
 
 
 		log("backtrace", "found %zu symbols", symbols.size());
+
+		pmm::freeEarlyMemory(bi, MemoryType::KernelElf);
 	}
 }
 }

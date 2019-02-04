@@ -3,9 +3,13 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+
 #include "devices/acpi.h"
 
 #include "efi/system-table.h"
+
+#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#include "bootinfo.h"
 
 namespace nx {
 namespace acpi

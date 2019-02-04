@@ -10,6 +10,7 @@
 namespace nx
 {
 	struct BootInfo;
+	enum class MemoryType : uint64_t;
 
 	namespace heap
 	{
@@ -24,6 +25,9 @@ namespace nx
 
 		addr_t allocate(size_t num, bool below4G = false);
 		void deallocate(addr_t addr, size_t num);
+
+		void freeEarlyMemory(BootInfo* bootinfo, MemoryType type);
+		void freeAllEarlyMemory(BootInfo* bootinfo);
 	}
 
 	namespace vmm

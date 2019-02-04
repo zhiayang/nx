@@ -4,6 +4,11 @@
 
 #include "nx.h"
 
+#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#include "bootinfo.h"
+
+
+
 namespace nx {
 namespace pmm
 {
@@ -62,6 +67,34 @@ namespace pmm
 		log("pmm", "initialised with %zu extents, %s", extmmState.numExtents, buf);
 	}
 
+	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
+	{
+		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
+		{
+			auto entry = &bootinfo->mmEntries[i];
+			if(entry->memoryType == type)
+			{
+				deallocate(entry->address, entry->numPages);
+
+				// for safety, make sure we don't touch this again (accidentally or otherwise)
+				entry->memoryType = MemoryType::Reserved;
+			}
+		}
+	}
+
+	// this one frees the memory map, and the bootinfo itself.
+	void freeAllEarlyMemory(BootInfo* bootinfo)
+	{
+		freeEarlyMemory(bootinfo, MemoryType::MemoryMap);
+
+		auto addr = (addr_t) bootinfo;
+		assert((addr & vmm::PAGE_ALIGN) == addr);
+
+		// we assume the kernel boot info is one page long!!
+		deallocate(addr, 1);
+
+		log("pmm", "freed all bootloader memory");
+	}
 
 
 	addr_t allocate(size_t num, bool below4G)

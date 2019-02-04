@@ -37,33 +37,95 @@ namespace nx
 		uint64_t efiAttributes;
 	};
 
+
+
+	#ifndef NX_BOOTINFO_VERSION
+		#error "define NX_BOOTINFO_VERSION before including bootinfo.h!"
+	#endif
+
 	struct BootInfo
 	{
-		uint8_t ident[3];       // E, F, X
+		// 'e', 'f', 'x'
+		uint8_t ident[3];
+
+		// the version of the bootinfo struct.
 		uint8_t version;
 
-		uint32_t fbHorz;        // horizontal resolution (in pixels)
-		uint32_t fbVert;        // vertical res
-		uint32_t fbScanWidth;   // 'actual width' -- number of pixels to go to the next vertical line.
-		uint64_t frameBuffer;   // pyhs address of the frame buffer
+		// horizontal resolution (in pixels)
+		uint32_t fbHorz;
 
-		uint64_t pml4Address;   // physical address of the PML4T that was set up by the bootloader.
+		// vertical resolution (in pixels)
+		uint32_t fbVert;
 
-		void* efiSysTable;      // pointer to EFI system table
-		bool canCallEFIRuntime; // whether or not we successfully called SetVirtualMemoryMap()
+		// 'actual width' -- number of pixels to go to the next vertical line.
+		uint32_t fbScanWidth;
 
+		// physical address of the frame buffer
+		uint64_t frameBuffer;
+
+		// physical address of the PML4T that was set up by the bootloader.
+		uint64_t pml4Address;
+
+		// pointer to EFI system table
+		void* efiSysTable;
+
+		// whether or not we successfully called SetVirtualMemoryMap()
+		bool canCallEFIRuntime;
+
+		// the number of memory map entries
 		uint64_t mmEntryCount;
+
+		// pointer to the first memory map entry (identity mapped)
 		MemMapEntry* mmEntries;
 
-		uint64_t initrdSize;    // we only support one initrd right now!
-		void* initrdBuffer;     // physical address, but the loader will identity map it (since it is LoaderSetup memory)
+		// the size of the initrd
+		uint64_t initrdSize;
+
+		// pointer to the initrd (identity mapped)
+		void* initrdBuffer;
 
 
-		// from version 2:
-		void* kernelElf;        // the entire kernel executable
-		uint64_t kernelElfSize; // how large the thing is.
+
+		#if NX_BOOTINFO_VERSION >= 2
+
+			// pointer to the kernel ELF executable (identity mapped)
+			void* kernelElf;
+
+			// the size of the kernel executable
+			uint64_t kernelElfSize;
+
+		#endif
+
+
+		#if NX_BOOTINFO_VERSION >= 3
+
+			// a list of kernel parameters; each parameter is null-terminated, and immediately proceeded by the next
+			// parameter (if any).
+			char* kernelParams;
+
+			// the total size of the parameter string
+			uint64_t kernelParamsLength;
+
+			// the number of null-terminated parameters
+			uint64_t numKernelParams;
+
+		#endif
 	};
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

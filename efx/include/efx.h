@@ -9,6 +9,10 @@
 #include "stdint.h"
 #include "krt.h"
 
+#define NX_BOOTINFO_VERSION 3
+#include "../../kernel/include/bootinfo.h"
+
+
 // fuck EFI
 #define STR(x) ((char16_t*) L ## x)
 
@@ -51,6 +55,8 @@ namespace efx
 
 		bool has_option(const string& opt);
 		string get_option(const string& opt);
+
+		array<string> getKernelCommandLine();
 	}
 
 	namespace fs

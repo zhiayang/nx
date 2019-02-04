@@ -1,4 +1,4 @@
-// main.cpp
+// efx_main.cpp
 // Copyright (c) 2018, zhiayang
 // Licensed under the Apache License Version 2.0.
 
@@ -12,9 +12,7 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#include "../../kernel/include/bootinfo.h"
-
-#define EFX_VERSION_STRING "0.3.0"
+#define EFX_VERSION_STRING "0.4.0"
 
 
 void efx::init()
@@ -100,6 +98,47 @@ void efx::init()
 
 		efi::println("loaded initrd %s, %s", path.cstr(), humanSizedBytes(len).cstr());
 	}
+
+
+	{
+		size_t reqSize = 0;
+
+		// set kernel command line
+		auto args = options::getKernelCommandLine();
+		for(const auto& s : args)
+		{
+			// include null terminator
+			reqSize += s.size() + 1;
+		}
+
+
+		char* buffer = 0;
+		{
+			uint64_t out = 0;
+			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo,
+				(reqSize + 0x1000) / 0x1000, &out);
+			efi::abort_if_error(stat, "failed to allocate memory for kernel parameters!");
+
+			buffer = (char*) out;
+		}
+
+
+		// ok, start copying.
+		size_t idx = 0;
+		for(const auto& s : args)
+		{
+			memmove(buffer + idx, s.cstr(), s.size());
+			idx += s.size();
+
+			buffer[idx] = 0;
+			idx += 1;
+		}
+
+		kernelBootInfo->kernelParams = buffer;
+		kernelBootInfo->numKernelParams = args.size();
+		kernelBootInfo->kernelParamsLength = reqSize;
+	}
+
 
 
 	{

@@ -7,7 +7,6 @@
 #include "efi/system-table.h"
 
 #include "elf.h"
-#include "../../kernel/include/bootinfo.h"
 #include "../../kernel/include/misc/addrs.h"
 
 namespace efx
@@ -96,7 +95,7 @@ namespace efx
 		bi->ident[0]    = 'e';
 		bi->ident[1]    = 'f';
 		bi->ident[2]    = 'x';
-		bi->version     = 2;
+		bi->version     = NX_BOOTINFO_VERSION;
 		bi->efiSysTable = (void*) efi::systable();
 
 		bi->fbHorz      = graphics::getX();

@@ -9,7 +9,6 @@
 #include "fs.h"
 #include "mm.h"
 #include "synchro.h"
-#include "bootinfo.h"
 
 #include "devices/acpi.h"
 #include "devices/ports.h"
@@ -26,10 +25,11 @@
 
 #include "platform-specific.h"
 
-
+#define NX_SUPPORTED_BOOTINFO_VERSION 2
 
 namespace nx
 {
+
 	constexpr size_t PAGE_SIZE                      = 0x1000;
 
 	namespace initrd

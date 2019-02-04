@@ -9,7 +9,6 @@
 #include "string.h"
 
 // for the vmm structs.
-#include "../../kernel/include/bootinfo.h"
 #include "../../kernel/include/misc/addrs.h"
 
 

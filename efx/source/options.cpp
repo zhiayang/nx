@@ -19,12 +19,16 @@ namespace options
 	};
 
 	static efx::array<option_t> loadOptions;
+	static efx::array<efx::string> kernelCommandLine;
 
 	void parse(const efx::string& opts)
 	{
 		// ok, we need to construct the global object, because efi does not call our constructors!
 		loadOptions = efx::array<option_t>();
 		auto options = efx::array<efx::string>();
+
+		kernelCommandLine = efx::array<efx::string>();
+
 
 		efx::string currentOption;
 		efx::stack<char> quoteStack;
@@ -73,26 +77,39 @@ namespace options
 					currentOption = "";
 				}
 			}
+
 			options.append(currentOption);
 		}
 
 		// now we actually need to parse each option.
+		bool endOfOpts = false;
 		for(const auto& opt : options)
 		{
-			// find an '='
-			auto eq = opt.find('=');
-			if(eq == -1)
+			if(opt == "--")
 			{
-				// ok, just add the option.
-				loadOptions.append(option_t(opt, "true"));
+				endOfOpts = true;
+			}
+			else if(endOfOpts)
+			{
+				kernelCommandLine.append(opt);
 			}
 			else
 			{
-				option_t option;
-				option.option = opt.substring(0, eq);
-				option.value = opt.substring(eq + 1);
+				// find an '='
+				auto eq = opt.find('=');
+				if(eq == -1)
+				{
+					// ok, just add the option.
+					loadOptions.append(option_t(opt, "true"));
+				}
+				else
+				{
+					option_t option;
+					option.option = opt.substring(0, eq);
+					option.value = opt.substring(eq + 1);
 
-				loadOptions.append(option);
+					loadOptions.append(option);
+				}
 			}
 		}
 
@@ -101,6 +118,11 @@ namespace options
 			efi::println("%s = %s", opt.option.cstr(), opt.value.cstr());
 
 		efi::println("");
+	}
+
+	array<string> getKernelCommandLine()
+	{
+		return kernelCommandLine;
 	}
 
 	bool has_option(const string& name)
