@@ -7,7 +7,6 @@
 #include "devices/x64/apic.h"
 #include "devices/x64/pit8253.h"
 
-
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
 extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
@@ -28,9 +27,26 @@ namespace scheduler
 
 	static nx::list<Thread*> ThreadList;
 	static nx::list<Thread*> BlockedThreads;
+	static nx::list<Thread*> DestructionQueue;
 
 	static nx::list<Process*> ProcessList;
 
+
+	[[noreturn]] static void death_destroyer_of_threads()
+	{
+		while(true)
+		{
+			while(DestructionQueue.size() > 0)
+			{
+				auto thr = DestructionQueue.popFront();
+				assert(thr);
+
+				destroyThread(thr);
+			}
+
+			yield();
+		}
+	}
 
 	void init(Thread* idle_thread, Thread* work_thread)
 	{
@@ -38,6 +54,7 @@ namespace scheduler
 
 		ThreadList = nx::list<Thread*>();
 		BlockedThreads = nx::list<Thread*>();
+		DestructionQueue = nx::list<Thread*>();
 
 		ProcessList = nx::list<Process*>();
 
@@ -74,12 +91,17 @@ namespace scheduler
 		}
 
 
+		{
+			// install the tick handler
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
 
-		// install the tick handler
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
+			// install the yield handler
+			cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
+		}
 
-		// install the yield handler
-		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
+		// add our own worker thread.
+		add(createThread(idle_thread->parent, death_destroyer_of_threads));
+
 
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}
@@ -109,6 +131,21 @@ namespace scheduler
 	void yield()
 	{
 		asm volatile ("int $0xF0");
+	}
+
+	void exit()
+	{
+		auto t = getCurrentThread();
+		assert(t);
+
+		log("sched", "exiting thread %lu", t->threadId);
+
+		t->state = ThreadState::AboutToExit;
+		DestructionQueue.append(t);
+
+		yield();
+
+		while(1);
 	}
 
 	void block(mutex* mtx)
@@ -187,6 +224,10 @@ namespace scheduler
 		for(auto& t : p->threads)
 			add(&t);
 	}
+
+
+
+
 
 
 

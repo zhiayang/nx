@@ -13,38 +13,29 @@
 
 namespace nx
 {
-	[[noreturn]] static int64_t idle_thread() { while(true) asm volatile ("hlt"); }
+	[[noreturn]] static void idle_thread() { while(true) asm volatile ("hlt"); }
 
-	int64_t work_thread2()
+	void work_thread1()
 	{
-		// s.lock();
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 5000000 == 0) print("2");
-
+			if(++ctr % 7500000 == 0) print("1");
 		}
-		return 1;
 	}
 
-	int64_t work_thread1()
+	void work_thread2()
 	{
-		scheduler::sleep(time::milliseconds(1000).ns());
+		scheduler::sleep(time::milliseconds(500).ns());
 
-		println("preparing to sleep for 5000 ms...");
-		scheduler::sleep(time::milliseconds(5000).ns());
+		println("preparing to sleep for 2000 ms...");
+		scheduler::sleep(time::milliseconds(2000).ns());
 
-		println("*yawn*");
-
-		size_t ctr = 0;
-		while(true)
-		{
-			if(++ctr % 5000000 == 0) print("1");
-		}
-		return 1;
+		println("*yawn*. goodbye!");
+		scheduler::exit();
 	}
 
-	int64_t kernel_main()
+	void kernel_main()
 	{
 		log("kernel", "started main worker thread\n");
 
@@ -57,11 +48,8 @@ namespace nx
 		uint64_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 5000000 == 0) print("q");
+			if(++ctr % 7500000 == 0) print("q");
 		}
-
-		// how?!
-		return 1;
 	}
 
 

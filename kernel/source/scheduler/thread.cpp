@@ -79,7 +79,7 @@ namespace scheduler
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)));
+			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)), proc);
 
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
@@ -93,6 +93,10 @@ namespace scheduler
 
 			auto phys = pmm::allocate(n);
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
+
+			// save it so we can kill it later.
+			thr->kernelStackTop = virt;
+
 
 			// map it in the target address space
 			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)));
@@ -128,6 +132,7 @@ namespace scheduler
 			*--kstk     = (uint64_t) b; // rsi
 			*--kstk     = (uint64_t) a; // rdi
 
+
 			// should be 160
 			assert((addr_t) kstk + 160 == (scratch + KERNEL_STACK_SIZE));
 
@@ -140,6 +145,35 @@ namespace scheduler
 		}
 
 		return thr;
+	}
+
+
+
+
+	void destroyThread(Thread* thr)
+	{
+		auto proc = thr->parent;
+		assert(proc);
+
+		// kill the user stack.
+		vmm::deallocate(thr->userStack, USER_STACK_SIZE / PAGE_SIZE, proc);
+
+		// kill the kernel thread.
+		vmm::deallocate(thr->kernelStackTop, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
+
+		auto id = thr->threadId;
+
+		// ok. erase it from the parent.
+		for(size_t i = 0; i < proc->threads.size(); i++)
+		{
+			if(proc->threads[i].threadId == thr->threadId)
+			{
+				proc->threads.erase_at(i, 1);
+				break;
+			}
+		}
+
+		log("sched", "destroyed thread %lu", id);
 	}
 }
 }

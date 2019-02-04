@@ -46,6 +46,7 @@ namespace nx
 			Running         = 1,
 			BlockedOnMutex  = 2,
 			BlockedOnSleep  = 3,
+			AboutToExit     = 4,
 		};
 
 		struct Thread
@@ -53,7 +54,9 @@ namespace nx
 			pid_t threadId;
 
 			addr_t userStack;
+
 			addr_t kernelStack;
+			addr_t kernelStackTop;
 
 			Process* parent = 0;
 
@@ -63,13 +66,13 @@ namespace nx
 			uint64_t wakeUpTimestamp = 0;
 		};
 
-		using Fn0Args_t = int64_t (*)();
-		using Fn1Arg_t  = int64_t (*)(void*);
-		using Fn2Args_t = int64_t (*)(void*, void*);
-		using Fn3Args_t = int64_t (*)(void*, void*, void*);
-		using Fn4Args_t = int64_t (*)(void*, void*, void*, void*);
-		using Fn5Args_t = int64_t (*)(void*, void*, void*, void*, void*);
-		using Fn6Args_t = int64_t (*)(void*, void*, void*, void*, void*, void*);
+		using Fn0Args_t = void (*)();
+		using Fn1Arg_t  = void (*)(void*);
+		using Fn2Args_t = void (*)(void*, void*);
+		using Fn3Args_t = void (*)(void*, void*, void*);
+		using Fn4Args_t = void (*)(void*, void*, void*, void*);
+		using Fn5Args_t = void (*)(void*, void*, void*, void*, void*);
+		using Fn6Args_t = void (*)(void*, void*, void*, void*, void*, void*);
 
 		// support up to 6 arguments
 		Thread* createThread(Process* p, Fn0Args_t fn);
@@ -94,13 +97,18 @@ namespace nx
 		uint64_t getNanosecondsPerTick();
 
 
+		[[noreturn]] void exit();
+
 		void yield();
+		void sleep(uint64_t ns);
+
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);
-		void sleep(uint64_t ns);
 
 		void add(Thread* t);
 		void add(Process* p);
+
+		void destroyThread(Thread* t);
 
 
 		// this is kinda dumb
