@@ -66,7 +66,7 @@ namespace nx
 			// uses the intr source info in the MADT.
 			void addISAIRQMapping(int isa, int irq);
 
-			// same as the above, but getting the mapping. if there is no mapping, it returns -1
+			// same as the above, but getting the mapping. if there is no mapping, it returns the original irq.
 			int getISAIRQMapping(int isa);
 		}
 	}

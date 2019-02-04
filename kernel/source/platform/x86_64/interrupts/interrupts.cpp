@@ -30,18 +30,25 @@ extern "C" void nx_x64_irq_handler_15();
 namespace nx {
 namespace interrupts
 {
-	static bool IsAPICPresent = false;
+	static bool IsIOAPICPresent = false;
+	static bool IsLocalAPICPresent = false;
 
 	bool hasIOAPIC()
 	{
-		return IsAPICPresent;
+		return IsIOAPICPresent;
 	}
+
+	bool hasLocalAPIC()
+	{
+		return IsLocalAPICPresent;
+	}
+
 
 	void init()
 	{
 		if constexpr (getArchitecture() == Architecture::x64)
 		{
-			if(IsAPICPresent = device::ioapic::init(); IsAPICPresent)
+			if(IsIOAPICPresent = device::ioapic::init(); IsIOAPICPresent)
 			{
 				// disable the legacy PIC by masking all interrupts.
 				device::pic8259::disable();
@@ -53,8 +60,10 @@ namespace interrupts
 			}
 
 			// check for local apic
-			if(!cpu::hasFeature(cpu::Feature::LocalAPIC) || scheduler::getCurrentCPU()->localApicAddr == 0)
-				abort("no local apic detected!");
+			IsLocalAPICPresent = (cpu::hasFeature(cpu::Feature::LocalAPIC) && scheduler::getCurrentCPU()->localApicAddr != 0);
+			if(!IsLocalAPICPresent)
+				warn("apic", "cpu does not have a local apic; this is not a well-supported configuration!");
+
 
 
 			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0,     (addr_t) nx_x64_irq_handler_0,  0x08, 0x8E);
@@ -118,13 +127,13 @@ namespace interrupts
 	//* meaning to say 'num' here will be 0-based -- it is the IRQ number after all, not the interrupt number.
 	void maskIRQ(int num)
 	{
-		if(IsAPICPresent)   device::ioapic::maskIRQ(num);
+		if(IsIOAPICPresent) device::ioapic::maskIRQ(num);
 		else                device::pic8259::maskIRQ(num);
 	}
 
 	void unmaskIRQ(int num)
 	{
-		if(IsAPICPresent)   device::ioapic::unmaskIRQ(num);
+		if(IsIOAPICPresent) device::ioapic::unmaskIRQ(num);
 		else                device::pic8259::unmaskIRQ(num);
 	}
 
@@ -135,9 +144,10 @@ namespace interrupts
 		// to handle cases where we have lapics but no ioapics, we will always send an EOI to the lapic
 		// if there's no ioapic, we will send an EOI to the 8259 pic also.
 
-		device::apic::sendEOI(num);
+		if(IsLocalAPICPresent)
+			device::apic::sendEOI(num);
 
-		if(!IsAPICPresent)
+		if(!IsIOAPICPresent)
 			device::pic8259::sendEOI(num);
 	}
 

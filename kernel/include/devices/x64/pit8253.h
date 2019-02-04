@@ -13,6 +13,8 @@ namespace nx
 			void enable();
 			void disable();
 
+			void setPeriod(uint64_t ns);
+
 			void tick();
 			uint64_t getTicks();
 

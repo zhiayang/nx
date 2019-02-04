@@ -5,6 +5,7 @@
 #include "nx.h"
 
 #include "devices/x64/apic.h"
+#include "devices/x64/pit8253.h"
 
 
 extern "C" void nx_x64_yield_thread();
@@ -40,11 +41,25 @@ namespace scheduler
 
 		if constexpr (getArchitecture() == Architecture::x64)
 		{
-			// setup stuff
-			device::apic::initLAPIC();
+			if(interrupts::hasLocalAPIC())
+			{
+				// setup stuff
+				device::apic::initLAPIC();
 
-			// calibrate the local apic timer for our scheduler ticks
-			device::apic::calibrateLAPICTimer();
+				// calibrate the local apic timer for our scheduler ticks
+				device::apic::calibrateLAPICTimer();
+			}
+			else
+			{
+				// re-set the PIT to fit our needs.
+				device::pit8253::setPeriod(NS_PER_TICK);
+
+				// who knows, we might have an ioapic without an lapic??
+				auto irq = device::ioapic::getISAIRQMapping(0);
+
+				interrupts::unmaskIRQ(irq);
+				setTickIRQ(irq);
+			}
 		}
 		else
 		{

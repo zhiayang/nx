@@ -56,8 +56,6 @@ namespace ioapic
 			return false;
 		}
 
-		return false;
-
 		// initialise all ioapics
 		// reference: https://pdos.csail.mit.edu/6.828/2006/readings/ia32/ioapic.pdf
 		// for the ioapic base address, the specs say FEC0 xy00h, where x is 0-F.
@@ -111,6 +109,7 @@ namespace ioapic
 
 	void addISAIRQMapping(int isa, int irq)
 	{
+		assert(IoApics.size() > 0);
 		if(auto it = ISAIRQMapping.find(isa); it != ISAIRQMapping.end())
 			log("ioapic", "ISA IRQ %d already has a mapping to ioapic irq %d!", isa, irq);
 
@@ -120,11 +119,13 @@ namespace ioapic
 
 	int getISAIRQMapping(int isa)
 	{
+		if(IoApics.empty()) return isa;
+
 		if(auto it = ISAIRQMapping.find(isa); it != ISAIRQMapping.end())
 			return it->value;
 
 		else
-			return -1;
+			return isa;;
 	}
 
 

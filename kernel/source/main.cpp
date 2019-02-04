@@ -116,7 +116,7 @@ namespace nx
 		scheduler::preinitCPUs();
 
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
-		acpi::init(bootinfo);
+		// acpi::init(bootinfo);
 
 		// initialise the interrupt controller (IOAPIC/LAPIC)
 		interrupts::init();

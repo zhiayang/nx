@@ -22,6 +22,7 @@ namespace nx
 		void sendEOI(int num);
 
 		bool hasIOAPIC();
+		bool hasLocalAPIC();
 
 		// note: 'vector' is in IRQ space! (0 => IRQ_BASE_VECTOR)
 		void mapIRQVector(int irq, int vector, int apicId);

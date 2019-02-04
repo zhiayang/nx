@@ -102,7 +102,7 @@ namespace apic
 
 		double nanosecondsPerTimerTick = 0;
 		{
-			auto measurementPeriodNS = scheduler::getNanosecondsPerTick();
+			auto measurementPeriodNS = 2 * __max(scheduler::getNanosecondsPerTick(), device::pit8253::getNanosecondsPerTick());
 			auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
 
 			constexpr int repeats = 5;
