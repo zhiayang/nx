@@ -83,8 +83,7 @@ namespace nx
 
 	void init(BootInfo* bootinfo)
 	{
-		// open all hatches
-		// extend all flaps and drag fins
+		// open all hatches, extend all flaps and drag fins
 
 		// init the fallback console
 		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);

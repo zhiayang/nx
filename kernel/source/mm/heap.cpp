@@ -42,9 +42,10 @@ namespace heap
 	// we always have a fixed number of buckets!
 	static Bucket Buckets[BucketCount];
 
+	static bool Initialised = false;
+
 	static size_t NumSpareChunks = 0;
 	static Chunk* SpareChunks = 0;
-
 
 
 	static void makeSpareChunks()
@@ -243,9 +244,14 @@ namespace heap
 			Buckets[i].bucketIdx = i;
 		}
 
+		Initialised = true;
 		log("heap", "initialised with %zu chunks in %zu buckets", numRequiredChunks, BucketCount);
 	}
 
+	bool initialised()
+	{
+		return Initialised;
+	}
 
 
 	static void insertUsedChunk(Bucket* bucket, Chunk* chunk)

@@ -8,10 +8,12 @@ namespace nx {
 namespace scheduler
 {
 	static Process KernelProcess;
+
 	void setupKernelProcess(addr_t cr3)
 	{
 		KernelProcess = Process();
 		KernelProcess.cr3 = cr3;
+		KernelProcess.processId = 0;
 
 		initialisePhase(1);
 	}

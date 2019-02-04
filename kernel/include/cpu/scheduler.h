@@ -32,6 +32,8 @@ namespace nx
 
 		struct Process
 		{
+			pid_t processId;
+
 			addr_t cr3;
 			nx::array<Thread> threads;
 

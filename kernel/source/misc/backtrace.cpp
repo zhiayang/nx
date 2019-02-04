@@ -59,6 +59,13 @@ namespace util
 	void printStackTrace(uint64_t rbp)
 	{
 		println("\nbacktrace:");
+		if(!heap::initialised())
+		{
+			println("    unavailable");
+			return;
+		}
+
+
 
 		int counter = 0;
 		auto frames = getStackFrames(rbp);

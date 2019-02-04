@@ -22,11 +22,14 @@ namespace scheduler
 	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary
 
 
+	// TODO: *all* of this crap needs to be CPU-specific and probably go into the CPU structure!
 	static Thread* IdleThread = 0;
 	static Thread* CurrentThread = 0;
 
 	static nx::list<Thread*> ThreadList;
 	static nx::list<Thread*> BlockedThreads;
+
+	static nx::list<Process*> ProcessList;
 
 
 	void init(Thread* idle_thread, Thread* work_thread)
@@ -35,6 +38,10 @@ namespace scheduler
 
 		ThreadList = nx::list<Thread*>();
 		BlockedThreads = nx::list<Thread*>();
+
+		ProcessList = nx::list<Process*>();
+
+
 
 		CurrentThread = work_thread;
 		ThreadList.append(work_thread);

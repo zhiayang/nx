@@ -17,6 +17,8 @@ namespace nx
 		void init();
 		addr_t allocate(size_t size, size_t align);
 		void deallocate(addr_t addr);
+
+		bool initialised();
 	}
 
 	namespace pmm
