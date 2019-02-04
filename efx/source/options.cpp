@@ -108,6 +108,12 @@ namespace options
 					option.option = opt.substring(0, eq);
 					option.value = opt.substring(eq + 1);
 
+					if(option.option == "root")
+					{
+						// we always need to forward the root option to the kernel
+						kernelCommandLine.append(opt);
+					}
+
 					loadOptions.append(option);
 				}
 			}

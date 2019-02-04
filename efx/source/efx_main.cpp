@@ -101,6 +101,8 @@ void efx::init()
 
 
 	{
+		efi::print("kernel parameters:");
+
 		size_t reqSize = 0;
 
 		// set kernel command line
@@ -109,7 +111,10 @@ void efx::init()
 		{
 			// include null terminator
 			reqSize += s.size() + 1;
+			efi::print(" %s", s.cstr());
 		}
+
+		efi::println("");
 
 
 		char* buffer = 0;

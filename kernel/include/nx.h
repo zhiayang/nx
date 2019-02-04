@@ -25,7 +25,7 @@
 
 #include "platform-specific.h"
 
-#define NX_SUPPORTED_BOOTINFO_VERSION 2
+#define NX_SUPPORTED_BOOTINFO_VERSION 3
 
 namespace nx
 {

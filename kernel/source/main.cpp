@@ -3,10 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-
-#include "devices/x64/apic.h"
-#include "devices/x64/pit8253.h"
-
+#include "misc/params.h"
 
 #define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
 #include "bootinfo.h"
@@ -119,7 +116,12 @@ namespace nx
 		vmm::init(kernelProc);
 		heap::init();
 
-		util::initSymbols(bootinfo);
+		// parse the kernel parameters from the bootloader.
+		params::init(bootinfo);
+
+		// find the symbol table & demangle symbols for backtracing purposes
+		if(!params::haveOption("no_symbols"))
+			util::initSymbols(bootinfo);
 
 		// setup the vfs and the initrd (for fonts)
 		vfs::init();
@@ -132,7 +134,8 @@ namespace nx
 		scheduler::preinitCPUs();
 
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
-		acpi::init(bootinfo);
+		if(!params::haveOption("no_acpi"))
+			acpi::init(bootinfo);
 
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);
