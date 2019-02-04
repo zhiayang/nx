@@ -14,26 +14,36 @@ namespace nx {
 namespace device {
 namespace apic
 {
-	constexpr int REG_EOI            = 0xB0;
-	constexpr int REG_SPURIOUS       = 0xF0;
+	constexpr addr_t REG_EOI            = 0xB0;
+	constexpr addr_t REG_SPURIOUS       = 0xF0;
 
-	constexpr int REG_LVT_TIMER      = 0x320;
-	constexpr int REG_LVT_LINT0      = 0x350;
-	constexpr int REG_LVT_LINT1      = 0x360;
+	constexpr addr_t REG_ISR            = 0x100;
 
-	constexpr int REG_TIMER_INITIAL  = 0x380;
-	constexpr int REG_TIMER_CURRENT  = 0x390;
-	constexpr int REG_TIMER_DIVISOR  = 0x3E0;
+	constexpr addr_t REG_LVT_TIMER      = 0x320;
+	constexpr addr_t REG_LVT_LINT0      = 0x350;
+	constexpr addr_t REG_LVT_LINT1      = 0x360;
+
+	constexpr addr_t REG_TIMER_INITIAL  = 0x380;
+	constexpr addr_t REG_TIMER_CURRENT  = 0x390;
+	constexpr addr_t REG_TIMER_DIVISOR  = 0x3E0;
 
 
-	static void writeLAPIC(addr_t base, int reg, uint32_t value)
+	static void writeLAPIC(addr_t base, addr_t reg, uint32_t value)
 	{
-		*((volatile uint32_t*) (base + (addr_t) reg)) = value;
+		*((volatile uint32_t*) (base + reg)) = value;
 	}
 
-	static uint32_t readLAPIC(addr_t base, int reg)
+	static uint32_t readLAPIC(addr_t base, addr_t reg)
 	{
-		return *((volatile uint32_t*) (base + (addr_t) reg));
+		return *((volatile uint32_t*) (base + reg));
+	}
+
+	static uint32_t readISR(addr_t base, int num)
+	{
+		assert(num >= IRQ_BASE_VECTOR);
+
+		auto reg = REG_ISR + (0x10 * (num / 32));
+		return readLAPIC(base, reg);
 	}
 
 
@@ -44,8 +54,16 @@ namespace apic
 		auto proc = scheduler::getCurrentCPU();
 		assert(proc);
 
-		// send an eoi by writing 0 to the eoi register.
-		writeLAPIC(proc->localApicAddr, REG_EOI, 0);
+		auto vector = num + IRQ_BASE_VECTOR;
+
+		// check the ISR register for the interrupt:
+		// note: we always take an IRQ number (ie IRQ0 is passed as '0'!)
+		auto isr = readISR(proc->localApicAddr, vector);
+		if(isr & (1 << (vector % 32)))
+		{
+			// send an eoi by writing 0 to the eoi register.
+			writeLAPIC(proc->localApicAddr, REG_EOI, 0);
+		}
 	}
 
 	void initLAPIC()
@@ -75,8 +93,7 @@ namespace apic
 
 		if(interrupts::hasIOAPIC())
 		{
-			device::ioapic::setInterrupt(device::ioapic::getISAIRQMapping(0),
-				IRQ_BASE_VECTOR, 0);
+			device::ioapic::setIRQMapping(device::ioapic::getISAIRQMapping(0), 0, 0);
 		}
 		else
 		{

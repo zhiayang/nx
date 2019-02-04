@@ -78,6 +78,8 @@ namespace pic8259
 
 	void sendEOI(uint8_t num)
 	{
+		assert(num <= 15);
+
 		if(num >= 8)
 			port::write1b(PIC2_CMD, 0x20);
 

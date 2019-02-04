@@ -17,7 +17,7 @@ namespace nx
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("2");
+			if(++ctr % 5000000 == 0) print("2");
 
 		}
 		return 1;
@@ -35,7 +35,7 @@ namespace nx
 		size_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("1");
+			if(++ctr % 5000000 == 0) print("1");
 		}
 		return 1;
 	}
@@ -53,7 +53,7 @@ namespace nx
 		uint64_t ctr = 0;
 		while(true)
 		{
-			if(++ctr % 10000000 == 0) print("q");
+			if(++ctr % 5000000 == 0) print("q");
 		}
 
 		// how?!

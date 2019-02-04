@@ -18,11 +18,12 @@ namespace nx
 		void maskIRQ(int num);
 		void unmaskIRQ(int num);
 
+		// note: 'num' is in IRQ space! (0 => IRQ_BASE_VECTOR)
 		void sendEOI(int num);
 
 		bool hasIOAPIC();
 
-		// note: 'vector' is in IDT space! (please use vectors >= 32)
+		// note: 'vector' is in IRQ space! (0 => IRQ_BASE_VECTOR)
 		void mapIRQVector(int irq, int vector, int apicId);
 	}
 

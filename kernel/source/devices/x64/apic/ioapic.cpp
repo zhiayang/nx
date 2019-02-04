@@ -141,12 +141,12 @@ namespace ioapic
 		return nullptr;
 	}
 
-	void setInterrupt(int irq, int vector, int apicId)
+	void setIRQMapping(int irq, int vector, int apicId)
 	{
+		vector += IRQ_BASE_VECTOR;
+
 		assert(vector < 0xFF);
 		assert(apicId <= 0xF);
-
-		assert(vector >= IRQ_BASE_VECTOR);
 
 		auto ioa = getIoApicForIrq(irq);
 		if(!ioa) return;

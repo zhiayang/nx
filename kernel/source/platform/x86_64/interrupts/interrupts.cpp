@@ -85,7 +85,7 @@ namespace interrupts
 	{
 		if constexpr (getArchitecture() == Architecture::x64)
 		{
-			if(hasIOAPIC())     device::ioapic::setInterrupt(irq, vector, apicId);
+			if(hasIOAPIC())     device::ioapic::setIRQMapping(irq, vector, apicId);
 			else                error("intr", "IRQs cannot be re-mapped without an IOAPIC");
 		}
 		else
@@ -128,6 +128,7 @@ namespace interrupts
 		else                device::pic8259::unmaskIRQ(num);
 	}
 
+	// 'num' is a relative vector!
 	void sendEOI(int num)
 	{
 		// note: eois are sent to the local apic!
@@ -140,16 +141,11 @@ namespace interrupts
 			device::pic8259::sendEOI(num);
 	}
 
-	extern "C" void nx_x64_send_eoi(int num)
-	{
-		sendEOI(num);
-	}
-
 	extern "C" void nx_x64_handle_irq(int num)
 	{
 		if(num == 0) device::pit8253::tick();
 
-		nx_x64_send_eoi(num);
+		sendEOI(num);
 	}
 }
 }
