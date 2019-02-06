@@ -90,6 +90,9 @@ function main() {
 		mkdir -p $SYSROOT/usr/lib
 
 		mkdir -p $SYSROOT/boot
+
+		mkdir -p $SYSROOT/drivers
+		mkdir -p $SYSROOT/services
 	fi
 
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}prefix:  ${_BOLD}$PREFIX${_NORMAL}"
@@ -217,13 +220,13 @@ function build_binutils() {
 	mkdir -p build-binutils
 	pushd build-binutils > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}configure${_NORMAL}"
-		../binutils-$BINUTILS_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-configure.log || { return 1; }
+		../binutils-$BINUTILS_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror 2>&1 | pv -t -i 0.5 --name 'elapsed' > binutils-configure.log || { return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make${_NORMAL}"
-		make -j$NUM_MAKE_JOBS all 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all 2>&1 | pv -t -i 0.5 --name 'elapsed' > binutils-make.log || { cat binutils-make.log; return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		make install 2>1 | pv -t -i 0.5 --name 'elapsed' > binutils-install.log || { return 1; }
+		make install 2>&1 | pv -t -i 0.5 --name 'elapsed' > binutils-install.log || { cat binutils-install.log; return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null
@@ -231,6 +234,7 @@ function build_binutils() {
 
 
 function build_gcc() {
+
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}gcc version: ${_BOLD}$GCC_VERSION${_NORMAL}"
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading gcc${_NORMAL}"
 
@@ -259,16 +263,16 @@ function build_gcc() {
 	mkdir -p build-gcc
 	pushd build-gcc > /dev/null
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}configure${_NORMAL}"
-		../gcc-$GCC_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror --disable-libssp --enable-languages=c,c++ 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-configure.log || { return 1; }
+		../gcc-$GCC_VERSION/configure --target=$TARGET --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-nls --disable-werror --disable-libssp --enable-languages=c,c++ 2>&1 | pv -t -i 0.5 --name "elapsed" > gcc-configure.log || { cat gcc-configure.log; return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (gcc)${_NORMAL}"
-		make -j$NUM_MAKE_JOBS all-gcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { return 1; }
+		make -j$NUM_MAKE_JOBS all-gcc 2>&1 | pv -t -i 0.5 --name "elapsed" > gcc-make.log || { cat gcc-make.log; return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libgcc)${_NORMAL}"
-		make -j$NUM_MAKE_JOBS all-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { return 1; }
+		make -j2 all-target-libgcc 2>&1 | pv -t -i 0.5 --name "elapsed" > libgcc-make.log || { cat libgcc-make.log; return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		make install-gcc install-target-libgcc 2>1 | pv -t -i 0.5 --name "elapsed" > gcc-install.log || { return 1; }
+		make install-gcc install-target-libgcc 2>&1 | pv -t -i 0.5 --name "elapsed" > gcc-install.log || { cat gcc-install.log; return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null
@@ -279,11 +283,12 @@ function build_gcc() {
 function build_libstdcpp() {
 
 	pushd build-gcc > /dev/null
+
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}make (libstdc++)${_NORMAL}"
-		make -j$NUM_MAKE_JOBS all-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-make.log || { return 1; }
+		make -j4 all-target-libstdc++-v3 2>&1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-make.log || { cat libstdcpp-make.log; return 1; }
 
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}install${_NORMAL}"
-		make install-target-libstdc++-v3 2>1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-install.log || { return 1; }
+		make install-target-libstdc++-v3 2>&1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-install.log || { cat libstdcpp-install.log; return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	popd > /dev/null
@@ -298,6 +303,7 @@ for i in "$@"; do
 	if [ $i == "--skip-efi-toolchain" ]; then SKIP_SETUP_EFI_TOOLCHAIN=true; fi
 done
 
+set -o pipefail
 main "$@"
 
 
