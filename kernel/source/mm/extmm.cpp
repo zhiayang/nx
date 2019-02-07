@@ -66,8 +66,6 @@ namespace extmm
 	{
 		if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
 
-		// println("alloc: %p: %zu", st, st->numExtents);
-
 		for(size_t i = 0; i < st->numExtents; i++)
 		{
 			auto ext = &st->extents[i];
@@ -93,7 +91,7 @@ namespace extmm
 		for(size_t i = 0; i < st->numExtents; i++)
 		{
 			auto ext = &st->extents[i];
-			if(ext->addr <= start && ext->size >= num)
+			if(ext->addr <= start && end(ext) >= end(start, num))
 			{
 				if(ext->addr == start)
 				{
@@ -113,10 +111,10 @@ namespace extmm
 					size_t numBackPages = (end(ext) - end(start, num)) / PAGE_SIZE;
 
 					// decrease the front block
-					ext->size -= numFrontPages;
+					ext->size = numFrontPages;
 
 					// make a new block
-					deallocate(st, end(start, num), numBackPages);
+					addExtent(st, end(start, num), numBackPages);
 				}
 
 				return start;
@@ -130,11 +128,9 @@ namespace extmm
 
 	void deallocate(State* st, addr_t addr, size_t num)
 	{
-		// println("dealloc: %p: %zu", st, st->numExtents);
-
 		// loop through every extent. we can match in two cases:
 		// 1. 'addr' is 'num' pages *below* the base of the extent
-		// 2. 'addr' is *size* pages above the *base* of the extent
+		// 2. 'addr' is *size* pages above the *end* of the extent
 
 		for(size_t i = 0; i < st->numExtents; i++)
 		{
