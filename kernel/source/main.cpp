@@ -120,9 +120,9 @@ namespace nx
 
 
 		// auto worker1 = scheduler::createThread(scheduler::getKernelProcess(), work_thread1);
-		// auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
+		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
 		// scheduler::addThread(worker1);
-		// scheduler::addThread(worker2);
+		scheduler::addThread(worker2);
 
 
 		uint64_t ctr = 0;

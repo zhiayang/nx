@@ -32,6 +32,7 @@ namespace vmm
 
 	void init(scheduler::Process* proc)
 	{
+		bool isFirst = (proc == scheduler::getKernelProcess());
 		memset(proc->vmmStates, 0, sizeof(extmm::State) * NumAddressSpaces);
 
 		for(size_t i = 0; i < NumAddressSpaces; i++)
@@ -39,14 +40,15 @@ namespace vmm
 			auto s = &proc->vmmStates[i];
 
 			mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_PRESENT, proc);
-			extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
+
+			if(isFirst) extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
+			else        extmm::init(s, extmmNames[i], 0, 0);
 
 			extmm::deallocate(s, AddressSpaces[i][0], (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
 		}
 
-
 		// unmap the null page.
-		if(proc == scheduler::getKernelProcess())
+		if(isFirst)
 		{
 			unmapAddress(0, 1, /* freePhys: */ false);
 		}
@@ -76,10 +78,10 @@ namespace vmm
 		else if(type == AddressSpace::Kernel)       st = &proc->vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
-		auto ret = extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
-		serial::debugprintf("alloc vmm (%p)  %p - %p\n", proc->cr3, ret, end(ret, num));
+		return extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
 
-		return ret;
+		// serial::debugprintf("alloc vmm (%p)  %p - %p\n", proc->cr3, ret, end(ret, num));
+		// return ret;
 	}
 
 	void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc)
@@ -90,7 +92,7 @@ namespace vmm
 		extmm::State* st = getAddrSpace(addr, num, proc->vmmStates);
 		if(!st) abort("deallocateAddrSpace(): address not in any of the address spaces!");
 
-		serial::debugprintf("free vmm (%p)  %p - %p\n", proc->cr3, addr, end(addr, num));
+		// serial::debugprintf("free vmm (%p)  %p - %p\n", proc->cr3, addr, end(addr, num));
 
 		return extmm::deallocate(st, addr, num);
 	}

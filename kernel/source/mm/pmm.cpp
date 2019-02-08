@@ -45,7 +45,6 @@ namespace pmm
 		if(!bootstrapped) abort("failed to bootstrap pmm!!");
 
 		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
-		memset(&extmmState, 0, sizeof(extmm::State));
 		extmm::init(&extmmState, "pmm", addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
 
 		// ok, now loop through each memory entry for real.

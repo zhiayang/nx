@@ -10,49 +10,51 @@
 namespace nx {
 namespace extmm
 {
-	constexpr size_t ExtentsPerPage             = PAGE_SIZE / sizeof(extent_t);
+	struct extent_t
+	{
+		uint64_t addr;
+		uint64_t size;
+
+		extent_t* next = 0;
+	};
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 	static addr_t end(extent_t* ext)            { return ext->addr + (ext->size * PAGE_SIZE); }
 
-
-	static void extendExtentArray(State* st)
-	{
-		auto virt = (addr_t) st->extents + (st->numPages * PAGE_SIZE);
-		if(virt == st->maxAddress)
-			abort("extmm/%s::extend(): reached expansion limit!", st->owner);
-
-		auto phys = pmm::allocate(1);
-
-		vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT);
-	}
-
 	static void addExtent(State* st, addr_t addr, size_t size)
 	{
-		extent_t ext;
-		ext.addr = addr;
-		ext.size = size;
+		extent_t* ext = 0;
+		if(st->bootstrapWatermark + sizeof(extent_t) <= st->bootstrapEnd)
+		{
+			ext = (extent_t*) st->bootstrapWatermark;
+			st->bootstrapWatermark += sizeof(extent_t);
+		}
+		else
+		{
+			ext = new extent_t();
+		}
 
-		st->extents[st->numExtents] = ext;
-		st->numExtents++;
+		assert(ext);
+		ext->addr = addr;
+		ext->size = size;
 
-		if(st->numExtents % ExtentsPerPage == 0)
-			extendExtentArray(st);
+		// insert at the head.
+		ext->next = st->head;
+
+		st->head = ext;
+		st->numExtents += 1;
 	}
-
-
-
 
 
 	void init(State* st, const char* owner, addr_t base, addr_t top)
 	{
-		st->extents = (extent_t*) base;
-
-		st->numPages = 1;
+		st->head = 0;
 		st->numExtents = 0;
 
-		st->maxAddress = top;
 		st->owner = owner;
+
+		st->bootstrapWatermark = base;
+		st->bootstrapEnd = top;
 	}
 
 
@@ -60,9 +62,9 @@ namespace extmm
 	{
 		if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
 
-		for(size_t i = 0; i < st->numExtents; i++)
+		auto ext = st->head;
+		while(ext)
 		{
-			auto ext = &st->extents[i];
 			if(ext->size >= num && satisfies(ext->addr, ext->size))
 			{
 				// return this.
@@ -74,6 +76,8 @@ namespace extmm
 
 				return ret;
 			}
+
+			ext = ext->next;
 		}
 
 		println("extmm/%s::allocate(): out of pages!", st->owner);
@@ -82,9 +86,9 @@ namespace extmm
 
 	addr_t allocateSpecific(State* st, addr_t start, size_t num)
 	{
-		for(size_t i = 0; i < st->numExtents; i++)
+		auto ext = st->head;
+		while(ext)
 		{
-			auto ext = &st->extents[i];
 			if(ext->addr <= start && end(ext) >= end(start, num))
 			{
 				if(ext->addr == start)
@@ -113,6 +117,8 @@ namespace extmm
 
 				return start;
 			}
+
+			ext = ext->next;
 		}
 
 		println("extmm/%s::allocateSpecific(): could not fulfil request!", st->owner);
@@ -126,9 +132,9 @@ namespace extmm
 		// 1. 'addr' is 'num' pages *below* the base of the extent
 		// 2. 'addr' is *size* pages above the *end* of the extent
 
-		for(size_t i = 0; i < st->numExtents; i++)
+		auto ext = st->head;
+		while(ext)
 		{
-			auto ext = &st->extents[i];
 			if(end(addr, num) == ext->addr)
 			{
 				// we are below. decrease the addr of the extent by num pages.
@@ -141,6 +147,8 @@ namespace extmm
 				ext->size += num;
 				return;
 			}
+
+			ext = ext->next;
 		}
 
 		// oops. make a new extent.

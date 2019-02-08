@@ -100,22 +100,19 @@ namespace nx
 
 	namespace extmm
 	{
-		struct extent_t
-		{
-			uint64_t addr;
-			uint64_t size;
-		};
-
+		struct extent_t;
 		struct State
 		{
-			extent_t* extents = 0;
+			extent_t* head = 0;
 			size_t numExtents = 0;
 
-			size_t numPages = 0;
-
-			addr_t maxAddress = 0;
 			const char* owner = 0;
+
+			addr_t bootstrapWatermark = 0;
+			addr_t bootstrapEnd = 0;
 		};
+
+		void dump(State* st);
 
 		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);
 

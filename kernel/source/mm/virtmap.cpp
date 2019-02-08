@@ -110,24 +110,10 @@ namespace vmm
 			// we need to temp-map the 509th entry of the target pml4 to itself as well
 			// to achieve that, get a temp thing to modify it.
 
-			serial::debugprintf("509: %p, %p | %p\n", getPML4()->entries[509], getPML4(), getPML4<509>());
-
-			println("\nstate: %p", &scheduler::getCurrentProcess()->vmmStates[0]);
-			for(size_t i = 0; i < scheduler::getCurrentProcess()->vmmStates[0].numExtents; i++)
-			{
-				auto ext = scheduler::getCurrentProcess()->vmmStates[0].extents[i];
-				println("%p - %p", ext.addr, ext.addr + (0x1000 * ext.size));
-			}
+			// serial::debugprintf("509: %p, %p | %p\n", getPML4()->entries[509], getPML4(), getPML4<509>());
 
 			auto tmp = allocateAddrSpace(1, AddressSpace::User);
-			serial::debugprintf("tmp addr is %p\n", tmp);
-
-			println("\nstate: %p", &scheduler::getCurrentProcess()->vmmStates[0]);
-			for(size_t i = 0; i < scheduler::getCurrentProcess()->vmmStates[0].numExtents; i++)
-			{
-				auto ext = scheduler::getCurrentProcess()->vmmStates[0].extents[i];
-				println("%p - %p", ext.addr, ext.addr + (0x1000 * ext.size));
-			}
+			// serial::debugprintf("tmp addr is %p\n", tmp);
 
 			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
 
@@ -137,7 +123,7 @@ namespace vmm
 
 		}
 
-		serial::debugprintf("%p -> %p / %zu (%p)\n", virt, phys, num, proc->cr3);
+		// serial::debugprintf("%p -> %p / %zu (%p)\n", virt, phys, num, proc->cr3);
 
 		for(size_t x = 0; x < num; x++)
 		{
@@ -157,29 +143,43 @@ namespace vmm
 			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
 			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
-			// serial::debugprint("three");
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			{
 				pml4->entries[p4idx] = pmm::allocate(1) | PAGE_PRESENT;
+				memset(pdpt, 0, PAGE_SIZE);
+			}
 
-			// serial::debugprint("four");
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			{
 				pdpt->entries[p3idx] = pmm::allocate(1) | PAGE_PRESENT;
+				memset(pdir, 0, PAGE_SIZE);
+			}
 
-			// serial::debugprint("five");
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			{
 				pdir->entries[p2idx] = pmm::allocate(1) | PAGE_PRESENT;
+				memset(ptab, 0, PAGE_SIZE);
+			}
 
-			// serial::debugprint("six");
 			if(ptab->entries[p1idx] & PAGE_PRESENT)
 				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
 
-			// serial::debugprint("seven");
 			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
 			invalidate((addr_t) v);
 		}
 
 		// undo
-		if(isOtherProc) getPML4()->entries[509] = 0;
+		if(isOtherProc)
+		{
+			getPML4()->entries[509] = 0;
+
+			auto tmp = allocateAddrSpace(1, AddressSpace::User);
+			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+
+			((pml_t*) tmp)->entries[509] = 0;
+
+			unmapAddress(tmp, 1, /* freePhys: */ false);
+		}
 	}
 
 
