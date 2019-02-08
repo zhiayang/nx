@@ -4,7 +4,6 @@
 
 #include "nx.h"
 
-
 namespace nx {
 namespace exceptions
 {

@@ -6,12 +6,6 @@
 
 .section .text
 
-.global nx_x64_loadidt
-.type nx_x64_loadidt, @function
-nx_x64_loadidt:
-	lidt (%rdi)
-	ret
-
 
 .global nx_x64_exception_handler_0
 .type nx_x64_exception_handler_0, @function

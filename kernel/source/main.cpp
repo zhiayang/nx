@@ -128,6 +128,8 @@ namespace nx
 		vmm::init(kernelProc);
 		heap::init();
 
+		cpu::gdt::init();
+
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);
 

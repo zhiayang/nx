@@ -1,0 +1,171 @@
+// gdt.cpp
+// Copyright (c) 2019, zhiayang
+// Licensed under the Apache License Version 2.0.
+
+#include "nx.h"
+
+namespace nx {
+namespace cpu {
+namespace gdt
+{
+	struct entry_t
+	{
+		uint16_t limit_low;
+		uint16_t base_low;
+
+		uint8_t base_mid;
+		uint8_t access;
+		uint8_t flags;
+		uint8_t base_high;
+
+	} __attribute__((packed));
+
+	struct entry64_t
+	{
+		uint16_t limit_low;
+		uint16_t base_low;
+
+		uint8_t base_mid;
+		uint8_t access;
+		uint8_t flags;
+		uint8_t base_high;
+
+		uint32_t base_highest;
+		uint32_t reserved;
+
+	} __attribute__((packed));
+
+	struct gdtptr_t
+	{
+		uint16_t limit;
+		uint64_t base;
+
+	} __attribute__((packed));
+
+	constexpr entry_t makeGDTEntry(uint32_t base, uint32_t limit, bool code, int ring)
+	{
+		return entry_t {
+			.limit_low  = (uint16_t) (limit & 0xFFFF),
+			.base_low   = (uint16_t) (base & 0xFFFF),
+			.base_mid   = (uint8_t)  ((base & 0xFF0000) >> 16),
+			.access     = (uint8_t)  (0x92 | (code ? 0x8 : 0) | ((ring & 0x3) << 5)),
+			.flags      = (uint8_t)  ((limit & 0xF0000) >> 16 | (1 << 5)),
+			.base_high  = (uint8_t)  ((base & 0xFF000000) >> 24)
+		};
+	}
+
+	constexpr entry64_t makeGDTEntry64(uint64_t base, uint32_t limit, bool code, int ring)
+	{
+		return entry64_t {
+			.limit_low      = (uint16_t) (limit & 0xFFFF),
+			.base_low       = (uint16_t) (base & 0xFFFF),
+			.base_mid       = (uint8_t)  ((base & 0xFF0000) >> 16),
+			.access         = (uint8_t)  (0x92 | (code ? 0x8 : 0) | ((ring & 0x3) << 5)),
+			.flags          = (uint8_t)  ((limit & 0xF0000) >> 16 | (1 << 5)),
+			.base_high      = (uint8_t)  ((base & 0xFF000000) >> 24),
+			.base_highest   = (uint32_t) ((base & 0xFFFFFFFF00000000) >> 32),
+			.reserved       = 0
+		};
+	}
+
+	// access setup:
+	// 0: accessed (useless)
+	// 1: readable (useless)
+	// 2: conforming (should be kept at 0)
+	// 3: 1 for code, 0 for data
+	// 4: 1
+	// 5:6: privilege level
+	// 7: present
+
+	// flags setup:
+	// 0:3: segment limit (useless)
+	// 4: avail (useless)
+	// 5: long mode (always 1)
+	// 6: d (always 0)
+	// 7: granularity (useless, 0)
+
+	extern "C" void nx_x64_loadgdt(uint64_t);
+
+
+	static addr_t GDTBaseAddress = 0;
+	static addr_t GDTPhysAddress = 0;
+	static size_t CurrentGDTIndex = 0;
+
+	static gdtptr_t GDTPointer;
+
+	static int addDescriptor(const entry_t& entry)
+	{
+		*((entry_t*) (GDTBaseAddress + CurrentGDTIndex)) = entry;
+
+		auto ret = CurrentGDTIndex;
+
+		CurrentGDTIndex += sizeof(entry_t);
+		return ret;
+	}
+
+
+	krt::pair<addr_t, addr_t> getGDTAddress()
+	{
+		return krt::pair(GDTBaseAddress, GDTPhysAddress);
+	}
+
+	void init()
+	{
+		// allocate me a page.
+		{
+			GDTPhysAddress = pmm::allocate(1);
+			GDTBaseAddress = vmm::allocateAddrSpace(1, vmm::AddressSpace::Kernel);
+
+			vmm::mapAddress(GDTBaseAddress, GDTPhysAddress, 1, vmm::PAGE_PRESENT);
+		}
+		memset((void*) GDTBaseAddress, 0, PAGE_SIZE);
+
+
+		// add the intial entries:
+		{
+			addDescriptor(makeGDTEntry(0, 0, 0, 0));                // null descriptor
+
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 0));    // ring 0 code segment
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 0));   // ring 0 data segment
+
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // ring 3 code segment
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 3));   // ring 3 data segment
+		}
+
+		GDTPointer.base = GDTBaseAddress;
+		GDTPointer.limit = CurrentGDTIndex - 1;
+
+		nx_x64_loadgdt((addr_t) &GDTPointer);
+	}
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

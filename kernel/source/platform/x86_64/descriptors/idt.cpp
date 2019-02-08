@@ -17,12 +17,14 @@ namespace idt
 		uint16_t    base_mid;
 		uint32_t    base_high;
 		uint32_t    always0;
+
 	} __attribute__((packed));
 
 	struct IDTPointer
 	{
 		uint16_t limit;
 		uint64_t base;
+
 	} __attribute__((packed));
 
 	constexpr int NumIDTEntries = 256;
@@ -43,8 +45,8 @@ namespace idt
 
 	void init()
 	{
-		idtp.limit = (sizeof(IDTEntry) * NumIDTEntries) - 1;
 		idtp.base = (uintptr_t) &idt;
+		idtp.limit = (sizeof(IDTEntry) * NumIDTEntries) - 1;
 
 		memset(&idt, 0, NumIDTEntries * sizeof(IDTEntry));
 

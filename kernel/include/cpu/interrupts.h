@@ -27,20 +27,4 @@ namespace nx
 		// note: 'vector' is in IRQ space! (0 => IRQ_BASE_VECTOR)
 		void mapIRQVector(int irq, int vector, int apicId);
 	}
-
-	namespace cpu
-	{
-		#ifdef __ARCH_x64__
-		namespace idt
-		{
-			void init();
-			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts);
-			void clearEntry(uint8_t intr);
-
-			void enableGate(uint8_t intr);
-			void disableGate(uint8_t intr);
-		}
-		#else
-		#endif
-	}
 }

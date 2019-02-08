@@ -15,6 +15,7 @@
 #include "devices/serial.h"
 #include "devices/console.h"
 
+#include "cpu/cpu.h"
 #include "cpu/scheduler.h"
 #include "cpu/interrupts.h"
 #include "cpu/exceptions.h"

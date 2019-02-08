@@ -91,7 +91,7 @@ namespace vmm
 		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_PRESENT;
 
 
-		// lastly, we need to map the lapic's base address as well, so we don't need to
+		// next, we need to map the lapic's base address as well, so we don't need to
 		// change cr3 every time we want to send an EOI.
 		// it is always one page long.
 		{
@@ -102,6 +102,15 @@ namespace vmm
 				abort("failed to map lapic (at %p) to user process!", lapicBase);
 
 			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT, proc);
+		}
+
+		// next, we need to map the gdt as well -- since we moved it out of the kernel data section
+		{
+			auto [ gdtv, gdtp ] = cpu::gdt::getGDTAddress();
+			if(allocateSpecific(gdtv, 1, proc) != gdtv)
+				abort("failed to map gdt (at %p) to user process!", gdtv);
+
+			mapAddress(gdtv, gdtp, 1, PAGE_PRESENT, proc);
 		}
 
 
