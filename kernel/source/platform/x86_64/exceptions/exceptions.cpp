@@ -94,41 +94,26 @@ namespace exceptions
 	extern "C" void nx_x64_exception_handler_30();
 	extern "C" void nx_x64_exception_handler_31();
 
+	constexpr void (*exception_handlers[32])() = {
+		nx_x64_exception_handler_0,  nx_x64_exception_handler_1,  nx_x64_exception_handler_2,  nx_x64_exception_handler_3,
+		nx_x64_exception_handler_4,  nx_x64_exception_handler_5,  nx_x64_exception_handler_6,  nx_x64_exception_handler_7,
+		nx_x64_exception_handler_8,  nx_x64_exception_handler_9,  nx_x64_exception_handler_10, nx_x64_exception_handler_11,
+		nx_x64_exception_handler_12, nx_x64_exception_handler_13, nx_x64_exception_handler_14, nx_x64_exception_handler_15,
+		nx_x64_exception_handler_16, nx_x64_exception_handler_17, nx_x64_exception_handler_18, nx_x64_exception_handler_19,
+		nx_x64_exception_handler_20, nx_x64_exception_handler_21, nx_x64_exception_handler_22, nx_x64_exception_handler_23,
+		nx_x64_exception_handler_24, nx_x64_exception_handler_25, nx_x64_exception_handler_26, nx_x64_exception_handler_27,
+		nx_x64_exception_handler_28, nx_x64_exception_handler_29, nx_x64_exception_handler_30, nx_x64_exception_handler_31,
+	};
+
 
 	void init()
 	{
-		cpu::idt::setEntry(0,  (uint64_t) nx_x64_exception_handler_0, 0x08, 0x8E);
-		cpu::idt::setEntry(1,  (uint64_t) nx_x64_exception_handler_1, 0x08, 0x8E);
-		cpu::idt::setEntry(2,  (uint64_t) nx_x64_exception_handler_2, 0x08, 0x8E);
-		cpu::idt::setEntry(3,  (uint64_t) nx_x64_exception_handler_3, 0x08, 0x8E);
-		cpu::idt::setEntry(4,  (uint64_t) nx_x64_exception_handler_4, 0x08, 0x8E);
-		cpu::idt::setEntry(5,  (uint64_t) nx_x64_exception_handler_5, 0x08, 0x8E);
-		cpu::idt::setEntry(6,  (uint64_t) nx_x64_exception_handler_6, 0x08, 0x8E);
-		cpu::idt::setEntry(7,  (uint64_t) nx_x64_exception_handler_7, 0x08, 0x8E);
-		cpu::idt::setEntry(8,  (uint64_t) nx_x64_exception_handler_8, 0x08, 0x8E);
-		cpu::idt::setEntry(9,  (uint64_t) nx_x64_exception_handler_9, 0x08, 0x8E);
-		cpu::idt::setEntry(10, (uint64_t) nx_x64_exception_handler_10, 0x08, 0x8E);
-		cpu::idt::setEntry(11, (uint64_t) nx_x64_exception_handler_11, 0x08, 0x8E);
-		cpu::idt::setEntry(12, (uint64_t) nx_x64_exception_handler_12, 0x08, 0x8E);
-		cpu::idt::setEntry(13, (uint64_t) nx_x64_exception_handler_13, 0x08, 0x8E);
-		cpu::idt::setEntry(14, (uint64_t) nx_x64_exception_handler_14, 0x08, 0x8E);
-		cpu::idt::setEntry(15, (uint64_t) nx_x64_exception_handler_15, 0x08, 0x8E);
-		cpu::idt::setEntry(16, (uint64_t) nx_x64_exception_handler_16, 0x08, 0x8E);
-		cpu::idt::setEntry(17, (uint64_t) nx_x64_exception_handler_17, 0x08, 0x8E);
-		cpu::idt::setEntry(18, (uint64_t) nx_x64_exception_handler_18, 0x08, 0x8E);
-		cpu::idt::setEntry(19, (uint64_t) nx_x64_exception_handler_19, 0x08, 0x8E);
-		cpu::idt::setEntry(20, (uint64_t) nx_x64_exception_handler_20, 0x08, 0x8E);
-		cpu::idt::setEntry(21, (uint64_t) nx_x64_exception_handler_21, 0x08, 0x8E);
-		cpu::idt::setEntry(22, (uint64_t) nx_x64_exception_handler_22, 0x08, 0x8E);
-		cpu::idt::setEntry(23, (uint64_t) nx_x64_exception_handler_23, 0x08, 0x8E);
-		cpu::idt::setEntry(24, (uint64_t) nx_x64_exception_handler_24, 0x08, 0x8E);
-		cpu::idt::setEntry(25, (uint64_t) nx_x64_exception_handler_25, 0x08, 0x8E);
-		cpu::idt::setEntry(26, (uint64_t) nx_x64_exception_handler_26, 0x08, 0x8E);
-		cpu::idt::setEntry(27, (uint64_t) nx_x64_exception_handler_27, 0x08, 0x8E);
-		cpu::idt::setEntry(28, (uint64_t) nx_x64_exception_handler_28, 0x08, 0x8E);
-		cpu::idt::setEntry(29, (uint64_t) nx_x64_exception_handler_29, 0x08, 0x8E);
-		cpu::idt::setEntry(30, (uint64_t) nx_x64_exception_handler_30, 0x08, 0x8E);
-		cpu::idt::setEntry(31, (uint64_t) nx_x64_exception_handler_31, 0x08, 0x8E);
+		for(int i = 0; i < 32; i++)
+		{
+			// 10x-er method of doing things, obviously.
+			cpu::idt::setEntry(i, (uint64_t) exception_handlers[i],
+				/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false);
+		}
 
 		// note: on x86, we do not remap the IRQs on the PIC first,
 		// because we 'prefer' to use the APIC system. when we call

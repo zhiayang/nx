@@ -7,10 +7,12 @@
 namespace nx {
 namespace scheduler
 {
+	static pid_t processIdCounter = 1;
 	Process* createProcess(const nx::string& name, int flags)
 	{
 		auto proc = new Process();
 
+		proc->processId = processIdCounter++;
 		proc->processName = name;
 		proc->flags = flags;
 

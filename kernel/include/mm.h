@@ -43,6 +43,7 @@ namespace nx
 		void bootstrap(addr_t physBase, addr_t virt, size_t maxPages);
 		void init(scheduler::Process* proc);
 
+		void switchAddrSpace(addr_t cr3);
 
 		void invalidate(addr_t addr);
 		void invalidateAll();
@@ -93,6 +94,12 @@ namespace nx
 		constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
 
 		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
+
+
+		constexpr bool isAligned(addr_t addr)
+		{
+			return addr == (addr & PAGE_ALIGN);
+		}
 	}
 
 

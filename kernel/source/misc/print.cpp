@@ -130,8 +130,6 @@ namespace nx
 		print("\n\nkernel abort! error: ");
 		vprint(fmt, args);
 		va_end(args);
-
-		util::printStackTrace();
 	}
 
 	void abort_nohalt(const char* fmt, ...)
@@ -145,6 +143,8 @@ namespace nx
 	[[noreturn]] void vabort(const char* fmt, va_list args)
 	{
 		vabort_nohalt(fmt, args);
+		util::printStackTrace();
+
 		while(true);
 	}
 

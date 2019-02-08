@@ -27,6 +27,15 @@ extern "C" void nx_x64_irq_handler_13();
 extern "C" void nx_x64_irq_handler_14();
 extern "C" void nx_x64_irq_handler_15();
 
+constexpr void (*irq_handlers[16])() = {
+	nx_x64_irq_handler_0,  nx_x64_irq_handler_1,  nx_x64_irq_handler_2,  nx_x64_irq_handler_3,
+	nx_x64_irq_handler_4,  nx_x64_irq_handler_5,  nx_x64_irq_handler_6,  nx_x64_irq_handler_7,
+	nx_x64_irq_handler_8,  nx_x64_irq_handler_9,  nx_x64_irq_handler_10, nx_x64_irq_handler_11,
+	nx_x64_irq_handler_12, nx_x64_irq_handler_13, nx_x64_irq_handler_14, nx_x64_irq_handler_15,
+};
+
+
+
 namespace nx {
 namespace interrupts
 {
@@ -64,24 +73,11 @@ namespace interrupts
 			if(!IsLocalAPICPresent)
 				warn("apic", "cpu does not have a local apic; this is not a well-supported configuration!");
 
-
-
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0,     (addr_t) nx_x64_irq_handler_0,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 1,     (addr_t) nx_x64_irq_handler_1,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 2,     (addr_t) nx_x64_irq_handler_2,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 3,     (addr_t) nx_x64_irq_handler_3,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 4,     (addr_t) nx_x64_irq_handler_4,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 5,     (addr_t) nx_x64_irq_handler_5,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 6,     (addr_t) nx_x64_irq_handler_6,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 7,     (addr_t) nx_x64_irq_handler_7,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 8,     (addr_t) nx_x64_irq_handler_8,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 9,     (addr_t) nx_x64_irq_handler_9,  0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 10,    (addr_t) nx_x64_irq_handler_10, 0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 11,    (addr_t) nx_x64_irq_handler_11, 0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 12,    (addr_t) nx_x64_irq_handler_12, 0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 13,    (addr_t) nx_x64_irq_handler_13, 0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 14,    (addr_t) nx_x64_irq_handler_14, 0x08, 0x8E);
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 15,    (addr_t) nx_x64_irq_handler_15, 0x08, 0x8E);
+			for(int i = 0; i < 16; i++)
+			{
+				cpu::idt::setEntry(IRQ_BASE_VECTOR + i, (addr_t) irq_handlers[i],
+					/* cs: */ 0x08, /* ring3: */ false, /* nestable: */ false);
+			}
 		}
 		else
 		{

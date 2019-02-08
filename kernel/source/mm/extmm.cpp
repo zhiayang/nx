@@ -45,6 +45,18 @@ namespace extmm
 		st->numExtents += 1;
 	}
 
+	void dump(State* st)
+	{
+		println("dumping extmm state %s (%p):", st->owner, st);
+		auto ext = st->head;
+		while(ext)
+		{
+			println("    %p - %p", ext->addr, end(ext));
+			ext = ext->next;
+		}
+		println("");
+	}
+
 
 	void init(State* st, const char* owner, addr_t base, addr_t top)
 	{

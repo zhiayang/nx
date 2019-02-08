@@ -59,7 +59,12 @@ namespace vmm
 
 	void invalidate(addr_t addr)
 	{
-		asm volatile("invlpg (%0)" :: "r"(addr));
+		asm volatile ("invlpg (%0)" :: "r"(addr));
+	}
+
+	void switchAddrSpace(addr_t cr3)
+	{
+		asm volatile ("mov %0, %%cr3" :: "a"(cr3) : "memory");
 	}
 
 
@@ -75,6 +80,7 @@ namespace vmm
 		mapAddress(virt, proc->cr3, 1, PAGE_PRESENT);
 
 		auto pml4 = (pml_t*) virt;
+		memset(pml4, 0, PAGE_SIZE);
 
 		// setup recursive paging
 		pml4->entries[510] = proc->cr3;
@@ -82,7 +88,22 @@ namespace vmm
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
 		// so getting pdpt 511 should not fault us.
-		pml4->entries[511] = (addr_t) getPDPT(511);
+		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_PRESENT;
+
+
+		// lastly, we need to map the lapic's base address as well, so we don't need to
+		// change cr3 every time we want to send an EOI.
+		// it is always one page long.
+		{
+			// note: we're not going to change the lapic base address,
+			// and it should be the same for every CPU.
+			auto lapicBase = scheduler::getCurrentCPU()->localApicAddr;
+			if(allocateSpecific(lapicBase, 1, proc) != lapicBase)
+				abort("failed to map lapic (at %p) to user process!", lapicBase);
+
+			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT, proc);
+		}
+
 
 		// ok i think that's it.
 		unmapAddress(virt, 1, /* freePhys: */ false);
@@ -99,8 +120,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		virt &= PAGE_ALIGN;
-		phys &= PAGE_ALIGN;
+		assert(isAligned(virt));
+		assert(isAligned(phys));
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc)
@@ -120,10 +141,8 @@ namespace vmm
 			((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
 
 			unmapAddress(tmp, 1, /* freePhys: */ false);
-
 		}
 
-		// serial::debugprintf("%p -> %p / %zu (%p)\n", virt, phys, num, proc->cr3);
 
 		for(size_t x = 0; x < num; x++)
 		{
@@ -179,6 +198,7 @@ namespace vmm
 			((pml_t*) tmp)->entries[509] = 0;
 
 			unmapAddress(tmp, 1, /* freePhys: */ false);
+			invalidateAll();
 		}
 	}
 
@@ -192,7 +212,7 @@ namespace vmm
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc) getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
 
-		virt &= PAGE_ALIGN;
+		assert(isAligned(virt));
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -245,18 +265,15 @@ namespace vmm
 		assert(proc);
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+		if(isOtherProc) abort("don't try it");
 
-
-		virt &= PAGE_ALIGN;
+		assert(isAligned(virt));
 
 		// right.
 		auto p4idx = indexPML4(virt);
 		auto p3idx = indexPDPT(virt);
 		auto p2idx = indexPageDir(virt);
 		auto p1idx = indexPageTable(virt);
-
-		if(p4idx == 510) abort("cannot unmap PML4T at index 510!");
 
 		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
@@ -276,9 +293,6 @@ namespace vmm
 			abort("%p was not mapped! (page not present)", virt);
 
 		auto phys = ptab->entries[p1idx] & PAGE_ALIGN;
-
-
-		if(isOtherProc) getPML4()->entries[509] = 0;
 
 		return phys;
 	}
@@ -305,13 +319,22 @@ namespace vmm
 			auto ptab = getPTab(p4idx, p3idx, p2idx);
 
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			{
 				pml4->entries[p4idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				memset(pdpt, 0, PAGE_SIZE);
+			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			{
 				pdpt->entries[p3idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				memset(pdir, 0, PAGE_SIZE);
+			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			{
 				pdir->entries[p2idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				memset(ptab, 0, PAGE_SIZE);
+			}
 
 			ptab->entries[p1idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
 			invalidate(v);

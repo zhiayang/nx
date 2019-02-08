@@ -19,15 +19,13 @@
 
 // parameters: new rsp (%rdi), new cr3 (%rsi)
 nx_x64_switch_to_thread:
-
-	// if the new cr3 is 0, then we do not switch.
-	cmp $0, %rsi
-	je restore_registers
+	test %rsi, %rsi
+	jz restore_regs
 
 change_cr3:
 	mov %rsi, %cr3
 
-restore_registers:
+restore_regs:
 	mov %rdi, %rsp
 
 	pop_all_regs

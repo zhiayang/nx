@@ -39,10 +39,15 @@ namespace vmm
 		{
 			auto s = &proc->vmmStates[i];
 
-			mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_PRESENT, proc);
-
-			if(isFirst) extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
-			else        extmm::init(s, extmmNames[i], 0, 0);
+			if(isFirst)
+			{
+				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_PRESENT, proc);
+				extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
+			}
+			else
+			{
+				extmm::init(s, extmmNames[i], 0, 0);
+			}
 
 			extmm::deallocate(s, AddressSpaces[i][0], (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
 		}
@@ -58,7 +63,7 @@ namespace vmm
 			setupAddrSpace(proc);
 		}
 
-		log("vmm", "initialised vmm for pid %lu", proc->processId);
+		log("vmm", "initialised vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
 	}
 
 
@@ -78,21 +83,21 @@ namespace vmm
 		else if(type == AddressSpace::Kernel)       st = &proc->vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
-		return extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
+		auto ret = extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
+		assert(isAligned(ret));
 
-		// serial::debugprintf("alloc vmm (%p)  %p - %p\n", proc->cr3, ret, end(ret, num));
-		// return ret;
+		return ret;
 	}
 
 	void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc)
 	{
+		assert(isAligned(addr));
+
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
 		extmm::State* st = getAddrSpace(addr, num, proc->vmmStates);
 		if(!st) abort("deallocateAddrSpace(): address not in any of the address spaces!");
-
-		// serial::debugprintf("free vmm (%p)  %p - %p\n", proc->cr3, addr, end(addr, num));
 
 		return extmm::deallocate(st, addr, num);
 	}
@@ -103,6 +108,8 @@ namespace vmm
 
 	addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc)
 	{
+		assert(isAligned(addr));
+
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
@@ -129,6 +136,8 @@ namespace vmm
 
 	void deallocate(addr_t addr, size_t num, scheduler::Process* proc)
 	{
+		assert(isAligned(addr));
+
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 

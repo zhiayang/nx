@@ -3,7 +3,7 @@ OUTPUT_FORMAT(elf64-x86-64)
 
 SECTIONS
 {
-	Kernel_VMA = 0xFFFFFFFF80000000;
+	Kernel_VMA = 0xFFFFFFFFF8000000;
 	. = Kernel_VMA;
 
 	.text ALIGN(0x1000) : AT(ADDR(.text) - Kernel_VMA)

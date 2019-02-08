@@ -17,13 +17,11 @@ namespace loader
 		assert(len > 0);
 
 		auto file = (uint8_t*) buf;
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		bool needsUserPerms = ((proc->flags & scheduler::Process::PROC_USER)
-			|| (scheduler::getCurrentProcess()->flags & scheduler::Process::PROC_USER));
+
+		constexpr const char* err = "loader/elf";
 
 
-		static constexpr const char* err = "loader/elf";
 
 		auto header = (Elf64_Ehdr*) file;
 		{
@@ -92,15 +90,19 @@ namespace loader
 			if(progHdr->p_type != PT_LOAD || progHdr->p_memsz == 0)
 				continue;
 
+			// make sure the things match
+			if((progHdr->p_offset % progHdr->p_align) != (progHdr->p_vaddr % progHdr->p_align))
+			{
+				error(err, "misaligned segment");
+				return false;
+			}
+
 
 			// allocate the physical pages.
 			size_t numPages = (progHdr->p_memsz + 0x1000) / 0x1000;
 
 			auto phys = pmm::allocate(numPages);
 			if(!phys) { error(err, "failed to allocate memory"); return false; }
-
-			// gimme some scratch space in the current addrspace
-			addr_t virt = 0;
 
 			// figure out how we should map this.
 			uint64_t virtFlags = 0;
@@ -110,18 +112,23 @@ namespace loader
 			if(proc->flags & scheduler::Process::PROC_USER) virtFlags |= vmm::PAGE_USER;
 
 
+			// gimme some scratch space in the current addrspace
+			addr_t virtBase = 0;
+			addr_t offsetVirt = 0;
 
 			if(isOtherProc)
 			{
-				virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+				virtBase = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
 
 				// since this is not the final mapping, we need to write it.
-				vmm::mapAddress(virt, phys, numPages, vmm::PAGE_PRESENT);
+				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT);
+
+				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}
 			else
 			{
-				virt = vmm::allocateSpecific(progHdr->p_vaddr, numPages, proc);
-				if(!virt)
+				virtBase = vmm::allocateSpecific(progHdr->p_vaddr & vmm::PAGE_ALIGN, numPages, proc);
+				if(!virtBase)
 				{
 					error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 					pmm::deallocate(phys, numPages);
@@ -129,30 +136,32 @@ namespace loader
 				}
 
 				// this is the final mapping, so we need the proper flags.
-				vmm::mapAddress(virt, phys, numPages, virtFlags);
+				vmm::mapAddress(virtBase, phys, numPages, virtFlags);
+
+				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}
 
-			assert(virt);
-			memmove((void*) virt, (file + progHdr->p_offset), progHdr->p_filesz);
+			assert(offsetVirt);
+			memmove((void*) offsetVirt, (file + progHdr->p_offset), progHdr->p_filesz);
 
 			// zero out any extra space.
-			memset((void*) (virt + progHdr->p_filesz), 0, (progHdr->p_memsz - progHdr->p_filesz));
+			memset((void*) (offsetVirt + progHdr->p_filesz), 0, (progHdr->p_memsz - progHdr->p_filesz));
 
 
 			// ok, if it is not the current address space, we need to unmap the scratch space and do the real mapping.
 			if(isOtherProc)
 			{
-				vmm::deallocateAddrSpace(virt, numPages);
-				vmm::unmapAddress(virt, numPages, /* freePhys: */ false);
+				vmm::deallocateAddrSpace(virtBase, numPages);
+				vmm::unmapAddress(virtBase, numPages, /* freePhys: */ false);
 
-				if(vmm::allocateSpecific(progHdr->p_vaddr, numPages, proc) == 0)
+				if(vmm::allocateSpecific(progHdr->p_vaddr & vmm::PAGE_ALIGN, numPages, proc) == 0)
 				{
 					error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 					pmm::deallocate(phys, numPages);
 					return false;
 				}
 
-				vmm::mapAddress(progHdr->p_vaddr, phys, numPages, virtFlags);
+				vmm::mapAddress(progHdr->p_vaddr & vmm::PAGE_ALIGN, phys, numPages, virtFlags, proc);
 			}
 		}
 

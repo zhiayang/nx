@@ -34,7 +34,7 @@ namespace nx
 		namespace idt
 		{
 			void init();
-			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, uint8_t flags);
+			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts);
 			void clearEntry(uint8_t intr);
 
 			void enableGate(uint8_t intr);

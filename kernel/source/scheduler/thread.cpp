@@ -50,7 +50,7 @@ namespace scheduler
 	static pid_t ThreadIdCounter = 0;
 	Thread* createThread(Process* proc, Fn6Args_t fn, void* a, void* b, void* c, void* d, void* e, void* f)
 	{
-		bool isKernProc = (proc == scheduler::getKernelProcess());
+		bool isUserProc = (proc->flags & Process::PROC_USER);
 
 		// setup the kernel stack
 
@@ -79,11 +79,11 @@ namespace scheduler
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)), proc);
+			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER | vmm::PAGE_NX) : 0), proc);
 
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
-			thr->userStack = virt;
+			thr->userStackBottom = virt;
 		}
 
 
@@ -95,11 +95,11 @@ namespace scheduler
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
 			// save it so we can kill it later.
-			thr->kernelStackTop = virt;
+			thr->kernelStackBottom = virt;
 
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isKernProc ? 0 : (vmm::PAGE_WRITE | vmm::PAGE_USER)));
+			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER | vmm::PAGE_NX) : 0), proc);
 
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
 			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpace::User);
@@ -108,10 +108,10 @@ namespace scheduler
 
 			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
-			*--kstk     = (isKernProc ? RING0_STACK_SEGMENT : RING3_STACK_SEGMENT);     // stack segment
-			*--kstk     = thr->userStack + USER_STACK_SIZE;                             // stack pointer
+			*--kstk     = (isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT);     // stack segment
+			*--kstk     = thr->userStackBottom + USER_STACK_SIZE;                       // stack pointer
 			*--kstk     = 0x202;                                                        // flags
-			*--kstk     = (isKernProc ? RING0_CODE_SEGMENT : RING3_CODE_SEGMENT);       // code segment
+			*--kstk     = (isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT);       // code segment
 			*--kstk     = (addr_t) fn;                                                  // return addr
 
 
@@ -156,10 +156,10 @@ namespace scheduler
 		assert(proc);
 
 		// kill the user stack.
-		vmm::deallocate(thr->userStack, USER_STACK_SIZE / PAGE_SIZE, proc);
+		vmm::deallocate(thr->userStackBottom, USER_STACK_SIZE / PAGE_SIZE, proc);
 
 		// kill the kernel thread.
-		vmm::deallocate(thr->kernelStackTop, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
+		vmm::deallocate(thr->kernelStackBottom, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
 
 		auto id = thr->threadId;
 

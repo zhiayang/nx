@@ -32,6 +32,32 @@ namespace scheduler
 	static nx::list<Process*> ProcessList;
 
 
+
+
+	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
+	{
+		// save the current stack.
+		auto oldcr3 = CurrentThread->parent->cr3;
+		CurrentThread->kernelStack = stackPointer;
+
+		// only put it back in the runqueue if we didn't block or sleep
+		if(CurrentThread->state == ThreadState::Running)
+			ThreadList.append(CurrentThread);
+
+
+		if(ThreadList.empty())  CurrentThread = IdleThread;
+		else                    CurrentThread = ThreadList.popFront();
+
+		CurrentThread->state = ThreadState::Running;
+		auto newcr3 = CurrentThread->parent->cr3;
+
+		nx_x64_switch_to_thread(CurrentThread->kernelStack, oldcr3 == newcr3 ? 0 : newcr3);
+	}
+
+
+
+
+
 	[[noreturn]] static void death_destroyer_of_threads()
 	{
 		while(true)
@@ -47,6 +73,8 @@ namespace scheduler
 			yield();
 		}
 	}
+
+
 
 	void init(Thread* idle_thread, Thread* work_thread)
 	{
@@ -93,10 +121,12 @@ namespace scheduler
 
 		{
 			// install the tick handler
-			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler, 0x08, 0x8E);
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler,
+				/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
 
 			// install the yield handler
-			cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread, 0x08, 0x8E);
+			cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread,
+				/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
 		}
 
 		// add our own worker thread.
@@ -104,27 +134,6 @@ namespace scheduler
 
 
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
-	}
-
-
-
-
-	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
-	{
-		// save the current stack.
-		CurrentThread->kernelStack = stackPointer;
-
-		// only put it back in the runqueue if we didn't block or sleep
-		if(CurrentThread->state == ThreadState::Running)
-			ThreadList.append(CurrentThread);
-
-
-		if(ThreadList.empty())  CurrentThread = IdleThread;
-		else                    CurrentThread = ThreadList.popFront();
-
-		CurrentThread->state = ThreadState::Running;
-
-		nx_x64_switch_to_thread(CurrentThread->kernelStack, 0);
 	}
 
 

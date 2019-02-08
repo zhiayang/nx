@@ -5,13 +5,13 @@
 CFLAGS		= -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
 CXXFLAGS	= -Wno-pragmas -O2 -fPIC -std=c++17 -mno-red-zone -fno-exceptions -fno-rtti -c
 
+SSRC		= $(shell find . -name "*.s")
 CSRC		= $(shell find . -name "*.c")
 CXXSRC		= $(shell find . -name "*.cpp")
-SSRC		= $(shell find . -name "*.s")
 
+SOBJ		= $(SSRC:.s=.s.o)
 COBJ		= $(CSRC:.c=.c.o)
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
-SOBJ		= $(SSRC:.s=.s.o)
 
 .PHONY: all
 
@@ -35,6 +35,7 @@ $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
 %.s.o: %.s
+	@echo "# $(notdir $<)"
 	@$(AS) $< -o $@
 
 
