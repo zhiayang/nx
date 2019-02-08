@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "devices/x64/pit8253.h"
+#include "devices/pc/pit8253.h"
 
 #include "math.h"
 

@@ -5,6 +5,7 @@
 export PROJECT_DIR      := $(shell pwd)
 
 export SYSROOT          := $(PROJECT_DIR)/build/sysroot
+export INITRD_DIR       := $(PROJECT_DIR)/build/initrd
 export TOOLCHAIN        := $(PROJECT_DIR)/build/toolchain
 export CC               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
 export CXX              := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
@@ -71,9 +72,13 @@ build:
 	@$(MAKE) -s -C libs/tinflate
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
+	@$(MAKE) -s -C drivers
 
-$(INITRD): $(shell find $(PROJECT_DIR)/build/initrd -name "*")
-	@tar -cvf - -C $(PROJECT_DIR)/build/initrd/ . | gzip -9 - > $(INITRD)
+
+
+$(INITRD): $(shell find $(INITRD_DIR) -name "*")
+	# initrd
+	@tar -cf - -C $(INITRD_DIR)/ . | gzip -9 - > $(INITRD)
 
 clean:
 	@find "efx" -name "*.o" -delete

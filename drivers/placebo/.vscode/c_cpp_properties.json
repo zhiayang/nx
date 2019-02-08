@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "placebo-windows",
+            "includePath": [
+                "${workspaceFolder:placebo}/include",
+                "${workspaceFolder:libc}/include"
+            ],
+            "defines": [
+                "__orionx__",
+                "_DEBUG"
+            ],
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder:placebo}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

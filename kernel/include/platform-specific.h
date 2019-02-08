@@ -6,8 +6,8 @@
 
 namespace nx
 {
-	enum class Platform         { PC };
-	enum class Architecture     { x64 };
+	enum class Platform         { PC, RPi3 };
+	enum class Architecture     { x64, AArch64 };
 
 	#ifdef __ARCH_x64__
 

@@ -7,8 +7,33 @@
 namespace nx {
 namespace scheduler
 {
-	static Process KernelProcess;
+	Process* createProcess(const nx::string& name, int flags)
+	{
+		auto proc = new Process();
 
+		proc->processName = name;
+		proc->flags = flags;
+
+		// allocate a cr3 for it.
+		proc->cr3 = pmm::allocate(1);
+
+		vmm::init(proc);
+
+		return proc;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	static Process KernelProcess;
 	void setupKernelProcess(addr_t cr3)
 	{
 		KernelProcess = Process();

@@ -14,5 +14,7 @@ namespace nx
 		void debugprint(char c);
 		void debugprint(char* c, size_t l);
 		void debugprint(const char* s);
+
+		void debugprintf(const char* fmt, ...);
 	}
 }

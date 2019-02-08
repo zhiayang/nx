@@ -4,8 +4,8 @@
 
 #include "nx.h"
 
-#include "devices/x64/apic.h"
-#include "devices/x64/pit8253.h"
+#include "devices/pc/apic.h"
+#include "devices/pc/pit8253.h"
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
@@ -100,7 +100,7 @@ namespace scheduler
 		}
 
 		// add our own worker thread.
-		add(createThread(idle_thread->parent, death_destroyer_of_threads));
+		addThread(createThread(idle_thread->parent, death_destroyer_of_threads));
 
 
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
@@ -214,16 +214,11 @@ namespace scheduler
 		return CurrentThread;
 	}
 
-	void add(Thread* t)
+	void addThread(Thread* t)
 	{
 		ThreadList.append(t);
 	}
 
-	void add(Process* p)
-	{
-		for(auto& t : p->threads)
-			add(&t);
-	}
 
 
 

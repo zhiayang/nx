@@ -4,9 +4,9 @@
 
 #include "nx.h"
 
-#include "devices/x64/pit8253.h"
-#include "devices/x64/pic8259.h"
-#include "devices/x64/apic.h"
+#include "devices/pc/pit8253.h"
+#include "devices/pc/pic8259.h"
+#include "devices/pc/apic.h"
 
 #include "cpu/cpuid.h"
 

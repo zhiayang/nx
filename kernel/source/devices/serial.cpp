@@ -2,10 +2,13 @@
 // Copyright (c) 2018, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#include "nx.h"
+
 #include "devices/ports.h"
 #include "devices/serial.h"
 
-#include "string.h"
+
+#include <stdarg.h>
 
 namespace nx {
 namespace serial
@@ -29,5 +32,31 @@ namespace serial
 	{
 		debugprint((char*) s, strlen(s));
 	}
+
+
+	void debugprintf(const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+
+		vcbprintf(nullptr, [](void* ctx, const char* s, size_t len) -> size_t {
+			serial::debugprint((char*) s, len);
+			return len;
+		}, fmt, args);
+
+		va_end(args);
+	}
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

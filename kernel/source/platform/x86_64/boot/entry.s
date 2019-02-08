@@ -39,7 +39,44 @@ kernel_entry:
 	mov %rax, %cr4
 
 
+enable_nx_bit:
+	// enable the nx-bit
 
+	// first, see if it's disabled (see https://forum.osdev.org/viewtopic.php?f=1&t=18945)
+	// and http://sandpile.org/x86/msr.htm -- we want MSR MISC_ENABLE, 0x1A0, and unset bit 34.
+	movl $0x1A0, %ecx
+	rdmsr
+
+
+	// since it's bit 34, we just use edx.
+	andl $0xfffffffb, %edx
+	wrmsr
+
+
+	// next, check if we even support it.
+	movl $0x80000001, %eax
+	cpuid
+
+	andl $(1 << 20), %edx
+	jz skip_nx_bit
+
+
+	// we do. set bit 11 of the EFER MSR (0xC0000080)
+	mov $0xC0000080, %ecx
+	rdmsr
+
+	orl $(1 << 11), %eax
+	wrmsr
+
+	movq $1, __nx_x64_was_nx_bit_enabled
+	jmp nx_bit_set
+
+
+skip_nx_bit:
+	movq $0, __nx_x64_was_nx_bit_enabled
+
+
+nx_bit_set:
 	// clear the wp bit in cr0 so ring0 can read/write all pages (without needing PAGE_WRITE)
 	mov %cr0, %eax
 	andl $0xfffeffff, %eax
@@ -86,8 +123,14 @@ skip_align:
 
 
 .section .data
-.align 16
 
+.global __nx_x64_was_nx_bit_enabled
+__nx_x64_was_nx_bit_enabled:
+	.quad 0
+
+
+
+.align 16
 
 GDT64:
 GDTNull:

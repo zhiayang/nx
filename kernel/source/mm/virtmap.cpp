@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "devices/serial.h"
 
 namespace nx {
 namespace vmm
@@ -51,8 +52,6 @@ namespace vmm
 		return (pml_t*) (RecursiveAddr<recursiveIdx>::ptab + (PDIR_SIZE * p4idx) + (PTAB_SIZE * p3idx) + (PAGE_SIZE * p2idx));
 	}
 
-
-
 	void invalidateAll()
 	{
 		asm volatile ("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "%rax");
@@ -65,6 +64,36 @@ namespace vmm
 
 
 
+	// sets up the initial address space for user processes.
+	void setupAddrSpace(scheduler::Process* proc)
+	{
+		// make sure we allocated it.
+		assert(proc->cr3);
+
+		// ok, give me some temp space.
+		auto virt = allocateAddrSpace(1, AddressSpace::User);
+		mapAddress(virt, proc->cr3, 1, PAGE_PRESENT);
+
+		auto pml4 = (pml_t*) virt;
+
+		// setup recursive paging
+		pml4->entries[510] = proc->cr3;
+
+		// setup kernel maps.
+		// note: we should always be calling this while in an address space that has already been setup
+		// so getting pdpt 511 should not fault us.
+		pml4->entries[511] = (addr_t) getPDPT(511);
+
+		// ok i think that's it.
+		unmapAddress(virt, 1, /* freePhys: */ false);
+		deallocateAddrSpace(virt, 1);
+	}
+
+
+
+
+
+
 	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
@@ -74,7 +103,41 @@ namespace vmm
 		phys &= PAGE_ALIGN;
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+		if(isOtherProc)
+		{
+			getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+
+			// we need to temp-map the 509th entry of the target pml4 to itself as well
+			// to achieve that, get a temp thing to modify it.
+
+			serial::debugprintf("509: %p, %p | %p\n", getPML4()->entries[509], getPML4(), getPML4<509>());
+
+			println("\nstate: %p", &scheduler::getCurrentProcess()->vmmStates[0]);
+			for(size_t i = 0; i < scheduler::getCurrentProcess()->vmmStates[0].numExtents; i++)
+			{
+				auto ext = scheduler::getCurrentProcess()->vmmStates[0].extents[i];
+				println("%p - %p", ext.addr, ext.addr + (0x1000 * ext.size));
+			}
+
+			auto tmp = allocateAddrSpace(1, AddressSpace::User);
+			serial::debugprintf("tmp addr is %p\n", tmp);
+
+			println("\nstate: %p", &scheduler::getCurrentProcess()->vmmStates[0]);
+			for(size_t i = 0; i < scheduler::getCurrentProcess()->vmmStates[0].numExtents; i++)
+			{
+				auto ext = scheduler::getCurrentProcess()->vmmStates[0].extents[i];
+				println("%p - %p", ext.addr, ext.addr + (0x1000 * ext.size));
+			}
+
+			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+
+			((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
+
+			unmapAddress(tmp, 1, /* freePhys: */ false);
+
+		}
+
+		serial::debugprintf("%p -> %p / %zu (%p)\n", virt, phys, num, proc->cr3);
 
 		for(size_t x = 0; x < num; x++)
 		{
@@ -87,26 +150,31 @@ namespace vmm
 			auto p2idx = indexPageDir(v);
 			auto p1idx = indexPageTable(v);
 
-			if(p4idx == 510) abort("cannot map to PML4T at index 510!");
+			if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
 
 			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
 			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
 			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
+			// serial::debugprint("three");
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 				pml4->entries[p4idx] = pmm::allocate(1) | PAGE_PRESENT;
 
+			// serial::debugprint("four");
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 				pdpt->entries[p3idx] = pmm::allocate(1) | PAGE_PRESENT;
 
+			// serial::debugprint("five");
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 				pdir->entries[p2idx] = pmm::allocate(1) | PAGE_PRESENT;
 
+			// serial::debugprint("six");
 			if(ptab->entries[p1idx] & PAGE_PRESENT)
-				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx] & PAGE_ALIGN);
+				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
 
-			ptab->entries[p1idx] = p | PAGE_PRESENT | flags;
+			// serial::debugprint("seven");
+			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
 			invalidate((addr_t) v);
 		}
 
@@ -216,7 +284,7 @@ namespace vmm
 	}
 
 
-	void bootstrap(addr_t physBase, addr_t v)
+	void bootstrap(addr_t physBase, addr_t v, size_t maxPages)
 	{
 		// we will do a very manual allocation of the first page.
 		// in the worst case scenario we will need 4 pages to map one virtual page.
@@ -247,6 +315,8 @@ namespace vmm
 
 			ptab->entries[p1idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
 			invalidate(v);
+
+			assert(bootstrapUsed <= maxPages);
 		}
 
 		// ok it should be set right now

@@ -168,10 +168,6 @@ void efx::init()
 		auto kernel_entry = (void (*)(nx::BootInfo*)) kernelEntry;
 		kernel_entry(kernelBootInfo);
 	}
-
-
-
-	efi::println("\nnothing to do...\n");
 }
 
 

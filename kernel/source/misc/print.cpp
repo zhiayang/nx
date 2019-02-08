@@ -78,7 +78,7 @@ namespace nx
 	void log(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "info (%s): ", sys);
+		cbprintf(nullptr, cb_serialprint, "[d] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -88,7 +88,7 @@ namespace nx
 	void warn(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "warn (%s): ", sys);
+		cbprintf(nullptr, cb_serialprint, "[w] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -97,7 +97,7 @@ namespace nx
 	void error(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "error (%s): ", sys);
+		cbprintf(nullptr, cb_serialprint, "[e] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -130,6 +130,8 @@ namespace nx
 		print("\n\nkernel abort! error: ");
 		vprint(fmt, args);
 		va_end(args);
+
+		util::printStackTrace();
 	}
 
 	void abort_nohalt(const char* fmt, ...)

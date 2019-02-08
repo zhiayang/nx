@@ -47,7 +47,7 @@ namespace params
 			ptr += str.size() + 1;
 		}
 
-		log("kernel", "parsed %zu kernel parameters", Options.size());
+		log("kernel", "parsed %s", util::plural("kernel parameter", Options.size()).cstr());
 	}
 
 	bool haveOption(const nx::string& name)

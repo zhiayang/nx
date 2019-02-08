@@ -35,7 +35,7 @@ namespace pmm
 					bootinfo->mmEntries[i].numPages -= NumReservedPages;
 
 					// bootstrap!
-					vmm::bootstrap(base, addrs::PMM_STACK_BASE);
+					vmm::bootstrap(base, addrs::PMM_STACK_BASE, NumReservedPages);
 					bootstrapped = true;
 					break;
 				}

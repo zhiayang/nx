@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "devices/x64/pic8259.h"
+#include "devices/pc/pic8259.h"
 
 namespace nx {
 namespace device {

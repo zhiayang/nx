@@ -10,12 +10,6 @@
 namespace nx {
 namespace extmm
 {
-	struct extent_t
-	{
-		uint64_t addr;
-		uint64_t size;
-	};
-
 	constexpr size_t ExtentsPerPage             = PAGE_SIZE / sizeof(extent_t);
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }

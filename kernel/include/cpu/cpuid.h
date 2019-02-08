@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "defs.h"
+
 namespace nx
 {
 	namespace cpu
@@ -26,11 +28,16 @@ namespace nx
 			AES,
 			AVX,
 			RDRand,
+
+			NX,
 		};
 
 		bool hasFeature(Feature f);
 
 		uint64_t readMSR(uint32_t reg);
 		void writeMSR(uint32_t reg, uint64_t value);
+
+
+		bool didEnableNoExecute();
 	}
 }

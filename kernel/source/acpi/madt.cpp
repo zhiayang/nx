@@ -5,7 +5,7 @@
 #include "nx.h"
 #include "cpu/cpuid.h"
 
-#include "devices/x64/apic.h"
+#include "devices/pc/apic.h"
 
 namespace nx {
 namespace acpi

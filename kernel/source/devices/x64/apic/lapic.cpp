@@ -5,8 +5,8 @@
 #include "nx.h"
 
 #include "devices/acpi.h"
-#include "devices/x64/apic.h"
-#include "devices/x64/pit8253.h"
+#include "devices/pc/apic.h"
+#include "devices/pc/pit8253.h"
 
 #include "math.h"
 

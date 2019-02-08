@@ -28,7 +28,8 @@
 #include "../../include/limits.h"
 #include "../../include/stdlib.h"
 #include "../../include/defs/_printf.h"
-#include <math.h>
+
+#include "math.h"
 
 static size_t convert_integer(char* destination, uintmax_t value, uintmax_t base, const char* digits)
 {

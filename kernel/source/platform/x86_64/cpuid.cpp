@@ -5,9 +5,27 @@
 #include "defs.h"
 #include "cpu/cpuid.h"
 
+#include "platform-specific.h"
+
+extern "C" uint64_t __nx_x64_was_nx_bit_enabled;
+
 namespace nx {
 namespace cpu
 {
+	bool didEnableNoExecute()
+	{
+		if constexpr (getArchitecture() == Architecture::x64)
+		{
+			return __nx_x64_was_nx_bit_enabled;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+
+
 	#define do_cpuid(num, a, b, c, d) \
 		asm volatile ("xchgl %%ebx, %1; cpuid; xchgl %%ebx, %1" \
         	: "=a" (a), "=r" (b), "=c" (c), "=d" (d)  \
@@ -73,6 +91,10 @@ namespace cpu
 			case Feature::RDRand:
 				do_cpuid(1, eax, ebx, ecx, edx);
 				return ecx & (1 << 30);
+
+			case Feature::NX:
+				do_cpuid(0x80000001, eax, ebx, ecx, edx);
+				return edx & (1 << 20);
 
 			default:
 				return false;

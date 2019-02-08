@@ -33,11 +33,18 @@ namespace nx
 		struct Process
 		{
 			pid_t processId;
+			nx::string processName;
 
 			addr_t cr3;
 			nx::array<Thread> threads;
 
+			int flags;
+
 			extmm::State vmmStates[vmm::NumAddressSpaces];
+
+
+			static constexpr int PROC_USER      = 0x1;
+			static constexpr int PROC_DRIVER    = 0x2;
 		};
 
 		enum class ThreadState
@@ -66,6 +73,27 @@ namespace nx
 			uint64_t wakeUpTimestamp = 0;
 		};
 
+
+		void setupKernelProcess(addr_t cr3);
+
+		Process* getKernelProcess();
+		Process* getCurrentProcess();
+
+		Process* createProcess(const nx::string& name, int flags);
+		void addProcess(Process* p);
+
+
+
+
+
+
+
+
+
+
+
+
+
 		using Fn0Args_t = void (*)();
 		using Fn1Arg_t  = void (*)(void*);
 		using Fn2Args_t = void (*)(void*, void*);
@@ -82,11 +110,6 @@ namespace nx
 		Thread* createThread(Process* p, Fn4Args_t fn, void* a, void* b, void* c, void* d);
 		Thread* createThread(Process* p, Fn5Args_t fn, void* a, void* b, void* c, void* d, void* e);
 		Thread* createThread(Process* p, Fn6Args_t fn, void* a, void* b, void* c, void* d, void* e, void* f);
-
-		void setupKernelProcess(addr_t cr3);
-
-		Process* getKernelProcess();
-		Process* getCurrentProcess();
 
 		Thread* getCurrentThread();
 
@@ -105,8 +128,7 @@ namespace nx
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);
 
-		void add(Thread* t);
-		void add(Process* p);
+		void addThread(Thread* t);
 
 		void destroyThread(Thread* t);
 

@@ -39,8 +39,10 @@ namespace nx
 			uint64_t entries[512];
 		};
 
-		void bootstrap(addr_t physBase, addr_t virt);
+		void setupAddrSpace(scheduler::Process* proc);
+		void bootstrap(addr_t physBase, addr_t virt, size_t maxPages);
 		void init(scheduler::Process* proc);
+
 
 		void invalidate(addr_t addr);
 		void invalidateAll();
@@ -88,6 +90,7 @@ namespace nx
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
 		constexpr uint64_t PAGE_WRITE       = 0x2;
 		constexpr uint64_t PAGE_USER        = 0x4;
+		constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
 
 		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
 	}
@@ -97,7 +100,12 @@ namespace nx
 
 	namespace extmm
 	{
-		struct extent_t;
+		struct extent_t
+		{
+			uint64_t addr;
+			uint64_t size;
+		};
+
 		struct State
 		{
 			extent_t* extents = 0;

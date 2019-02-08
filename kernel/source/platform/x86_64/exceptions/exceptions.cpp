@@ -141,6 +141,7 @@ namespace exceptions
 
 	static void dumpRegs(RegState_t* r)
 	{
+		println("");
 		println("rax:    %16.8lx   rbx:   %16.8lx", r->rax, r->rbx);
 		println("rcx:    %16.8lx   rdx:   %16.8lx", r->rcx, r->rdx);
 		println("r08:    %16.8lx   r09:   %16.8lx", r->r8, r->r9);
@@ -155,8 +156,11 @@ namespace exceptions
 	}
 
 
+	static int faultCount = 0;
 	extern "C" void nx_x64_handle_exception(RegState_t* regs)
 	{
+		faultCount += 1;
+
 		uint64_t cr2;
 		uint64_t cr3;
 
@@ -169,6 +173,20 @@ namespace exceptions
 		println("\n");
 		println("cpu exception %d: %s", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
 		println("error code:   %d", regs->ErrorCode);
+		if(regs->InterruptID == 13 && regs->ErrorCode != 0)
+		{
+			auto err = regs->ErrorCode;
+
+			print("gpf:");
+
+			if((err & 0x1))         print(" (external)");
+			if((err & 0x6) == 0)    print(" (gdt)");
+			if((err & 0x6) == 2)    print(" (idt)");
+			if((err & 0x6) == 4)    print(" (ldt)");
+			if((err & 0x6) == 6)    print(" (idt)");
+
+			println(", selector: %x", (err & 0xfff8) >> 3);
+		}
 
 		dumpRegs(regs);
 
@@ -199,9 +217,13 @@ namespace exceptions
 		println("\nfault location:");
 		println("%p   |   %s", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
 
-		util::printStackTrace(regs->rbp);
+		// this is likely to cause faults if we did something really bad
+		// so if we already faulted, don't try again.
+		if(faultCount == 1)
+			util::printStackTrace(regs->rbp);
 
-		abort("unrecoverable cpu exception");
+		println("\n!! error: unrecoverable cpu exception !!");
+		while(1);
 	}
 }
 }

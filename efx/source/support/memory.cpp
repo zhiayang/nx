@@ -128,6 +128,8 @@ namespace memory
 				uint64_t v = nx::addrs::EFI_RUNTIME_SERVICES_BASE + entry->PhysicalStart;
 				mapVirtual(entry->PhysicalStart, v, entry->NumberOfPages);
 			}
+
+			// efi::println("%2d: %p - %p   |   %d", i, entry->PhysicalStart, entry->PhysicalStart + (0x1000 * entry->NumberOfPages), entry->Type);
 		}
 	}
 
