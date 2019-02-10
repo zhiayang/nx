@@ -4,11 +4,13 @@
 
 #include "nx.h"
 
+
 namespace nx {
 namespace scheduler
 {
 	void initCPU(CPU* cpu)
 	{
+		assert(cpu);
 		kassert(cpu->localState == 0, "cpu %d was already initialised!", cpu->id);
 
 		// we can only init cpus before the scheduler starts, and while we are in the kernel's address space.
@@ -16,6 +18,7 @@ namespace scheduler
 
 		// make the local state struct.
 		cpu->localState = new CPULocalState();
+		cpu->localState->cpu        = cpu;
 		cpu->localState->id         = cpu->id;
 		cpu->localState->lApicId    = cpu->lApicId;
 		cpu->localState->self       = cpu->localState;
@@ -25,10 +28,9 @@ namespace scheduler
 		cpu->localState->tssSelector    = tsssel;
 		cpu->localState->TSSBase        = tssbase;
 
+
 		if(cpu->isBootstrap)
 		{
-			cpu::tss::loadTSS(cpu->localState->tssSelector);
-
 			// note: %gs always uses the value in MSR_GS_BASE; swapgs just swaps it with the other MSR.
 			// so, since we call this while in kernel-space, we write the local state to MSR_GS_BASE;
 			// when we exit to userspace, we will 'swap' to the user gs.
@@ -36,6 +38,8 @@ namespace scheduler
 			// write gsbase to point to the cpu local state.
 			cpu::writeMSR(cpu::MSR_GS_BASE, (uint64_t) cpu->localState);
 			cpu::writeMSR(cpu::MSR_KERNEL_GS_BASE, 0);
+
+			cpu::tss::loadTSS((uint16_t) cpu->localState->tssSelector);
 		}
 		else
 		{

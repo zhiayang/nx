@@ -15,8 +15,6 @@
 
 namespace nx
 {
-	[[noreturn]] static void idle_thread() { while(true) asm volatile ("hlt"); }
-
 	void work_thread1()
 	{
 		size_t ctr = 0;
@@ -163,10 +161,12 @@ namespace nx
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!
 		{
-			auto idle = scheduler::createThread(kernelProc, idle_thread);
-			auto worker = scheduler::createThread(kernelProc, kernel_main);
+			scheduler::bootstrap();
+			scheduler::init();
+			scheduler::installTickHandlers();
 
-			scheduler::init(idle, worker);
+			scheduler::addThread(scheduler::createThread(kernelProc, kernel_main));
+			scheduler::start();
 
 			// we are all done here: the worker thread will take care of the rest of kernel startup.
 		}

@@ -26,7 +26,7 @@ namespace util
 
 			rbp = *((addr_t*) rbp);
 
-		} while(rbp && rbp >= addrs::KERNEL_ENTRY);
+		} while(rbp && rbp >= 0xFFFF'8000'0000'0000);
 
 		return addrs;
 	}

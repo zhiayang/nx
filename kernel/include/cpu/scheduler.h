@@ -19,22 +19,43 @@ namespace nx
 		struct Thread;
 		struct Process;
 
-		struct State;
+		struct CPU;
+
+		// this is the per-cpu scheduler state!
+		struct State
+		{
+			Thread* IdleThread = 0;
+			Thread* CurrentThread = 0;
+
+			nx::list<Thread*> ThreadList;
+			nx::list<Thread*> BlockedThreads;
+			nx::list<Thread*> DestructionQueue;
+
+			nx::list<Process*> ProcessList;
+		};
+
 		struct CPULocalState
 		{
 			// note: the first pointer should be a pointer to self, because apparently there's
 			// no straightforward way to access %gs:0 without loading the value at %gs:0.
 			// (the LEA instruction doesn't care about segments)
-			CPULocalState* self = 0;
 
-			int id = 0;
-			int lApicId = 0;
+			CPULocalState* self = 0;        // ofs: 0x00
 
-			addr_t TSSBase = 0;
-			uint16_t tssSelector = 0;
+			int id = 0;                     // ofs: 0x08
+			int lApicId = 0;                // ofs: 0x0C
 
-			addr_t cr3 = 0;
-			State* schedState = 0;
+			addr_t TSSBase = 0;             // ofs: 0x10
+			uint64_t tssSelector = 0;       // ofs: 0x18
+
+			addr_t cr3 = 0;                 // ofs: 0x20
+			addr_t unused = 0;              // ofs: 0x28
+			CPU* cpu = 0;                   // ofs: 0x30
+
+			// do not change the position of stuff before this!!!
+			// see syscall/syscall.s
+			uint64_t syscallRetRIP;         // ofs: 0x38
+			uint64_t syscallRetRSP;         // ofs: 0x40
 		};
 
 		struct CPU
@@ -49,6 +70,8 @@ namespace nx
 
 			// the value of this pointer must match the KernelGSBase MSR!!
 			CPULocalState* localState = 0;
+
+			State schedState;
 		};
 
 		struct Process
@@ -136,7 +159,14 @@ namespace nx
 
 		Thread* getCurrentThread();
 
-		void init(Thread* idle_thread, Thread* work_thread);
+		State* getSchedState();
+
+		// call these 4 functions in this order to start scheduling.
+		void bootstrap();
+		void init();
+		void installTickHandlers();
+		void start();
+
 		void setTickIRQ(int irq);
 
 		uint64_t getElapsedNanoseconds();

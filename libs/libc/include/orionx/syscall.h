@@ -12,7 +12,7 @@
 namespace Library
 {
 	namespace SystemCall
-{
+	{
 		extern "C" uint64_t Syscall0Param(uint64_t scvec);
 		extern "C" uint64_t Syscall1Param(uint64_t p1, uint64_t scvec);
 		extern "C" uint64_t Syscall2Param(uint64_t p1, uint64_t p2, uint64_t scvec);

@@ -18,7 +18,7 @@ kernel_entry:
 	// this should be in %rdi. we do not touch that, so it should not be trashed.
 
 	// Set up segments
-	mov $0, %ax
+	mov $0x0, %ax
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %gs

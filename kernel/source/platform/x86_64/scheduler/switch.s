@@ -16,6 +16,22 @@
 .type nx_x64_yield_thread, @function
 
 
+// note: why this is only called "if necessary":
+// if were interrupted while in ring 0 (eg. while running kernel threads), then we *don't want* to swap gs,
+// because gsbase will already be valid. similarly, when we are leaving *to* ring 0, we don't want to swap either.
+
+// (we can call this macro on exit as well, but only after restoring the registers -- so the only things on the stack
+// are the 5 things that the cpu pushed for the interrupt stack frame)
+
+// on the contrary, if we came from ring 3, cs will be 0x1B, so we will do a swapgs; the same applies when leaving to ring 3.
+.macro swapgs_if_necessary
+	cmp $0x08, 0x8(%rsp)
+	je 1f
+	swapgs
+1:
+.endm
+
+
 
 // parameters: new rsp (%rdi), new cr3 (%rsi)
 nx_x64_switch_to_thread:
@@ -32,7 +48,7 @@ restore_regs:
 
 	pop_all_regs
 
-	swapgs
+	swapgs_if_necessary
 	iretq
 
 
@@ -40,7 +56,7 @@ restore_regs:
 
 // wire this to whatever IRQ we're using to tick the kernel (be it PIT or HPET or whatever)
 nx_x64_tick_handler:
-	swapgs
+	swapgs_if_necessary
 
 	// we might be calling this at a high frequency, so for the fast path we don't save all
 	// the registers -- only the caller-saved ones. according to system v abi, these are:
@@ -50,14 +66,13 @@ nx_x64_tick_handler:
 
 	// this actually needs no arguments, it will use... *gasp*
 	// G L O B A L   S T A T E
-	xor %rax, %rax
 	call nx_x64_scheduler_tick
 
 	// if it returned 1, we need to context switch. if 0, we iret as usual.
 	// note: the scheduler_tick function will send the EOI, since we don't know (from here)
 	// which IRQ number we're using for the tick.
 
-	cmp $0, %eax
+	cmp $0, %rax
 	je do_nothing
 
 do_something:
@@ -73,7 +88,7 @@ do_something:
 
 	// scheduler code that finds the next thread to run, and calls nx_x64_switch_to_thread (above)
 	// note: since this will result in an iretq, we do not have to handle its return or whatever.
-	call nx_x64_find_and_switch_thread
+	jmp nx_x64_find_and_switch_thread
 
 	// unreachable!!!
 	ud2
@@ -83,11 +98,8 @@ do_nothing:
 	pop_scratch_regs
 
 	// bye bye
-	swapgs
+	swapgs_if_necessary
 	iretq
-
-
-
 
 
 
@@ -97,14 +109,15 @@ do_nothing:
 
 // this will be a software interrupt.
 nx_x64_yield_thread:
-	swapgs
+	swapgs_if_necessary
+
 	push_all_regs
 
 	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
 	// we just find the next thing, no issue.
 
 	movq %rsp, %rdi
-	call nx_x64_find_and_switch_thread
+	jmp nx_x64_find_and_switch_thread
 
 	// find_and_switch will iret for us.
 	ud2

@@ -13,6 +13,7 @@ namespace nx
 
 		constexpr uint32_t MSR_EFER             = 0xC000'0080;
 
+		constexpr uint32_t MSR_STAR             = 0xC000'0081;
 		constexpr uint32_t MSR_LSTAR            = 0xC000'0082;
 		constexpr uint32_t MSR_CSTAR            = 0xC000'0083;
 		constexpr uint32_t MSR_SF_MASK          = 0xC000'0084;

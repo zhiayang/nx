@@ -17,13 +17,11 @@ _start:
 	pushq %rsi
 	pushq %rdi
 
-	// xchg %bx, %bx
 	// Prepare signals, memory allocation, stdio and such.
 	// call init_libc
 
 	// Run the global constructors.
 	// call _init
-
 
 	// Restore argc and argv.
 	popq %rdi

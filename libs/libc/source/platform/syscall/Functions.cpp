@@ -10,12 +10,13 @@ namespace Library {
 namespace SystemCall
 {
 	/*
-		// misc things, page 0+
+		* misc things, page 0+
 		.quad	ExitProc			// 0000
 		.quad	InstallIRQ			// 0001
 		.quad	InstallIRQNoRegs	// 0002
 
-		// process related things, page 4000+
+
+		* process related things, page 4000+
 		.quad	CreateThread		// 4000
 		.quad	SpawnProcess		// 4001
 		.quad	SendSignalToProcess	// 4002
@@ -39,7 +40,7 @@ namespace SystemCall
 		.quad	ForkProcess			// 4020
 
 
-		// file io things, page 8000+
+		* file io things, page 8000+
 		.quad	OpenFile			// 8000
 		.quad	OpenSocket			// 8001
 		.quad	OpenAnyFD			// 8002
