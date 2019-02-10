@@ -42,7 +42,7 @@ namespace scheduler
 		KernelProcess.cr3 = cr3;
 		KernelProcess.processId = 0;
 
-		initialisePhase(1);
+		setInitPhase(SchedulerInitPhase::KernelProcessInit);
 	}
 
 	Process* getKernelProcess()
@@ -52,9 +52,9 @@ namespace scheduler
 
 	Process* getCurrentProcess()
 	{
-		assert(getCurrentInitialisationPhase() > 0);
+		assert(getInitPhase() > SchedulerInitPhase::Uninitialised);
 
-		if(__unlikely(getCurrentInitialisationPhase() < 3))
+		if(__unlikely(getInitPhase() < SchedulerInitPhase::BootstrapCPURegistered))
 			return &KernelProcess;
 
 		auto cpu = getCurrentCPU();

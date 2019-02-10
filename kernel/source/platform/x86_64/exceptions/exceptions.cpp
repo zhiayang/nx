@@ -28,11 +28,11 @@ namespace exceptions
 		"into detected overflow",
 		"out of bounds",
 		"invalid opcode",
-		"no coprocessor",
+		"device not available",
 
 		"double fault",
 		"coprocessor segment overrun",
-		"bad tss",
+		"invalid tss",
 		"segment not present",
 		"stack fault",
 		"general protection fault",
@@ -169,7 +169,7 @@ namespace exceptions
 			if((err & 0x6) == 4)    print(" (ldt)");
 			if((err & 0x6) == 6)    print(" (idt)");
 
-			println(", selector: %x", (err & 0xfff8) >> 3);
+			println(", selector: %x", err & 0xfff8);
 		}
 
 		dumpRegs(regs);

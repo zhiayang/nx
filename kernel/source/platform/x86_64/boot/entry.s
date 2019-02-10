@@ -21,8 +21,11 @@ kernel_entry:
 	mov $0x10, %ax
 	mov %ax, %ds
 	mov %ax, %es
-	mov %ax, %gs
 	mov %ax, %ss
+
+	xor %ax, %ax
+	mov %ax, %gs
+	mov %ax, %fs
 
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp

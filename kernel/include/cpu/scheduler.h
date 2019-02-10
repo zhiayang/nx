@@ -19,6 +19,24 @@ namespace nx
 		struct Thread;
 		struct Process;
 
+		struct State;
+		struct CPULocalState
+		{
+			// note: the first pointer should be a pointer to self, because apparently there's
+			// no straightforward way to access %gs:0 without loading the value at %gs:0.
+			// (the LEA instruction doesn't care about segments)
+			CPULocalState* self = 0;
+
+			int id = 0;
+			int lApicId = 0;
+
+			addr_t TSSBase = 0;
+			uint16_t tssSelector = 0;
+
+			addr_t cr3 = 0;
+			State* schedState = 0;
+		};
+
 		struct CPU
 		{
 			int id;
@@ -28,6 +46,9 @@ namespace nx
 			addr_t localApicAddr;
 
 			Process* currentProcess = 0;
+
+			// the value of this pointer must match the KernelGSBase MSR!!
+			CPULocalState* localState = 0;
 		};
 
 		struct Process
@@ -133,20 +154,32 @@ namespace nx
 		void destroyThread(Thread* t);
 
 
+		enum class SchedulerInitPhase
+		{
+			Uninitialised,
+			KernelProcessInit,
+			ReadyToRegisterCPUs,
+			BootstrapCPURegistered,
+			SchedulerStarted
+		};
+
 		// this is kinda dumb
-		int getCurrentInitialisationPhase();
-		void initialisePhase(int p);
-
-
+		SchedulerInitPhase getInitPhase();
+		void setInitPhase(SchedulerInitPhase phase);
 
 		// processor-related stuff
 
 		void preinitCPUs();
 		void registerCPU(bool bsp, int id, int lApicId, addr_t localApic);
 
+		CPULocalState* getCPULocalState();
+
 		size_t getNumCPUs();
 
 		CPU* getCurrentCPU();
+		nx::array<CPU>& getAllCPUs();
+
+		void initCPU(CPU* cpu);
 	};
 }
 

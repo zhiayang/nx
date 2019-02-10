@@ -3,7 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "cpu/cpuid.h"
 
 #include "devices/pc/apic.h"
 
@@ -104,7 +103,7 @@ namespace acpi
 			// bit 8 is set if this is the BSP (it should be, because we have not started any APs yet)
 			// bit 11 is set if the LAPIC is already enabled.
 
-			addr_t base = cpu::readMSR(0x1B);
+			addr_t base = cpu::readMSR(cpu::MSR_APIC_BASE);
 			if((base & vmm::PAGE_ALIGN) != lApicAddr)
 			{
 				abort("acpi/madt: invalid configuration, lapic base address in MSR (%p) does not match madt (%p)",
@@ -119,7 +118,7 @@ namespace acpi
 			base |= 0x800;
 			base |= 0x100;
 
-			cpu::writeMSR(0x1B, base);
+			cpu::writeMSR(cpu::MSR_APIC_BASE, base);
 
 			// note: this 'enabling' doesn't start accepting interrupts; it just means 'not disabled'.
 			// we actually enable it later.

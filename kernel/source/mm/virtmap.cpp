@@ -106,11 +106,11 @@ namespace vmm
 
 		// next, we need to map the gdt as well -- since we moved it out of the kernel data section
 		{
-			auto [ gdtv, gdtp ] = cpu::gdt::getGDTAddress();
-			if(allocateSpecific(gdtv, 1, proc) != gdtv)
-				abort("failed to map gdt (at %p) to user process!", gdtv);
+			// auto [ gdtv, gdtp ] = cpu::gdt::getGDTAddress();
+			// if(allocateSpecific(gdtv, 1, proc) != gdtv)
+			// 	abort("failed to map gdt (at %p) to user process!", gdtv);
 
-			mapAddress(gdtv, gdtp, 1, PAGE_PRESENT, proc);
+			// mapAddress(gdtv, gdtp, 1, PAGE_PRESENT, proc);
 		}
 
 

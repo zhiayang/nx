@@ -1,0 +1,161 @@
+// multicpu.cpp
+// Copyright (c) 2019, zhiayang
+// Licensed under the Apache License Version 2.0.
+
+#include "nx.h"
+
+namespace nx {
+namespace scheduler
+{
+	void initCPU(CPU* cpu)
+	{
+		kassert(cpu->localState == 0, "cpu %d was already initialised!", cpu->id);
+
+		// we can only init cpus before the scheduler starts, and while we are in the kernel's address space.
+		assert(getCurrentProcess() == getKernelProcess());
+
+		// make the local state struct.
+		cpu->localState = new CPULocalState();
+		cpu->localState->id         = cpu->id;
+		cpu->localState->lApicId    = cpu->lApicId;
+		cpu->localState->self       = cpu->localState;
+
+		// make a tss
+		auto [ tssbase, tsssel ] = cpu::tss::createTSS();
+		cpu->localState->tssSelector    = tsssel;
+		cpu->localState->TSSBase        = tssbase;
+
+		if(cpu->isBootstrap)
+		{
+			cpu::tss::loadTSS(cpu->localState->tssSelector);
+
+			// note: %gs always uses the value in MSR_GS_BASE; swapgs just swaps it with the other MSR.
+			// so, since we call this while in kernel-space, we write the local state to MSR_GS_BASE;
+			// when we exit to userspace, we will 'swap' to the user gs.
+
+			// write gsbase to point to the cpu local state.
+			cpu::writeMSR(cpu::MSR_GS_BASE, (uint64_t) cpu->localState);
+			cpu::writeMSR(cpu::MSR_KERNEL_GS_BASE, 0);
+		}
+		else
+		{
+			// TODO: send IPIs to wake up the APs.
+		}
+	}
+
+	extern "C" uint64_t nx_x64_get_gs_base();
+	CPULocalState* getCPULocalState()
+	{
+		// use gs.
+		return (CPULocalState*) nx_x64_get_gs_base();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	static bool InitialisedAPs = false;
+	static array<CPU> processors;
+
+	void preinitCPUs()
+	{
+		processors = array<CPU>();
+
+		setInitPhase(SchedulerInitPhase::ReadyToRegisterCPUs);
+	}
+
+	nx::array<CPU>& getAllCPUs()
+	{
+		return processors;
+	}
+
+	size_t getNumCPUs()
+	{
+		return processors.size();
+	}
+
+	void registerCPU(bool bsp, int id, int lApicId, addr_t localApic)
+	{
+		assert(getInitPhase() >= SchedulerInitPhase::ReadyToRegisterCPUs);
+
+		// make sure the bsp is the first one on the list!!
+		// the MADT tables from ACPI guarantee this.
+		assert(!bsp || processors.empty());
+
+		CPU p;
+		p.id = id;
+		p.lApicId = lApicId;
+		p.localApicAddr = localApic;
+
+		p.isBootstrap = bsp;
+
+		processors.append(p);
+
+		setInitPhase(SchedulerInitPhase::BootstrapCPURegistered);
+	}
+
+	CPU* getCurrentCPU()
+	{
+		if(!InitialisedAPs) return &processors[0];
+		else                abort("!");
+	}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

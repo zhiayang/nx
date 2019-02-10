@@ -5,30 +5,13 @@
 #pragma once
 #include "defs.h"
 
-namespace nx
-{
-	namespace cpu
-	{
-		#ifdef __ARCH_x64__
-		namespace idt
-		{
-			void init();
-			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts);
-			void clearEntry(uint8_t intr);
 
-			void enableGate(uint8_t intr);
-			void disableGate(uint8_t intr);
-		}
+#ifdef __ARCH_x64__
 
-		namespace gdt
-		{
-			void init();
+#include "x64/cpu.h"
+#include "x64/msr.h"
+#include "x64/cpuid.h"
 
-			// returns (virt, phys)
-			krt::pair<addr_t, addr_t> getGDTAddress();
-		}
-		#else
+#else
 
-		#endif
-	}
-}
+#endif

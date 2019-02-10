@@ -1,4 +1,4 @@
-// cpuid.h
+// x64/cpuid.h
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
@@ -33,10 +33,6 @@ namespace nx
 		};
 
 		bool hasFeature(Feature f);
-
-		uint64_t readMSR(uint32_t reg);
-		void writeMSR(uint32_t reg, uint64_t value);
-
 
 		bool didEnableNoExecute();
 	}

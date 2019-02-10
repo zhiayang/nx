@@ -3,7 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "cpu/cpuid.h"
 #include "misc/params.h"
 
 #include "loader.h"
@@ -37,7 +36,7 @@ namespace nx
 		println("*yawn*");
 
 		uint64_t ctr = 0;
-		while(true) if(++ctr % 7500000 == 0) print("x");
+		while(true) if(++ctr % 5000000 == 0) print("x");
 	}
 
 	void kernel_main()
@@ -58,7 +57,7 @@ namespace nx
 
 			addr_t entryPt = 0;
 			bool success = loader::loadIndeterminateBinary(proc, buf, sz, &entryPt);
-			println("succeeded = %d", success);
+			println("success = %d", success);
 
 			auto thr = scheduler::createThread(proc, (scheduler::Fn0Args_t) entryPt);
 			scheduler::addThread(thr);
@@ -70,7 +69,7 @@ namespace nx
 
 
 		uint64_t ctr = 0;
-		while(true) if(++ctr % 7500000 == 0) print("q");
+		while(true) if(++ctr % 5000000 == 0) print("q");
 	}
 
 
@@ -127,8 +126,6 @@ namespace nx
 		pmm::init(bootinfo);
 		vmm::init(kernelProc);
 		heap::init();
-
-		cpu::gdt::init();
 
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);

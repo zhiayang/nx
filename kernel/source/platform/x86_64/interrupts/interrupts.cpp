@@ -8,8 +8,6 @@
 #include "devices/pc/pic8259.h"
 #include "devices/pc/apic.h"
 
-#include "cpu/cpuid.h"
-
 extern "C" void nx_x64_irq_handler_0();
 extern "C" void nx_x64_irq_handler_1();
 extern "C" void nx_x64_irq_handler_2();

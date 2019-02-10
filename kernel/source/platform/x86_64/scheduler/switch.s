@@ -30,6 +30,7 @@ restore_regs:
 
 	pop_all_regs
 
+	swapgs
 	iretq
 
 
@@ -38,6 +39,8 @@ restore_regs:
 
 // wire this to whatever IRQ we're using to tick the kernel (be it PIT or HPET or whatever)
 nx_x64_tick_handler:
+	swapgs
+
 	// we might be calling this at a high frequency, so for the fast path we don't save all
 	// the registers -- only the caller-saved ones. according to system v abi, these are:
 	// rax, rcx, rdx, rdi, rsi, r8, r9, r10, r11
@@ -78,6 +81,7 @@ do_nothing:
 	pop_scratch_regs
 
 	// bye bye
+	swapgs
 	iretq
 
 
@@ -91,6 +95,7 @@ do_nothing:
 
 // this will be a software interrupt.
 nx_x64_yield_thread:
+	swapgs
 	push_all_regs
 
 	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)

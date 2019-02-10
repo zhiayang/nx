@@ -14,3 +14,18 @@ nx_x64_loadidt:
 nx_x64_loadgdt:
 	lgdt (%rdi)
 	ret
+
+
+.global nx_x64_loadtss
+.type nx_x64_loadtss, @function
+nx_x64_loadtss:
+	mov %rdi, %rax
+
+	ltr %ax
+	ret
+
+.global nx_x64_get_gs_base
+.type nx_x64_get_gs_base, @function
+nx_x64_get_gs_base:
+	movq %gs:0, %rax
+	ret

@@ -15,7 +15,7 @@ namespace nx {
 namespace scheduler
 {
 	constexpr uint64_t NS_PER_TICK           = time::milliseconds(10).ns();
-	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(50).ns();
+	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(40).ns();
 
 	static_assert(NS_PER_TICK <= TIMESLICE_DURATION_NS);
 	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary
@@ -50,8 +50,9 @@ namespace scheduler
 
 		CurrentThread->state = ThreadState::Running;
 		auto newcr3 = CurrentThread->parent->cr3;
+		auto cr3 = oldcr3 == newcr3 ? 0 : newcr3;
 
-		nx_x64_switch_to_thread(CurrentThread->kernelStack, oldcr3 == newcr3 ? 0 : newcr3);
+		nx_x64_switch_to_thread(CurrentThread->kernelStack, cr3);
 	}
 
 
@@ -74,23 +75,8 @@ namespace scheduler
 		}
 	}
 
-
-
-	void init(Thread* idle_thread, Thread* work_thread)
+	static void calibrateTickTimer()
 	{
-		IdleThread = idle_thread;
-
-		ThreadList = nx::list<Thread*>();
-		BlockedThreads = nx::list<Thread*>();
-		DestructionQueue = nx::list<Thread*>();
-
-		ProcessList = nx::list<Process*>();
-
-
-
-		CurrentThread = work_thread;
-		ThreadList.append(work_thread);
-
 		if constexpr (getArchitecture() == Architecture::x64)
 		{
 			if(interrupts::hasLocalAPIC())
@@ -117,8 +103,22 @@ namespace scheduler
 		{
 			abort("unsupported architecture!");
 		}
+	}
 
+	void init(Thread* idle_thread, Thread* work_thread)
+	{
+		IdleThread = idle_thread;
 
+		ThreadList = nx::list<Thread*>();
+		BlockedThreads = nx::list<Thread*>();
+		DestructionQueue = nx::list<Thread*>();
+
+		ProcessList = nx::list<Process*>();
+
+		CurrentThread = work_thread;
+		ThreadList.append(work_thread);
+
+		calibrateTickTimer();
 		{
 			// install the tick handler
 			cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler,
@@ -129,10 +129,20 @@ namespace scheduler
 				/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
 		}
 
+		// initialise the managed GDT, so we can allocate TSSes for the cpus.
+		cpu::gdt::init();
+
+		// init all cpus with their cpu-local storage, and give them each a TSS
+		for(auto& cpu : getAllCPUs())
+			initCPU(&cpu);
+
 		// add our own worker thread.
 		addThread(createThread(idle_thread->parent, death_destroyer_of_threads));
 
+		// the scheduler has started.
+		setInitPhase(SchedulerInitPhase::SchedulerStarted);
 
+		log("sched", "scheduler initialised");
 		nx_x64_switch_to_thread(work_thread->kernelStack, 0);
 	}
 
@@ -287,13 +297,13 @@ namespace scheduler
 
 
 
-	static int initPhase = 0;
-	int getCurrentInitialisationPhase()
+	static auto initPhase = SchedulerInitPhase::Uninitialised;
+	SchedulerInitPhase getInitPhase()
 	{
 		return initPhase;
 	}
 
-	void initialisePhase(int p)
+	void setInitPhase(SchedulerInitPhase p)
 	{
 		assert(p >= initPhase);
 		initPhase = p;

@@ -8,8 +8,6 @@
 #include "devices/pc/apic.h"
 #include "devices/pc/pic8259.h"
 
-#include "cpu/cpuid.h"
-
 namespace nx {
 namespace device {
 namespace ioapic

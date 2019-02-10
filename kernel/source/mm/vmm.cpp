@@ -119,7 +119,7 @@ namespace vmm
 		return extmm::allocateSpecific(st, addr, num);
 	}
 
-	addr_t allocate(size_t num, AddressSpace type, scheduler::Process* proc)
+	addr_t allocate(size_t num, AddressSpace type, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -130,7 +130,7 @@ namespace vmm
 		auto phys = pmm::allocate(num);
 		if(phys == 0) return 0;
 
-		mapAddress(virt, phys, num, PAGE_PRESENT, proc);
+		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
 		return virt;
 	}
 

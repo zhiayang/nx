@@ -61,7 +61,7 @@ namespace nx
 		addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		// these will allocate an address space, *AND* allocate a physical page *AND* map it!
-		addr_t allocate(size_t num, AddressSpace type, scheduler::Process* proc = 0);
+		addr_t allocate(size_t num, AddressSpace type, uint64_t flags = 0, scheduler::Process* proc = 0);
 		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }

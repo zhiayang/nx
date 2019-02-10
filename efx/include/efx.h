@@ -84,7 +84,7 @@ namespace efx
 	namespace memory
 	{
 		void setupCR3();
-		void mapVirtual(uint64_t phys, uint64_t virt, size_t num);
+		void mapVirtual(uint64_t phys, uint64_t virt, size_t num, uint64_t flags = 0);
 
 		uint64_t getPML4Address();
 

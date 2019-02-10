@@ -29,13 +29,6 @@ namespace idt
 
 	constexpr int NumIDTEntries = 256;
 
-
-	constexpr uint8_t FLAG_DPL_SHIFT    = 5;
-	constexpr uint8_t FLAG_DPL_BITS     = 2;
-	constexpr uint8_t FLAG_TYPE_BITS    = 4;
-	constexpr uint8_t FLAG_TYPE_SHIFT   = 0;
-
-
 	static IDTEntry idt[NumIDTEntries];
 	static IDTPointer idtp;
 
@@ -78,6 +71,7 @@ namespace idt
 
 		uint8_t flags = 0x80;   // bit 7 is the present flag
 		flags |= 0xE;           // bits 0:3 are the type. 0b1110 (ie 0xE) is interrupt gate -- no nested interrupts.
+								// bit 4 is apparently always 0.
 
 		if(ring3Interrupt)      flags |= 0x60;  // bits 5:6 are the ring (ie what ring will the cpu go into when interrupted)
 		if(nestedInterrupts)    flags |= 0x1;   // setting bit 0 makes the type 0b1111 (ie 0xF), which is trap gate -- with nested interrupts
