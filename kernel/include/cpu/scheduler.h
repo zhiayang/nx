@@ -32,6 +32,8 @@ namespace nx
 			nx::list<Thread*> DestructionQueue;
 
 			nx::list<Process*> ProcessList;
+
+			uint64_t tickCounter = 0;
 		};
 
 		struct CPULocalState

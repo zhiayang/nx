@@ -193,8 +193,10 @@ namespace scheduler
 		yield();
 	}
 
-	static void wakeUpThreads()
+	static bool wakeUpThreads()
 	{
+		bool woke = false;
+
 		// checks for sleeping threads and wakes them up if necessary.
 		// TODO: optimise this!!!!
 
@@ -207,8 +209,11 @@ namespace scheduler
 				thr->state = ThreadState::Stopped;
 
 				getSchedState()->ThreadList.prepend(thr);
+				woke = true;
 			}
 		}
+
+		return woke;
 	}
 
 
@@ -259,19 +264,20 @@ namespace scheduler
 
 
 	// returns true if it's time to preempt somebody
-	static uint64_t TickCounter = 0;
 	extern "C" uint64_t nx_x64_scheduler_tick()      // note: this is called from asm-land
 	{
 		interrupts::sendEOI(TickIRQ);
 
-		TickCounter += 1;
+		auto ss = getSchedState();
+
+		ss->tickCounter += 1;
 		ElapsedNanoseconds += NS_PER_TICK;
 
-		wakeUpThreads();
+		bool woke = wakeUpThreads();
 
-		bool ret = (TickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
-		if(ret) TickCounter = 0;
+		bool ret = woke || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 
+		if(ret) ss->tickCounter = 0;
 		return ret;
 	}
 
