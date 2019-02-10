@@ -26,7 +26,7 @@ namespace util
 
 			rbp = *((addr_t*) rbp);
 
-		} while(rbp);
+		} while(rbp && rbp >= addrs::KERNEL_ENTRY);
 
 		return addrs;
 	}
@@ -64,8 +64,6 @@ namespace util
 			println("    unavailable");
 			return;
 		}
-
-
 
 		int counter = 0;
 		auto frames = getStackFrames(rbp);

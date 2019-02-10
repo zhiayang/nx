@@ -50,9 +50,11 @@ namespace scheduler
 
 		CurrentThread->state = ThreadState::Running;
 		auto newcr3 = CurrentThread->parent->cr3;
-		auto cr3 = oldcr3 == newcr3 ? 0 : newcr3;
+		auto setcr3 = oldcr3 == newcr3 ? 0 : newcr3;
 
-		nx_x64_switch_to_thread(CurrentThread->kernelStack, cr3);
+		cpu::tss::setRSP0(getCPULocalState()->TSSBase, CurrentThread->kernelStackTop);
+
+		nx_x64_switch_to_thread(CurrentThread->kernelStack, setcr3);
 	}
 
 

@@ -14,6 +14,7 @@
 
 constexpr uintptr_t PAGE_PRESENT = 0x1;
 constexpr uintptr_t PAGE_WRITE   = 0x2;
+constexpr uintptr_t PAGE_USER    = 0x4;
 constexpr uintptr_t PAGE_ALIGN   = ~0xFFF;
 
 struct pml_t
@@ -83,7 +84,7 @@ namespace memory
 		if(auto fbaddr = graphics::getFramebufferAddress(); fbaddr != 0)
 		{
 			// TODO: hack! map the framebuffer as user
-			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0x1000) / 0x1000, 0x4);
+			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0x1000) / 0x1000, PAGE_USER);
 		}
 	}
 
@@ -188,6 +189,7 @@ namespace memory
 	{
 		if(!pml4t_addr) efi::abort("mapVirtual(): must call setupCR3() first!");
 
+		constexpr uint64_t DEFAULT_FLAGS = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
 		for(size_t i = 0; i < num; i++)
 		{
 			uint64_t p = phys + (0x1000 * i);
@@ -202,19 +204,17 @@ namespace memory
 			if(p4idx == 510) efi::abort("mapVirtual(): cannot map to 510th PML4 entry!");
 
 			if(pml4t_addr->entries[p4idx] == 0)
-				pml4t_addr->entries[p4idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE | flags);
+				pml4t_addr->entries[p4idx] = allocate_pagetab(DEFAULT_FLAGS | flags);
 
 			auto pdpt = (pml_t*) (pml4t_addr->entries[p4idx] & PAGE_ALIGN);
 
-
 			if(pdpt->entries[p3idx] == 0)
-				pdpt->entries[p3idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE | flags);
+				pdpt->entries[p3idx] = allocate_pagetab(DEFAULT_FLAGS | flags);
 
 			auto pdir = (pml_t*) (pdpt->entries[p3idx] & PAGE_ALIGN);
 
-
 			if(pdir->entries[p2idx] == 0)
-				pdir->entries[p2idx] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE | flags);
+				pdir->entries[p2idx] = allocate_pagetab(DEFAULT_FLAGS | flags);
 
 			auto ptable = (pml_t*) (pdir->entries[p2idx] & PAGE_ALIGN);
 

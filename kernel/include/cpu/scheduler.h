@@ -84,6 +84,8 @@ namespace nx
 			addr_t userStackBottom;
 
 			addr_t kernelStack;
+
+			addr_t kernelStackTop;
 			addr_t kernelStackBottom;
 
 			Process* parent = 0;

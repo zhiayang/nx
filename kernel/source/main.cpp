@@ -53,14 +53,19 @@ namespace nx
 			auto didRead = vfs::read(f, buf, sz);
 			if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
 
-			auto proc = scheduler::createProcess("placebo", 0 /* scheduler::Process::PROC_USER */);
+			auto proc = scheduler::createProcess("placebo", scheduler::Process::PROC_USER);
 
 			addr_t entryPt = 0;
 			bool success = loader::loadIndeterminateBinary(proc, buf, sz, &entryPt);
-			println("success = %d", success);
-
-			auto thr = scheduler::createThread(proc, (scheduler::Fn0Args_t) entryPt);
-			scheduler::addThread(thr);
+			if(success)
+			{
+				auto thr = scheduler::createThread(proc, (scheduler::Fn0Args_t) entryPt);
+				scheduler::addThread(thr);
+			}
+			else
+			{
+				abort("failed to load!");
+			}
 		}
 
 

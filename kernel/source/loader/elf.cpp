@@ -17,7 +17,9 @@ namespace loader
 		assert(len > 0);
 
 		auto file = (uint8_t*) buf;
+
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
+		bool isUserProc = (proc->flags & scheduler::Process::PROC_USER);
 
 		constexpr const char* err = "loader/elf";
 
@@ -107,10 +109,9 @@ namespace loader
 			// figure out how we should map this.
 			uint64_t virtFlags = 0;
 
+			if(isUserProc)                                  virtFlags |= vmm::PAGE_USER;
 			if(progHdr->p_flags & PF_W)                     virtFlags |= vmm::PAGE_WRITE;
 			if(!(progHdr->p_flags & PF_X))                  virtFlags |= vmm::PAGE_NX;
-			if(proc->flags & scheduler::Process::PROC_USER) virtFlags |= vmm::PAGE_USER;
-
 
 			// gimme some scratch space in the current addrspace
 			addr_t virtBase = 0;
@@ -120,8 +121,8 @@ namespace loader
 			{
 				virtBase = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
 
-				// since this is not the final mapping, we need to write it.
-				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT);
+				// since this is not the final mapping, we don't need user perms.
+				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT | 0x4);
 
 				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}
@@ -136,7 +137,7 @@ namespace loader
 				}
 
 				// this is the final mapping, so we need the proper flags.
-				vmm::mapAddress(virtBase, phys, numPages, virtFlags);
+				vmm::mapAddress(virtBase, phys, numPages, virtFlags | 0x4);
 
 				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}
@@ -161,7 +162,7 @@ namespace loader
 					return false;
 				}
 
-				vmm::mapAddress(progHdr->p_vaddr & vmm::PAGE_ALIGN, phys, numPages, virtFlags, proc);
+				vmm::mapAddress(progHdr->p_vaddr & vmm::PAGE_ALIGN, phys, numPages, virtFlags | 0x4, proc);
 			}
 		}
 

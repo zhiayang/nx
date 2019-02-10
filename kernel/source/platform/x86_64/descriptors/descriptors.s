@@ -19,9 +19,7 @@ nx_x64_loadgdt:
 .global nx_x64_loadtss
 .type nx_x64_loadtss, @function
 nx_x64_loadtss:
-	mov %rdi, %rax
-
-	ltr %ax
+	ltr %di
 	ret
 
 .global nx_x64_get_gs_base

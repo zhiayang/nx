@@ -98,6 +98,14 @@ namespace tss
 		return krt::pair(tssaddr, selector);
 	}
 
+	void setRSP0(addr_t tssBase, uint64_t rsp0)
+	{
+		auto tss = (tss_t*) tssBase;
+		tss->rsp0 = rsp0;
+	}
+
+
+
 	extern "C" void nx_x64_loadtss(uint16_t);
 
 	void loadTSS(uint16_t selector)

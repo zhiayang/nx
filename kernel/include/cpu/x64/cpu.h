@@ -37,6 +37,8 @@ namespace nx
 			krt::pair<addr_t, uint16_t> createTSS();
 
 			void loadTSS(uint16_t selector);
+
+			void setRSP0(addr_t tssBase, uint64_t rsp0);
 		}
 
 		#else

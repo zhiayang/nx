@@ -62,7 +62,7 @@ vbox: diskimage
 
 
 
-diskimage: build $(INITRD)
+diskimage: build
 	@utils/tools/update-diskimage.sh
 
 build:
@@ -73,11 +73,6 @@ build:
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
-
-
-
-$(INITRD): $(shell find $(INITRD_DIR) -name "*")
-	# initrd
 	@tar -cf - -C $(INITRD_DIR)/ . | gzip -9 - > $(INITRD)
 
 clean:

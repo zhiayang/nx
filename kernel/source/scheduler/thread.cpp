@@ -37,10 +37,11 @@ namespace scheduler
 
 
 	constexpr uint64_t RING0_CODE_SEGMENT        = 0x08;
-	constexpr uint64_t RING0_STACK_SEGMENT       = 0x10;
+	constexpr uint64_t RING0_STACK_SEGMENT       = 0x10;     // 0x18 | 0x3
 
-	constexpr uint64_t RING3_CODE_SEGMENT        = 0x23;     // 0x20 | 0x3
-	constexpr uint64_t RING3_STACK_SEGMENT       = 0x1B;     // 0x18 | 0x3
+	constexpr uint64_t RING3_CODE_SEGMENT        = 0x1B;     // 0x18 | 0x3
+	constexpr uint64_t RING3_STACK_SEGMENT       = 0x23;     // 0x20 | 0x3
+
 
 	//* note: we don't bother rounding this up, we just divide by PAGE_SIZE
 	//* so don't be stupid; set these to a multiple of 0x1000, thanks.
@@ -79,7 +80,7 @@ namespace scheduler
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER | vmm::PAGE_NX) : 0), proc);
+			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER) : vmm::PAGE_NX), proc);
 
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
@@ -99,7 +100,7 @@ namespace scheduler
 
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER | vmm::PAGE_NX) : 0), proc);
+			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER) : vmm::PAGE_NX), proc);
 
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
 			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpace::User);
@@ -108,11 +109,11 @@ namespace scheduler
 
 			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
-			*--kstk     = (isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT);     // stack segment
-			*--kstk     = thr->userStackBottom + USER_STACK_SIZE;                       // stack pointer
-			*--kstk     = 0x202;                                                        // flags
-			*--kstk     = (isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT);       // code segment
-			*--kstk     = (addr_t) fn;                                                  // return addr
+			*--kstk     = (isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT); // stack segment
+			*--kstk     = thr->userStackBottom + USER_STACK_SIZE;                   // stack pointer
+			*--kstk     = 0x202;                                                    // flags
+			*--kstk     = (isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT);   // code segment
+			*--kstk     = (addr_t) fn;                                              // return addr
 
 
 			// now for the registers.
@@ -133,11 +134,12 @@ namespace scheduler
 			*--kstk     = (uint64_t) a; // rdi
 
 
-			// should be 160
-			assert((addr_t) kstk + 160 == (scratch + KERNEL_STACK_SIZE));
+			constexpr size_t EXPECTED_STACK_OFFSET = 160;
+			assert((addr_t) kstk + EXPECTED_STACK_OFFSET == (scratch + KERNEL_STACK_SIZE));
 
 			// ok. set the stack.
-			thr->kernelStack = (virt + KERNEL_STACK_SIZE) - 160;
+			thr->kernelStack = (virt + KERNEL_STACK_SIZE) - EXPECTED_STACK_OFFSET;
+			thr->kernelStackTop = (virt + KERNEL_STACK_SIZE);
 
 			// clear the temp mapping
 			vmm::unmapAddress(scratch, n, /* freePhys: */ false);

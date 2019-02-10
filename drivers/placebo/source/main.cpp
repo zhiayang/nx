@@ -7,14 +7,29 @@
 
 extern "C" int main()
 {
-	uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
-	for(int y = 0; y < 300; y++)
+	uint64_t ctr = 0;
+
+	constexpr uint32_t colours[4] = {
+		0xffff0000,
+		0xff00ff00,
+		0xff0000ff,
+		0xff00ffff,
+	};
+
+	int ctr2 = 0;
+	while(true)
 	{
-		for(int x = 0; x < 800; x++)
+		if(ctr++ % 50000000 == 0)
 		{
-			*(fb + y * 800 + x) = 0xffff0000;
+			ctr2++;
+			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
+			for(int y = 0; y < 300; y++)
+			{
+				for(int x = 0; x < 800; x++)
+				{
+					*(fb + y * 800 + x) = colours[ctr2 % 4];
+				}
+			}
 		}
 	}
-
-	while(1);
 }

@@ -28,11 +28,12 @@ change_cr3:
 restore_regs:
 	mov %rdi, %rsp
 
+	// TODO: restore floating point state!!
+
 	pop_all_regs
 
 	swapgs
 	iretq
-
 
 
 
@@ -63,6 +64,7 @@ do_something:
 	// need to context switch -- so we need to push all the registers.
 	pop_scratch_regs
 	push_all_regs
+
 
 	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
 

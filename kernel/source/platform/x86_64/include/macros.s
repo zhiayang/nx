@@ -2,8 +2,6 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-
-
 .macro push_all_regs
 	push %r15
 	push %r14
@@ -63,8 +61,6 @@
 	pop %r10
 	pop %r11
 .endm
-
-
 
 
 

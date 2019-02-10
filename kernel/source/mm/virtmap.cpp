@@ -83,12 +83,12 @@ namespace vmm
 		memset(pml4, 0, PAGE_SIZE);
 
 		// setup recursive paging
-		pml4->entries[510] = proc->cr3;
+		pml4->entries[510] = proc->cr3 | PAGE_PRESENT;
 
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
 		// so getting pdpt 511 should not fault us.
-		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_PRESENT;
+		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
 
 
 		// next, we need to map the lapic's base address as well, so we don't need to
@@ -103,16 +103,6 @@ namespace vmm
 
 			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT, proc);
 		}
-
-		// next, we need to map the gdt as well -- since we moved it out of the kernel data section
-		{
-			// auto [ gdtv, gdtp ] = cpu::gdt::getGDTAddress();
-			// if(allocateSpecific(gdtv, 1, proc) != gdtv)
-			// 	abort("failed to map gdt (at %p) to user process!", gdtv);
-
-			// mapAddress(gdtv, gdtp, 1, PAGE_PRESENT, proc);
-		}
-
 
 		// ok i think that's it.
 		unmapAddress(virt, 1, /* freePhys: */ false);
@@ -140,11 +130,7 @@ namespace vmm
 			// we need to temp-map the 509th entry of the target pml4 to itself as well
 			// to achieve that, get a temp thing to modify it.
 
-			// serial::debugprintf("509: %p, %p | %p\n", getPML4()->entries[509], getPML4(), getPML4<509>());
-
 			auto tmp = allocateAddrSpace(1, AddressSpace::User);
-			// serial::debugprintf("tmp addr is %p\n", tmp);
-
 			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
 
 			((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
@@ -152,6 +138,13 @@ namespace vmm
 			unmapAddress(tmp, 1, /* freePhys: */ false);
 		}
 
+		// note: the flags in the higher-level structures will override those at the lower level
+		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
+		// same applies for PAGE_WRITE (when CR0.WP=1)
+		// also: for 0 <= p4idx <= 255, we set the user-bit on intermediate entries.
+		// for 256 <= p4idx <= 511, we don't set it.
+		constexpr addr_t DEFAULT_FLAGS_LOW = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
+		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
 
 		for(size_t x = 0; x < num; x++)
 		{
@@ -171,26 +164,30 @@ namespace vmm
 			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
 			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
+			auto DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
+
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
-				pml4->entries[p4idx] = pmm::allocate(1) | PAGE_PRESENT;
+				pml4->entries[p4idx] = pmm::allocate(1) | DEFAULT_FLAGS;
 				memset(pdpt, 0, PAGE_SIZE);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
-				pdpt->entries[p3idx] = pmm::allocate(1) | PAGE_PRESENT;
+				pdpt->entries[p3idx] = pmm::allocate(1) | DEFAULT_FLAGS;
 				memset(pdir, 0, PAGE_SIZE);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
-				pdir->entries[p2idx] = pmm::allocate(1) | PAGE_PRESENT;
+				pdir->entries[p2idx] = pmm::allocate(1) | DEFAULT_FLAGS;
 				memset(ptab, 0, PAGE_SIZE);
 			}
 
+
 			if(ptab->entries[p1idx] & PAGE_PRESENT)
 				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
+
 
 			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
 			invalidate((addr_t) v);

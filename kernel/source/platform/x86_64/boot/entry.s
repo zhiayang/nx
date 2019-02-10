@@ -18,14 +18,16 @@ kernel_entry:
 	// this should be in %rdi. we do not touch that, so it should not be trashed.
 
 	// Set up segments
-	mov $0x10, %ax
+	mov $0, %ax
 	mov %ax, %ds
 	mov %ax, %es
-	mov %ax, %ss
-
-	xor %ax, %ax
 	mov %ax, %gs
 	mov %ax, %fs
+
+	// stack segment is a special fucker
+	mov $0x10, %ax
+	mov %ax, %ss
+
 
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp
