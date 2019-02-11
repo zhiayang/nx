@@ -90,7 +90,6 @@ namespace scheduler
 
 
 
-	static bool InitialisedAPs = false;
 	static array<CPU> processors;
 
 	void preinitCPUs()
@@ -132,8 +131,11 @@ namespace scheduler
 
 	CPU* getCurrentCPU()
 	{
-		if(!InitialisedAPs) return &processors[0];
-		else                abort("!");
+		if(getInitPhase() >= SchedulerInitPhase::SchedulerStarted)
+			return getCPULocalState()->cpu;
+
+		else
+			return &processors[0];
 	}
 }
 }

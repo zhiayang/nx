@@ -1,23 +1,96 @@
 // helper.s
-// Copyright (c) 2014 - 2016, zhiayang
+// Copyright (c) 2014 - 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-.global Syscall0Param
-.global Syscall1Param
-.global Syscall2Param
-.global Syscall3Param
-.global Syscall4Param
-.global Syscall5Param
 
-.type Syscall0Param, @function
-.type Syscall1Param, @function
-.type Syscall2Param, @function
-.type Syscall3Param, @function
-.type Syscall4Param, @function
-.type Syscall5Param, @function
 
-// any errno set by a syscall is stored in 0x2610 and preserved across context switches.
-// so we access 0x2610 to get the errno.
+.global nx_syscall_0; .type nx_syscall_0, @function
+.global nx_syscall_1; .type nx_syscall_1, @function
+.global nx_syscall_2; .type nx_syscall_2, @function
+.global nx_syscall_3; .type nx_syscall_3, @function
+.global nx_syscall_4; .type nx_syscall_4, @function
+.global nx_syscall_5; .type nx_syscall_5, @function
+.global nx_syscall_6; .type nx_syscall_6, @function
+
+nx_syscall_0:
+	int $0xF8
+
+nx_syscall_1:
+	int $0xF8
+
+nx_syscall_2:
+	int $0xF8
+
+nx_syscall_3:
+	int $0xF8
+
+nx_syscall_4:
+	int $0xF8
+
+nx_syscall_5:
+	int $0xF8
+
+nx_syscall_6:
+	int $0xF8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.global Syscall0Param; .type Syscall0Param, @function
+.global Syscall1Param; .type Syscall1Param, @function
+.global Syscall2Param; .type Syscall2Param, @function
+.global Syscall3Param; .type Syscall3Param, @function
+.global Syscall4Param; .type Syscall4Param, @function
+.global Syscall5Param; .type Syscall5Param, @function
+.global Syscall6Param; .type Syscall6Param, @function
+
 
 Syscall0Param:
 	mov %rdi, %r10

@@ -198,7 +198,7 @@ namespace scheduler
 		bool woke = false;
 
 		// checks for sleeping threads and wakes them up if necessary.
-		// TODO: optimise this!!!!
+		// TODO: optimise this!!!! (eg. sort the threads by the wakeup timestamp)
 
 		auto now = getElapsedNanoseconds();
 		for(auto thr : getSchedState()->BlockedThreads)

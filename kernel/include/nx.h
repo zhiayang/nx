@@ -22,6 +22,7 @@
 
 #include "misc/util.h"
 #include "misc/addrs.h"
+#include "misc/syscall.h"
 #include "misc/timekeeping.h"
 
 #include "platform-specific.h"

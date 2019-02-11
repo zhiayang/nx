@@ -5,8 +5,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <orionx/syscall.h>
+
 extern "C" int main()
 {
+	__nx_syscall_1(0, 'x');
+
+
 	uint64_t ctr = 0;
 
 	constexpr uint32_t colours[4] = {

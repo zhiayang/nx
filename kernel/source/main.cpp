@@ -165,6 +165,8 @@ namespace nx
 			scheduler::init();
 			scheduler::installTickHandlers();
 
+			syscall::init();
+
 			scheduler::addThread(scheduler::createThread(kernelProc, kernel_main));
 			scheduler::start();
 

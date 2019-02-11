@@ -40,7 +40,6 @@ kernel_entry:
 	mov %rax, %cr0
 	mov %cr4, %rax
 	orq $0x10600, %rax      // set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
-	orq $0x600, %rax
 	mov %rax, %cr4
 
 

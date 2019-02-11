@@ -20,7 +20,7 @@ all: $(SYSROOT)/usr/lib/libc.a
 
 $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo "# libc"
-	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o source/platform/syscall/helper.s.o
+	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o source/syscall/helper.s.o
 	@cp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libg.a
 	@cp source/platform/support/crt0.s.o $(SYSROOT)/usr/lib/crt0.o
 	@cp source/platform/support/crti.s.o $(SYSROOT)/usr/lib/crti.o
