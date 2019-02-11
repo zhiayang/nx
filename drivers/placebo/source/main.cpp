@@ -9,7 +9,8 @@
 
 extern "C" int main()
 {
-	__nx_syscall_1(0, 'x');
+	__nx_intr_syscall_1(0, 'x');
+	__nx_syscall_1(0, 'y');
 
 
 	uint64_t ctr = 0;

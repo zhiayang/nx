@@ -5,6 +5,8 @@
 CFLAGS		= -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
 CXXFLAGS	= -Wno-pragmas -O2 -fPIC -std=c++17 -mno-red-zone -fno-exceptions -fno-rtti -c
 
+HDRS        = $(shell find . -name "*.h")
+
 SSRC		= $(shell find . -name "*.s")
 CSRC		= $(shell find . -name "*.c")
 CXXSRC		= $(shell find . -name "*.cpp")
@@ -18,7 +20,7 @@ CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 all: $(SYSROOT)/usr/lib/libc.a
 	@cp -r include/* $(SYSROOT)/usr/include/
 
-$(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
+$(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ) $(HDRS)
 	@echo "# libc"
 	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o source/syscall/helper.s.o
 	@cp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libg.a

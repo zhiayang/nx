@@ -36,6 +36,7 @@ namespace nx
 			uint64_t tickCounter = 0;
 		};
 
+		// this might need to change on non-x64
 		struct CPULocalState
 		{
 			// note: the first pointer should be a pointer to self, because apparently there's
@@ -56,8 +57,8 @@ namespace nx
 
 			// do not change the position of stuff before this!!!
 			// see syscall/syscall.s
-			uint64_t syscallRetRIP;         // ofs: 0x38
-			uint64_t syscallRetRSP;         // ofs: 0x40
+			uint64_t syscallRetInstrPtr;    // ofs: 0x38
+			uint64_t syscallRetStackPtr;    // ofs: 0x40
 		};
 
 		struct CPU

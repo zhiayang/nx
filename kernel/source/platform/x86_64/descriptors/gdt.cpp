@@ -115,6 +115,10 @@ namespace gdt
 
 			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x18: ring 3 code segment
 			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 3));   // 0x20: ring 3 data segment
+
+			// dupe the ring3 code segment again, because the design of sysret is stupid
+			// see syscall/funcs.cpp
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x28: ring 3 code segment
 		}
 
 

@@ -48,6 +48,12 @@ namespace scheduler
 		nx_x64_switch_to_thread(ss->CurrentThread->kernelStack, setcr3);
 	}
 
+
+
+
+
+
+
 	[[noreturn]] static void death_destroyer_of_threads(void* _ss)
 	{
 		auto ss = (State*) _ss;

@@ -7,7 +7,7 @@ CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing
 
 all: $(INITRD_DIR)/drivers/placebo
 
-$(INITRD_DIR)/drivers/placebo: source/main.cpp
+$(INITRD_DIR)/drivers/placebo: source/main.cpp $(SYSROOT)/usr/lib/libc.a
 	@echo "# placebo"
 	@$(CXX) $(CXXFLAGS) -o $@ source/main.cpp
 
