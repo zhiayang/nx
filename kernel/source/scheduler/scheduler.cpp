@@ -27,25 +27,36 @@ namespace scheduler
 	{
 		auto ss = getSchedState();
 
-		// save the current stack.
-		ss->CurrentThread->kernelStack = stackPointer;
+		Thread* oldthr = ss->CurrentThread;
+		Thread* newthr = 0;
 
-		auto oldcr3 = ss->CurrentThread->parent->cr3;
+		// save the current stack.
+		oldthr->kernelStack = stackPointer;
 
 		// only put it back in the runqueue if we didn't block or sleep
-		if(ss->CurrentThread->state == ThreadState::Running)
-			ss->ThreadList.append(ss->CurrentThread);
+		if(oldthr->state == ThreadState::Running)
+			ss->ThreadList.append(oldthr);
 
-		if(ss->ThreadList.empty())  ss->CurrentThread = ss->IdleThread;
-		else                        ss->CurrentThread = ss->ThreadList.popFront();
+		if(ss->ThreadList.empty())  newthr = ss->IdleThread;
+		else                        newthr = ss->ThreadList.popFront();
 
-		ss->CurrentThread->state = ThreadState::Running;
-		auto newcr3 = ss->CurrentThread->parent->cr3;
-		auto setcr3 = oldcr3 == newcr3 ? 0 : newcr3;
+		newthr->state = ThreadState::Running;
 
-		cpu::tss::setRSP0(getCPULocalState()->TSSBase, ss->CurrentThread->kernelStackTop);
+		cpu::tss::setRSP0(getCPULocalState()->TSSBase, newthr->kernelStackTop);
 
-		nx_x64_switch_to_thread(ss->CurrentThread->kernelStack, setcr3);
+		// clear the selectors
+		asm volatile ("mov $0, %%ax; mov %%ax, %%ds; mov %%ax, %%es; mov %%ax, %%fs" ::: "%eax");
+
+		// save the fsbase.
+		oldthr->fsBase = cpu::readFSBase();
+		cpu::writeFSBase(newthr->fsBase);
+
+
+		auto oldcr3 = oldthr->parent->cr3;
+		auto newcr3 = newthr->parent->cr3;
+
+		ss->CurrentThread = newthr;
+		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3);
 	}
 
 
@@ -144,12 +155,12 @@ namespace scheduler
 		asm volatile ("int $0xF0");
 	}
 
-	void exit()
+	void exit(int status)
 	{
 		auto t = getCurrentThread();
 		assert(t);
 
-		log("sched", "exiting thread %lu", t->threadId);
+		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
 
 		t->state = ThreadState::AboutToExit;
 		getSchedState()->DestructionQueue.append(t);

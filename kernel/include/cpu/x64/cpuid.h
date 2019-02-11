@@ -17,7 +17,8 @@ namespace nx
 			SimultaneousMultiThreading,     // aka intel hyperthreading / amd SMT
 			x2LocalAPIC,                    // version 2 of apic (since ~2008)
 			PageGlobalEnable,
-			// SysEnterExit,
+
+			FSGSBase,
 
 			SSE1,
 			SSE2,

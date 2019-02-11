@@ -24,5 +24,9 @@ namespace nx
 
 		uint64_t readMSR(uint32_t reg);
 		void writeMSR(uint32_t reg, uint64_t value);
+
+
+		uint64_t readFSBase();
+		void writeFSBase(uint64_t base);
 	}
 }

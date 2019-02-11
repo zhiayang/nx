@@ -22,7 +22,7 @@ namespace cpu
 		uint32_t low = value & 0xFFFFFFFF;
 		uint32_t high = (value & 0xFFFFFFFF'00000000) >> 32;
 
-		asm volatile ("wrmsr" : : "a"(low), "d"(high), "c"(reg));
+		asm volatile ("wrmsr" :: "a"(low), "d"(high), "c"(reg));
 	}
 }
 }

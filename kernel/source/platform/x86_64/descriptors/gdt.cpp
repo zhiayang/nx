@@ -63,6 +63,9 @@ namespace gdt
 
 	static gdtptr_t GDTPointer;
 
+	static bool HasFSGSBaseInstr = false;
+
+
 	static int addDescriptor(const entry_t& entry)
 	{
 		*((entry_t*) (GDTBaseAddress + CurrentGDTSize)) = entry;
@@ -113,12 +116,13 @@ namespace gdt
 			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 0));    // 0x08: ring 0 code segment
 			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 0));   // 0x10: ring 0 data segment
 
-			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x18: ring 3 code segment
-			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 3));   // 0x20: ring 3 data segment
+			// apparently sysret "expects" a 32-bit ring-3 code descriptor in this position (ie. before the ring 3 data segment)
+			// since we don't give a shit about compat-mode, we just put a null descriptor here.
 
-			// dupe the ring3 code segment again, because the design of sysret is stupid
-			// see syscall/funcs.cpp
-			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x28: ring 3 code segment
+			addDescriptor(makeGDTEntry(0, 0, 0, 0));                // 0x18: stupid null descriptor
+
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 3));   // 0x20: ring 3 data segment
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x18: ring 3 code segment
 		}
 
 
@@ -126,8 +130,37 @@ namespace gdt
 		GDTPointer.limit = CurrentGDTSize - 1;
 
 		nx_x64_loadgdt((addr_t) &GDTPointer);
+
+		HasFSGSBaseInstr = cpu::hasFeature(Feature::FSGSBase);
 	}
 }
+
+
+	uint64_t readFSBase()
+	{
+		if(__likely(gdt::HasFSGSBaseInstr))
+		{
+			uint64_t base;
+			asm volatile ("rdfsbase %0" : "=a"(base));
+			return base;
+		}
+		else
+		{
+			return readMSR(MSR_FS_BASE);
+		}
+	}
+
+	void writeFSBase(uint64_t base)
+	{
+		if(__likely(gdt::HasFSGSBaseInstr))
+		{
+			asm volatile ("wrfsbase %0" :: "a"(base));
+		}
+		else
+		{
+			writeMSR(MSR_FS_BASE, base);
+		}
+	}
 }
 }
 

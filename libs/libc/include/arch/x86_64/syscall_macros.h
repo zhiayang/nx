@@ -16,9 +16,9 @@
 	asm volatile("                                      \
 		movq %0, %%rax;                                 \
 		syscall                                         \
-	" :: "n"(num) : "%rax", "%rcx", "%rdx",             \
-					"%rdi", "%rsi", "%r8",              \
-					"%r9",  "%r10", "%r11")             \
+	" :: "n"(num) : "rax", "rcx", "rdx",                \
+					"rdi", "rsi", "r8",                 \
+					"r9",  "r10", "r11");               \
 	} while(0)
 
 
@@ -28,9 +28,9 @@
 		movq %0, %%rax;                                 \
 		syscall                                         \
 	" :: "n"(num), "r"(rdi) :                           \
-					"%rax", "%rcx", "%rdx",             \
-					"%rsi", "%r8",  "%r9",              \
-					"%r10", "%r11");                    \
+					"rax", "rcx", "rdx",                \
+					"rsi", "r8",  "r9",                 \
+					"r10", "r11");                      \
 	} while(0)
 
 #define __nx_syscall_2(num, a, b) do {                  \
@@ -40,9 +40,9 @@
 		movq %0, %%rax;                                 \
 		syscall                                         \
 	" :: "n"(num), "r"(rdi), "r"(rsi) :                 \
-					"%rax", "%rcx", "%rdx",             \
-					"%r8",  "%r9",  "%r10",             \
-					"%r11");                            \
+					"rax", "rcx", "rdx",                \
+					"r8",  "r9",  "r10",                \
+					"r11");                             \
 	} while(0)
 
 #define __nx_syscall_3(num, a, b, c) do {               \
@@ -53,8 +53,8 @@
 		movq %0, %%rax;                                 \
 		syscall                                         \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx) :       \
-					"%rax", "%rcx", "%r8",              \
-					"%r9",  "%r10", "%r11");            \
+					"rax", "rcx", "r8",                 \
+					"r9",  "r10", "r11");               \
 	} while(0)
 
 #define __nx_syscall_4(num, a, b, c, d) do {            \
@@ -67,8 +67,8 @@
 		syscall                                         \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10) :                           \
-					"%rax", "%rcx", "%r8",              \
-					"%r9",  "%r11");                    \
+					"rax", "rcx", "r8",                 \
+					"r9",  "r11");                      \
 	} while(0)
 
 #define __nx_syscall_5(num, a, b, c, d, e) do {         \
@@ -82,8 +82,8 @@
 		syscall                                         \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10), "r"(r8) :                  \
-					"%rax", "%rcx", "%r9",              \
-					"%r11");                            \
+					"rax", "rcx", "r9",                 \
+					"r11");                             \
 	} while(0)
 
 #define __nx_syscall_6(num, a, b, c, d, e, f) do {      \
@@ -98,7 +98,7 @@
 		syscall                                         \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10), "r"(r8), "r"(r9) :         \
-					"%rax", "%rcx", "%r11");            \
+					"rax", "rcx", "r11");               \
 	} while(0)
 
 
@@ -116,9 +116,9 @@
 	asm volatile("                                      \
 		movq %0, %%rax;                                 \
 		int $0xF8                                       \
-	" :: "n"(num) : "%rax", "%rcx", "%rdx",             \
-					"%rdi", "%rsi", "%r8",              \
-					"%r9",  "%r10", "%r11")             \
+	" :: "n"(num) : "rax", "rcx", "rdx",                \
+					"rdi", "rsi", "r8",                 \
+					"r9",  "r10", "r11");               \
 	} while(0)
 
 
@@ -128,9 +128,9 @@
 		movq %0, %%rax;                                 \
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi) :                           \
-					"%rax", "%rcx", "%rdx",             \
-					"%rsi", "%r8",  "%r9",              \
-					"%r10", "%r11");                    \
+					"rax", "rcx", "rdx",                \
+					"rsi", "r8",  "r9",                 \
+					"r10", "r11");                      \
 	} while(0)
 
 #define __nx_intr_syscall_2(num, a, b) do {             \
@@ -140,9 +140,9 @@
 		movq %0, %%rax;                                 \
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi), "r"(rsi) :                 \
-					"%rax", "%rcx", "%rdx",             \
-					"%r8",  "%r9",  "%r10",             \
-					"%r11");                            \
+					"rax", "rcx", "rdx",                \
+					"r8",  "r9",  "r10",                \
+					"r11");                             \
 	} while(0)
 
 #define __nx_intr_syscall_3(num, a, b, c) do {          \
@@ -153,8 +153,8 @@
 		movq %0, %%rax;                                 \
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx) :       \
-					"%rax", "%rcx", "%r8",              \
-					"%r9",  "%r10", "%r11");            \
+					"rax", "rcx", "r8",                 \
+					"r9",  "r10", "r11");               \
 	} while(0)
 
 #define __nx_intr_syscall_4(num, a, b, c, d) do {       \
@@ -167,8 +167,8 @@
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10) :                           \
-					"%rax", "%rcx", "%r8",              \
-					"%r9",  "%r11");                    \
+					"rax", "rcx", "r8",                 \
+					"r9",  "r11");                      \
 	} while(0)
 
 #define __nx_intr_syscall_5(num, a, b, c, d, e) do {    \
@@ -182,8 +182,8 @@
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10), "r"(r8) :                  \
-					"%rax", "%rcx", "%r9",              \
-					"%r11");                            \
+					"rax", "rcx", "r9",                 \
+					"r11");                             \
 	} while(0)
 
 #define __nx_intr_syscall_6(num, a, b, c, d, e, f) do { \
@@ -198,5 +198,5 @@
 		int $0xF8                                       \
 	" :: "n"(num), "r"(rdi), "r"(rsi), "r"(rdx)         \
 				,  "r"(r10), "r"(r8), "r"(r9) :         \
-					"%rax", "%rcx", "%r11");            \
+					"rax", "rcx", "r11");               \
 	} while(0)

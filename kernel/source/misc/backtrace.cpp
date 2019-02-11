@@ -22,11 +22,13 @@ namespace util
 
 		do {
 			auto rip = *((addr_t*) (rbp + sizeof(uint64_t)));
+			if(!IS_CANONICAL(rip)) break;
+
 			if(rip) addrs.append(rip);
 
 			rbp = *((addr_t*) rbp);
 
-		} while(rbp && rbp >= 0xFFFF'8000'0000'0000);
+		} while(rbp);
 
 		return addrs;
 	}

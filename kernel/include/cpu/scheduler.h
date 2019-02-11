@@ -109,8 +109,6 @@ namespace nx
 
 			addr_t userStackBottom;
 
-			addr_t kernelStack;
-
 			addr_t kernelStackTop;
 			addr_t kernelStackBottom;
 
@@ -120,6 +118,11 @@ namespace nx
 
 			mutex* blockedMtx = 0;
 			uint64_t wakeUpTimestamp = 0;
+
+
+			// saved information from context switches:
+			addr_t kernelStack;
+			addr_t fsBase;
 		};
 
 
@@ -176,7 +179,7 @@ namespace nx
 		uint64_t getNanosecondsPerTick();
 
 
-		[[noreturn]] void exit();
+		[[noreturn]] void exit(int status);
 
 		void yield();
 		void sleep(uint64_t ns);

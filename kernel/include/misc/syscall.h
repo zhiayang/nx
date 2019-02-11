@@ -10,5 +10,14 @@ namespace nx
 	namespace syscall
 	{
 		void init();
+
+
+
+		constexpr uint64_t SYSCALL_EXIT     = 0;
+
+
+
+
+		int64_t sc_exit(int status);        // SYSCALL_EXIT
 	}
 }

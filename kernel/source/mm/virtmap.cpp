@@ -3,7 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "devices/serial.h"
 
 namespace nx {
 namespace vmm
@@ -92,8 +91,8 @@ namespace vmm
 
 
 		// next, we need to map the lapic's base address as well, so we don't need to
-		// change cr3 every time we want to send an EOI.
-		// it is always one page long.
+		// change cr3 every time we want to send an EOI. it is always one page long.
+		if(interrupts::hasLocalAPIC())
 		{
 			// note: we're not going to change the lapic base address,
 			// and it should be the same for every CPU.
@@ -112,6 +111,36 @@ namespace vmm
 
 
 
+	static void performTempMapping(scheduler::Process* proc)
+	{
+		getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+
+		// we need to temp-map the 509th entry of the target pml4 to itself as well
+		// to achieve that, get a temp thing to modify it.
+
+		auto tmp = allocateAddrSpace(1, AddressSpace::User);
+		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+
+		((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
+
+		unmapAddress(tmp, 1, /* freePhys: */ false);
+	}
+
+
+	static void performTempUnmapping(scheduler::Process* proc)
+	{
+		getPML4()->entries[509] = 0;
+
+		auto tmp = allocateAddrSpace(1, AddressSpace::User);
+		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+
+		((pml_t*) tmp)->entries[509] = 0;
+
+		unmapAddress(tmp, 1, /* freePhys: */ false);
+		invalidateAll();
+	}
+
+
 
 
 	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
@@ -123,20 +152,8 @@ namespace vmm
 		assert(isAligned(phys));
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc)
-		{
-			getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+		if(isOtherProc) performTempMapping(proc);
 
-			// we need to temp-map the 509th entry of the target pml4 to itself as well
-			// to achieve that, get a temp thing to modify it.
-
-			auto tmp = allocateAddrSpace(1, AddressSpace::User);
-			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
-
-			((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
-
-			unmapAddress(tmp, 1, /* freePhys: */ false);
-		}
 
 		// note: the flags in the higher-level structures will override those at the lower level
 		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
@@ -195,17 +212,7 @@ namespace vmm
 
 		// undo
 		if(isOtherProc)
-		{
-			getPML4()->entries[509] = 0;
-
-			auto tmp = allocateAddrSpace(1, AddressSpace::User);
-			mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
-
-			((pml_t*) tmp)->entries[509] = 0;
-
-			unmapAddress(tmp, 1, /* freePhys: */ false);
-			invalidateAll();
-		}
+			performTempUnmapping(proc);
 	}
 
 
@@ -216,7 +223,7 @@ namespace vmm
 		assert(proc);
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+		if(isOtherProc) performTempMapping(proc);
 
 		assert(isAligned(virt));
 
@@ -262,8 +269,10 @@ namespace vmm
 			invalidate(v);
 		}
 
-		if(isOtherProc) getPML4()->entries[509] = 0;
+		if(isOtherProc)
+			performTempUnmapping(proc);
 	}
+
 
 	addr_t getPhysAddr(addr_t virt, scheduler::Process* proc)
 	{

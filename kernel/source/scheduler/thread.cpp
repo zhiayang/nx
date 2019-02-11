@@ -39,8 +39,9 @@ namespace scheduler
 	constexpr uint64_t RING0_CODE_SEGMENT        = 0x08;
 	constexpr uint64_t RING0_STACK_SEGMENT       = 0x10;     // 0x18 | 0x3
 
-	constexpr uint64_t RING3_CODE_SEGMENT        = 0x1B;     // 0x18 | 0x3
+	// see cpu/gdt.cpp and syscall/funcs.cpp for why the code segment is *after* the data segment
 	constexpr uint64_t RING3_STACK_SEGMENT       = 0x23;     // 0x20 | 0x3
+	constexpr uint64_t RING3_CODE_SEGMENT        = 0x2B;     // 0x28 | 0x3
 
 
 	//* note: we don't bother rounding this up, we just divide by PAGE_SIZE

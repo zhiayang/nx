@@ -10,20 +10,21 @@ namespace syscall
 	extern "C" void nx_x64_syscall_entry();
 	extern "C" void nx_x64_syscall_intr_entry();
 
-	using SyscallFn_t = int64_t (*)(void*, void*, void*, void*, void*, void*);
-
 	extern "C" int64_t debug_char(char c)
 	{
 		println("char: %c", c);
 		return 0;
 	}
 
-	extern "C" constexpr SyscallFn_t SyscallTable[] = {
-		[0] = (SyscallFn_t) debug_char,
-		[1] = (SyscallFn_t) debug_char
+	extern "C" constexpr void* SyscallTable[] = {
+
+		[SYSCALL_EXIT]      = (void*) sc_exit,
+
+
+		[1] = (void*) debug_char
 	};
 
-	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(SyscallFn_t);
+	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
 
 
 
@@ -63,17 +64,17 @@ namespace syscall
 				0x00    null descriptor
 				0x08    ring 0 code
 				0x10    ring 0 data
-				0x18    ring 3 code
+				0x18    null descriptor
 				0x20    ring 3 data
-				0x28    ring 3 code (AGAIN)
+				0x28    ring 3 code
 
 				we set syscall selector = 0x08, so we get CS=0x08, SS=0x10
 				we set sysret selector = 0x18, so we get CS=0x28, SS=0x20
 			*/
 
 			uint64_t star = 0;
-			star |= (0x18ULL | 0x3) << 48;
-			star |= (0x08ULL | 0x0) << 32;
+			star |= (0x08ULL | 0x0) << 32;      // syscall selector
+			star |= (0x18ULL | 0x3) << 48;      // sysret selector
 
 			cpu::writeMSR(cpu::MSR_STAR, star);
 

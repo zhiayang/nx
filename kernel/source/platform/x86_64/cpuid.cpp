@@ -2,7 +2,7 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "cpu/cpu.h"
+#include "nx.h"
 #include "platform-specific.h"
 
 extern "C" uint64_t __nx_x64_was_nx_bit_enabled;
@@ -24,10 +24,10 @@ namespace cpu
 
 
 
-	#define do_cpuid(num, a, b, c, d) \
-		asm volatile ("xchgl %%ebx, %1; cpuid; xchgl %%ebx, %1" \
-        	: "=a" (a), "=r" (b), "=c" (c), "=d" (d)  \
-            : "0" (num))
+	#define do_cpuid(num, a, b, c, d)   \
+		asm volatile ("                 \
+			cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (num))
+
 
 	bool hasFeature(Feature f)
 	{
@@ -93,6 +93,10 @@ namespace cpu
 			case Feature::NX:
 				do_cpuid(0x80000001, eax, ebx, ecx, edx);
 				return edx & (1 << 20);
+
+			case Feature::FSGSBase:
+				do_cpuid(7, eax, ebx, ecx, edx);
+				return ebx & (1 << 0);
 
 			default:
 				return false;

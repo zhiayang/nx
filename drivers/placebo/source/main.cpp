@@ -9,8 +9,8 @@
 
 extern "C" int main()
 {
-	__nx_intr_syscall_1(0, 'x');
-	__nx_syscall_1(0, 'y');
+	__nx_intr_syscall_1(1, 'x');
+	__nx_syscall_1(1, 'y');
 
 
 	uint64_t ctr = 0;
@@ -36,6 +36,20 @@ extern "C" int main()
 					*(fb + y * 800 + x) = colours[ctr2 % 4];
 				}
 			}
+		}
+
+		if(ctr2 == 16)
+		{
+			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
+			for(int y = 0; y < 300; y++)
+			{
+				for(int x = 0; x < 800; x++)
+				{
+					*(fb + y * 800 + x) = 0;
+				}
+			}
+
+			__nx_syscall_1(0, 103);
 		}
 	}
 }
