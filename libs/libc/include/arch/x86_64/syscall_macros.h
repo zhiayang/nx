@@ -21,7 +21,6 @@
 					"r9",  "r10", "r11");               \
 	} while(0)
 
-
 #define __nx_syscall_1(num, a) do {                     \
 	register uint64_t rdi asm("rdi") = (uint64_t) a;    \
 	asm volatile("                                      \
@@ -120,7 +119,6 @@
 					"rdi", "rsi", "r8",                 \
 					"r9",  "r10", "r11");               \
 	} while(0)
-
 
 #define __nx_intr_syscall_1(num, a) do {                \
 	register uint64_t rdi asm("rdi") = (uint64_t) a;    \
