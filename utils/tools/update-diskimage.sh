@@ -45,6 +45,9 @@ pushd $PROJECT_DIR/build > /dev/null
 
 	mcopy -D o -snQ -i $ROOT_IMG_OFFSET $PROJECT_DIR/build/sysroot/* ::/
 
+
+	cp disk.img disk2.img
+
 popd > /dev/null
 
 echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"

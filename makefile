@@ -54,11 +54,16 @@ qemu: diskimage
 
 vbox-debug: diskimage
 	@echo -e "# starting virtualbox (debug)\n"
-	@/mnt/c/Program\ Files/Oracle/VirtualBox/VirtualBoxVM.exe --startvm "nx" --debug
+	@$(VIRTUALBOX) --startvm "nx" --debug
 
 vbox: diskimage
 	@echo -e "# starting virtualbox\n"
-	@/mnt/c/Program\ Files/Oracle/VirtualBox/VirtualBoxVM.exe --startvm "nx"
+	@$(VIRTUALBOX) --startvm "nx"
+
+bochs: diskimage
+	@echo -e "# starting bochs\n"
+	@$(BOCHS) -qf utils/bochsrc.bxrc
+
 
 
 

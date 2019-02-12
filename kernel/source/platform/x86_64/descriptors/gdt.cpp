@@ -132,6 +132,14 @@ namespace gdt
 		nx_x64_loadgdt((addr_t) &GDTPointer);
 
 		HasFSGSBaseInstr = cpu::hasFeature(Feature::FSGSBase);
+		if(HasFSGSBaseInstr)
+		{
+			asm volatile ("             \
+				mov %%cr4, %%rax;       \
+				orq $0x10000, %%rax;    \
+				mov %%rax, %%cr4;       \
+			" ::: "rax");
+		}
 	}
 }
 

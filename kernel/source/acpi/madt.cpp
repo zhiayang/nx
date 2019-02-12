@@ -18,48 +18,51 @@ namespace acpi
 	void readMADT(MADTable* madt)
 	{
 		if(!cpu::hasFeature(cpu::Feature::LocalAPIC))
-			abort("cpu does not have a local apic, but madt was present??");
+		{
+			error("acpi", "cpu does not have a local apic, ignoring MADT");
+			return;
+		}
 
 		if(!checkTable((header_t*) madt))
 		{
-			warn("acpi/madt", "invalid checksum, skipping");
+			error("acpi", "madt has invalid checksum, skipping");
 			return;
 		}
 
 		device::ioapic::preinit();
 
-		size_t len = madt->header.length;
-		size_t ofs = sizeof(MADTable);
+		auto iterateTables = [](MADTable* madt, uint8_t type, auto callback) {
+			size_t len = madt->header.length;
+			addr_t base = ((addr_t) madt);
+
+			size_t ofs = sizeof(MADTable);
+			while(ofs < len)
+			{
+				auto rec = (madt_record_header_t*) (base + ofs);
+				if(rec->type == type)
+					callback(rec);
+
+				ofs += rec->length;
+			}
+		};
+
 
 		addr_t lApicAddr = madt->localApicAddr;
-		{
-			// search first for an override.
-			auto x = ofs;
-			while(x < len)
-			{
-				auto rec = (madt_record_header_t*) ((addr_t) madt + x);
-				if(rec->type == MADT_ENTRY_TYPE_LAPIC_ADDR)
-				{
-				    lApicAddr = ((MADT_LAPICOverride*) rec)->lapicAddress;
-					break;
-				}
+		iterateTables(madt, MADT_ENTRY_TYPE_LAPIC_ADDR, [&lApicAddr](madt_record_header_t* rec) {
+			lApicAddr = ((MADT_LAPICOverride*) rec)->lapicAddress;
+		});
 
-				x += rec->length;
-			}
-		}
+		log("acpi", "lapic at %p", lApicAddr);
 
-		log("acpi/madt", "lapic at %p", lApicAddr);
+		// note: we iterate the table three bloody times because we need the information in a specific order
+		// notably -- we need to have seen all IOAPICs before we see any IRQ mappings, because those mappings
+		// modify the IOAPIC struct.
+
 
 		bool foundBsp = false;
-		while(ofs < len)
 		{
-			// ACPI spec says we should initialise processors in the order
-			// that they appear, and that the first processor is the bootstrap
-			// processor!
+			iterateTables(madt, MADT_ENTRY_TYPE_LAPIC, [&foundBsp, &lApicAddr](madt_record_header_t* rec) {
 
-			auto rec = (madt_record_header_t*) ((addr_t) madt + ofs);
-			if(rec->type == MADT_ENTRY_TYPE_LAPIC)
-			{
 				auto lapic = (MADT_LAPIC*) rec;
 				if(lapic->flags & 0x1)  // bit 0 is set if the processor is enabled.
 				{
@@ -67,10 +70,11 @@ namespace acpi
 					foundBsp = true;
 				}
 
-				log("acpi/madt", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
-			}
-			else if(rec->type == MADT_ENTRY_TYPE_IOAPIC)
-			{
+				log("acpi", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
+			});
+
+			iterateTables(madt, MADT_ENTRY_TYPE_IOAPIC, [](madt_record_header_t* rec) {
+
 				auto ioapic = (MADT_IOAPIC*) rec;
 
 				device::ioapic::IOAPIC ioa;
@@ -78,23 +82,22 @@ namespace acpi
 				ioa.baseAddr = (addr_t) ioapic->ioApicAddress;
 				ioa.gsiBase = ioapic->globalSysInterruptBase;
 
-				log("acpi/madt", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
+				log("acpi", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
 
 				device::ioapic::addIOAPIC(ioa);
-			}
-			else if(rec->type == MADT_ENTRY_TYPE_INT_SRC)
-			{
+			});
+
+			iterateTables(madt, MADT_ENTRY_TYPE_INT_SRC, [](madt_record_header_t* rec) {
 				auto intsrc = (MADT_IntSourceOverride*) rec;
-				log("acpi/madt", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
+				log("acpi", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
 
 				device::ioapic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
-			}
-
-			ofs += rec->length;
+			});
 		}
 
 
-		log("acpi/madt", "found %s, %s", util::plural("processor", scheduler::getNumCPUs()).cstr(),
+
+		log("acpi", "found %s, %s", util::plural("processor", scheduler::getNumCPUs()).cstr(),
 			util::plural("ioapic", device::ioapic::getNumIOAPICs()).cstr());
 
 		{
@@ -106,12 +109,12 @@ namespace acpi
 			addr_t base = cpu::readMSR(cpu::MSR_APIC_BASE);
 			if((base & vmm::PAGE_ALIGN) != lApicAddr)
 			{
-				abort("acpi/madt: invalid configuration, lapic base address in MSR (%p) does not match madt (%p)",
+				abort("acpi: invalid configuration, lapic base address in MSR (%p) does not match madt (%p)",
 					base & vmm::PAGE_ALIGN, lApicAddr);
 			}
 			else if(!(base & 0x100))
 			{
-				abort("acpi/madt: lapic msr says we are not the bootstrap processor??");
+				abort("acpi: lapic msr says we are not the bootstrap processor??");
 			}
 
 			base &= vmm::PAGE_ALIGN;

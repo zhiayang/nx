@@ -15,7 +15,6 @@ namespace util
 		Substitution(const nx::string& s, const nx::string& r) : str(s), replacement(r) { }
 	};
 
-
 	nx::array<Substitution> operatorSubsts;
 	nx::array<Substitution> builtinTypeSubsts;
 	nx::array<Substitution> stdlibTemplateSubsts;
@@ -316,12 +315,19 @@ namespace util
 		string ret;
 		if(s[0] == '_')
 		{
-			// T_.
-			assert(st.templateSubs.size() > 0);
 			s.remove_prefix(1);
 
-
-			ret = st.templateSubs[0];
+			// T_.
+			// if we have nothing inside, insert an 'auto'...
+			if(st.templateSubs.size() > 0)
+			{
+				ret = st.templateSubs[0];
+			}
+			else
+			{
+				ret = "auto:1";
+				st.templateSubs.append(ret);
+			}
 		}
 		else
 		{
@@ -331,8 +337,15 @@ namespace util
 			assert(s[0] == '_');
 			s.remove_prefix(1);
 
-			assert(n < st.templateSubs.size());
-			ret = st.templateSubs[n];
+			if(n < st.templateSubs.size())
+			{
+				ret = st.templateSubs[n];
+			}
+			else
+			{
+				ret = sprint("auto:%d", n + 1);
+				st.templateSubs.append(ret);
+			}
 		}
 
 		st.subs.append(ret);
@@ -1130,6 +1143,7 @@ namespace util
 		if(mangled.find("_Z") != 0) return mangled;
 
 		auto input = string_view(mangled);
+		// serial::debugprintf("%s\n", mangled.cstr());
 
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_

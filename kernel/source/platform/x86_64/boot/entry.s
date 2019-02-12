@@ -10,6 +10,12 @@
 kernel_entry:
 	cli
 
+	// never gets old
+	xchg %bx, %bx
+
+
+
+
 	// Load Long Mode GDT
 	mov GDT64Pointer, %rax
 	lgdt GDT64Pointer
@@ -39,7 +45,7 @@ kernel_entry:
 	or $0x02, %ax           // set coprocessor monitoring  CR0.MP
 	mov %rax, %cr0
 	mov %cr4, %rax
-	orq $0x10600, %rax      // set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
+	orq $0x600, %rax        // set CR4.OSFXSR and CR4.OSXMMEXCPTe
 	mov %rax, %cr4
 
 
