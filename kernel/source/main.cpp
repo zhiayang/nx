@@ -118,9 +118,11 @@ namespace nx
 				bootinfo->version, NX_SUPPORTED_BOOTINFO_VERSION);
 		}
 
+		// set the wp bit so we don't go around writing stuff.
+		cpu::writeCR0(cpu::readCR0() | cpu::CR0_WP);
+
 		if(!cpu::didEnableNoExecute())
 			warn("kernel", "cpu does not support no-execute bit");
-
 
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
 		auto kernelProc = scheduler::getKernelProcess();

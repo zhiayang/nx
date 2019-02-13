@@ -104,7 +104,7 @@ namespace gdt
 			GDTPhysAddress = pmm::allocate(1);
 			GDTBaseAddress = vmm::allocateAddrSpace(1, vmm::AddressSpace::Kernel);
 
-			vmm::mapAddress(GDTBaseAddress, GDTPhysAddress, 1, vmm::PAGE_PRESENT);
+			vmm::mapAddress(GDTBaseAddress, GDTPhysAddress, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 			memset((void*) GDTBaseAddress, 0, PAGE_SIZE);
 		}
 

@@ -41,7 +41,7 @@ namespace vmm
 
 			if(isFirst)
 			{
-				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_PRESENT, proc);
+				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_WRITE | PAGE_PRESENT, proc);
 				extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
 			}
 			else
@@ -130,7 +130,7 @@ namespace vmm
 		auto phys = pmm::allocate(num);
 		if(phys == 0) return 0;
 
-		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
+		mapAddress(virt, phys, num, flags | PAGE_WRITE | PAGE_PRESENT, proc);
 		return virt;
 	}
 

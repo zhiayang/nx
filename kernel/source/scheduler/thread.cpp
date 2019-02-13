@@ -64,14 +64,11 @@ namespace scheduler
 
 		thr->threadId = ThreadIdCounter++;
 
-
 		// allocate the user and kernel stacks, but in the address space of the process.
 		// we don't really care what the address is, as long as we got the space.
 		// we do the phys and virt allocation separately because we want the physical address as well.
 
-		//? note: we allocate everything in the 'user' AddressSpace in the current process, because the kernel might decide to change
-		//? mappings while in a syscall or something -- we might want to create threads or something while using another
-		//? CR3, so we need to take note of that.
+		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_NX | (isUserProc ? (vmm::PAGE_USER) : 0);
 
 		// first, just make some space for the user stack.
 		{
@@ -81,7 +78,7 @@ namespace scheduler
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER) : vmm::PAGE_NX), proc);
+			vmm::mapAddress(virt, phys, n, target_flags, proc);
 
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
@@ -99,14 +96,13 @@ namespace scheduler
 			// save it so we can kill it later.
 			thr->kernelStackBottom = virt;
 
-
 			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, vmm::PAGE_PRESENT | (isUserProc ? (vmm::PAGE_WRITE | vmm::PAGE_USER) : vmm::PAGE_NX), proc);
+			vmm::mapAddress(virt, phys, n, target_flags, proc);
 
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
 			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpace::User);
 
-			vmm::mapAddress(scratch, phys, n, vmm::PAGE_PRESENT);
+			vmm::mapAddress(scratch, phys, n, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
 			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
@@ -158,7 +154,7 @@ namespace scheduler
 
 			// map scratch space.
 			auto scratch = vmm::allocateAddrSpace(1, vmm::AddressSpace::User);
-			vmm::mapAddress(scratch, phys, 1, vmm::PAGE_WRITE | vmm::PAGE_USER);
+			vmm::mapAddress(scratch, phys, 1, vmm::PAGE_WRITE);
 
 			cpu::fpu::initState(scratch);
 

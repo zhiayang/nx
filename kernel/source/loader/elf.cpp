@@ -122,7 +122,7 @@ namespace loader
 				virtBase = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
 
 				// since this is not the final mapping, we don't need user perms.
-				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT | 0x4);
+				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
 				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}
@@ -137,7 +137,7 @@ namespace loader
 				}
 
 				// this is the final mapping, so we need the proper flags.
-				vmm::mapAddress(virtBase, phys, numPages, virtFlags | 0x4);
+				vmm::mapAddress(virtBase, phys, numPages, virtFlags);
 
 				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
 			}

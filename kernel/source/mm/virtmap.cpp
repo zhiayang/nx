@@ -76,13 +76,13 @@ namespace vmm
 
 		// ok, give me some temp space.
 		auto virt = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(virt, proc->cr3, 1, PAGE_PRESENT);
+		mapAddress(virt, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
 		auto pml4 = (pml_t*) virt;
 		memset(pml4, 0, PAGE_SIZE);
 
 		// setup recursive paging
-		pml4->entries[510] = proc->cr3 | PAGE_PRESENT;
+		pml4->entries[510] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
 
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
@@ -100,7 +100,7 @@ namespace vmm
 			if(allocateSpecific(lapicBase, 1, proc) != lapicBase)
 				abort("failed to map lapic (at %p) to user process!", lapicBase);
 
-			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT, proc);
+			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT | PAGE_WRITE, proc);
 		}
 
 		// ok i think that's it.
@@ -113,15 +113,15 @@ namespace vmm
 
 	static void performTempMapping(scheduler::Process* proc)
 	{
-		getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT;
+		getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
 
 		// we need to temp-map the 509th entry of the target pml4 to itself as well
 		// to achieve that, get a temp thing to modify it.
 
 		auto tmp = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
-		((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT;
+		((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
 
 		unmapAddress(tmp, 1, /* freePhys: */ false);
 	}
@@ -132,7 +132,7 @@ namespace vmm
 		getPML4()->entries[509] = 0;
 
 		auto tmp = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT);
+		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
 		((pml_t*) tmp)->entries[509] = 0;
 
@@ -335,23 +335,23 @@ namespace vmm
 
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
-				pml4->entries[p4idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				pml4->entries[p4idx] = end(physBase, bootstrapUsed++) | PAGE_WRITE | PAGE_PRESENT;
 				memset(pdpt, 0, PAGE_SIZE);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
-				pdpt->entries[p3idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				pdpt->entries[p3idx] = end(physBase, bootstrapUsed++) | PAGE_WRITE | PAGE_PRESENT;
 				memset(pdir, 0, PAGE_SIZE);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
-				pdir->entries[p2idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+				pdir->entries[p2idx] = end(physBase, bootstrapUsed++) | PAGE_WRITE | PAGE_PRESENT;
 				memset(ptab, 0, PAGE_SIZE);
 			}
 
-			ptab->entries[p1idx] = end(physBase, bootstrapUsed++) | PAGE_PRESENT;
+			ptab->entries[p1idx] = end(physBase, bootstrapUsed++) | PAGE_WRITE | PAGE_PRESENT;
 			invalidate(v);
 
 			assert(bootstrapUsed <= maxPages);

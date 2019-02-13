@@ -76,7 +76,7 @@ namespace ioapic
 				if(vmm::allocateSpecific(alignedBase, 1) == 0)
 					abort("ioapic: failed to map base address %p", ioa->baseAddr);
 
-				vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT);
+				vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 				mappedBases.append(alignedBase);
 			}
 

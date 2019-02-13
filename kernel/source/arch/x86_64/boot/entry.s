@@ -93,9 +93,9 @@ skip_nx_bit:
 
 nx_bit_set:
 	// clear the wp bit in cr0 so ring0 can read/write all pages (without needing PAGE_WRITE)
-	mov %cr0, %eax
-	andl $0xfffeffff, %eax
-	mov %eax, %cr0
+	// mov %cr0, %eax
+	// andl $0xfffeffff, %eax
+	// mov %eax, %cr0
 
 
 	// 'far return' to the kernel -- changing the code segment from whatever nonsense
