@@ -134,11 +134,7 @@ namespace gdt
 		HasFSGSBaseInstr = cpu::hasFeature(Feature::FSGSBase);
 		if(HasFSGSBaseInstr)
 		{
-			asm volatile ("             \
-				mov %%cr4, %%rax;       \
-				orq $0x10000, %%rax;    \
-				mov %%rax, %%cr4;       \
-			" ::: "rax");
+			writeCR4(readCR4() | CR4_FSGSBASE);
 		}
 	}
 }

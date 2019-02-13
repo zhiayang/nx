@@ -187,7 +187,7 @@ namespace util
 		}
 
 
-		log("backtrace", "found %zu symbols", symbols.size());
+		log("backtrace", "found %s", util::plural("symbol", symbols.size()).cstr());
 
 		pmm::freeEarlyMemory(bi, MemoryType::KernelElf);
 	}

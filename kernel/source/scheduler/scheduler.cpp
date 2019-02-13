@@ -9,7 +9,7 @@
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
-extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3);
+extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* );
 
 namespace nx {
 namespace scheduler
@@ -33,6 +33,9 @@ namespace scheduler
 		// save the current stack.
 		oldthr->kernelStack = stackPointer;
 
+		// save the fpu state
+		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
+
 		// only put it back in the runqueue if we didn't block or sleep
 		if(oldthr->state == ThreadState::Running)
 			ss->ThreadList.append(oldthr);
@@ -51,12 +54,13 @@ namespace scheduler
 		oldthr->fsBase = cpu::readFSBase();
 		cpu::writeFSBase(newthr->fsBase);
 
-
 		auto oldcr3 = oldthr->parent->cr3;
 		auto newcr3 = newthr->parent->cr3;
 
 		ss->CurrentThread = newthr;
-		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3);
+		getCPULocalState()->cpu->currentProcess = newthr->parent;
+
+		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer);
 	}
 
 
@@ -143,7 +147,7 @@ namespace scheduler
 		auto ss = getSchedState();
 
 		ss->CurrentThread = ss->IdleThread;
-		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0);
+		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer);
 	}
 
 

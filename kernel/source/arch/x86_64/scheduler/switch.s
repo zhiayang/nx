@@ -33,7 +33,7 @@
 
 
 
-// parameters: new rsp (%rdi), new cr3 (%rsi)
+// parameters: new rsp (%rdi), new cr3 (%rsi), newthread-sse-state (%rdx)
 nx_x64_switch_to_thread:
 	test %rsi, %rsi
 	jz restore_regs
@@ -44,7 +44,8 @@ change_cr3:
 restore_regs:
 	mov %rdi, %rsp
 
-	// TODO: restore floating point state!!
+	mov %rdx, %rdi
+	call _ZN2nx3cpu3fpu7restoreEm
 
 	pop_all_regs
 
@@ -80,9 +81,6 @@ do_something:
 	pop_scratch_regs
 	push_all_regs
 
-
-	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
-
 	// note: we need to pass the context via the stack pointer.
 	movq %rsp, %rdi
 
@@ -113,7 +111,6 @@ nx_x64_yield_thread:
 
 	push_all_regs
 
-	// TODO: save/restore floating point state!!!! (fxsave, fxrstor)
 	// we just find the next thing, no issue.
 
 	movq %rsp, %rdi

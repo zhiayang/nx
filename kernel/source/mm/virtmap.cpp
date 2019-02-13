@@ -53,7 +53,7 @@ namespace vmm
 
 	void invalidateAll()
 	{
-		asm volatile ("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "%rax");
+		asm volatile ("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
 	}
 
 	void invalidate(addr_t addr)

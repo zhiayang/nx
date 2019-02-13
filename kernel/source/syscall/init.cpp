@@ -29,9 +29,6 @@ namespace syscall
 
 
 
-
-
-
 	void init()
 	{
 		if constexpr (getArchitecture() == Architecture::x64)

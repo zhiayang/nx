@@ -119,7 +119,7 @@ namespace options
 			}
 		}
 
-		efi::println("parsed %d option%s:", options.size(), options.size() == 1 ? "" : "s");
+		efi::println("parsed %d option%s:", loadOptions.size(), loadOptions.size() == 1 ? "" : "s");
 		for(const auto& opt : loadOptions)
 			efi::println("%s = %s", opt.option.cstr(), opt.value.cstr());
 

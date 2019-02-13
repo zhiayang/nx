@@ -123,6 +123,7 @@ namespace nx
 			// saved information from context switches:
 			addr_t kernelStack;
 			addr_t fsBase;
+			addr_t fpuSavedStateBuffer;
 		};
 
 

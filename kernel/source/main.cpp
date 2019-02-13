@@ -130,6 +130,12 @@ namespace nx
 		vmm::init(kernelProc);
 		heap::init();
 
+		// init cpuid so we can start detecting features.
+		cpu::initCPUID();
+
+		// setup the fpu -- including x87, sse, and avx
+		cpu::fpu::init();
+
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);
 

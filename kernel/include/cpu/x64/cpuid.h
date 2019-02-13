@@ -30,8 +30,16 @@ namespace nx
 			AVX,
 			RDRand,
 
+			FXSaveRestore,
+			XSave,
+			OSXSave,
+
 			NX,
 		};
+
+		void initCPUID();
+		bool do_cpuid(uint32_t leaf, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d);
+		bool do_cpuid(uint32_t leaf, uint32_t subleaf, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d);
 
 		bool hasFeature(Feature f);
 

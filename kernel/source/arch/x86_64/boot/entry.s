@@ -39,6 +39,8 @@ kernel_entry:
 	movq $0x0, %rbp
 
 
+
+
 	// Setup SSE
 	mov %cr0, %rax
 	and $0xFFFB, %ax        // clear coprocessor emulation CR0.EM
@@ -50,6 +52,8 @@ kernel_entry:
 
 
 enable_nx_bit:
+	jmp 1f
+
 	// enable the nx-bit
 
 	// first, see if it's disabled (see https://forum.osdev.org/viewtopic.php?f=1&t=18945)
@@ -63,6 +67,7 @@ enable_nx_bit:
 	wrmsr
 
 
+1:
 	// next, check if we even support it.
 	movl $0x80000001, %eax
 	cpuid

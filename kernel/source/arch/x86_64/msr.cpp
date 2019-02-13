@@ -24,6 +24,30 @@ namespace cpu
 
 		asm volatile ("wrmsr" :: "a"(low), "d"(high), "c"(reg));
 	}
+
+	uint32_t readCR0()
+	{
+		uint32_t ret = 0;
+		asm volatile ("mov %%cr0, %0" : "=a"(ret));
+		return ret;
+	}
+
+	void writeCR0(uint32_t val)
+	{
+		asm volatile ("mov %0, %%cr0" :: "a"(val));
+	}
+
+	uint32_t readCR4()
+	{
+		uint32_t ret = 0;
+		asm volatile ("mov %%cr4, %0" : "=a"(ret));
+		return ret;
+	}
+
+	void writeCR4(uint32_t val)
+	{
+		asm volatile ("mov %0, %%cr4" :: "a"(val));
+	}
 }
 }
 

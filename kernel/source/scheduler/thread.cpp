@@ -147,6 +147,27 @@ namespace scheduler
 			vmm::deallocateAddrSpace(scratch, n);
 		}
 
+
+		// finally, some misc stuff:
+		{
+			auto sseSz = cpu::fpu::getFPUStateSize();
+			assert(sseSz <= PAGE_SIZE);
+
+			auto phys = pmm::allocate(1);
+			auto virt = vmm::allocateAddrSpace(1, vmm::AddressSpace::User, proc);
+
+			// map scratch space.
+			auto scratch = vmm::allocateAddrSpace(1, vmm::AddressSpace::User);
+			vmm::mapAddress(scratch, phys, 1, vmm::PAGE_WRITE | vmm::PAGE_USER);
+
+			cpu::fpu::initState(scratch);
+
+			vmm::unmapAddress(scratch, 1, /* freePhys: */ false);
+
+			vmm::mapAddress(virt, phys, 1, vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
+			thr->fpuSavedStateBuffer = virt;
+		}
+
 		return thr;
 	}
 
@@ -161,8 +182,11 @@ namespace scheduler
 		// kill the user stack.
 		vmm::deallocate(thr->userStackBottom, USER_STACK_SIZE / PAGE_SIZE, proc);
 
-		// kill the kernel thread.
+		// kill the kernel stack.
 		vmm::deallocate(thr->kernelStackBottom, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
+
+		// kill the sse state
+		vmm::deallocate(thr->fpuSavedStateBuffer, 1, proc);
 
 		auto id = thr->threadId;
 

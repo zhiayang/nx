@@ -10,14 +10,14 @@ CFLAGS          = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -std=c
 CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
 
 
-SSRC            =  $(shell find source -name "platform" -prune -o -name "*.s" -print)
-SSRC            += $(shell find source/platform/$(ARCH) -iname "*.s")
+SSRC            =  $(shell find source -name "arch" -prune -o -name "*.s" -print)
+SSRC            += $(shell find source/arch/$(ARCH) -iname "*.s")
 
-CSRC            =  $(shell find source -name "platform" -prune -o -name "*.c" -print)
-CSRC            += $(shell find source/platform/$(ARCH) -iname "*.c")
+CSRC            =  $(shell find source -name "arch" -prune -o -name "*.c" -print)
+CSRC            += $(shell find source/arch/$(ARCH) -iname "*.c")
 
-CXXSRC          =  $(shell find source -name "platform" -prune -o -name "*.cpp" -print)
-CXXSRC          += $(shell find source/platform/$(ARCH) -iname "*.cpp")
+CXXSRC          =  $(shell find source -name "arch" -prune -o -name "*.cpp" -print)
+CXXSRC          += $(shell find source/arch/$(ARCH) -iname "*.cpp")
 
 
 SOBJ            = $(SSRC:.s=.s.o)
@@ -54,7 +54,7 @@ $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINF
 
 %.s.o: %.s
 	@echo "# $(notdir $<)"
-	@$(AS) -Isource/platform/$(ARCH)/include $< -o $@
+	@$(AS) -Isource/arch/$(ARCH)/include $< -o $@
 
 %.cpp.o: %.cpp
 	@echo "# $(notdir $<)"

@@ -59,11 +59,7 @@ namespace pmm
 			}
 		}
 
-		char buf[128] = { 0 };
-		auto s = krt::util::humanSizedBytes(&buf[0], totalMem);
-		buf[s] = 0;
-
-		log("pmm", "initialised with %zu extents, %s", extmmState.numExtents, buf);
+		log("pmm", "initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
