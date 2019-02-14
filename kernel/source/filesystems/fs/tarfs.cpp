@@ -56,7 +56,7 @@ namespace tarfs
 		size_t ret = 0;
 		int l = 12;
 
-		int mul = 1;
+		size_t mul = 1;
 		for(int i = l - 1; i-- > 0;)
 		{
 			ret += mul * (oct[i] - '0');
