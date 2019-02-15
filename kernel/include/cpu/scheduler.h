@@ -191,6 +191,7 @@ namespace nx
 		void addThread(Thread* t);
 
 		void destroyThread(Thread* t);
+		void destroyProcess(Process* p);
 
 
 		enum class SchedulerInitPhase

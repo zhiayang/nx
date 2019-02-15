@@ -41,7 +41,9 @@ namespace nx
 
 		void setupAddrSpace(scheduler::Process* proc);
 		void bootstrap(addr_t physBase, addr_t virt, size_t maxPages);
+
 		void init(scheduler::Process* proc);
+		void destroy(scheduler::Process* proc);
 
 		void switchAddrSpace(addr_t cr3);
 
@@ -115,6 +117,7 @@ namespace nx
 
 			const char* owner = 0;
 
+			addr_t bootstrapStart = 0;
 			addr_t bootstrapWatermark = 0;
 			addr_t bootstrapEnd = 0;
 		};
@@ -122,6 +125,7 @@ namespace nx
 		void dump(State* st);
 
 		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);
+		void destroy(State* st);
 
 		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
 		addr_t allocateSpecific(State* state, addr_t start, size_t num);

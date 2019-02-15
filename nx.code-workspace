@@ -1,25 +1,25 @@
 {
 	"folders": [
 		{
+			"path": "kernel"
+		},
+		{
+			"path": "libs\\libc"
+		},
+		{
+			"path": "libs\\libnxpc"
+		},
+		{
 			"path": "efx"
 		},
 		{
 			"path": "libs\\libkrt"
 		},
 		{
-			"path": "kernel"
+			"path": "drivers\\placebo"
 		},
 		{
 			"path": "."
-		},
-		{
-			"path": "libs\\libc"
-		},
-		{
-			"path": "libs\\libm"
-		},
-		{
-			"path": "drivers\\placebo"
 		}
 	],
 	"settings": {

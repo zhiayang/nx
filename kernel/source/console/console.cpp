@@ -163,7 +163,7 @@ namespace console
 					g.width = w / oversample;
 					g.height = h / oversample;
 
-					auto bitmap = new uint8_t[w * h];
+					auto bitmap = new uint8_t[(w + 1) * (h + 1)];
 
 					stbtt_MakeGlyphBitmap(fi, bitmap, w, h, w, scale, scale, g.glyphIdx);
 

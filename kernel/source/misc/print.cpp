@@ -119,7 +119,7 @@ namespace nx
 
 	[[noreturn]] void halt()
 	{
-		print("\nhalting...");
+		serial::debugprintf("\nhalting...");
 
 		asm volatile ("cli");
 		while(true) asm volatile ("hlt");
@@ -127,7 +127,7 @@ namespace nx
 
 	void vabort_nohalt(const char* fmt, va_list args)
 	{
-		print("\n\nkernel abort! error: ");
+		serial::debugprintf("\n\nkernel abort! error: ");
 		vprint(fmt, args);
 		va_end(args);
 	}

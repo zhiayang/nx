@@ -4,16 +4,14 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <orionx/syscall.h>
 
-static void real_main();
+#include <nx/ipc.h>
 
 extern "C" int main()
 {
-	__nx_intr_syscall_1(1, 'x');
-	__nx_syscall_1(1, 'y');
-
 	uint64_t ctr = 0;
 
 	constexpr uint32_t colours[4] = {
@@ -37,6 +35,15 @@ extern "C" int main()
 					*(fb + y * 800 + x) = colours[ctr2 % 4];
 				}
 			}
+
+			nx::ipc::message_t msg;
+			memset(&msg, 0, sizeof(nx::ipc::message_t));
+
+			msg.magic = nx::ipc::MAGIC_LE;
+			msg.targetId = 0;
+			msg.version = nx::ipc::CUR_VERSION;
+
+			nx::ipc::send(&msg);
 		}
 
 		if(ctr2 == 16)
@@ -50,7 +57,16 @@ extern "C" int main()
 				}
 			}
 
-			__nx_syscall_1(0, 103);
+			int ret;
+			__nx_syscall_1(0, ret, 103);
 		}
 	}
 }
+
+
+
+
+
+
+
+

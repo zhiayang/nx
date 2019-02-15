@@ -60,10 +60,10 @@ namespace util
 
 	void printStackTrace(uint64_t rbp)
 	{
-		println("\nbacktrace:");
+		serial::debugprintf("\nbacktrace:\n");
 		if(!heap::initialised())
 		{
-			println("    unavailable");
+			serial::debugprintf("    unavailable\n");
 			return;
 		}
 
@@ -73,7 +73,7 @@ namespace util
 		{
 			if(frm != 0)
 			{
-				println("    %2d: %p   |   %s", counter, frm, getSymbolAtAddr(frm).cstr());
+				serial::debugprintf("    %2d: %p   |   %s\n", counter, frm, getSymbolAtAddr(frm).cstr());
 				counter += 1;
 			}
 		}

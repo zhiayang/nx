@@ -66,7 +66,29 @@ namespace extmm
 		st->owner = owner;
 
 		st->bootstrapWatermark = base;
+		st->bootstrapStart = base;
 		st->bootstrapEnd = top;
+	}
+
+	void destroy(State* st)
+	{
+		// just loop through all the extents and destroy them.
+		auto ext = st->head;
+		while(ext)
+		{
+			if(!(((addr_t) ext) >= st->bootstrapStart && ((addr_t) ext) < st->bootstrapEnd))
+			{
+				delete ext;
+			}
+
+			// else do nothing.
+
+			ext = ext->next;
+		}
+
+		st->head = 0;
+		st->numExtents = 0;
+		st->bootstrapWatermark = st->bootstrapStart;
 	}
 
 

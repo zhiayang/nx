@@ -66,6 +66,20 @@ namespace vmm
 		log("vmm", "initialised vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
 	}
 
+	void destroy(scheduler::Process* proc)
+	{
+		assert(proc);
+		assert(proc->processId != 0);       // yo wtf that's illegal
+
+		for(size_t i = 0; i < NumAddressSpaces; i++)
+			extmm::destroy(&proc->vmmStates[i]);
+
+		// note: we don't need to un-setupAddrSpace, because that doesn't
+		// allocate any memory -- only address spaces.
+
+		log("vmm", "cleaned up vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
+	}
+
 
 	// these are the address spaces that we can hand out:
 	// USER_ADDRSPACE_BASE          ->      USER_ADDRSPACE_END

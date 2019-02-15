@@ -202,6 +202,12 @@ namespace scheduler
 		}
 
 		log("sched", "destroyed thread %lu", id);
+
+		if(proc->threads.empty())
+		{
+			log("sched", "killed last thread of process %lu, cleaning up process", proc->processId);
+			destroyProcess(proc);
+		}
 	}
 }
 }

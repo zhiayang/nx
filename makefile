@@ -75,6 +75,7 @@ build:
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
+	@$(MAKE) -s -C libs/libnxpc
 	@$(MAKE) -s -C libs/tinflate
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel

@@ -24,7 +24,17 @@ namespace scheduler
 		return proc;
 	}
 
+	void destroyProcess(Process* proc)
+	{
+		assert(proc);
 
+		vmm::destroy(proc);
+		pmm::deallocate(proc->cr3, 1);
+
+		delete proc;
+
+		// TODO: remove it from its cpu list
+	}
 
 
 

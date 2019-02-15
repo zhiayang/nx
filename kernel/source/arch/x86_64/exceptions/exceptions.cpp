@@ -125,24 +125,28 @@ namespace exceptions
 
 	static void dumpRegs(RegState_t* r)
 	{
-		println("");
-		println("rax:    %16.8lx   rbx:   %16.8lx", r->rax, r->rbx);
-		println("rcx:    %16.8lx   rdx:   %16.8lx", r->rcx, r->rdx);
-		println("r08:    %16.8lx   r09:   %16.8lx", r->r8, r->r9);
-		println("r10:    %16.8lx   r11:   %16.8lx", r->r10, r->r11);
-		println("r12:    %16.8lx   r13:   %16.8lx", r->r12, r->r13);
-		println("r14:    %16.8lx   r15:   %16.8lx", r->r14, r->r15);
-		println("rdi:    %16.8lx   rsi:   %16.8lx", r->rdi, r->rsi);
-		println("rbp:    %16.8lx   rsp:   %16.8lx", r->rbp, r->rsp);
-		println("rip:    %16.8lx   cs:    %16.8lx", r->rip, r->cs);
-		println("ss:     %16.8lx   u-rsp: %16.8lx", r->ss, r->useresp);
-		println("rflags: %16.8lx   cr2:   %16.8lx", r->rflags, r->cr2);
+		using namespace serial;
+
+		debugprintf("\n");
+		debugprintf("rax:    %16.8lx   rbx:   %16.8lx\n", r->rax, r->rbx);
+		debugprintf("rcx:    %16.8lx   rdx:   %16.8lx\n", r->rcx, r->rdx);
+		debugprintf("r08:    %16.8lx   r09:   %16.8lx\n", r->r8, r->r9);
+		debugprintf("r10:    %16.8lx   r11:   %16.8lx\n", r->r10, r->r11);
+		debugprintf("r12:    %16.8lx   r13:   %16.8lx\n", r->r12, r->r13);
+		debugprintf("r14:    %16.8lx   r15:   %16.8lx\n", r->r14, r->r15);
+		debugprintf("rdi:    %16.8lx   rsi:   %16.8lx\n", r->rdi, r->rsi);
+		debugprintf("rbp:    %16.8lx   rsp:   %16.8lx\n", r->rbp, r->rsp);
+		debugprintf("rip:    %16.8lx   cs:    %16.8lx\n", r->rip, r->cs);
+		debugprintf("ss:     %16.8lx   u-rsp: %16.8lx\n", r->ss, r->useresp);
+		debugprintf("rflags: %16.8lx   cr2:   %16.8lx\n", r->rflags, r->cr2);
 	}
 
 
 	static int faultCount = 0;
 	extern "C" void nx_x64_handle_exception(RegState_t* regs)
 	{
+		using namespace serial;
+
 		faultCount += 1;
 
 		uint64_t cr2;
@@ -154,29 +158,36 @@ namespace exceptions
 		// TODO: kill the process if this happens
 		// TODO: also stuff like page faults aren't always bad news
 
-		println("\n");
-		println("cpu exception %d: %s", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
-		println("error code:   %d", regs->ErrorCode);
+		debugprintf("\n\n");
+		debugprintf("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
+		debugprintf("error code:   %d\n", regs->ErrorCode);
+
+		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
+		{
+			debugprintf("pid: %lu / tid: %lu\n", scheduler::getCurrentProcess()->processId,
+				scheduler::getCurrentThread()->threadId);
+		}
+
 		if(regs->InterruptID == 13 && regs->ErrorCode != 0)
 		{
 			auto err = regs->ErrorCode;
 
-			print("gpf:");
+			debugprintf("gpf:");
 
-			if((err & 0x1))         print(" (external)");
-			if((err & 0x6) == 0)    print(" (gdt)");
-			if((err & 0x6) == 2)    print(" (idt)");
-			if((err & 0x6) == 4)    print(" (ldt)");
-			if((err & 0x6) == 6)    print(" (idt)");
+			if((err & 0x1))         debugprintf(" (external)");
+			if((err & 0x6) == 0)    debugprintf(" (gdt)");
+			if((err & 0x6) == 2)    debugprintf(" (idt)");
+			if((err & 0x6) == 4)    debugprintf(" (ldt)");
+			if((err & 0x6) == 6)    debugprintf(" (idt)");
 
-			println(", selector: %x", err & 0xfff8);
+			debugprintf(", selector: %x\n", err & 0xfff8);
 		}
 
 		dumpRegs(regs);
 
 		if(regs->InterruptID == 14)
 		{
-			println("");
+			debugprintf("\n");
 
 			// The error code gives us details of what happened.
 			uint8_t notPresent          = !(regs->ErrorCode & 0x1); // Page not present
@@ -185,28 +196,41 @@ namespace exceptions
 			uint8_t reservedBits        = regs->ErrorCode & 0x8;    // Overwritten CPU-reserved bits of page entry?
 			uint8_t instructionFetch    = regs->ErrorCode & 0x10;   // Caused by an instruction fetch?
 
-			println("cr3:    %p", cr3);
-			println("addr:   %p", cr2);
-			print  ("reason:");
+			debugprintf("cr3:    %p\n", cr3);
+			debugprintf("addr:   %p\n", cr2);
+			debugprintf("reason:");
 
-			if(notPresent)          print(" (not present)");
-			if(access)              print(" (read-only)");
-			if(supervisor)          print(" (supervisor)");
-			if(reservedBits)        print(" (reserved write)");
-			if(instructionFetch)    print(" (instruction fetch)");
+			if(notPresent)          debugprintf(" (not present)");
+			if(access)              debugprintf(" (read-only)");
+			if(supervisor)          debugprintf(" (supervisor)");
+			if(reservedBits)        debugprintf(" (reserved write)");
+			if(instructionFetch)    debugprintf(" (instruction fetch)");
 
-			println("");
+			debugprintf("\n");
 		}
 
-		println("\nfault location:");
-		println("%p   |   %s", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
+		debugprintf("\nfault location:\n");
+		debugprintf("%p   |   %s\n\n", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
 
-		// this is likely to cause faults if we did something really bad
-		// so if we already faulted, don't try again.
-		if(faultCount == 1)
-			util::printStackTrace(regs->rbp);
+		// if this was a user program, then fuck that guy.
+		if(scheduler::getCurrentProcess() != scheduler::getKernelProcess())
+		{
+			auto thr = scheduler::getCurrentThread();
+			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
 
-		println("\n!! error: unrecoverable cpu exception !!");
+			// this calls yield
+			scheduler::exit(-1);
+		}
+		else
+		{
+			// this is likely to cause faults if we did something really bad
+			// so if we already faulted, don't try again.
+			if(faultCount == 1)
+				util::printStackTrace(regs->rbp);
+
+			debugprintf("\n!! error: unrecoverable cpu exception !!");
+		}
+
 		while(1);
 	}
 }

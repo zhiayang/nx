@@ -1,7 +1,6 @@
 # Makefile for UnixCompatLibC.
 # Written in 2014
 
-
 CFLAGS		= -ffreestanding -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-strict-aliasing -fno-exceptions -c
 CXXFLAGS	= -ffreestanding -Wno-pragmas -O2 -fPIC -std=c++17 -mno-red-zone -fno-strict-aliasing -fno-exceptions -fno-rtti -c
 
@@ -19,11 +18,11 @@ CDEPS       = $(COBJ:.o=.d)
 .PHONY: all
 
 
-all: $(SYSROOT)/usr/lib/libkrt.a
+all: $(SYSROOT)/usr/lib/libnxpc.a
 
-$(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
-	@echo "# libkrt"
-	@$(AR) rcs $(SYSROOT)/usr/lib/libkrt.a $(SOBJ) $(COBJ) $(CXXOBJ)
+$(SYSROOT)/usr/lib/libnxpc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
+	@echo "# libnxpc"
+	@$(AR) rcs $(SYSROOT)/usr/lib/libnxpc.a $(SOBJ) $(COBJ) $(CXXOBJ)
 
 %.c.o: %.c
 	@echo "# $(notdir $<)"

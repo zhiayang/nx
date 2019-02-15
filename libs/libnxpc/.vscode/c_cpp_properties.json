@@ -1,9 +1,8 @@
 {
     "configurations": [
         {
-            "name": "placebo-windows",
+            "name": "libnxpc-windows",
             "includePath": [
-                "${workspaceFolder:placebo}/include",
                 "${workspaceFolder:libc}/include",
                 "${workspaceFolder:libnxpc}/include"
             ],
@@ -11,11 +10,11 @@
                 "__orionx__",
                 "_DEBUG"
             ],
-            "compilerPath": "${workspaceFolder}/../../build/toolchain/bin/x86_64-orionx-g++",
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "${workspaceFolder:placebo}"
+                    "${workspaceFolder:libnxpc}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
