@@ -8,6 +8,7 @@
 
 #include "fs.h"
 #include "mm.h"
+#include "ipc.h"
 #include "synchro.h"
 
 #include "devices/acpi.h"

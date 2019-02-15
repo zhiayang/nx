@@ -41,6 +41,10 @@ namespace nx
 	{
 		log("kernel", "started main worker thread\n");
 
+		// start the ipc dispatcher
+		ipc::init();
+
+		// start some other shit
 		{
 			auto f = vfs::open("/initrd/drivers/placebo", vfs::Mode::Read);
 			assert(f);
@@ -166,8 +170,6 @@ namespace nx
 		interrupts::init();
 		interrupts::enable();
 
-
-		cpu::writeFSBase(0xffffffffdeadbeef);
 
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!

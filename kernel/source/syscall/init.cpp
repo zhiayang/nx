@@ -25,11 +25,11 @@ namespace syscall
 
 	extern "C" constexpr void* SyscallTable[] = {
 
-		[SYSCALL_EXIT]      = (void*) sc_exit,
+		[SYSCALL_EXIT]      = (void*) sc_exit,      // defined in syscall/misc.cpp
+		[SYSCALL_IPC_SEND]  = (void*) sc_ipc_send,  // defined in ipc/dispatcher.cpp
 
-
-		[1] = (void*) debug_char,
-		[2] = (void*) debug_ptr
+		[2] = (void*) debug_char,
+		[3] = (void*) debug_ptr
 	};
 
 	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
@@ -69,7 +69,7 @@ namespace syscall
 				0x00    null descriptor
 				0x08    ring 0 code
 				0x10    ring 0 data
-				0x18    null descriptor
+				0x18    null descriptor    <-- this is dumb. AMD saved this space for a 32-bit code segment.
 				0x20    ring 3 data
 				0x28    ring 3 code
 
@@ -86,7 +86,7 @@ namespace syscall
 			// 3. lstar stores the syscall entry point.
 			cpu::writeMSR(cpu::MSR_LSTAR, (uint64_t) nx_x64_syscall_entry);
 
-			// 4. mask some stuff, like the direction bit.
+			// 4. mask some stuff, like the direction bit. note we don't mask IF cos syscalls should be preemptible.
 			cpu::writeMSR(cpu::MSR_SF_MASK, 0x400);
 		}
 		else

@@ -50,7 +50,7 @@ namespace initrd
 		// note: we do this to avoid unaligned access, which ubsan complains about.
 		{
 			uint32_t tmp = 0;
-			memcpy(&tmp, (uint32_t*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)), sizeof(uint32_t));
+			memcpy(&tmp, (void*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)), sizeof(uint32_t));
 
 			uncompressedSize = tmp;
 		}
