@@ -47,11 +47,15 @@ namespace scheduler
 
 		cpu::tss::setRSP0(getCPULocalState()->TSSBase, newthr->kernelStackTop);
 
-		// clear the selectors
-		asm volatile ("mov $0, %%ax; mov %%ax, %%ds; mov %%ax, %%es; mov %%ax, %%fs" ::: "%eax");
-
-		// save the fsbase.
+		// note wrt the selectors:
+		// on intel, writing 0 to %fs clears FSBase. so we must save the current fsbase,
+		// zero the segments, then write the new fsbase.
 		oldthr->fsBase = cpu::readFSBase();
+
+		// clear the selectors
+		asm volatile ("mov $0, %%ax; mov %%ax, %%ds; mov %%ax, %%es" ::: "%eax");
+
+		// load the new fsbase
 		cpu::writeFSBase(newthr->fsBase);
 
 		auto oldcr3 = oldthr->parent->cr3;

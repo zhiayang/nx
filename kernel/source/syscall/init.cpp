@@ -16,12 +16,20 @@ namespace syscall
 		return 0;
 	}
 
+	extern "C" int64_t debug_ptr(void* p)
+	{
+		println("ptr: %p", p);
+		return 0;
+	}
+
+
 	extern "C" constexpr void* SyscallTable[] = {
 
 		[SYSCALL_EXIT]      = (void*) sc_exit,
 
 
-		[1] = (void*) debug_char
+		[1] = (void*) debug_char,
+		[2] = (void*) debug_ptr
 	};
 
 	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);

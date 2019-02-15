@@ -144,7 +144,7 @@ namespace scheduler
 		}
 
 
-		// finally, some misc stuff:
+		// setup fpu state:
 		{
 			auto sseSz = cpu::fpu::getFPUStateSize();
 			assert(sseSz <= PAGE_SIZE);
@@ -162,6 +162,11 @@ namespace scheduler
 
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt;
+		}
+
+		// more misc stuff:
+		{
+			// if(isUserProc) thr->fsBase = 0xffffffffc0debabe;
 		}
 
 		return thr;

@@ -45,7 +45,15 @@ namespace initrd
 		size_t inpSz = bi->initrdSize;
 		void* initrd = bi->initrdBuffer;
 
-		size_t uncompressedSize = *((uint32_t*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)));
+		size_t uncompressedSize = 0;
+
+		// note: we do this to avoid unaligned access, which ubsan complains about.
+		{
+			uint32_t tmp = 0;
+			memcpy(&tmp, (uint32_t*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)), sizeof(uint32_t));
+
+			uncompressedSize = tmp;
+		}
 
 		// make a thing.
 		void* buf = (void*) vmm::allocate((uncompressedSize + PAGE_SIZE) / PAGE_SIZE, vmm::AddressSpace::Kernel);

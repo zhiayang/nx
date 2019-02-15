@@ -166,6 +166,9 @@ namespace nx
 		interrupts::init();
 		interrupts::enable();
 
+
+		cpu::writeFSBase(0xffffffffdeadbeef);
+
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!
 		{
