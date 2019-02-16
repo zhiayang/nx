@@ -87,8 +87,11 @@ namespace nx
 
 			int flags;
 
-			extmm::State vmmStates[vmm::NumAddressSpaces];
+			addr_t tlsMasterCopy;
+			size_t tlsAlign = 0;
+			size_t tlsSize = 0;
 
+			extmm::State vmmStates[vmm::NumAddressSpaces];
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
@@ -119,6 +122,8 @@ namespace nx
 			mutex* blockedMtx = 0;
 			uint64_t wakeUpTimestamp = 0;
 
+			// we don't really care about the data that goes here.
+			void* userspaceTCB;
 
 			// saved information from context switches:
 			addr_t kernelStack;

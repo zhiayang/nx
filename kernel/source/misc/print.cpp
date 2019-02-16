@@ -78,7 +78,7 @@ namespace nx
 	void log(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[d] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "[log] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -88,7 +88,7 @@ namespace nx
 	void warn(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[w] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "[wrn] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -97,7 +97,7 @@ namespace nx
 	void error(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[e] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "[err] %s: ", sys);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);

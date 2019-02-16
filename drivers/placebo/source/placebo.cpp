@@ -10,6 +10,8 @@
 
 #include <nx/ipc.h>
 
+thread_local int foofoo;
+
 extern "C" int main()
 {
 	uint64_t ctr = 0;
@@ -44,6 +46,8 @@ extern "C" int main()
 			msg.version = nx::ipc::CUR_VERSION;
 
 			nx::ipc::send(&msg);
+
+			foofoo = 10;
 		}
 
 		if(ctr2 == 16)

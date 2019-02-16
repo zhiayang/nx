@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ipc_message.h"
+#include <nx/ipc_message.h>
 
 namespace nx {
 namespace ipc

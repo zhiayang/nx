@@ -4,57 +4,59 @@
 
 #include "nx.h"
 
-namespace nx {
-namespace ipc
+namespace nx
 {
-	static nx::mutex messageQueueLock;
-	static nx::list<message_t*> messageQueue;
-	static void dispatcher()
+	namespace ipc
 	{
-		while(true)
+		static nx::mutex queueLock;
+		static nx::list<message_t*> messageQueue;
+		static void dispatcher()
 		{
-			while(messageQueue.size() > 0)
+			while(true)
 			{
-				message_t* msg = 0;
-				messageQueueLock.lock();
+				while(messageQueue.size() > 0)
 				{
-					msg = messageQueue.popFront();
+					message_t* msg = 0;
+					{
+						autolock lk(&queueLock);
+						msg = messageQueue.popFront();
+					}
+
+					assert(msg);
+					log("ipc", "message from %lu", msg->senderId);
 				}
-				messageQueueLock.unlock();
 
-				assert(msg);
-				log("ipc", "message from %lu", msg->senderId);
+				scheduler::yield();
 			}
-
-			scheduler::yield();
 		}
-	}
 
-	void init()
-	{
-		messageQueue = nx::list<message_t*>();
-		messageQueueLock = nx::mutex();
-
-		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), dispatcher));
-	}
-
-	void addMessage(message_t* msg)
-	{
-		// note: we assert here, because the syscall handler should have verified this already.
-		assert(msg->magic == MAGIC_LE);
-		assert((msg->version & 0xFF) == CUR_VERSION);
-
-		// ok then...
-		auto copy = (message_t*) heap::allocate(sizeof(message_t) + msg->payloadSize, alignof(message_t));
-		memcpy(copy, msg, sizeof(message_t) + msg->payloadSize);
-
-		messageQueueLock.lock();
+		void init()
 		{
-			messageQueue.append(copy);
+			queueLock = nx::mutex();
+			messageQueue = nx::list<message_t*>();
+
+			scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), dispatcher));
 		}
-		messageQueueLock.unlock();
+
+		void addMessage(message_t* msg)
+		{
+			// note: we assert here, because the syscall handler should have verified this already.
+			assert(msg->magic == MAGIC_LE);
+			assert((msg->version & 0xFF) == CUR_VERSION);
+
+			// ok then...
+			auto copy = (message_t*) heap::allocate(sizeof(message_t) + msg->payloadSize, alignof(message_t));
+			memcpy(copy, msg, sizeof(message_t) + msg->payloadSize);
+
+			{
+				autolock lk(&queueLock);
+				messageQueue.append(copy);
+			}
+		}
 	}
-}
+
+
+
 
 	int64_t syscall::sc_ipc_send(void* _msg)
 	{

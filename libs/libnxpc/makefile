@@ -19,6 +19,7 @@ CDEPS       = $(COBJ:.o=.d)
 
 
 all: $(SYSROOT)/usr/lib/libnxpc.a
+	@cp -r include/* $(SYSROOT)/usr/include/
 
 $(SYSROOT)/usr/lib/libnxpc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo "# libnxpc"

@@ -104,6 +104,10 @@ namespace nx
 		}
 	}
 
+	constexpr size_t SIZE_IN_PAGES(size_t bytes)
+	{
+		return (bytes + (PAGE_SIZE - 1)) / PAGE_SIZE;
+	}
 
 
 

@@ -3,7 +3,7 @@
         {
             "name": "libnxpc-windows",
             "includePath": [
-                "${workspaceFolder:libc}/include",
+                "${workspaceFolder:nx}/build/sysroot/usr/include",
                 "${workspaceFolder:libnxpc}/include"
             ],
             "defines": [

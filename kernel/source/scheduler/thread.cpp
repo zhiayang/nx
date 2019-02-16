@@ -4,6 +4,8 @@
 
 #include "nx.h"
 
+#include "export/thread.h"
+
 namespace nx {
 namespace scheduler
 {
@@ -160,13 +162,61 @@ namespace scheduler
 
 			vmm::unmapAddress(scratch, 1, /* freePhys: */ false);
 
-			vmm::mapAddress(virt, phys, 1, vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
+			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt;
 		}
 
-		// more misc stuff:
+
+		// thread-local storage:
+		if(proc->tlsSize > 0)
 		{
-			// if(isUserProc) thr->fsBase = 0xffffffffc0debabe;
+			// TODO: find some way to minimise wastage here?
+			//* we are always allocating a minimum of 4kb for each thread, even if it only
+			//* has one thread local variable eg. errno.
+
+			// so we can distinguish it.
+			using usertcb_t = thread_t;
+
+			size_t tls_data_sz = __alignup(proc->tlsSize, proc->tlsAlign);
+			size_t tcb_offset  = __alignup(proc->tlsSize, __max(proc->tlsAlign, alignof(usertcb_t)));
+
+			// ok, we need to allocate pages for this as well.
+			auto numPages = SIZE_IN_PAGES(tcb_offset + sizeof(usertcb_t));
+
+			auto phys = pmm::allocate(numPages);
+			assert(phys);
+
+			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User, proc);
+			vmm::mapAddress(virt, phys, numPages, target_flags, proc);
+
+			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+
+			auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+			vmm::mapAddress(scratchMaster, vmm::getPhysAddr(proc->tlsMasterCopy & vmm::PAGE_ALIGN, proc), numPages,
+				vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+
+			scratchMaster += (proc->tlsMasterCopy - (proc->tlsMasterCopy & vmm::PAGE_ALIGN));
+
+			// setup the tcb first
+			auto tcb = (usertcb_t*) (void*) (scratch + tcb_offset);
+			memset(tcb, 0, sizeof(usertcb_t));
+
+			tcb->self = (usertcb_t*) (void*) (virt + tcb_offset);
+			tcb->threadId = thr->threadId;
+			tcb->processId = proc->processId;
+			tcb->pendingIPCMsgCount = 0;
+
+			thr->userspaceTCB = tcb->self;
+			thr->fsBase = (addr_t) tcb->self;
+
+			// ok now do the tls
+			memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
+
+			// ok we should be done.
+			vmm::unmapAddress(scratch, numPages, /* freePhys: */ false);
+			vmm::unmapAddress(scratchMaster & vmm::PAGE_ALIGN, numPages, /* freePhys: */ false);
+
 		}
 
 		return thr;

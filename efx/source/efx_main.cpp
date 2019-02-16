@@ -61,7 +61,7 @@ void efx::init()
 		{
 			uint64_t out = 0;
 			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_KernelElf,
-				(len + 0x1000) / 0x1000, &out);
+				(len + 0xFFF) / 0x1000, &out);
 			efi::abort_if_error(stat, "failed to allocate memory for kernel!");
 
 			memmove((void*) out, buf, len);
@@ -84,7 +84,7 @@ void efx::init()
 		{
 			uint64_t out = 0;
 			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_Initrd,
-				(len + 0x1000) / 0x1000, &out);
+				(len + 0xFFF) / 0x1000, &out);
 			efi::abort_if_error(stat, "failed to allocate memory for initrd!");
 
 			memmove((void*) out, buf, len);
@@ -121,7 +121,7 @@ void efx::init()
 		{
 			uint64_t out = 0;
 			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo,
-				(reqSize + 0x1000) / 0x1000, &out);
+				(reqSize + 0xFFF) / 0x1000, &out);
 			efi::abort_if_error(stat, "failed to allocate memory for kernel parameters!");
 
 			buffer = (char*) out;

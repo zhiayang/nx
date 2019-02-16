@@ -33,9 +33,6 @@
 
 namespace nx
 {
-
-	constexpr size_t PAGE_SIZE                      = 0x1000;
-
 	namespace initrd
 	{
 		void init(BootInfo* bi);

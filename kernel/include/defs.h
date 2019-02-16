@@ -13,6 +13,8 @@ using addr_t = uintptr_t;
 
 namespace nx
 {
+	constexpr size_t PAGE_SIZE = 0x1000;
+
 	struct _allocator
 	{
 		static void* allocate(size_t sz, size_t align);

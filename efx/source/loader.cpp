@@ -54,7 +54,7 @@ namespace efx
 
 			// load by pages, rounded up.
 			// note: EFI allocates pages in chunks of 0x1000 aka 4KB. we might use large pages later in the kernel, who knows?
-			size_t numPages = (progHdr->p_memsz + 0x1000) / 0x1000;
+			size_t numPages = (progHdr->p_memsz + 0xFFF) / 0x1000;
 
 			uint64_t buffer = 0;
 			auto stat = efi::systable()->BootServices->AllocatePages(AllocateAnyPages,
@@ -172,7 +172,7 @@ namespace efx
 		// ok now, allocate and start to fill in.
 		nx::MemMapEntry* entries = 0;
 		{
-			size_t numPages = 1 + ((neededEntries * sizeof(nx::MemMapEntry)) + 0x1000) / 0x1000;
+			size_t numPages = 1 + ((neededEntries * sizeof(nx::MemMapEntry)) + 0xFFF) / 0x1000;
 			auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_MemoryMap, numPages, (uint64_t*) &entries);
 			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate pages");
 
@@ -241,7 +241,7 @@ namespace efx
 
 		// finally, the framebuffer.
 		entries[bi->mmEntryCount].address = graphics::getFramebufferAddress();
-		entries[bi->mmEntryCount].numPages = (graphics::getFramebufferSize() + 0x1000) / 0x1000;
+		entries[bi->mmEntryCount].numPages = (graphics::getFramebufferSize() + 0xFFF) / 0x1000;
 		entries[bi->mmEntryCount].memoryType = nx::MemoryType::Framebuffer;
 		bi->mmEntryCount++;
 

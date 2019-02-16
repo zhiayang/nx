@@ -280,7 +280,7 @@ namespace vmm
 		assert(proc);
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) abort("don't try it");
+		if(isOtherProc) performTempMapping(proc);
 
 		assert(isAligned(virt));
 
@@ -308,6 +308,9 @@ namespace vmm
 			abort("%p was not mapped! (page not present)", virt);
 
 		auto phys = ptab->entries[p1idx] & PAGE_ALIGN;
+
+		if(isOtherProc)
+			performTempUnmapping(proc);
 
 		return phys;
 	}

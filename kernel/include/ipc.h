@@ -5,7 +5,7 @@
 #pragma once
 #include "defs.h"
 
-#include "../../../libs/libnxpc/include/nx/ipc_message.h"
+#include "export/ipc_message.h"
 
 namespace nx
 {

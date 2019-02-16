@@ -4,8 +4,7 @@
             "name": "placebo-windows",
             "includePath": [
                 "${workspaceFolder:placebo}/include",
-                "${workspaceFolder:libc}/include",
-                "${workspaceFolder:libnxpc}/include"
+                "${workspaceFolder:nx}/build/sysroot/usr/include"
             ],
             "defines": [
                 "__orionx__",
