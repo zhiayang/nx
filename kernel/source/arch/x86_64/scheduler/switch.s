@@ -16,23 +16,6 @@
 .type nx_x64_yield_thread, @function
 
 
-// note: why this is only called "if necessary":
-// if were interrupted while in ring 0 (eg. while running kernel threads), then we *don't want* to swap gs,
-// because gsbase will already be valid. similarly, when we are leaving *to* ring 0, we don't want to swap either.
-
-// (we can call this macro on exit as well, but only after restoring the registers -- so the only things on the stack
-// are the 5 things that the cpu pushed for the interrupt stack frame)
-
-// on the contrary, if we came from ring 3, cs will be 0x1B, so we will do a swapgs; the same applies when leaving to ring 3.
-.macro swapgs_if_necessary
-	cmp $0x08, 0x8(%rsp)
-	je 1f
-	swapgs
-1:
-.endm
-
-
-
 // parameters: new rsp (%rdi), new cr3 (%rsi), newthread-sse-state (%rdx)
 nx_x64_switch_to_thread:
 	test %rsi, %rsi

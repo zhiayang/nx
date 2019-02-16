@@ -107,6 +107,7 @@ nx_x64_irq_handler_15:
 
 
 GlobalHandler:
+	swapgs_if_necessary 0x10    // note: extra offset for the int number
 	push_all_regs
 
 	movq 120(%rsp), %rdi
@@ -117,6 +118,8 @@ GlobalHandler:
 	// remove the interrupt number
 	addq $8, %rsp
 
+	// we removed the int_no, no extra offset.
+	swapgs_if_necessary
 	iretq
 
 

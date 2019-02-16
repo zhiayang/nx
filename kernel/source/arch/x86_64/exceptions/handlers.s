@@ -235,6 +235,8 @@ nx_x64_exception_handler_31:
 
 
 GlobalHandler:
+	swapgs_if_necessary 0x18
+
 	push_all_regs
 	pushq %rsp
 
@@ -256,8 +258,20 @@ GlobalHandler:
 	// Remove int_no and err_code
 	addq $16, %rsp
 
-	// Return to where we came from.
+	// note: the offset for this swapgs is the default (0x8) because we already removed the error code and number
+	// from the stack above.
+	swapgs_if_necessary
 	iretq
+
+
+
+
+
+
+
+
+
+
 
 
 
