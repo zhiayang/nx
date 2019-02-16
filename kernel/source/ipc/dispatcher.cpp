@@ -24,6 +24,25 @@ namespace nx
 
 					assert(msg);
 					log("ipc", "message from %lu", msg->senderId);
+
+
+					// for now reply the mesage.
+					if(auto proc = scheduler::getProcessWithId(msg->senderId); proc)
+					{
+						auto reply = new ((void*) heap::allocate(sizeof(message_t), alignof(message_t))) message_t;
+
+						reply->magic = MAGIC_LE;
+						reply->version = 1;
+						reply->messageClass = 0;
+
+						reply->senderId = 0;
+						reply->targetId = msg->senderId;
+
+						reply->payloadSize = 0;
+
+						// TODO: @LockSafety lock this!
+						proc->pendingMessages.append(reply);
+					}
 				}
 
 				scheduler::yield();
@@ -53,48 +72,6 @@ namespace nx
 				messageQueue.append(copy);
 			}
 		}
-	}
-
-
-
-
-	int64_t syscall::sc_ipc_send(void* _msg)
-	{
-		using namespace nx::ipc;
-
-
-		if(!_msg) return -1;
-
-		auto msg = (message_t*) _msg;
-		assert(msg);
-
-		if(msg->magic != MAGIC_LE)
-		{
-			error("ipc", "invalid magic %x in message; discarding", msg->magic);
-			return -1;
-		}
-		if((msg->version & 0xFF) != CUR_VERSION)
-		{
-			error("ipc", "invalid version %d in message; discarding", msg->version & 0xFF);
-			return -1;
-		}
-		if((msg->version & ~0xFF) != 0)
-		{
-			error("ipc", "invalid feature flags %x in message; discarding", msg->version & ~0xFF);
-			return -1;
-		}
-		if(msg->payloadSize > MAX_PAYLOAD_SIZE)
-		{
-			error("ipc", "payload size of %zu exceeds max of %zu; discarding", msg->payloadSize, MAX_PAYLOAD_SIZE);
-			return -1;
-		}
-
-		msg->senderId = scheduler::getCurrentThread()->threadId;
-
-		// ok, add it
-		addMessage(msg);
-
-		return 0;
 	}
 }
 

@@ -13,8 +13,8 @@ namespace nx {
 namespace ipc
 {
 	int send(message_t* msg);
-	bool poll(uint64_t classFilter, uint64_t senderFilter);
 
-	void receive(message_t* msg, uint64_t classFilter, uint64_t senderFilter);
+	bool poll();
+	void receive(message_t* msg);
 }
 }

@@ -1,9 +1,10 @@
 {
     "configurations": [
         {
-            "name": "libnxpc-windows",
+            "name": "libc-windows",
             "includePath": [
-                "${workspaceFolder:nx}/build/sysroot/usr/include"
+                "${workspaceFolder:nx}/build/sysroot/usr/include",
+                "${workspaceFolder:libc}/include"
             ],
             "defines": [
                 "__orionx__",
@@ -13,7 +14,7 @@
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "${workspaceFolder:libnxpc}"
+                    "${workspaceFolder:libc}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""

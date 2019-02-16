@@ -42,7 +42,6 @@ UBSAN_FLAG      = -fsanitize=undefined
 
 all: $(SYSROOT)/boot/$(KERNEL)
 	@mkdir -p $(SYSROOT)/usr/include/nx
-	@cp -r include/export/* $(SYSROOT)/usr/include/nx/
 
 $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINFLATE)
 	@echo "# nxkernel"

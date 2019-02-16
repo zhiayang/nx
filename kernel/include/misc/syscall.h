@@ -4,6 +4,7 @@
 
 #pragma once
 #include "defs.h"
+#include "export/syscall.h"
 
 namespace nx
 {
@@ -11,11 +12,11 @@ namespace nx
 	{
 		void init();
 
-		constexpr uint64_t SYSCALL_EXIT         = 0;
-		constexpr uint64_t SYSCALL_IPC_SEND     = 1;
-
-
-		int64_t sc_exit(int status);        // SYSCALL_EXIT
-		int64_t sc_ipc_send(void* msg);     // SYSCALL_IPC_SEND
+		int64_t sc_exit(int status);
+		int64_t sc_ipc_send(void* msg, size_t len);
+		int64_t sc_ipc_peek(void* msg, size_t len);
+		int64_t sc_ipc_poll();
+		int64_t sc_ipc_discard();
+		int64_t sc_ipc_receive(void* msg, size_t len);
 	}
 }

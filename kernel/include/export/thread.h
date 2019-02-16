@@ -8,19 +8,23 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+
+struct process_t
+{
+	pid_t processId;
+};
+
 struct thread_t
 {
 	thread_t* self;
 
 	pid_t threadId;
-	pid_t processId;
-
-	size_t pendingIPCMsgCount;
-
+	process_t* parentProcess;
 };
 
 #ifndef __cplusplus
 
 typedef struct thread_t thread_t;
+typedef struct process_t process_t;
 
 #endif

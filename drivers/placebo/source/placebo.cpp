@@ -8,9 +8,7 @@
 
 #include <orionx/syscall.h>
 
-#include <nx/ipc.h>
-
-thread_local int foofoo;
+#include <nxpc.h>
 
 extern "C" int main()
 {
@@ -38,6 +36,9 @@ extern "C" int main()
 				}
 			}
 
+			int ret;
+			__nx_syscall_1(6, ret, 'a' + nx::ipc::poll());
+
 			nx::ipc::message_t msg;
 			memset(&msg, 0, sizeof(nx::ipc::message_t));
 
@@ -46,8 +47,6 @@ extern "C" int main()
 			msg.version = nx::ipc::CUR_VERSION;
 
 			nx::ipc::send(&msg);
-
-			foofoo = 10;
 		}
 
 		if(ctr2 == 16)

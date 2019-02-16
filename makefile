@@ -72,6 +72,7 @@ diskimage: build
 	@utils/tools/update-diskimage.sh
 
 build:
+	@cp -r kernel/include/export/* $(SYSROOT)/usr/include/nx/
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt

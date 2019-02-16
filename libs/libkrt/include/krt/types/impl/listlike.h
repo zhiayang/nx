@@ -203,7 +203,7 @@ namespace krt
 			self->cnt = 0;
 		}
 
-		void deleteNode(Container* self, Node* node)
+		static void deleteNode(Container* self, Node* node)
 		{
 			if(!node) return;
 
@@ -211,12 +211,16 @@ namespace krt
 			if(node == self->head)
 			{
 				self->head = node->next;
-				self->head->prev = 0;
+
+				if(self->head)
+					self->head->prev = 0;
 			}
 			else if(node == self->tail)
 			{
 				self->tail = node->prev;
-				self->tail->next = 0;
+
+				if(self->tail)
+					self->tail->next = 0;
 			}
 			else
 			{

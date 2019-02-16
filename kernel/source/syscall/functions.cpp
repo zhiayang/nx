@@ -23,14 +23,24 @@ namespace syscall
 	}
 
 
-	extern "C" constexpr void* SyscallTable[] = {
+	extern "C" constexpr void* SyscallTable[] =
+	{
+		// defined in syscall/misc.cpp
+		[SYSCALL_EXIT]          = (void*) sc_exit,
 
-		[SYSCALL_EXIT]      = (void*) sc_exit,      // defined in syscall/misc.cpp
-		[SYSCALL_IPC_SEND]  = (void*) sc_ipc_send,  // defined in ipc/dispatcher.cpp
+		// defined in ipc/sc_handlers.cpp
+		[SYSCALL_IPC_SEND]      = (void*) sc_ipc_send,
+		[SYSCALL_IPC_PEEK]      = (void*) sc_ipc_peek,
+		[SYSCALL_IPC_POLL]      = (void*) sc_ipc_poll,
+		[SYSCALL_IPC_DISCARD]   = (void*) sc_ipc_discard,
+		[SYSCALL_IPC_RECEIVE]   = (void*) sc_ipc_receive,
 
-		[2] = (void*) debug_char,
-		[3] = (void*) debug_ptr
+		[6] = (void*) debug_char,
+		[7] = (void*) debug_ptr
 	};
+
+
+
 
 	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
 

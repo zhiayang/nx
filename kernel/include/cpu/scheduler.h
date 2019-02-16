@@ -91,6 +91,8 @@ namespace nx
 			size_t tlsAlign = 0;
 			size_t tlsSize = 0;
 
+			nx::list<ipc::message_t*> pendingMessages;
+
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 
 			static constexpr int PROC_USER      = 0x1;
@@ -140,7 +142,7 @@ namespace nx
 		Process* createProcess(const nx::string& name, int flags);
 		void addProcess(Process* p);
 
-
+		Process* getProcessWithId(pid_t id);
 
 
 

@@ -2,8 +2,10 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "nx/ipc.h"
-#include "orionx/syscall.h"
+#include <syscall.h>
+#include <nx/thread_local.h>
+
+#include "nxpc.h"
 
 namespace nx {
 namespace ipc
@@ -19,17 +21,20 @@ namespace ipc
 		// preferably without #defines polluting the kernel namespace
 
 		int64_t ret = 0;
-		__nx_syscall_1(1, ret, msg);
+		__nx_syscall_1(SYSCALL_IPC_SEND, ret, msg);
 
 		return ret;
 	}
 
-	bool poll(uint64_t classFilter, uint64_t senderFilter)
+	bool poll()
 	{
-		return false;
+		int64_t ret = 0;
+		__nx_syscall_0(SYSCALL_IPC_POLL, ret);
+
+		return (bool) ret;
 	}
 
-	void receive(message_t* msg, uint64_t classFilter, uint64_t senderFilter)
+	void receive(message_t* msg)
 	{
 	}
 }

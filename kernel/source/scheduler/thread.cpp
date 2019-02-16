@@ -168,20 +168,25 @@ namespace scheduler
 
 
 		// thread-local storage:
-		if(proc->tlsSize > 0)
 		{
 			// TODO: find some way to minimise wastage here?
 			//* we are always allocating a minimum of 4kb for each thread, even if it only
 			//* has one thread local variable eg. errno.
 
+			// note: we always need to allocate tls -- for the thread control block.
+
+
 			// so we can distinguish it.
 			using usertcb_t = thread_t;
+			using userpcb_t = process_t;
 
-			size_t tls_data_sz = __alignup(proc->tlsSize, proc->tlsAlign);
-			size_t tcb_offset  = __alignup(proc->tlsSize, __max(proc->tlsAlign, alignof(usertcb_t)));
+			size_t tls_data_sz = proc->tlsSize ? __alignup(proc->tlsSize, proc->tlsAlign) : 0;
+			size_t tcb_offset  = __alignup(proc->tlsSize, __max(proc->tlsAlign,
+				__max(alignof(usertcb_t), alignof(userpcb_t))));
+
 
 			// ok, we need to allocate pages for this as well.
-			auto numPages = SIZE_IN_PAGES(tcb_offset + sizeof(usertcb_t));
+			auto numPages = SIZE_IN_PAGES(tcb_offset + sizeof(usertcb_t) + sizeof(userpcb_t));
 
 			auto phys = pmm::allocate(numPages);
 			assert(phys);
@@ -192,30 +197,42 @@ namespace scheduler
 			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
 			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
-			auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
-			vmm::mapAddress(scratchMaster, vmm::getPhysAddr(proc->tlsMasterCopy & vmm::PAGE_ALIGN, proc), numPages,
-				vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
-
-			scratchMaster += (proc->tlsMasterCopy - (proc->tlsMasterCopy & vmm::PAGE_ALIGN));
-
 			// setup the tcb first
-			auto tcb = (usertcb_t*) (void*) (scratch + tcb_offset);
+			auto tcb = (usertcb_t*) (scratch + tcb_offset);
 			memset(tcb, 0, sizeof(usertcb_t));
 
-			tcb->self = (usertcb_t*) (void*) (virt + tcb_offset);
+			tcb->self = (usertcb_t*) (virt + tcb_offset);
 			tcb->threadId = thr->threadId;
-			tcb->processId = proc->processId;
-			tcb->pendingIPCMsgCount = 0;
+
+			auto pcb = (userpcb_t*) (scratch + tcb_offset + sizeof(usertcb_t));
+			memset(pcb, 0, sizeof(userpcb_t));
+
+			pcb->processId = proc->processId;
+
+			tcb->parentProcess = (userpcb_t*) (virt + tcb_offset + sizeof(usertcb_t));
 
 			thr->userspaceTCB = tcb->self;
 			thr->fsBase = (addr_t) tcb->self;
 
-			// ok now do the tls
-			memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
+
+
+			if(proc->tlsSize > 0)
+			{
+				auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+				vmm::mapAddress(scratchMaster, vmm::getPhysAddr(proc->tlsMasterCopy & vmm::PAGE_ALIGN, proc), numPages,
+					vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+
+				scratchMaster += (proc->tlsMasterCopy - (proc->tlsMasterCopy & vmm::PAGE_ALIGN));
+
+				// ok now do the tls
+				memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
+
+				vmm::unmapAddress(scratchMaster & vmm::PAGE_ALIGN, numPages, /* freePhys: */ false);
+			}
+
 
 			// ok we should be done.
 			vmm::unmapAddress(scratch, numPages, /* freePhys: */ false);
-			vmm::unmapAddress(scratchMaster & vmm::PAGE_ALIGN, numPages, /* freePhys: */ false);
 
 		}
 

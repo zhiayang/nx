@@ -8,8 +8,14 @@ namespace nx {
 namespace scheduler
 {
 	static pid_t processIdCounter = 1;
+	static nx::list<Process*> AllProcesses;
+
 	Process* createProcess(const nx::string& name, int flags)
 	{
+		if(processIdCounter == 1)
+			AllProcesses = nx::list<Process*>();
+
+
 		auto proc = new Process();
 
 		proc->processId = processIdCounter++;
@@ -21,6 +27,8 @@ namespace scheduler
 
 		vmm::init(proc);
 
+		AllProcesses.append(proc);
+
 		return proc;
 	}
 
@@ -31,9 +39,18 @@ namespace scheduler
 		vmm::destroy(proc);
 		pmm::deallocate(proc->cr3, 1);
 
-		delete proc;
+		// TODO: remove it from its cpu list as well
 
-		// TODO: remove it from its cpu list
+		for(auto it = AllProcesses.begin(); it != AllProcesses.end(); ++it)
+		{
+			if(*it == proc)
+			{
+				AllProcesses.erase(it);
+				break;
+			}
+		}
+
+		delete proc;
 	}
 
 
@@ -72,6 +89,16 @@ namespace scheduler
 			return &KernelProcess;
 
 		return cpu->currentProcess;
+	}
+
+	Process* getProcessWithId(pid_t id)
+	{
+		// oh no
+		for(auto p : AllProcesses)
+			if(p->processId == id)
+				return p;
+
+		return 0;
 	}
 }
 }
