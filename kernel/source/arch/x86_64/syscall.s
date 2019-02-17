@@ -10,6 +10,14 @@
 	push %r13
 	push %r14
 	push %r15
+
+	xor %rbx, %rbx
+	xor %rbp, %rbp
+	xor %r11, %r11
+	xor %r12, %r12
+	xor %r13, %r13
+	xor %r14, %r14
+	xor %r15, %r15
 .endm
 
 .macro restore_regs
@@ -25,7 +33,7 @@
 .macro do_syscall_jump_table
 
 	cmp $SyscallTableEntryCount, %rax
-	jl return
+	jl 1f
 
 	// %rax contains the syscall number; shift it right by 3 to get the index
 	// into the table.
@@ -38,11 +46,17 @@
 
 	call *SyscallTable(%rax)
 
+1:
 .endm
 
 
 
 
+// note: on entry to either of these handlers, interrupts are disabled. this is because (and we found out the hard way)
+// an irq (usually the timer) might come in after control is transferred here, but *before* we call swapgs. so, CS=0x8,
+// and so swapgs_if_necessary doesn't swap. BUT %gs is still the user gs, so we crash the kernel. thus, we only enable
+// interrupts after swapgs is complete.
+// for the same reason, we disable interrupts before the swapgs to userspace.
 
 
 .extern SyscallTable
@@ -55,9 +69,10 @@ nx_x64_syscall_entry:
 	// here, because we did not interrupt, literally nothing has changed except some segments, and rcx holds the return
 	// address (which we need to preserve)
 
-	// store the user IP and SP. see scheduler.h for the offsets.
+	// store the user IP, SP, and flags. see scheduler.h for the offsets.
 	movq %rcx, %gs:0x38
 	movq %rsp, %gs:0x40
+	movq %r11, %gs:0x48
 
 	// ok, now we can use %rcx as a scratch register of sorts. the next step is to get us a stack pointer.
 	// when the current thread is scheduled, TSS->RSP0 is set to the top of the kernel stack. we will use
@@ -69,6 +84,10 @@ nx_x64_syscall_entry:
 	// RSP0 is at offset 4 from the TSSBase
 	movq 4(%rcx), %rsp
 
+
+	// interrupts r safe
+	sti
+
 	// ok great we can do stack stuff now.
 	save_regs
 
@@ -78,11 +97,13 @@ nx_x64_syscall_entry:
 
 	restore_regs
 
-	// ok, now we need to restore the user sp and ip.
+	// ok, now we need to restore the user sp and ip and flags
 	movq %gs:0x38, %rcx
 	movq %gs:0x40, %rsp
+	movq %gs:0x48, %r11
 
 	// and off we go
+	cli
 	swapgs
 	sysretq
 
@@ -96,12 +117,15 @@ nx_x64_syscall_entry:
 .type nx_x64_syscall_intr_entry, @function
 nx_x64_syscall_intr_entry:
 	swapgs
+	sti
+
 	save_regs
 
 	do_syscall_jump_table
 
-return:
 	restore_regs
+
+	cli
 	swapgs
 	iretq
 

@@ -53,7 +53,7 @@ namespace syscall
 		{
 			// install the interrupt handler:
 			cpu::idt::setEntry(NX_SYSCALL_INTERRUPT_VECTOR, (addr_t) nx_x64_syscall_intr_entry, 0x08,
-				/* ring3: */ true, /* nestable: */ true);
+				/* ring3: */ true, /* nestable: */ false);
 
 			// install the syscall thingy.
 			// 1. enable the syscall instruction. EFER.SCE is bit 0.
@@ -96,8 +96,8 @@ namespace syscall
 			// 3. lstar stores the syscall entry point.
 			cpu::writeMSR(cpu::MSR_LSTAR, (uint64_t) nx_x64_syscall_entry);
 
-			// 4. mask some stuff, like the direction bit. note we don't mask IF cos syscalls should be preemptible.
-			cpu::writeMSR(cpu::MSR_SF_MASK, 0x400);
+			// 4. mask some stuff, like the direction bit. note we mask IF, so we can enable it when we're ready.
+			cpu::writeMSR(cpu::MSR_SF_MASK, cpu::FLAG_DIRECTION | cpu::FLAG_INTERRUPT);
 		}
 		else
 		{

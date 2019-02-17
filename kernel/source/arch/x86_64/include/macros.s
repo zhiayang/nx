@@ -14,8 +14,8 @@
 
 // on the contrary, if we came from ring 3, cs will be 0x1B, so we will do a swapgs; the same applies when leaving to ring 3.
 .macro swapgs_if_necessary offset=0x8
-	cmp $0x08, \offset(%rsp)
-	je 1f
+	testb $0x3, \offset(%rsp)
+	jz 1f
 	swapgs
 1:
 .endm

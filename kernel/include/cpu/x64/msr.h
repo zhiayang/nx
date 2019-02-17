@@ -22,6 +22,16 @@ namespace nx
 		constexpr uint32_t MSR_GS_BASE          = 0xC000'0101;
 		constexpr uint32_t MSR_KERNEL_GS_BASE   = 0xC000'0102;
 
+		constexpr uint32_t FLAG_CARRY           = (1UL << 0);
+		constexpr uint32_t FLAG_PARITY          = (1UL << 2);
+		constexpr uint32_t FLAG_ADJUST          = (1UL << 4);
+		constexpr uint32_t FLAG_ZERO            = (1UL << 6);
+		constexpr uint32_t FLAG_SIGN            = (1UL << 7);
+		constexpr uint32_t FLAG_TRAP            = (1UL << 8);
+		constexpr uint32_t FLAG_INTERRUPT       = (1UL << 9);
+		constexpr uint32_t FLAG_DIRECTION       = (1UL << 10);
+		constexpr uint32_t FLAG_OVERFLOW        = (1UL << 11);
+
 		constexpr uint32_t CR0_PE               = (1UL << 0);   // protected mode enable
 		constexpr uint32_t CR0_MP               = (1UL << 1);   // monitor coprocessor
 		constexpr uint32_t CR0_EM               = (1UL << 2);   // emulate coprocessor

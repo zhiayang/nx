@@ -48,8 +48,7 @@ nx_x64_tick_handler:
 	// the order doesn't really matter, but we'll just follow the standard order we use and leave holes.
 	push_scratch_regs
 
-	// this actually needs no arguments, it will use... *gasp*
-	// G L O B A L   S T A T E
+
 	call nx_x64_scheduler_tick
 
 	// if it returned 1, we need to context switch. if 0, we iret as usual.

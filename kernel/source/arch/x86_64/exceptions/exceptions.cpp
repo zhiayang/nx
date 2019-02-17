@@ -148,6 +148,11 @@ namespace exceptions
 		using namespace serial;
 
 		faultCount += 1;
+		if(faultCount == 3)
+		{
+			debugprintf("\n\ntriple fault!!!\n");
+			while(1);
+		}
 
 		uint64_t cr2;
 		uint64_t cr3;
@@ -211,6 +216,7 @@ namespace exceptions
 
 		debugprintf("\nfault location:\n");
 		debugprintf("%p   |   %s\n\n", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
+
 
 		// if this was a user program, then fuck that guy.
 		if(scheduler::getCurrentProcess() != scheduler::getKernelProcess())
