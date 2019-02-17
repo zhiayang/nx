@@ -6,9 +6,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <orionx/syscall.h>
-
 #include <nxpc.h>
+#include <syscall.h>
+
+
 
 extern "C" int main()
 {
@@ -61,7 +62,7 @@ extern "C" int main()
 			}
 
 			int ret;
-			__nx_syscall_1(0, ret, 103);
+			__nx_syscall_1(nx::SYSCALL_EXIT, ret, 103);
 		}
 	}
 }

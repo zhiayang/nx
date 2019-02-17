@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <nx/syscall.h>
+#include <nx/syscall_funcs.h>
 
 #if defined(__x86_64__)
 

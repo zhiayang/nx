@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "libnxpc-windows",
+            "name": "libnxsc-windows",
             "includePath": [
                 "${workspaceFolder:nx}/build/sysroot/usr/include"
             ],
@@ -13,7 +13,7 @@
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "${workspaceFolder:libnxpc}"
+                    "${workspaceFolder:libnxsc}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""

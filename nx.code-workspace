@@ -4,10 +4,10 @@
 			"path": "kernel"
 		},
 		{
-			"path": "libs\\libc"
+			"path": "libs\\libnxsc"
 		},
 		{
-			"path": "libs\\libnxpc"
+			"path": "libs\\libc"
 		},
 		{
 			"path": "efx"

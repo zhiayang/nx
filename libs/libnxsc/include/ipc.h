@@ -14,7 +14,7 @@ namespace ipc
 {
 	int send(message_t* msg);
 
-	bool poll();
+	size_t poll();
 	void receive(message_t* msg);
 }
 }

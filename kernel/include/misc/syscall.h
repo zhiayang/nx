@@ -4,7 +4,7 @@
 
 #pragma once
 #include "defs.h"
-#include "export/syscall.h"
+#include "export/syscall_funcs.h"
 
 namespace nx
 {

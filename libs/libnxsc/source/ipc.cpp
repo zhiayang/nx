@@ -1,11 +1,11 @@
-// nxpc.cpp
+// ipc.cpp
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
 #include <syscall.h>
 #include <nx/thread_local.h>
 
-#include "nxpc.h"
+#include "ipc.h"
 
 namespace nx {
 namespace ipc
@@ -26,12 +26,12 @@ namespace ipc
 		return ret;
 	}
 
-	bool poll()
+	size_t poll()
 	{
-		int64_t ret = 0;
+		size_t ret = 0;
 		__nx_syscall_0(SYSCALL_IPC_POLL, ret);
 
-		return (bool) ret;
+		return ret;
 	}
 
 	void receive(message_t* msg)
