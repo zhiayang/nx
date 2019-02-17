@@ -12,11 +12,11 @@ namespace nx
 	{
 		void init();
 
-		int64_t sc_exit(int status);
+		void sc_exit(int status);
 		int64_t sc_ipc_send(void* msg, size_t len);
-		int64_t sc_ipc_peek(void* msg, size_t len);
-		int64_t sc_ipc_poll();
-		int64_t sc_ipc_discard();
-		int64_t sc_ipc_receive(void* msg, size_t len);
+		size_t sc_ipc_peek(void* msg, size_t len);
+		size_t sc_ipc_poll();
+		void sc_ipc_discard();
+		size_t sc_ipc_receive(void* msg, size_t len);
 	}
 }

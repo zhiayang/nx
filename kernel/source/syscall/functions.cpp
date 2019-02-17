@@ -10,18 +10,20 @@ namespace syscall
 	extern "C" void nx_x64_syscall_entry();
 	extern "C" void nx_x64_syscall_intr_entry();
 
-	extern "C" int64_t debug_char(char c)
+	extern "C" void debug_char(char c)
 	{
 		println("char: %c", c);
-		return 0;
 	}
 
-	extern "C" int64_t debug_ptr(void* p)
+	extern "C" void debug_ptr(void* p)
 	{
 		println("ptr: %p", p);
-		return 0;
 	}
 
+	extern "C" void debug_str(char* s)
+	{
+		println("str: %s", s);
+	}
 
 	extern "C" constexpr void* SyscallTable[] =
 	{
@@ -36,7 +38,8 @@ namespace syscall
 		[SYSCALL_IPC_RECEIVE]   = (void*) sc_ipc_receive,
 
 		[6] = (void*) debug_char,
-		[7] = (void*) debug_ptr
+		[7] = (void*) debug_ptr,
+		[8] = (void*) debug_str
 	};
 
 

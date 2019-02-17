@@ -3,7 +3,7 @@
 # This makefile is licensed under the WTFPL
 
 
-WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros # -pedantic-errors
+WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros -Werror=return-type # -pedantic-errors
 
 CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
 

@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <nxpc.h>
+#include <ipc.h>
 #include <syscall.h>
 
 
@@ -37,17 +37,32 @@ extern "C" int main()
 				}
 			}
 
-			int ret;
-			__nx_syscall_1(6, ret, 'a' + nx::ipc::poll());
+			{
+				using namespace nx::ipc;
 
-			nx::ipc::message_t msg;
-			memset(&msg, 0, sizeof(nx::ipc::message_t));
+				{
+					auto str = "hello there!";
 
-			msg.magic = nx::ipc::MAGIC_LE;
-			msg.targetId = 0;
-			msg.version = nx::ipc::CUR_VERSION;
+					char buf[sizeof(message_t) + strlen(str) + 1];
 
-			nx::ipc::send(&msg);
+					auto msg = init_msg((message_t*) buf);
+
+					msg->payloadSize = strlen(str);
+					memcpy(msg->payload, str, strlen(str) + 1);
+
+					send(msg, sizeof(message_t) + msg->payloadSize + 1);
+				}
+
+				while(!poll())
+					;
+
+				auto sz = receive(NULL, 0);
+				char buf[sz] = { };
+
+				receive((message_t*) buf, sz);
+
+				__nx_syscall_1v(8, ((message_t*) buf)->payload);
+			}
 		}
 
 		if(ctr2 == 16)

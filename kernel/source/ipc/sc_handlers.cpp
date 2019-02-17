@@ -9,12 +9,19 @@ namespace nx
 	using namespace nx::ipc;
 
 
-	int64_t syscall::sc_ipc_discard()
+	void syscall::sc_ipc_discard()
 	{
-		return 0;
+		auto proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		if(proc->pendingMessages.size() > 0)
+		{
+			autolock lk(&proc->msgQueueLock);
+			proc->pendingMessages.popFront();
+		}
 	}
 
-	int64_t syscall::sc_ipc_poll()
+	size_t syscall::sc_ipc_poll()
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -22,26 +29,44 @@ namespace nx
 		return (int64_t) proc->pendingMessages.size();
 	}
 
-	int64_t syscall::sc_ipc_receive(void* _msg, size_t len)
+	size_t syscall::sc_ipc_receive(void* msg, size_t len)
 	{
-		// unimplemented!
-		return -1;
+		// note: there is no race condition here cos new messages go to the back, and discard pops from the front.
+		auto ret = sc_ipc_peek(msg, len);
+
+		// note: we only discard if we received a proper buffer.
+		if(msg && ret) sc_ipc_discard();
+
+		return ret;
 	}
 
-	int64_t syscall::sc_ipc_peek(void* _msg, size_t len)
+	size_t syscall::sc_ipc_peek(void* _buf, size_t len)
 	{
-		if(!_msg) return -1;
+		auto proc = scheduler::getCurrentProcess();
+		assert(proc);
 
-		auto msg = (message_t*) _msg;
-		assert(msg);
+		if(proc->pendingMessages.empty())
+			return 0;
 
-		// unimplemented!
-		return -1;
+		if(!_buf)
+			return proc->pendingMessages.front()->payloadSize + sizeof(message_t);
+
+
+		auto buf = (message_t*) _buf;
+		assert(buf);
+
+		auto msg = proc->pendingMessages.front();
+		auto totalLen = sizeof(message_t) + msg->payloadSize;
+		if(totalLen > len)
+			return 0;
+
+		memcpy(buf, msg, totalLen);
+		return totalLen;
 	}
 
 	int64_t syscall::sc_ipc_send(void* _msg, size_t len)
 	{
-		if(!_msg) return -1;
+		if(!_msg || len == 0) return -1;
 
 		auto msg = (message_t*) _msg;
 		assert(msg);
@@ -59,6 +84,11 @@ namespace nx
 		if((msg->version & ~0xFF) != 0)
 		{
 			error("ipc", "invalid feature flags %x in message; discarding", msg->version & ~0xFF);
+			return -1;
+		}
+		if(len > MAX_MESSAGE_SIZE)
+		{
+			error("ipc", "message size of %zu exceeds max of %zu; discarding", msg->payloadSize, MAX_MESSAGE_SIZE);
 			return -1;
 		}
 		if(msg->payloadSize > MAX_PAYLOAD_SIZE)

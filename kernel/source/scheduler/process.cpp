@@ -85,6 +85,8 @@ namespace scheduler
 			return &KernelProcess;
 
 		auto cpu = getCurrentCPU();
+		assert(cpu);
+
 		if(__unlikely(!cpu->currentProcess))
 			return &KernelProcess;
 

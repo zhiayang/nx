@@ -10,6 +10,21 @@ namespace nx
 	{
 		static nx::mutex queueLock;
 		static nx::list<message_t*> messageQueue;
+
+		static message_t* prepare_msg(size_t payloadSz)
+		{
+			auto msg = new ((void*) heap::allocate(sizeof(message_t) + payloadSz, alignof(message_t))) message_t;
+			memset(msg, 0, sizeof(message_t));
+
+			msg->magic = MAGIC_LE;
+			msg->version = 1;
+			msg->messageClass = 0;
+
+			msg->payloadSize = payloadSz;
+
+			return msg;
+		}
+
 		static void dispatcher()
 		{
 			while(true)
@@ -23,25 +38,26 @@ namespace nx
 					}
 
 					assert(msg);
-					log("ipc", "message from %lu", msg->senderId);
-
+					log("ipc", "message from %lu: %s", msg->senderId, msg->payloadSize > 0 ? msg->payload : 0);
 
 					// for now reply the mesage.
 					if(auto proc = scheduler::getProcessWithId(msg->senderId); proc)
 					{
-						auto reply = new ((void*) heap::allocate(sizeof(message_t), alignof(message_t))) message_t;
+						if(msg->payloadSize > 0 && strcmp((const char*) msg->payload, "hello there!") == 0)
+						{
+							const char* str = "general kenobi!";
+							auto reply = prepare_msg(strlen(str) + 1);
 
-						reply->magic = MAGIC_LE;
-						reply->version = 1;
-						reply->messageClass = 0;
+							memcpy(reply->payload, str, strlen(str));
 
-						reply->senderId = 0;
-						reply->targetId = msg->senderId;
+							reply->senderId = 0;
+							reply->targetId = msg->senderId;
 
-						reply->payloadSize = 0;
-
-						// TODO: @LockSafety lock this!
-						proc->pendingMessages.append(reply);
+							{
+								autolock lk(&proc->msgQueueLock);
+								proc->pendingMessages.append(reply);
+							}
+						}
 					}
 				}
 

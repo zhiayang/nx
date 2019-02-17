@@ -59,6 +59,7 @@ namespace nx
 			// see syscall/syscall.s
 			uint64_t syscallRetInstrPtr;    // ofs: 0x38
 			uint64_t syscallRetStackPtr;    // ofs: 0x40
+			uint64_t syscallRetRFlags;      // ofs: 0x48
 		};
 
 		struct CPU
@@ -91,6 +92,7 @@ namespace nx
 			size_t tlsAlign = 0;
 			size_t tlsSize = 0;
 
+			nx::mutex msgQueueLock;
 			nx::list<ipc::message_t*> pendingMessages;
 
 			extmm::State vmmStates[vmm::NumAddressSpaces];

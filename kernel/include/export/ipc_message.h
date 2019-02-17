@@ -13,7 +13,8 @@ namespace ipc
 	constexpr uint32_t MAGIC_LE         = 0x6370786e;    // 'nxpc' but in little endian so 'cpxn'
 	constexpr uint32_t MAGIC_BE         = 0x6e787063;    // 'nxpc'
 
-	constexpr size_t MAX_PAYLOAD_SIZE   = 768;
+	constexpr size_t MAX_PAYLOAD_SIZE   = 3500;
+	constexpr size_t MAX_MESSAGE_SIZE   = 4000;
 
 	constexpr uint8_t CUR_VERSION       = 1;
 

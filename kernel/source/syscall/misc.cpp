@@ -7,7 +7,7 @@
 namespace nx {
 namespace syscall
 {
-	int64_t sc_exit(int status)
+	void sc_exit(int status)
 	{
 		// ok good. this will yield.
 		scheduler::exit(status);

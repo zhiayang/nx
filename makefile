@@ -29,7 +29,7 @@ MEMORY              = 256
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
 
-QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
+QEMU_CPU_CONFIG     = -display none -smp 4 -cpu qemu64,fsgsbase=true
 QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
