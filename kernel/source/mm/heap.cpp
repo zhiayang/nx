@@ -47,11 +47,22 @@ namespace heap
 	static size_t NumSpareChunks = 0;
 	static Chunk* SpareChunks = 0;
 
+	static size_t AllocatedByteCount = 0;
+
+
+	static addr_t internal_allocatePages(size_t num)
+	{
+		auto kproc = scheduler::getKernelProcess();
+		assert(kproc);
+
+		return vmm::allocate(num, vmm::AddressSpace::KernelHeap, 0, kproc);
+	}
+
 
 	static void makeSpareChunks()
 	{
 		// make us one page worth of spare chunks -- 256 of them.
-		addr_t chunkBuffer = vmm::allocate(1, vmm::AddressSpace::KernelHeap);
+		addr_t chunkBuffer = internal_allocatePages(1);
 		if(chunkBuffer == 0) abort("heap::makeSpareChunks(): out of memory!");
 
 		// memset((void*) chunkBuffer, 0, 1 * PAGE_SIZE);
@@ -99,7 +110,7 @@ namespace heap
 
 	static void expandBucket(Bucket* bucket)
 	{
-		addr_t memoryBuffer = vmm::allocate(ExpansionFactor, vmm::AddressSpace::KernelHeap);
+		addr_t memoryBuffer = internal_allocatePages(ExpansionFactor);
 		if(memoryBuffer == 0) abort("heap::expandBucket(): out of memory!");
 
 
@@ -206,8 +217,8 @@ namespace heap
 
 		// each bucket gets exactly one page worth of memory for its chunks -- minus the slack space.
 		// redistribution of wealth and all that
-		addr_t chunkBuffer = vmm::allocate(numChunkPages, vmm::AddressSpace::KernelHeap);
-		addr_t memoryBuffer = vmm::allocate(BucketCount, vmm::AddressSpace::KernelHeap);
+		addr_t chunkBuffer = internal_allocatePages(numChunkPages);
+		addr_t memoryBuffer = internal_allocatePages(BucketCount);
 
 		// memset((void*) chunkBuffer, 0, numChunkPages * PAGE_SIZE);
 
@@ -334,7 +345,7 @@ namespace heap
 			// very slightly above a page size! whatever.
 
 			size_t num = (total_size + PAGE_SIZE) / PAGE_SIZE;
-			return_ptr = vmm::allocate(num, vmm::AddressSpace::KernelHeap);
+			return_ptr = internal_allocatePages(num);
 		}
 		else
 		{
@@ -370,6 +381,7 @@ namespace heap
 
 		auto ret = align_the_memory(return_ptr, align);
 
+		AllocatedByteCount += total_size;
 		return ret;
 	}
 
@@ -429,8 +441,15 @@ namespace heap
 
 			// ok, we're done.
 		}
+
+		AllocatedByteCount -= sz;
 	}
 
+
+	size_t getNumAllocatedBytes()
+	{
+		return AllocatedByteCount;
+	}
 }
 }
 

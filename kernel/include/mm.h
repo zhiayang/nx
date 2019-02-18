@@ -19,6 +19,8 @@ namespace nx
 		void deallocate(addr_t addr);
 
 		bool initialised();
+
+		size_t getNumAllocatedBytes();
 	}
 
 	namespace pmm
