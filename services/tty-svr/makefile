@@ -1,7 +1,7 @@
 # Makefile for UnixCompatLibC.
 # Written in 2014
 
-CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -Iinclude
+CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -Iinclude -fno-rtti
 
 CXXSRC		= $(shell find source -name "*.cpp")
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)

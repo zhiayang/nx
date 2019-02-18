@@ -145,7 +145,7 @@ namespace nx
 		vabort_nohalt(fmt, args);
 		util::printStackTrace();
 
-		while(true);
+		halt();
 	}
 
 	[[noreturn]] void abort(const char* fmt, ...)

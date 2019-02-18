@@ -54,12 +54,6 @@ namespace nx
 			addr_t cr3 = 0;                 // ofs: 0x20
 			addr_t unused = 0;              // ofs: 0x28
 			CPU* cpu = 0;                   // ofs: 0x30
-
-			// do not change the position of stuff before this!!!
-			// see syscall/syscall.s
-			uint64_t syscallRetInstrPtr;    // ofs: 0x38
-			uint64_t syscallRetStackPtr;    // ofs: 0x40
-			uint64_t syscallRetRFlags;      // ofs: 0x48
 		};
 
 		struct CPU

@@ -2,11 +2,13 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <ipc.h>
+#include <svr/tty.h>
 #include <syscall.h>
 
 extern "C" int main()
@@ -23,7 +25,7 @@ extern "C" int main()
 	int ctr2 = 0;
 	while(true)
 	{
-		if(ctr++ % 50000000 == 0)
+		if(ctr++ % 20000000 == 0)
 		{
 			ctr2++;
 			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
@@ -37,46 +39,49 @@ extern "C" int main()
 
 			{
 				using namespace nx::ipc;
-
 				{
 					auto str = "hello there!";
 
-					char buf[sizeof(message_t) + strlen(str) + 1];
+					char buf[sizeof(message_t) + sizeof(ttysvr::payload_t) + strlen(str) + 1];
 
 					auto msg = init_msg((message_t*) buf);
+					msg->targetId = 1;
 
-					msg->payloadSize = strlen(str);
-					memcpy(msg->payload, str, strlen(str) + 1);
+					msg->payloadSize = sizeof(ttysvr::payload_t) + strlen(str) + 1;
+					auto ttypl = (ttysvr::payload_t*) msg->payload;
 
-					send(msg, sizeof(message_t) + msg->payloadSize + 1);
+					ttypl->magic = ttysvr::MAGIC;
+					ttypl->tty = 1;
+
+					ttypl->dataSize = strlen(str) + 1;
+					memcpy(ttypl->data, str, strlen(str));
+
+					send(msg, sizeof(message_t) + msg->payloadSize);
 				}
-
-				while(!poll())
-					;
-
-				auto sz = receive(NULL, 0);
-				char buf[sz] = { };
-
-				receive((message_t*) buf, sz);
-
-				__nx_syscall_1v(13, ((message_t*) buf)->payload);
 			}
 		}
 
-		if(ctr2 == 16)
+		if(ctr2 == 4)
 		{
-			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
-			for(int y = 0; y < 300; y++)
-			{
-				for(int x = 0; x < 800; x++)
-				{
-					*(fb + y * 800 + x) = 0;
-				}
-			}
-
-			int ret;
-			__nx_syscall_1(nx::SYSCALL_EXIT, ret, 103);
+			ctr2 = 0;
+			printf("cycle\n");
 		}
+
+		// if(ctr2 == 12)
+		// {
+		// 	uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
+		// 	for(int y = 0; y < 300; y++)
+		// 	{
+		// 		for(int x = 0; x < 800; x++)
+		// 		{
+		// 			*(fb + y * 800 + x) = 0;
+		// 		}
+		// 	}
+
+		// 	// int ret;
+		// 	// __nx_syscall_1(nx::SYSCALL_EXIT, ret, 103);
+		// }
+
 	}
 }
 

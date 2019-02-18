@@ -57,8 +57,25 @@ namespace util
 		return "??";
 	}
 
+	// this does not make temp strings, which comes in handy when we have heap problems
+	// that cause aborts.
+	const nx::string* getSymbolAtAddr1(addr_t x)
+	{
+		// loop through all symbols...
+		for(const auto& sym : symbols)
+		{
+			if(x >= sym.addr && x < sym.addr + sym.size)
+				return &sym.name;
+		}
 
-	void printStackTrace(uint64_t rbp)
+		return 0;
+	}
+
+
+
+
+
+	void printStackTrace(uint64_t _rbp)
 	{
 		serial::debugprintf("\nbacktrace:\n");
 		if(!heap::initialised())
@@ -68,15 +85,24 @@ namespace util
 		}
 
 		int counter = 0;
-		auto frames = getStackFrames(rbp);
-		for(auto frm : frames)
-		{
-			if(frm != 0)
+		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
+
+		do {
+			auto rip = *((addr_t*) (rbp + sizeof(uint64_t)));
+			if(!IS_CANONICAL(rip)) break;
+
+			if(rip)
 			{
-				serial::debugprintf("    %2d: %p   |   %s\n", counter, frm, getSymbolAtAddr(frm).cstr());
+				auto s = getSymbolAtAddr1(rip);
+				if(!s) break;
+
+				serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s->cstr());
 				counter += 1;
 			}
-		}
+
+			rbp = *((addr_t*) rbp);
+
+		} while(rbp);
 	}
 
 

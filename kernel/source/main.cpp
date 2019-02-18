@@ -26,15 +26,14 @@ namespace nx
 
 	void work_thread2()
 	{
+		top:
+		println("500ms");
 		scheduler::sleep(time::milliseconds(500).ns());
+		goto top;
 
-		println("preparing to sleep for 2000 ms...");
-		scheduler::sleep(time::milliseconds(2000).ns());
 
-		println("*yawn*");
-
-		uint64_t ctr = 0;
-		while(true) if(++ctr % 5000000 == 0) print("x");
+		// uint64_t ctr = 0;
+		// while(true) if(++ctr % 5000000 == 0) print("x");
 	}
 
 	void kernel_main()
@@ -52,8 +51,10 @@ namespace nx
 		scheduler::addThread(worker2);
 
 
-		uint64_t ctr = 0;
-		while(true) if(++ctr % 5000000 == 0) print("q");
+		// uint64_t ctr = 0;
+		// while(true) if(++ctr % 5000000 == 0) print("q");
+		while(true);
+
 	}
 
 

@@ -17,7 +17,9 @@ namespace nx
 		if(proc->pendingMessages.size() > 0)
 		{
 			autolock lk(&proc->msgQueueLock);
-			proc->pendingMessages.popFront();
+			auto msg = proc->pendingMessages.popFront();
+
+			delete msg;
 		}
 	}
 
@@ -26,7 +28,7 @@ namespace nx
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		return (int64_t) proc->pendingMessages.size();
+		return proc->pendingMessages.size();
 	}
 
 	size_t syscall::sc_ipc_receive(void* msg, size_t len)

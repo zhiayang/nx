@@ -2,7 +2,16 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+.include "macros.s"
+
 .macro save_regs
+	push %rdi
+	push %rsi
+	push %rdx
+	push %r10
+	push %r8
+	push %r9
+
 	push %rbx
 	push %rbp
 	push %r11
@@ -28,24 +37,28 @@
 	pop %r11
 	pop %rbp
 	pop %rbx
+
+	pop %r9
+	pop %r8
+	pop %r10
+	pop %rdx
+	pop %rsi
+	pop %rdi
 .endm
 
 .macro do_syscall_jump_table
 
-	cmp $SyscallTableEntryCount, %rax
-	jl 1f
+	cmpq (SyscallTableEntryCount), %rax
+	jge 1f
 
-	// %rax contains the syscall number; shift it right by 3 to get the index
-	// into the table.
-	shl $3, %rax
 
 	// setup the arguments. since the syscall entries are C functions, they expect
 	// parameters in %rdi, %rsi, %rdx, %rcx, %r8, %r9
 	// so we swap %rcx and %r10.
-	xchg %rcx, %r10
+	mov %r10, %rcx
 
+	shl $3, %rax
 	call *SyscallTable(%rax)
-
 1:
 .endm
 
@@ -59,8 +72,6 @@
 // for the same reason, we disable interrupts before the swapgs to userspace.
 
 
-.extern SyscallTable
-
 .global nx_x64_syscall_entry
 .type nx_x64_syscall_entry, @function
 nx_x64_syscall_entry:
@@ -69,21 +80,18 @@ nx_x64_syscall_entry:
 	// here, because we did not interrupt, literally nothing has changed except some segments, and rcx holds the return
 	// address (which we need to preserve)
 
-	// store the user IP, SP, and flags. see scheduler.h for the offsets.
-	movq %rcx, %gs:0x38
-	movq %rsp, %gs:0x40
-	movq %r11, %gs:0x48
-
-	// ok, now we can use %rcx as a scratch register of sorts. the next step is to get us a stack pointer.
+	// fetch the kernel stack into r11:
 	// when the current thread is scheduled, TSS->RSP0 is set to the top of the kernel stack. we will use
 	// this as the stack pointer. see scheduler.h for the offset for TSSBase in the CPULocalState.
+	movq %gs:0x10, %r11
+	movq 4(%r11), %r11
 
-	// load TSSBase into RCX
-	movq %gs:0x10, %rcx
+	// make that our stack pointer. now %r11 contains the user stack
+	xchg %rsp, %r11
 
-	// RSP0 is at offset 4 from the TSSBase
-	movq 4(%rcx), %rsp
-
+	// we are now on the kernel stack. save the user rsp and user rip.
+	pushq %r11
+	pushq %rcx
 
 	// interrupts r safe
 	sti
@@ -91,19 +99,18 @@ nx_x64_syscall_entry:
 	// ok great we can do stack stuff now.
 	save_regs
 
-
 	do_syscall_jump_table
-
 
 	restore_regs
 
-	// ok, now we need to restore the user sp and ip and flags
-	movq %gs:0x38, %rcx
-	movq %gs:0x40, %rsp
-	movq %gs:0x48, %r11
-
 	// and off we go
 	cli
+
+	// note that we always set rflags to 0x202; IF set, bit 1 (reserved) set, everything else clear
+	popq %rcx
+	popq %rsp
+	movq $0x202, %r11
+
 	swapgs
 	sysretq
 

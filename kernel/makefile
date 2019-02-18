@@ -21,7 +21,7 @@ CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS         = $(CXXOBJ:.o=.d)
 
 DEBUG_FLAG      := -msse2 -O0 -g
-LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
+LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1
 INCLUDES        = -Iinclude -I$(PROJECT_DIR)/libs -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -I$(PROJECT_DIR)/efx/zircon-efi

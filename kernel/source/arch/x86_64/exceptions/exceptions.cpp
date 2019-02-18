@@ -128,17 +128,24 @@ namespace exceptions
 		using namespace serial;
 
 		debugprintf("\n");
-		debugprintf("rax:    %16.8lx   rbx:   %16.8lx\n", r->rax, r->rbx);
-		debugprintf("rcx:    %16.8lx   rdx:   %16.8lx\n", r->rcx, r->rdx);
-		debugprintf("r08:    %16.8lx   r09:   %16.8lx\n", r->r8, r->r9);
-		debugprintf("r10:    %16.8lx   r11:   %16.8lx\n", r->r10, r->r11);
-		debugprintf("r12:    %16.8lx   r13:   %16.8lx\n", r->r12, r->r13);
-		debugprintf("r14:    %16.8lx   r15:   %16.8lx\n", r->r14, r->r15);
-		debugprintf("rdi:    %16.8lx   rsi:   %16.8lx\n", r->rdi, r->rsi);
-		debugprintf("rbp:    %16.8lx   rsp:   %16.8lx\n", r->rbp, r->rsp);
-		debugprintf("rip:    %16.8lx   cs:    %16.8lx\n", r->rip, r->cs);
-		debugprintf("ss:     %16.8lx   u-rsp: %16.8lx\n", r->ss, r->useresp);
-		debugprintf("rflags: %16.8lx   cr2:   %16.8lx\n", r->rflags, r->cr2);
+		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
+		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
+		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
+		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
+		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
+		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
+		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
+		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
+		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
+		debugprintf("ss:       %16.8lx   u-rsp:    %16.8lx\n", r->ss, r->useresp);
+		debugprintf("rflags:   %16.8lx   cr2:      %16.8lx\n", r->rflags, r->cr2);
+		debugprintf("\n");
+
+		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
+		auto kgsbase = cpu::readMSR(cpu::MSR_KERNEL_GS_BASE);
+		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
+		debugprintf("gs_base:  %16.8lx   kgs_base: %16.8lx\n", gsbase, kgsbase);
+		debugprintf("fs_base:  %16.8lx\n", fsbase);
 	}
 
 
