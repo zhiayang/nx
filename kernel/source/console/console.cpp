@@ -25,6 +25,7 @@ namespace console
 	static uint32_t CurrentFGColour = 0;
 	static uint32_t CurrentBGColour = 0;
 
+	static nx::mutex cursorLock;
 
 	// font rendering stuff.
 	// refer to here: https://www.freetype.org/freetype2/docs/glyphs/glyphs-3.html
@@ -111,6 +112,8 @@ namespace console
 		CurrentBGColour = 0x080808;
 
 		FontScale = 16;
+
+		cursorLock = nx::mutex();
 
 
 		// load the font
@@ -257,6 +260,8 @@ namespace console
 		}
 		else
 		{
+			autolock lk(&cursorLock);
+
 			if(c == '\r')
 			{
 				CursorX = Padding;
