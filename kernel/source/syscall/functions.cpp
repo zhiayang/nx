@@ -27,19 +27,28 @@ namespace syscall
 
 	extern "C" constexpr void* SyscallTable[] =
 	{
-		// defined in syscall/misc.cpp
+		// syscall/sc_misc.cpp
 		[SYSCALL_EXIT]          = (void*) sc_exit,
 
-		// defined in ipc/sc_handlers.cpp
-		[SYSCALL_IPC_SEND]      = (void*) sc_ipc_send,
-		[SYSCALL_IPC_PEEK]      = (void*) sc_ipc_peek,
-		[SYSCALL_IPC_POLL]      = (void*) sc_ipc_poll,
-		[SYSCALL_IPC_DISCARD]   = (void*) sc_ipc_discard,
-		[SYSCALL_IPC_RECEIVE]   = (void*) sc_ipc_receive,
+		// ipc/sc_handlers.cpp
+		[SYSCALL_IPC_SEND]              = (void*) sc_ipc_send,
+		[SYSCALL_IPC_PEEK]              = (void*) sc_ipc_peek,
+		[SYSCALL_IPC_POLL]              = (void*) sc_ipc_poll,
+		[SYSCALL_IPC_DISCARD]           = (void*) sc_ipc_discard,
+		[SYSCALL_IPC_RECEIVE]           = (void*) sc_ipc_receive,
+		[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) 0,
 
-		[6] = (void*) debug_char,
-		[7] = (void*) debug_ptr,
-		[8] = (void*) debug_str
+		// syscall/sc_mmap.cpp
+		[SYSCALL_MMAP_ANON]             = (void*) sc_mmap_anon,
+		[SYSCALL_MMAP_FILE]             = (void*) sc_mmap_file,
+
+		// syscall/sc_vfs.cpp
+		[SYSCALL_VFS_READ]              = (void*) sc_vfs_read,
+		[SYSCALL_VFS_WRITE]             = (void*) sc_vfs_write,
+
+		[11] = (void*) debug_char,
+		[12] = (void*) debug_ptr,
+		[13] = (void*) debug_str
 	};
 
 

@@ -2,15 +2,14 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "../include/stdint.h"
-#include "../include/stdio.h"
-#include "../include/errno.h"
-#include "../include/stdlib.h"
+#include <stdio.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 static FILE _stdin;
 static FILE _stdout;
 static FILE _stderr;
-static FILE _stdlog;
 
 #define BUFFER_SIZE		4096
 
@@ -25,12 +24,10 @@ extern "C" void init_libc()
 	_stdin.__fd		= 0;
 	_stdout.__fd	= 1;
 	_stderr.__fd	= 2;
-	_stdlog.__fd	= 3;
 
 	stdin	= &_stdin;
 	stdout	= &_stdout;
 	stderr	= &_stderr;
-	stdlog	= &_stdlog;
 
 	// init heap
 	Heap::Initialise();

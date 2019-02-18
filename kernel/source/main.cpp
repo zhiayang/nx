@@ -44,31 +44,8 @@ namespace nx
 		// start the ipc dispatcher
 		ipc::init();
 
-		// start some other shit
-		{
-			auto f = vfs::open("/initrd/drivers/placebo", vfs::Mode::Read);
-			assert(f);
-
-			auto sz = vfs::stat(f).fileSize;
-			auto buf = new uint8_t[sz];
-
-			auto didRead = vfs::read(f, buf, sz);
-			if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
-
-			auto proc = scheduler::createProcess("placebo", scheduler::Process::PROC_USER);
-
-			addr_t entryPt = 0;
-			bool success = loader::loadIndeterminateBinary(proc, buf, sz, &entryPt);
-			if(success)
-			{
-				auto thr = scheduler::createThread(proc, (scheduler::Fn0Args_t) entryPt);
-				scheduler::addThread(thr);
-			}
-			else
-			{
-				abort("failed to load!");
-			}
-		}
+		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
+		scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);

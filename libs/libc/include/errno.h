@@ -11,8 +11,8 @@
 
 __BEGIN_DECLS
 
-extern /*__thread*/ int _errno;
-#define errno			_errno
+extern __thread int _errno;
+#define errno       _errno
 
 __END_DECLS
 #define EOPNOTSUPP ENOTSUP

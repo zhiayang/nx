@@ -63,7 +63,7 @@ namespace vmm
 			setupAddrSpace(proc);
 		}
 
-		log("vmm", "initialised vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
+		// log("vmm", "initialised vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
 	}
 
 	void destroy(scheduler::Process* proc)
@@ -77,7 +77,7 @@ namespace vmm
 		// note: we don't need to un-setupAddrSpace, because that doesn't
 		// allocate any memory -- only address spaces.
 
-		log("vmm", "cleaned up vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
+		// log("vmm", "cleaned up vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
 	}
 
 

@@ -9,8 +9,6 @@
 #include <ipc.h>
 #include <syscall.h>
 
-
-
 extern "C" int main()
 {
 	uint64_t ctr = 0;
@@ -61,7 +59,7 @@ extern "C" int main()
 
 				receive((message_t*) buf, sz);
 
-				__nx_syscall_1v(8, ((message_t*) buf)->payload);
+				__nx_syscall_1v(13, ((message_t*) buf)->payload);
 			}
 		}
 

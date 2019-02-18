@@ -9,6 +9,6 @@ all: $(INITRD_DIR)/drivers/placebo
 
 $(INITRD_DIR)/drivers/placebo: source/placebo.cpp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libnxsc.a
 	@echo "# placebo"
-	@$(CXX) $(CXXFLAGS) -o $@ source/placebo.cpp -lnxsc
+	@$(CXX) $(CXXFLAGS) -o $@ -lnxsc source/placebo.cpp
 
 

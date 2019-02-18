@@ -2,6 +2,8 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#if 0
+
 #include "../../include/sys/socket.h"
 #include "../../include/netinet/in.h"
 #include "../../include/sys/un.h"
@@ -111,7 +113,7 @@ extern "C" int connect(int socket, const struct sockaddr* addr, socklen_t addr_l
 // }
 
 
-
+#endif
 
 
 

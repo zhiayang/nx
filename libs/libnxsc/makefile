@@ -15,14 +15,12 @@ CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS     = $(CXXOBJ:.o=.d)
 CDEPS       = $(COBJ:.o=.d)
 
-_UNUSED     := $(shell cp -r include/* $(SYSROOT)/usr/include/)
-
 
 .PHONY: all
 
 all: $(SYSROOT)/usr/lib/libnxsc.a
 
-$(SYSROOT)/usr/lib/libnxsc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
+$(SYSROOT)/usr/lib/libnxsc.a: $(SOBJ) $(COBJ) $(CXXOBJ)
 	@echo "# libnxsc"
 	@$(AR) rcs $(SYSROOT)/usr/lib/libnxsc.a $(SOBJ) $(COBJ) $(CXXOBJ)
 

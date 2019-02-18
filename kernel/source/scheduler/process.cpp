@@ -29,6 +29,7 @@ namespace scheduler
 
 		AllProcesses.append(proc);
 
+		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->cr3);
 		return proc;
 	}
 
@@ -50,6 +51,7 @@ namespace scheduler
 			}
 		}
 
+		log("sched", "destroyed process '%s' (pid: %lu)", proc->processName.cstr(), proc->processId);
 		delete proc;
 	}
 

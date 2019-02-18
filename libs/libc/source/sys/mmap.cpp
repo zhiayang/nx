@@ -3,17 +3,16 @@
 // Licensed under the Apache License Version 2.0.
 
 
-#include "../../include/sys/mman.h"
-#include "../../include/assert.h"
-#include "../../include/stdlib.h"
-#include "../../include/orionx/syscall.h"
+#include <stdlib.h>
+#include <sys/mman.h>
 
+#include <syscall.h>
 
 extern "C" void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
 	if(flags & MAP_ANONYMOUS)
 	{
-		return (void*) Library::SystemCall::MMap_Anonymous((uint64_t) addr, length, prot, flags);
+		return syscall::mmap_anon(addr, length, prot, flags);
 	}
 	else
 	{

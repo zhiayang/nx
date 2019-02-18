@@ -189,24 +189,6 @@ namespace loader
 
 
 
-	// note: we put it here cos for now elfs (elves?) are the only thing we support
-	bool loadIndeterminateBinary(scheduler::Process* proc, void* buf, size_t len, addr_t* entry)
-	{
-		assert(buf);
-		assert(proc);
-		assert(len > 0);
-
-		// check for ELF
-		{
-			auto tmp = (char*) buf;
-			if(tmp[0] == ELFMAG0 && tmp[1] == ELFMAG1 && tmp[2] == ELFMAG2 && tmp[3] == ELFMAG3)
-				return loadELFBinary(proc, buf, len, entry);
-		}
-
-		// oopss.
-		error("loader", "unable to determine executable format; loading failed");
-		return false;
-	}
 }
 }
 

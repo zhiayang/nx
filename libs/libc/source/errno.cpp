@@ -5,7 +5,6 @@
 #include "../include/errno.h"
 #include "../include/stdlib.h"
 
-extern "C"
-{
-	int /*__thread*/ _errno = 0;
+extern "C" {
+	thread_local int _errno = 0;
 }

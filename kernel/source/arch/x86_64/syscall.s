@@ -153,13 +153,6 @@ nx_x64_syscall_intr_entry:
 	vector and arguments identical to the interrupt interface.
 	caller-saved registers (%rax, %rcx, %rdx, %rdi, %rsi, %r8, %r9, %r10, %r11) will be clobbered.
 
-
-
-	* system call vector list *
-
-	0       int exit(int code)
-	1       size_t read(fd_t fd, void* buf, size_t count)
-	2       size_t write(fd_t fd, void* buf, size_t count)
 */
 
 

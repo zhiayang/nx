@@ -29,7 +29,7 @@ MEMORY              = 256
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
 
-QEMU_CPU_CONFIG     = -display none -smp 4 -cpu qemu64,fsgsbase=true
+QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
 QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
@@ -41,7 +41,7 @@ QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -
 INITRD              = $(SYSROOT)/boot/initrd.tar.gz
 
 
-.PHONY: all clean build diskimage qemu debug clean-kernel
+.PHONY: all clean build diskimage qemu debug clean-kernel exportheaders
 
 all: qemu
 
@@ -71,8 +71,17 @@ bochs: diskimage
 diskimage: build
 	@utils/tools/update-diskimage.sh
 
-build:
+exportheaders:
+	@mkdir -p $(SYSROOT)/usr/include/nx/
+	@mkdir -p $(SYSROOT)/usr/include/svr/
+	@cp -r libs/libc/include/* $(SYSROOT)/usr/include/
+	@cp -r libs/libm/include/* $(SYSROOT)/usr/include/
+	@cp -r libs/libnxsc/include/* $(SYSROOT)/usr/include/
 	@cp -r kernel/include/export/* $(SYSROOT)/usr/include/nx/
+
+	@cp -r services/*/include/* $(SYSROOT)/usr/include/svr/
+
+build: exportheaders
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
@@ -81,6 +90,7 @@ build:
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
+	@$(MAKE) -s -C services
 	@tar -cf - -C $(INITRD_DIR)/ . | gzip -9 - > $(INITRD)
 
 clean:
@@ -95,6 +105,7 @@ clean:
 	@rm -f $(SYSROOT)/boot/efxloader
 	@rm -f $(SYSROOT)/boot/nxkernel64
 	@rm -f $(SYSROOT)/usr/lib/*.a
+	@rm -rf $(SYSROOT)/usr/include/*
 
 clean-kernel:
 	@find "kernel" -name "*.o" -delete

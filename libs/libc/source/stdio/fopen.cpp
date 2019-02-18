@@ -6,7 +6,6 @@
 #include "../../include/stdlib.h"
 #include "../../include/unistd.h"
 #include "../../include/fcntl.h"
-#include "../../include/orionx/syscall.h"
 
 extern "C" FILE* fopen(const char* fname, const char* mode)
 {

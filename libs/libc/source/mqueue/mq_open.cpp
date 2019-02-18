@@ -2,6 +2,8 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#if 0
+
 #include <stdarg.h>
 #include "../../include/mqueue.h"
 #include "../../include/fcntl.h"
@@ -46,3 +48,4 @@ extern "C" mqd_t mq_open(const char* path, int flags, ...)
 	return fd;
 }
 
+#endif

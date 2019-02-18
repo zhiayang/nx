@@ -316,6 +316,44 @@ namespace vmm
 	}
 
 
+	bool isMapped(addr_t virt, size_t num, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		bool isOtherProc = (proc != scheduler::getCurrentProcess());
+		if(isOtherProc) performTempMapping(proc);
+
+		assert(isAligned(virt));
+
+		for(size_t i = 0; i < num; i++)
+		{
+			addr_t v = virt + (i * PAGE_SIZE);
+
+			// right.
+			auto p4idx = indexPML4(v);
+			auto p3idx = indexPDPT(v);
+			auto p2idx = indexPageDir(v);
+			auto p1idx = indexPageTable(v);
+
+			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
+			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
+			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
+			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
+
+			if(!(pml4->entries[p4idx] & PAGE_PRESENT))  return false;
+			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))  return false;
+			if(!(pdir->entries[p2idx] & PAGE_PRESENT))  return false;
+			if(!(ptab->entries[p1idx] & PAGE_PRESENT))  return false;
+
+			if(isOtherProc)
+				performTempUnmapping(proc);
+		}
+
+		return true;
+	}
+
+
 	void bootstrap(addr_t physBase, addr_t v, size_t maxPages)
 	{
 		// we will do a very manual allocation of the first page.

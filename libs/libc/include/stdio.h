@@ -21,7 +21,6 @@ extern "C" {
 extern FILE* stdin;
 extern FILE* stdout;
 extern FILE* stderr;
-extern FILE* stdlog;
 
 // typedefs
 typedef off_t fpos_t;

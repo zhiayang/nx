@@ -2,6 +2,8 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#if 0
+
 #include <pthread.h>
 #include "../../include/orionx/syscall.h"
 #include <string.h>
@@ -26,3 +28,5 @@ extern "C" int pthread_create(pthread_t* restrict thread, const pthread_attr_t* 
 
 	return tid > 0 ? 0 : -1;
 }
+
+#endif

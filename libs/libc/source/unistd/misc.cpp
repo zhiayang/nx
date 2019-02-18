@@ -2,6 +2,8 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#if 0
+
 #include "../../include/orionx/syscall.h"
 #include <sys/types.h>
 
@@ -15,3 +17,5 @@ extern "C" pid_t fork()
 {
 	return Library::SystemCall::ForkProcess();
 }
+
+#endif

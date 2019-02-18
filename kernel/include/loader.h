@@ -16,5 +16,6 @@ namespace nx
 		bool loadELFBinary(scheduler::Process* proc, void* ptr, size_t len, addr_t* entry);
 
 		bool loadIndeterminateBinary(scheduler::Process* proc, void* ptr, size_t len, addr_t* entry);
+		scheduler::Thread* loadProgram(const nx::string& path);
 	}
 }

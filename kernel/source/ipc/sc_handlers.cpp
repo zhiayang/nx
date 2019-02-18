@@ -91,11 +91,6 @@ namespace nx
 			error("ipc", "message size of %zu exceeds max of %zu; discarding", msg->payloadSize, MAX_MESSAGE_SIZE);
 			return -1;
 		}
-		if(msg->payloadSize > MAX_PAYLOAD_SIZE)
-		{
-			error("ipc", "payload size of %zu exceeds max of %zu; discarding", msg->payloadSize, MAX_PAYLOAD_SIZE);
-			return -1;
-		}
 
 		msg->senderId = scheduler::getCurrentProcess()->processId;
 

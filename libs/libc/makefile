@@ -15,14 +15,13 @@ SOBJ		= $(SSRC:.s=.s.o)
 COBJ		= $(CSRC:.c=.c.o)
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 
-.PHONY: all copyhdrs
+.PHONY: all
 
 all: $(SYSROOT)/usr/lib/libc.a
-	@cp -r include/* $(SYSROOT)/usr/include/
 
-$(SYSROOT)/usr/lib/libc.a: copyhdrs $(COBJ) $(CXXOBJ) $(SOBJ) $(HDRS)
+$(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ) $(HDRS)
 	@echo "# libc"
-	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o source/syscall/helper.s.o
+	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o
 	@cp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libg.a
 	@cp source/platform/support/crt0.s.o $(SYSROOT)/usr/lib/crt0.o
 	@cp source/platform/support/crti.s.o $(SYSROOT)/usr/lib/crti.o

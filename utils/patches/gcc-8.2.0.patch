@@ -43,7 +43,7 @@ diff -urN /home/zhiayang/code/orionx-gcc/gcc-8.2.0-backup/gcc/config/aarch64/ori
 +#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
 +
 +#undef  LIB_SPEC
-+#define LIB_SPEC "-lc -lm"
++#define LIB_SPEC "-lc -lm -lnxsc"
 +
 +#undef  PID_TYPE
 +#define PID_TYPE "long int"
@@ -93,7 +93,7 @@ diff -urN /home/zhiayang/code/orionx-gcc/gcc-8.2.0-backup/gcc/config/i386/orionx
 +#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
 +
 +#undef  LIB_SPEC
-+#define LIB_SPEC "-lc -lm"
++#define LIB_SPEC "-lc -lm -lnxsc"
 +
 +#undef  PID_TYPE
 +#define PID_TYPE "long int"

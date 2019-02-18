@@ -5,7 +5,6 @@
 #include "../../include/stdio.h"
 #include "../../include/stdlib.h"
 #include "../../include/unistd.h"
-#include "../../include/orionx/syscall.h"
 
 extern "C" int fclose(FILE* file)
 {

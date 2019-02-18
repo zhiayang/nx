@@ -18,5 +18,13 @@ namespace nx
 		size_t sc_ipc_poll();
 		void sc_ipc_discard();
 		size_t sc_ipc_receive(void* msg, size_t len);
+
+		void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags);
+		void* sc_mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);
+
+		int sc_munmap(void* req_addr, size_t length);
+
+		ssize_t sc_vfs_read(int fd, void* buf, size_t len);
+		ssize_t sc_vfs_write(int fd, const void* buf, size_t len);
 	}
 }

@@ -2,6 +2,8 @@
 // Copyright (c) 2014 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#if 0
+
 #include "../include/spawn.h"
 #include "../../include/orionx/syscall.h"
 
@@ -20,3 +22,5 @@ int posix_spawnp(pid_t* restrict pid, const char* restrict file, const posix_spa
 {
 	return posix_spawn(pid, file, file_actions, attrp, argv, envp);
 }
+
+#endif
