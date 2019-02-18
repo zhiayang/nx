@@ -29,10 +29,25 @@ namespace krt
 		{
 			friend listlike_impl;
 
-			iterator& operator ++ ()        { this->node = this->node->next; return *this; }
-			iterator operator ++ (int)      { iterator copy(*this); ++(*this); return copy; }
+			iterator& operator ++ ()
+			{
+				if(!this->node)
+					aborter::abort("out of range!");
 
-			iterator& operator -- ()        { this->node = this->node->prev; return *this; }
+				this->node = this->node->next;
+				return *this;
+			}
+
+			iterator& operator -- ()
+			{
+				if(!this->node)
+					aborter::abort("out of range!");
+
+				this->node = this->node->prev;
+				return *this;
+			}
+
+			iterator operator ++ (int)      { iterator copy(*this); ++(*this); return copy; }
 			iterator operator -- (int)      { iterator copy(*this); --(*this); return copy; }
 
 
@@ -57,10 +72,25 @@ namespace krt
 		{
 			friend listlike_impl;
 
-			const_iterator& operator ++ ()      { this->node = this->node->next; return *this; }
-			const_iterator operator ++ (int)    { const_iterator copy(*this); ++(*this); return copy; }
+			const_iterator& operator ++ ()
+			{
+				if(!this->node)
+					aborter::abort("out of range!");
 
-			const_iterator& operator -- ()      { this->node = this->node->prev; return *this; }
+				this->node = this->node->next;
+				return *this;
+			}
+
+			const_iterator& operator -- ()
+			{
+				if(!this->node)
+					aborter::abort("out of range!");
+
+				this->node = this->node->prev;
+				return *this;
+			}
+
+			const_iterator operator ++ (int)    { const_iterator copy(*this); ++(*this); return copy; }
 			const_iterator operator -- (int)    { iterator copy(*this); --(*this); return copy; }
 
 			bool operator == (const const_iterator& other) const { return other.node == this->node; }
@@ -203,9 +233,9 @@ namespace krt
 			self->cnt = 0;
 		}
 
-		static void deleteNode(Container* self, Node* node)
+		static Node* deleteNode(Container* self, Node* node)
 		{
-			if(!node) return;
+			if(!node) return 0;
 
 			self->cnt -= 1;
 			if(node == self->head)
@@ -229,6 +259,14 @@ namespace krt
 				if(node->next)
 					node->next->prev = node->prev;
 			}
+
+			// ok now get rid of the node.
+			auto ret = node->next;
+
+			node->~Node();
+			allocator::deallocate(node);
+
+			return ret;
 		}
 
 
@@ -292,8 +330,9 @@ namespace krt
 			at->next = node;
 
 			if(next) next->prev = node;
-
 			if(at == self->tail) self->tail = node;
+
+			self->cnt += 1;
 		}
 
 

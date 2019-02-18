@@ -63,9 +63,9 @@ namespace krt
 			return *this;
 		}
 
-		void clear()                    { impl::clear(this); }
+		void clear()                        { impl::clear(this); }
 
-		void erase(const iterator& it)  { impl::deleteNode(this, impl::getNode(it)); }
+		iterator erase(const iterator& it)  { return iterator(impl::deleteNode(this, impl::getNode(it)), this); }
 
 		void insertAfter(const iterator& it, const T& val)  { impl::insertAfter(this, impl::getNode(it), val); }
 		void insertBefore(const iterator& it, const T& val) { impl::insertBefore(this, impl::getNode(it), val); }

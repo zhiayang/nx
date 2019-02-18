@@ -192,14 +192,22 @@ namespace scheduler
 	void unblock(mutex* mtx)
 	{
 		// hmm.
-		for(auto thr : getSchedState()->BlockedThreads)
+		auto& bthrs = getSchedState()->BlockedThreads;
+
+		for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 		{
 			if(thr->state == ThreadState::BlockedOnMutex && thr->blockedMtx == mtx)
 			{
 				thr->blockedMtx = 0;
 				thr->state = ThreadState::Stopped;
 
-				getSchedState()->ThreadList.prepend(thr);
+				getSchedState()->ThreadList.prepend(*thr);
+
+				thr = bthrs.erase(thr);
+			}
+			else
+			{
+				thr++;
 			}
 		}
 	}
@@ -226,15 +234,22 @@ namespace scheduler
 		// TODO: optimise this!!!! (eg. sort the threads by the wakeup timestamp)
 
 		auto now = getElapsedNanoseconds();
-		for(auto thr : getSchedState()->BlockedThreads)
+		auto& bthrs = getSchedState()->BlockedThreads;
+		for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 		{
 			if(thr->state == ThreadState::BlockedOnSleep && now >= thr->wakeUpTimestamp)
 			{
 				thr->wakeUpTimestamp = 0;
 				thr->state = ThreadState::Stopped;
 
-				getSchedState()->ThreadList.prepend(thr);
+				getSchedState()->ThreadList.prepend(*thr);
 				woke = true;
+
+				thr = bthrs.erase(thr);
+			}
+			else
+			{
+				thr++;
 			}
 		}
 
