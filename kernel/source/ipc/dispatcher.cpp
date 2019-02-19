@@ -33,7 +33,6 @@ namespace nx
 					}
 				}
 
-				log("heap", "alloc: %zu", heap::getNumAllocatedBytes());
 				scheduler::yield();
 			}
 		}

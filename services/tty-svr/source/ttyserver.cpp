@@ -21,32 +21,28 @@ extern "C" int main()
 		while(!ipc::poll())
 			;
 
-		printf("got a message!\n");
-		ipc::discard();
-
-		// size_t bufSz = ipc::receive(nullptr, 0);
+		size_t bufSz = ipc::receive(nullptr, 0);
 		// printf("received a message: %zu\n", bufSz);
 
-		// auto buf = (char*) malloc(bufSz);
-		// printf("malloc: %p\n", buf);
+		auto buf = (char*) malloc(bufSz);
 
-		// auto msgSz = ipc::receive((ipc::message_t*) buf, bufSz);
+		auto msgSz = ipc::receive((ipc::message_t*) buf, bufSz);
 
-		// if(msgSz > 0)
-		// {
-		// 	auto msg = (ipc::message_t*) buf;
-		// 	if(msg->payloadSize > 0)
-		// 	{
-		// 		auto tty_payload = (ttysvr::payload_t*) msg->payload;
-		// 		if(tty_payload->magic != ttysvr::MAGIC)
-		// 			continue;
+		if(msgSz > 0)
+		{
+			auto msg = (ipc::message_t*) buf;
+			if(msg->payloadSize > 0)
+			{
+				auto tty_payload = (ttysvr::payload_t*) msg->payload;
+				if(tty_payload->magic != ttysvr::MAGIC)
+					continue;
 
-		// 		// TODO: verify the sanity of the tty payload
-		// 		syscall::vfs_write((int) tty_payload->tty, tty_payload->data, tty_payload->dataSize);
-		// 	}
-		// }
+				// TODO: verify the sanity of the tty payload
+				// syscall::vfs_write((int) tty_payload->tty, tty_payload->data, tty_payload->dataSize);
+			}
+		}
 
-		// free(buf);
+		free(buf);
 	}
 }
 

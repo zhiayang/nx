@@ -14,8 +14,8 @@ extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* )
 namespace nx {
 namespace scheduler
 {
-	constexpr uint64_t NS_PER_TICK           = time::milliseconds(10).ns();
-	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(40).ns();
+	constexpr uint64_t NS_PER_TICK           = time::milliseconds(5).ns();
+	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(15).ns();
 
 	static_assert(NS_PER_TICK <= TIMESLICE_DURATION_NS);
 	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary

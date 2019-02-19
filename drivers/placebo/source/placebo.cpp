@@ -25,7 +25,7 @@ extern "C" int main()
 	int ctr2 = 0;
 	while(true)
 	{
-		if(ctr++ % 20000000 == 0)
+		if(ctr++ % 35000000 == 0)
 		{
 			ctr2++;
 			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
@@ -64,7 +64,7 @@ extern "C" int main()
 		if(ctr2 == 4)
 		{
 			ctr2 = 0;
-			printf("cycle\n");
+			// printf("cycle\n");
 		}
 
 		// if(ctr2 == 12)

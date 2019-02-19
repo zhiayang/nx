@@ -5,28 +5,13 @@
 .include "macros.s"
 
 .macro save_regs
-	push %rdi
-	push %rsi
-	push %rdx
-	push %r10
-	push %r8
-	push %r9
-
-	push %rbx
-	push %rbp
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
-
-	xor %rbx, %rbx
-	xor %rbp, %rbp
-	xor %r11, %r11
-	xor %r12, %r12
-	xor %r13, %r13
-	xor %r14, %r14
-	xor %r15, %r15
+	push %rbx; xor %rbx, %rbx
+	push %rbp; xor %rbp, %rbp
+	push %r11; xor %r11, %r11
+	push %r12; xor %r12, %r12
+	push %r13; xor %r13, %r13
+	push %r14; xor %r14, %r14
+	push %r15; xor %r15, %r15
 .endm
 
 .macro restore_regs
@@ -38,12 +23,12 @@
 	pop %rbp
 	pop %rbx
 
-	pop %r9
-	pop %r8
-	pop %r10
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	xor %r9, %r9
+	xor %r8, %r8
+	xor %r10, %r10
+	xor %rdx, %rdx
+	xor %rsi, %rsi
+	xor %rdi, %rdi
 .endm
 
 .macro do_syscall_jump_table

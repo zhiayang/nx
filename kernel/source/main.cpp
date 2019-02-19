@@ -27,8 +27,8 @@ namespace nx
 	void work_thread2()
 	{
 		top:
-		println("500ms");
-		scheduler::sleep(time::milliseconds(500).ns());
+		println("1s");
+		scheduler::sleep(time::milliseconds(1000).ns());
 		goto top;
 
 
