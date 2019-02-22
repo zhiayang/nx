@@ -7,7 +7,6 @@
 .macro save_regs
 	push %rbx; xor %rbx, %rbx
 	push %rbp; xor %rbp, %rbp
-	push %r11; xor %r11, %r11
 	push %r12; xor %r12, %r12
 	push %r13; xor %r13, %r13
 	push %r14; xor %r14, %r14
@@ -19,7 +18,6 @@
 	pop %r14
 	pop %r13
 	pop %r12
-	pop %r11
 	pop %rbp
 	pop %rbx
 

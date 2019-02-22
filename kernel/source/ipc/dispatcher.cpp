@@ -9,7 +9,7 @@ namespace nx
 	namespace ipc
 	{
 		static nx::mutex queueLock;
-		static nx::list<message_t*> messageQueue;
+		static nx::list<message_t> messageQueue;
 
 		static void dispatcher()
 		{
@@ -17,16 +17,13 @@ namespace nx
 			{
 				while(messageQueue.size() > 0)
 				{
-					message_t* msg = 0;
+					auto msg = message_t();
 					{
 						autolock lk(&queueLock);
 						msg = messageQueue.popFront();
 					}
 
-					assert(msg);
-					// log("ipc", "message from %lu: %s", msg->senderId, msg->payloadSize > 0 ? msg->payload : 0);
-
-					if(auto proc = scheduler::getProcessWithId(msg->targetId); proc)
+					if(auto proc = scheduler::getProcessWithId(msg.targetId); proc)
 					{
 						autolock lk(&proc->msgQueueLock);
 						proc->pendingMessages.append(msg);
@@ -40,25 +37,33 @@ namespace nx
 		void init()
 		{
 			queueLock = nx::mutex();
-			messageQueue = nx::list<message_t*>();
+			messageQueue = nx::list<message_t>();
 
 			scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), dispatcher));
 		}
 
-		void addMessage(message_t* msg)
+		void addMessage(uint64_t senderId, uint64_t targetId, void* payload, size_t len)
 		{
-			// note: we assert here, because the syscall handler should have verified this already.
-			assert(msg->magic == MAGIC_LE);
-			assert((msg->version & 0xFF) == CUR_VERSION);
-
 			// ok then...
-			auto copy = (message_t*) heap::allocate(sizeof(message_t) + msg->payloadSize, alignof(message_t));
-			memcpy(copy, msg, sizeof(message_t) + msg->payloadSize);
+			auto copy = (void*) heap::allocate(len, 1);
+			memcpy(copy, payload, len);
+
+			auto msg = message_t();
+			msg.payload = copy;
+			msg.payloadSize = len;
+
+			msg.senderId = senderId;
+			msg.targetId = targetId;
 
 			{
 				autolock lk(&queueLock);
-				messageQueue.append(copy);
+				messageQueue.append(msg);
 			}
+		}
+
+		void disposeMessage(message_t& message)
+		{
+			heap::deallocate((addr_t) message.payload);
 		}
 	}
 }

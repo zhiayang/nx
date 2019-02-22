@@ -15,17 +15,20 @@ extern "C" int main()
 {
 	uint64_t ctr = 0;
 
-	constexpr uint32_t colours[4] = {
-		0xffff0000,
-		0xff00ff00,
-		0xff0000ff,
-		0xff00ffff,
+	constexpr uint32_t colours[] = {
+		0xff'fdb813,
+		0xff'f37020,
+		0xff'c9234b,
+		0xff'635fab,
+		0xff'0089cf,
+		0xff'0ab04a,
 	};
+	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
 
 	int ctr2 = 0;
 	while(true)
 	{
-		if(ctr++ % 35000000 == 0)
+		if(ctr++ % 20000000 == 0)
 		{
 			ctr2++;
 			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
@@ -42,13 +45,10 @@ extern "C" int main()
 				{
 					auto str = "hello there!";
 
-					char buf[sizeof(message_t) + sizeof(ttysvr::payload_t) + strlen(str) + 1];
+					size_t len = sizeof(ttysvr::payload_t) + strlen(str) + 1;
+					char buf[len] = { };
 
-					auto msg = init_msg((message_t*) buf);
-					msg->targetId = 1;
-
-					msg->payloadSize = sizeof(ttysvr::payload_t) + strlen(str) + 1;
-					auto ttypl = (ttysvr::payload_t*) msg->payload;
+					auto ttypl = (ttysvr::payload_t*) buf;
 
 					ttypl->magic = ttysvr::MAGIC;
 					ttypl->tty = 1;
@@ -56,15 +56,9 @@ extern "C" int main()
 					ttypl->dataSize = strlen(str) + 1;
 					memcpy(ttypl->data, str, strlen(str));
 
-					send(msg, sizeof(message_t) + msg->payloadSize);
+					send(1, buf, len);
 				}
 			}
-		}
-
-		if(ctr2 == 4)
-		{
-			ctr2 = 0;
-			// printf("cycle\n");
 		}
 
 		// if(ctr2 == 12)

@@ -87,7 +87,7 @@ namespace nx
 			size_t tlsSize = 0;
 
 			nx::mutex msgQueueLock;
-			nx::list<ipc::message_t*> pendingMessages;
+			nx::list<ipc::message_t> pendingMessages;
 
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 

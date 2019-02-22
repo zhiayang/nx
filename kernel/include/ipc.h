@@ -11,9 +11,19 @@ namespace nx
 {
 	namespace ipc
 	{
+		struct message_t
+		{
+			uint64_t senderId;
+			uint64_t targetId;
+
+			void* payload;
+			size_t payloadSize;
+		};
+
 		void init();
 
-		void addMessage(message_t* message);
+		void addMessage(uint64_t senderId, uint64_t targetId, void* payload, size_t len);
+		void disposeMessage(message_t& message);
 	}
 }
 

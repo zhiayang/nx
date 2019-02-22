@@ -22,24 +22,19 @@ extern "C" int main()
 			;
 
 		size_t bufSz = ipc::receive(nullptr, 0);
-		// printf("received a message: %zu\n", bufSz);
+		printf("received a message: %zu\n", bufSz);
 
-		auto buf = (char*) malloc(bufSz);
-
-		auto msgSz = ipc::receive((ipc::message_t*) buf, bufSz);
+		auto buf = malloc(bufSz);
+		auto msgSz = ipc::receive(buf, bufSz);
 
 		if(msgSz > 0)
 		{
-			auto msg = (ipc::message_t*) buf;
-			if(msg->payloadSize > 0)
-			{
-				auto tty_payload = (ttysvr::payload_t*) msg->payload;
-				if(tty_payload->magic != ttysvr::MAGIC)
-					continue;
+			auto tty_payload = (ttysvr::payload_t*) buf;
+			if(tty_payload->magic != ttysvr::MAGIC)
+				continue;
 
-				// TODO: verify the sanity of the tty payload
-				// syscall::vfs_write((int) tty_payload->tty, tty_payload->data, tty_payload->dataSize);
-			}
+			// TODO: verify the sanity of the tty payload
+			syscall::vfs_write((int) tty_payload->tty, tty_payload->data, tty_payload->dataSize);
 		}
 
 		free(buf);

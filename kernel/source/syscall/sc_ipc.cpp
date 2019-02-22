@@ -19,7 +19,7 @@ namespace nx
 			autolock lk(&proc->msgQueueLock);
 			auto msg = proc->pendingMessages.popFront();
 
-			delete msg;
+			disposeMessage(msg);
 		}
 	}
 
@@ -42,7 +42,7 @@ namespace nx
 		return ret;
 	}
 
-	size_t syscall::sc_ipc_peek(void* _buf, size_t len)
+	size_t syscall::sc_ipc_peek(void* buf, size_t len)
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -50,54 +50,33 @@ namespace nx
 		if(proc->pendingMessages.empty())
 			return 0;
 
-		if(!_buf)
-			return proc->pendingMessages.front()->payloadSize + sizeof(message_t);
-
-
-		auto buf = (message_t*) _buf;
-		assert(buf);
+		if(!buf)
+			return proc->pendingMessages.front().payloadSize;
 
 		auto msg = proc->pendingMessages.front();
-		auto totalLen = sizeof(message_t) + msg->payloadSize;
-		if(totalLen > len)
+
+		// buffer too small u dummy
+		if(msg.payloadSize > len)
 			return 0;
 
-		memcpy(buf, msg, totalLen);
-		return totalLen;
+		memcpy(buf, msg.payload, msg.payloadSize);
+		return msg.payloadSize;
 	}
 
-	int64_t syscall::sc_ipc_send(void* _msg, size_t len)
+	int64_t syscall::sc_ipc_send(uint64_t target, void* buf, size_t len)
 	{
-		if(!_msg || len == 0) return -1;
+		if(!buf || len == 0) return -1;
 
-		auto msg = (message_t*) _msg;
-		assert(msg);
-
-		if(msg->magic != MAGIC_LE)
-		{
-			error("ipc", "invalid magic %x in message; discarding", msg->magic);
-			return -1;
-		}
-		if((msg->version & 0xFF) != CUR_VERSION)
-		{
-			error("ipc", "invalid version %d in message; discarding", msg->version & 0xFF);
-			return -1;
-		}
-		if((msg->version & ~0xFF) != 0)
-		{
-			error("ipc", "invalid feature flags %x in message; discarding", msg->version & ~0xFF);
-			return -1;
-		}
 		if(len > MAX_MESSAGE_SIZE)
 		{
-			error("ipc", "message size of %zu exceeds max of %zu; discarding", msg->payloadSize, MAX_MESSAGE_SIZE);
+			error("ipc", "message size of %zu exceeds max of %zu; discarding", len, MAX_MESSAGE_SIZE);
 			return -1;
 		}
 
-		msg->senderId = scheduler::getCurrentProcess()->processId;
+		auto senderId = scheduler::getCurrentProcess()->processId;
 
 		// ok, add it
-		addMessage(msg);
+		addMessage(senderId, target, buf, len);
 
 		return 0;
 	}

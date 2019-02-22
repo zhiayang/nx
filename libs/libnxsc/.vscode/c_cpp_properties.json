@@ -13,7 +13,8 @@
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "${workspaceFolder:libnxsc}"
+                    "${workspaceFolder:libnxsc}",
+                    "${workspaceFolder:nx}/build/sysroot/usr/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
