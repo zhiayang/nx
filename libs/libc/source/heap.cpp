@@ -2,15 +2,27 @@
 // Copyright (c) 2018, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "nx.h"
+//* note: this is literally the same thing as what the kernel uses
+//* just adapted to use mmap instead of vmm::*, plus support for realloc()
+//* which we omit from the kernel because (a) it adds complexity, and (b) we don't need it.
 
-namespace nx {
+// TODO: we need to handle out-of-memory conditions better!!
+//? malloc & friends should return 0 on failure, not abort the program!
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+
+#include <sys/mman.h>
+
 namespace heap
 {
 	struct Chunk
 	{
 		Chunk* next;
-		addr_t memory;
+		uintptr_t memory;
 	};
 
 	struct Bucket
@@ -25,7 +37,7 @@ namespace heap
 		size_t chunkSize;
 	};
 
-	static addr_t align_up(addr_t ptr, size_t align)
+	static uintptr_t align_up(uintptr_t ptr, size_t align)
 	{
 		return (((ptr) + ((align) - 1)) & ~((align) - 1));
 	}
@@ -33,6 +45,12 @@ namespace heap
 	constexpr size_t BucketSizes[] = {
 		24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096
 	};
+
+	using __max_align_t = long double;
+
+	// cannot change!!!
+	constexpr size_t PAGE_SIZE = 0x1000;
+	constexpr uintptr_t PAGE_ALIGN = ~0xFFFULL;
 
 	constexpr size_t ExpansionFactor = 2;
 	constexpr size_t BucketCount = sizeof(BucketSizes) / sizeof(BucketSizes[0]);
@@ -47,23 +65,20 @@ namespace heap
 	static size_t NumSpareChunks = 0;
 	static Chunk* SpareChunks = 0;
 
-	static size_t AllocatedByteCount = 0;
 
-
-	static addr_t internal_allocatePages(size_t num)
+	static uintptr_t NextVirtAddr = 0;
+	static uintptr_t internal_allocatePages(size_t num)
 	{
-		auto kproc = scheduler::getKernelProcess();
-		assert(kproc);
-
-		return vmm::allocate(num, vmm::AddressSpace::KernelHeap, 0, kproc);
+		void* at = (void*) NextVirtAddr;
+		return (uintptr_t) mmap(at, num * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | (at ? MAP_FIXED : 0), 0, 0);
 	}
 
 
 	static void makeSpareChunks()
 	{
 		// make us one page worth of spare chunks -- 256 of them.
-		addr_t chunkBuffer = internal_allocatePages(1);
-		if(chunkBuffer == 0) abort("heap::makeSpareChunks(): out of memory!");
+		uintptr_t chunkBuffer = internal_allocatePages(1);
+		if(chunkBuffer == 0) assert(!"heap::makeSpareChunks(): out of memory!");
 
 		// memset((void*) chunkBuffer, 0, 1 * PAGE_SIZE);
 
@@ -110,8 +125,8 @@ namespace heap
 
 	static void expandBucket(Bucket* bucket)
 	{
-		addr_t memoryBuffer = internal_allocatePages(ExpansionFactor);
-		if(memoryBuffer == 0) abort("heap::expandBucket(): out of memory!");
+		uintptr_t memoryBuffer = internal_allocatePages(ExpansionFactor);
+		if(memoryBuffer == 0) assert(!"heap::expandBucket(): out of memory!");
 
 
 		size_t numBytes = ExpansionFactor * PAGE_SIZE;
@@ -211,14 +226,14 @@ namespace heap
 			}
 		}
 
-		if(slackSpace != 0) abort("failed to consume slack space?!");
+		if(slackSpace != 0) assert(!"failed to consume slack space?!");
 
 		size_t numChunkPages = ((numRequiredChunks * sizeof(Chunk)) + PAGE_SIZE) / PAGE_SIZE;
 
 		// each bucket gets exactly one page worth of memory for its chunks -- minus the slack space.
 		// redistribution of wealth and all that
-		addr_t chunkBuffer = internal_allocatePages(numChunkPages);
-		addr_t memoryBuffer = internal_allocatePages(BucketCount);
+		uintptr_t chunkBuffer = internal_allocatePages(numChunkPages);
+		uintptr_t memoryBuffer = internal_allocatePages(BucketCount);
 
 		// memset((void*) chunkBuffer, 0, numChunkPages * PAGE_SIZE);
 
@@ -256,7 +271,6 @@ namespace heap
 		}
 
 		Initialised = true;
-		log("heap", "initialised with %zu chunks in %zu buckets", numRequiredChunks, BucketCount);
 	}
 
 	bool initialised()
@@ -282,14 +296,14 @@ namespace heap
 				return &Buckets[i];
 		}
 
-		abort("did not find a fitting bucket?!");
+		assert(!"did not find a fitting bucket?!");
 		return 0;
 	}
 
 
 
 	using alignment_offset_t = uint8_t;
-	static addr_t align_the_memory(addr_t ptr, size_t align)
+	static uintptr_t align_the_memory(uintptr_t ptr, size_t align)
 	{
 		auto tmp = ptr;
 		ptr = align_up(ptr + sizeof(alignment_offset_t), align);
@@ -300,11 +314,12 @@ namespace heap
 		return ptr;
 	}
 
-	addr_t allocate(size_t req_size, size_t align)
+
+	uintptr_t allocate(size_t req_size, size_t align)
 	{
 		if(req_size == 0) return 0;
 
-		align = __max(align, alignof(std::max_align_t));
+		align = (align, alignof(__max_align_t));
 
 		assert((align & (align - 1)) == 0);
 		assert(align <= 256);
@@ -333,7 +348,7 @@ namespace heap
 		size_t extra_size = sizeof(size_t) + sizeof(alignment_offset_t) + (align - 1);
 		size_t total_size = req_size + extra_size;
 
-		addr_t return_ptr = 0;
+		uintptr_t return_ptr = 0;
 		if(total_size >= PAGE_SIZE)
 		{
 			// note: we do have a bucket for 4096-byte chunks, but that's mainly
@@ -367,7 +382,7 @@ namespace heap
 			bucket->chunks = chunk->next;
 			bucket->numFreeChunks -= 1;
 
-			addr_t ptr = chunk->memory;
+			uintptr_t ptr = chunk->memory;
 			chunk->memory = 0;
 			chunk->next = 0;
 
@@ -380,12 +395,11 @@ namespace heap
 
 		auto ret = align_the_memory(return_ptr, align);
 
-		AllocatedByteCount += total_size;
 		return ret;
 	}
 
 
-	void deallocate(addr_t _addr)
+	void deallocate(uintptr_t _addr)
 	{
 		if(_addr == 0) return;
 
@@ -403,8 +417,8 @@ namespace heap
 		if(sz >= PAGE_SIZE)
 		{
 			// the size is still the size -- but we do some rounding to get the number of pages.
-			assert(addr == (addr & vmm::PAGE_ALIGN));
-			vmm::deallocate(addr, (sz + PAGE_SIZE) / PAGE_SIZE);
+			assert(addr == (addr & PAGE_ALIGN));
+			munmap((void*) addr, sz);
 		}
 		else
 		{
@@ -440,105 +454,80 @@ namespace heap
 
 			// ok, we're done.
 		}
-
-		AllocatedByteCount -= sz;
 	}
 
 
-	size_t getNumAllocatedBytes()
+	uintptr_t reallocate(uintptr_t usr_addr, size_t req_size, size_t align)
 	{
-		return AllocatedByteCount;
+		if(usr_addr == 0)
+			return allocate(req_size, align);
+
+		auto base_addr = usr_addr;
+
+		// grab the uint8_t offset right behind the addr
+		auto ofs = *(((uint8_t*) base_addr) - 1);
+
+		base_addr -= ofs;
+		base_addr -= sizeof(size_t);
+
+		size_t old_sz = *((size_t*) base_addr);
+		size_t old_real_sz = old_sz - (usr_addr - base_addr);
+
+		// we currently do not support shrinking.
+		if(req_size <= old_sz)
+			return usr_addr;
+
+		if(old_sz >= PAGE_SIZE)
+		{
+			auto newptr = allocate(req_size, align);
+			memcpy((void*) newptr, (void*) usr_addr, old_real_sz);
+
+			deallocate(usr_addr);
+
+			return newptr;
+		}
+		else
+		{
+			// figure out which bucket the current allocation belongs to
+			auto bucket = getFittingBucket(old_sz);
+			assert(bucket);
+
+			// get the size of our bucket.
+			auto bucket_sz = bucket->chunkSize;
+
+			// get the total_size of the new allocation
+			size_t extra_size = sizeof(size_t) + sizeof(alignment_offset_t) + (align - 1);
+			size_t total_size = req_size + extra_size;
+
+			if(bucket_sz >= total_size)
+			{
+				// oh look, we have enough space in the current bucket to accommodate everyone.
+				// update the size & alignment, then return the same memory (potentially a different
+				// address if the alignment was not the same as the original)
+
+				uintptr_t return_ptr = base_addr;
+
+				*((size_t*) return_ptr) = total_size;
+				return_ptr += sizeof(size_t);
+
+				auto ret = align_the_memory(return_ptr, align);
+
+				return ret;
+			}
+			else
+			{
+				// boohoo, we need to make new memory.
+
+				auto newptr = allocate(req_size, align);
+				memcpy((void*) newptr, (void*) usr_addr, old_real_sz);
+
+				deallocate(usr_addr);
+
+				return newptr;
+			}
+		}
 	}
 }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace nx
-{
-	void* _allocator::allocate(size_t cnt, size_t align)
-	{
-		return (void*) heap::allocate(cnt, align);
-	}
-
-	void _allocator::deallocate(void* ptr)
-	{
-		heap::deallocate((addr_t) ptr);
-	}
-}
-
-
-
-/*
-	design of this heap:
-
-	* broad overview *
-
-		We have a fixed number of Buckets (at the time of this writing, 16), each of which is responsible for Chunks of a
-		particular size. The list of sizes that we support are outlined in the BucketSizes array. We start from 24 but generally
-		increase in powers-of-two, while including the 1.5x values (eg. 24, 48, 96, etc)
-
-		Unlike certain heaps where blocks get split/merged, or where there are headers/footers before/after blocks of memory, the
-		memory in which Buckets and Chunks are managed are disjoint from the memory that we hand out to users.
-
-		Each bucket manages a linked list of Chunks. each Chunk points points to a piece of memory, which is what we hand out to callers.
-
-
-	* implementation *
-
-		When allocating, we find the Bucket with the size that's a closest fit to the requested size -- plus some extra for bookkeeping.
-		If the Bucket has run out of Chunks, we call expandBucket() to -- you guessed it -- expand the bucket. After that, we take the
-		first Chunk (the head of the list), and give that out to the user.
-
-		Of note is that the alignment offset is stored immediately before the user-given pointer (as a uint8_t), and the size of the chunk
-		further before that, to let us find the correct Bucket when deallocating memory.
-
-		We also keep a list of 'UsedChunks' in the Bucket, to which we add the chunk that was just allocated; while the contents of the chunk
-		itself are now meaningless, we can reuse the chunk when deallocating memory.
-
-
-
-		When deallocating, we do some pointer math to get both the alignment offset, as well as the total size of the chunk, so that we
-		can find the Bucket that it belongs to. We then get a spare chunk from the UsedChunkList and make it point to the memory that
-		we just received, before adding it back to the FreeChunkList.
-
-		The invariant here is that, because chunks always move from one list to the other, and never out, we should never run out of
-		existing chunks when deallocating memory.
-
-
-
-		When expanding a bucket, we always expand by a fixed size -- currently 2 pages (or 8kb of memory). The variable in this case is
-		the number of chunks required to address that memory. Since we are expanding a specific Bucket, we calculate the number of chunks
-		that would be required (eg. in expanding a 2048-byte Bucket, we only need to create 4 chunks -- but we need 128 for a 64-byte Bucket).
-
-		For the non-power-two sizes that we support, we will inevitably be left with some 'slack space', which we address by giving chunks to
-		other bucket sizes. (we prioritise smaller chunks when redistributing this wealth, because they are more common)
-
-		In order to refer to the memory that we have just sliced up, we use chunks from the 'SpareChunks' list -- which is a linked list (again)
-		of -- you guessed it -- spare chunks. If the number of chunks that we need exceeds the number of spare chunks that we have, we make
-		more spare chunks. Each time we make spare chunks we make 256 of them, because that's how many (ChunksPerPage) that fit in one page.
-
-		We grab some chunks from the spare list, fix them to point to our memory, and add them to the list in their respective Buckets.
-*/
-
-
-
 
 
 

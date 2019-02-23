@@ -23,7 +23,7 @@ namespace krt
 				atleast += 1;
 
 			if(self->cap >= atleast) return false;
-			size_t newsz = __max(16, __max(atleast, (self->cap * 3) / 2));
+			size_t newsz = __max((size_t) 16, __max(atleast, (self->cap * 3) / 2));
 
 
 			auto newptr = (ElmTy*) allocator::allocate(newsz * sizeof(ElmTy), alignof(ElmTy));

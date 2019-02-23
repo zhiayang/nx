@@ -6,19 +6,6 @@
 
 namespace krt
 {
-	struct kernel_allocator
-	{
-		static void* allocate(size_t sz);
-		static void deallocate(void* pt);
-	};
-
-	struct kernel_aborter
-	{
-		static void abort(const char* fmt, ...);
-		static void debuglog(const char* fmt, ...);
-	};
-
-
 	// omg why the fuck are we doing this?!
 	template <typename T, T v>
 	struct integral_constant

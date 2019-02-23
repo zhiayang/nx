@@ -35,12 +35,11 @@ extern func_void_void_t __exitfunc;
 extern tm __tm;
 
 
+#define	RAND_MAX  (__INT_MAX__ - 1)
 
-#define	RAND_MAX		(__INT_MAX__ - 1)
-
-typedef struct	{ int quot; int rem; }			div_t;
-typedef struct	{ long quot; long rem; }		ldiv_t;
-typedef struct	{ long long quot; long long rem; }	lldiv_t;
+typedef struct  { int quot; int rem; }              div_t;
+typedef struct  { long quot; long rem; }            ldiv_t;
+typedef struct  { long long quot; long long rem; }  lldiv_t;
 
 
 
@@ -64,43 +63,42 @@ int mbtowc(wchar_t* pwc, const char* pmb, size_t max);
 
 
 
-#define __min(a, b)		(a > b ? b : a)
-#define __max(a, b)		(a > b ? a : b)
-#define __abs(x)		(x < 0 ? -x : x)
+#define __min(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+#define __max(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#define __abs(a)        ({ __typeof__ (a) _a = (a); _a < 0 ? -_a : _a; })
+
+
+int posix_memalign(void** memptr, size_t alignment, size_t size);
+void* aligned_alloc(size_t alignment, size_t size);
 
 
 
 
 
 
-
-
-
-
-// bunch of shit
-double			atof	(const char* nptr);
-int			atoi	(const char* nptr);
-long			atol	(const char* nptr);
-long long		atoll	(const char* nptr);
-double			strtod	(const char* nptr, char** endptr);
-float			strtof	(const char* nptr, char** endptr);
-long double		strtold	(const char* nptr, char** endptr);
-long			strtol	(const char* nptr, char** endptr, int base);
-long long		strtoll	(const char* nptr, char** endptr, int base);
-unsigned long		strtoul	(const char* nptr, char** endptr, int base);
-unsigned long long	strtoull	(const char* nptr, char** endptr, int base);
-int			rand	();
-void			srand	(unsigned int seed);
-void*			bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
-void			qsort	(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
-int			abs	(int j);
-long int			labs	(long int j);
-long long		llabs	(long long int j);
-div_t			div	(int numer, int denom);
-ldiv_t			ldiv	(long numer, long denom);
-lldiv_t			lldiv	(long long numer, long long denom);
-int			mblen	(const char* s, size_t n);
-void			abort	();
+double atof(const char* nptr);
+int atoi(const char* nptr);
+long atol(const char* nptr);
+long long atoll(const char* nptr);
+double strtod(const char* nptr, char** endptr);
+float strtof(const char* nptr, char** endptr);
+long double strtold(const char* nptr, char** endptr);
+long strtol(const char* nptr, char** endptr, int base);
+long long strtoll(const char* nptr, char** endptr, int base);
+unsigned long strtoul(const char* nptr, char** endptr, int base);
+unsigned long long strtoull(const char* nptr, char** endptr, int base);
+int rand();
+void srand(unsigned int seed);
+void* bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+void qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+int abs(int j);
+long int labs(long int j);
+long long llabs(long long int j);
+div_t div(int numer, int denom);
+ldiv_t ldiv(long numer, long denom);
+lldiv_t lldiv(long long numer, long long denom);
+int mblen(const char* s, size_t n);
+void abort();
 
 char* itoa(int num, char* dest, int base);
 char* ltoa(long num, char* dest, int base);

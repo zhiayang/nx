@@ -72,7 +72,7 @@ diskimage: build
 	@utils/tools/update-diskimage.sh
 
 exportheaders:
-	@rm -r $(SYSROOT)/usr/include/*
+	-@rm -r $(SYSROOT)/usr/include/*
 	@mkdir -p $(SYSROOT)/usr/include/nx/
 	@mkdir -p $(SYSROOT)/usr/include/svr/
 	@cp -r libs/libc/include/* $(SYSROOT)/usr/include/

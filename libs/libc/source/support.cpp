@@ -13,9 +13,9 @@ static FILE _stderr;
 
 #define BUFFER_SIZE		4096
 
-namespace Heap
+namespace heap
 {
-	void Initialise();
+	void init();
 }
 
 extern "C" void init_libc()
@@ -29,8 +29,7 @@ extern "C" void init_libc()
 	stdout	= &_stdout;
 	stderr	= &_stderr;
 
-	// init heap
-	Heap::Initialise();
+	heap::init();
 
 	errno = 0;
 

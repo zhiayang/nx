@@ -5,30 +5,28 @@
 #include <stddef.h>
 #include "../../include/stdint.h"
 #include "../../include/string.h"
-#include "../../include/stdio.h"
 
-#include "../../include/assert.h"
 
-namespace Heap
+namespace heap
 {
-	void* Allocate(size_t Size);
-	void Free(void* Pointer);
-	void* Reallocate(void* ptr, size_t newsize);
+	uintptr_t allocate(size_t req_size, size_t align);
+	uintptr_t reallocate(uintptr_t old, size_t req_size, size_t align);
+	void deallocate(uintptr_t _addr);
 }
 
 extern "C" void* malloc(size_t size)
 {
-	return Heap::Allocate(size);
+	return (void*) heap::allocate(size, 1);
 }
 
 extern "C" void free(void* ptr)
 {
-	Heap::Free(ptr);
+	heap::deallocate((uintptr_t) ptr);
 }
 
 extern "C" void* calloc(size_t num, size_t size)
 {
-	void* ret = Heap::Allocate(num * size);
+	void* ret = (void*) heap::allocate(num * size, 1);
 	memset(ret, 0, num * size);
 
 	return ret;
@@ -36,7 +34,7 @@ extern "C" void* calloc(size_t num, size_t size)
 
 extern "C" void* realloc(void* ptr, size_t newsize)
 {
-	return Heap::Reallocate(ptr, newsize);
+	return (void*) heap::reallocate((uintptr_t) ptr, newsize, 1);
 }
 
 

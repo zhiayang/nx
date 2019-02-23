@@ -9,7 +9,7 @@
 extern "C" void __assert(const char* filename, unsigned long line, const char* function_name, const char* expression)
 {
 	fprintf(stderr, "Assertion failure: %s:%lu: %s: %s\n", filename, line,
-	        function_name, expression);
+			function_name, expression);
 
 	abort();
 }

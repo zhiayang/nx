@@ -32,15 +32,6 @@ namespace krt
 		void write4b(uint32_t value, uint16_t port);
 	}
 
-	namespace heap
-	{
-		void init();
-
-		void* alloc(size_t sz);
-		void free(void* ptr);
-		void* realloc(void* ptr, size_t newsz);
-	}
-
 	namespace util
 	{
 		size_t humanSizedBytes(char* buffer, size_t bytes, bool thousand = false);

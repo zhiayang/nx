@@ -4,9 +4,10 @@
 
 #pragma once
 
-#define __min(a, b)     ((a) > (b) ? (b) : (a))
-#define __max(a, b)     ((a) > (b) ? (a) : (b))
-#define __abs(x)        ((x) < (0) ? (-(x)) : (x))
+#define __min(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+#define __max(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#define __abs(a)        ({ __typeof__ (a) _a = (a); _a < 0 ? -_a : _a; })
+
 
 #define __alignup(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 
