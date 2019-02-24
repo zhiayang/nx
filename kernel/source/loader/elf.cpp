@@ -150,7 +150,7 @@ namespace loader
 					vmm::mapAddress(virt, phys, numPages, virtFlags, proc);
 
 					proc->tlsMasterCopy = virt + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
-					proc->tlsAlign = __max(progHdr->p_align, 1);
+					proc->tlsAlign = __max(progHdr->p_align, (uint64_t) 1);
 					proc->tlsSize = progHdr->p_memsz;
 				}
 				else

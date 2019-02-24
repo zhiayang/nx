@@ -16,8 +16,8 @@ namespace krt
 		ptr_iterator& operator ++ () { this->pointer++; return *this; }
 		ptr_iterator& operator -- () { this->pointer--; return *this; }
 
-		ptr_iterator operator ++ (int)  { ptr_iterator copy(*this); this->pointer++; copy; }
-		ptr_iterator operator -- (int)  { ptr_iterator copy(*this); this->pointer--; copy; }
+		ptr_iterator operator ++ (int)  { ptr_iterator copy(*this); this->pointer++; return copy; }
+		ptr_iterator operator -- (int)  { ptr_iterator copy(*this); this->pointer--; return copy; }
 
 		ptr_iterator& operator += (size_t ofs) { this->pointer += ofs; return *this; }
 		ptr_iterator& operator -= (size_t ofs) { this->pointer += ofs; return *this; }
@@ -30,6 +30,8 @@ namespace krt
 		T& operator * ()             { return *pointer; }
 		const T& operator * () const { return *pointer; }
 
+		T* operator -> ()             { return pointer; }
+		const T* operator -> () const { return pointer; }
 
 		ptr_iterator(const ptr_iterator& other) : pointer(other.pointer) { }
 		ptr_iterator(T* ptr) : pointer(ptr) { }
@@ -44,8 +46,8 @@ namespace krt
 		const_ptr_iterator& operator ++ ()  { this->pointer++; return *this; }
 		const_ptr_iterator& operator -- ()  { this->pointer--; return *this; }
 
-		const_ptr_iterator operator ++ (int){ const_ptr_iterator copy(*this); this->pointer++; copy; }
-		const_ptr_iterator operator -- (int){ const_ptr_iterator copy(*this); this->pointer--; copy; }
+		const_ptr_iterator operator ++ (int){ const_ptr_iterator copy(*this); this->pointer++; return copy; }
+		const_ptr_iterator operator -- (int){ const_ptr_iterator copy(*this); this->pointer--; return copy; }
 
 		const_ptr_iterator& operator += (size_t ofs)    { this->pointer += ofs; return *this; }
 		const_ptr_iterator& operator -= (size_t ofs)    { this->pointer += ofs; return *this; }
@@ -56,6 +58,7 @@ namespace krt
 		bool operator != (const const_ptr_iterator& other) const    { return other.pointer != this->pointer; }
 
 		const T& operator * () const    { return *pointer; }
+		const T* operator -> () const   { return pointer; }
 
 		const_ptr_iterator(const const_ptr_iterator& other) : pointer(other.pointer) { }
 		const_ptr_iterator(T* ptr) : pointer(ptr) { }

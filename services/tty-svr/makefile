@@ -17,7 +17,7 @@ $(INITRD_DIR)/services/tty-svr: $(CXXOBJ) $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/u
 
 %.cpp.o: %.cpp
 	@echo "# $(notdir $<)"
-	@$(CXX) $(CXXFLAGS) -c -MMD -MP -Iinclude -o $@ $<
+	@$(CXX) $(CXXFLAGS) -c -MMD -MP -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -o $@ $<
 
 
 

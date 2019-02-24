@@ -4,6 +4,7 @@
             "name": "tty-svr-windows",
             "includePath": [
                 "${workspaceFolder:tty-svr}/include",
+                "${workspaceFolder:nx}/libs/libkrt/include",
                 "${workspaceFolder:nx}/build/sysroot/usr/include"
             ],
             "defines": [

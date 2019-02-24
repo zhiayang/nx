@@ -104,7 +104,7 @@ namespace tarfs
 			// nx::println("filename: %s, size: %zu", file.name.cstr(), file.size);
 
 			auto s = ((file.size + 511) & ~511);
-			i += __max(512, ((512 + s) / 512) * 512);
+			i += __max((size_t) 512, ((512 + s) / 512) * 512);
 		}
 
 		return true;

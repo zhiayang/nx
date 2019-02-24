@@ -18,10 +18,10 @@ extern "C" int main()
 	printf("this is the tty server\n");
 	while(true)
 	{
-		while(!ipc::poll())
+		size_t bufSz = 0;
+		while(!(bufSz = ipc::receive(nullptr, 0)))
 			;
 
-		size_t bufSz = ipc::receive(nullptr, 0);
 		printf("received a message: %zu\n", bufSz);
 
 		auto buf = malloc(bufSz);
@@ -34,7 +34,7 @@ extern "C" int main()
 				continue;
 
 			// TODO: verify the sanity of the tty payload
-			syscall::vfs_write((int) tty_payload->tty, tty_payload->data, tty_payload->dataSize);
+			syscall::vfs_write(1, tty_payload->data, tty_payload->dataSize);
 		}
 
 		free(buf);

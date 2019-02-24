@@ -196,10 +196,10 @@ namespace scheduler
 
 		for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 		{
-			if(thr->state == ThreadState::BlockedOnMutex && thr->blockedMtx == mtx)
+			if((*thr)->state == ThreadState::BlockedOnMutex && (*thr)->blockedMtx == mtx)
 			{
-				thr->blockedMtx = 0;
-				thr->state = ThreadState::Stopped;
+				(*thr)->blockedMtx = 0;
+				(*thr)->state = ThreadState::Stopped;
 
 				getSchedState()->ThreadList.prepend(*thr);
 
@@ -237,10 +237,10 @@ namespace scheduler
 		auto& bthrs = getSchedState()->BlockedThreads;
 		for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 		{
-			if(thr->state == ThreadState::BlockedOnSleep && now >= thr->wakeUpTimestamp)
+			if((*thr)->state == ThreadState::BlockedOnSleep && now >= (*thr)->wakeUpTimestamp)
 			{
-				thr->wakeUpTimestamp = 0;
-				thr->state = ThreadState::Stopped;
+				(*thr)->wakeUpTimestamp = 0;
+				(*thr)->state = ThreadState::Stopped;
 
 				getSchedState()->ThreadList.prepend(*thr);
 				woke = true;

@@ -51,7 +51,7 @@ extern "C" int main()
 					auto ttypl = (ttysvr::payload_t*) buf;
 
 					ttypl->magic = ttysvr::MAGIC;
-					ttypl->tty = 1;
+					ttypl->tty = 0;
 
 					ttypl->dataSize = strlen(str) + 1;
 					memcpy(ttypl->data, str, strlen(str));
