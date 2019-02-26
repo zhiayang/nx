@@ -19,6 +19,11 @@ namespace krt
 	{
 		struct Node
 		{
+			Node(const ElmTy& v) : value(v) { }
+
+			template <typename... Args>
+			Node(Args&&... args) : value(krt::forward<Args>(args)...) { }
+
 			ElmTy value;
 
 			Node* prev = 0;
@@ -141,19 +146,24 @@ namespace krt
 		static void clone(Container* self, const Container& other)
 		{
 			auto src = other.head;
-			auto dst = new (allocator::allocate(sizeof(Node), alignof(Node))) Node;
-			auto front = dst;
+			Node* dst = 0;
+			Node* front = 0;
+
 
 			while(src)
 			{
-				dst->value = src->value;
+				auto nd = new (allocator::allocate(sizeof(Node), alignof(Node))) Node(src->value);
+				if(dst)
+				{
+					dst->next = nd;
+					nd->prev = dst;
+				}
+				else
+				{
+					front = dst;
+				}
 
-				auto nn = new (allocator::allocate(sizeof(Node), alignof(Node))) Node;
-				nn->prev = dst;
-				dst->next = nn;
-
-				dst = nn;
-
+				dst = nd;
 				src = src->next;
 			}
 
@@ -269,12 +279,8 @@ namespace krt
 			return ret;
 		}
 
-
-		static void insertBefore(Container* self, Node* at, const ElmTy& val)
+		static ElmTy& _insertBefore(Container* self, Node* at, Node* node)
 		{
-			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node;
-			node->value = val;
-
 			// insert at the back.
 			if(at == nullptr)
 			{
@@ -314,14 +320,27 @@ namespace krt
 			}
 
 			self->cnt += 1;
+
+			return node->value;
 		}
 
-		static void insertAfter(Container* self, Node* at, const ElmTy& val)
+		static ElmTy& insertBefore(Container* self, Node* at, const ElmTy& val)
+		{
+			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node(val);
+			return _insertBefore(self, at, node);
+		}
+
+		template <typename... Args>
+		static ElmTy& emplaceBefore(Container* self, Node* at, Args&&... args)
+		{
+			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node(krt::forward<Args>(args)...);
+			return _insertBefore(self, at, node);
+		}
+
+
+		static ElmTy& _insertAfter(Container* self, Node* at, Node* node)
 		{
 			if(at == nullptr) aborter::abort("insertAfter(): cannot insert after end!");
-
-			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node;
-			node->value = val;
 
 			auto next = at->next;
 
@@ -333,8 +352,22 @@ namespace krt
 			if(at == self->tail) self->tail = node;
 
 			self->cnt += 1;
+
+			return node->value;
 		}
 
+		static ElmTy& insertAfter(Container* self, Node* at, const ElmTy& val)
+		{
+			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node(val);
+			return _insertAfter(self, at, node);
+		}
+
+		template <typename... Args>
+		static ElmTy& emplaceAfter(Container* self, Node* at, Args&&... args)
+		{
+			auto node = new (allocator::allocate(sizeof(Node), alignof(Node))) Node(krt::forward<Args>(args)...);
+			return _insertAfter(self, at, node);
+		}
 
 
 

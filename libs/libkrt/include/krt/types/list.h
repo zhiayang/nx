@@ -73,6 +73,26 @@ namespace krt
 		void append(const T& val)       { this->insertBefore(this->end(), val); }
 		void prepend(const T& val)      { this->insertBefore(this->begin(), val); }
 
+		template <typename... Args>
+		T& emplaceAfter(const iterator& it, Args&&... args)
+		{
+			return impl::emplaceAfter(this, impl::getNode(it), krt::forward<Args>(args)...);
+		}
+
+		template <typename... Args>
+		T& emplaceBefore(const iterator& it, Args&&... args)
+		{
+			return impl::emplaceBefore(this, impl::getNode(it), krt::forward<Args>(args)...);
+		}
+
+		template <typename... Args>
+		T& emplaceBack(Args&&... args)  { return this->emplaceBefore(this->end(), krt::forward<Args>(args)...); }
+
+		template <typename... Args>
+		T& emplaceFront(Args&&... args) { return this->emplaceBefore(this->begin(), krt::forward<Args>(args)...); }
+
+
+
 		T popFront()                    { return impl::popFront(this); }
 		T popBack()                     { return impl::popBack(this); }
 

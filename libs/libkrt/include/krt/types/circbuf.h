@@ -22,12 +22,12 @@ namespace krt
 	{
 		struct iterator
 		{
-			ptr_iterator& operator ++ ()            { this->idx = (this->idx + 1) % this->len; return *this; }
-			ptr_iterator operator ++ (int)          { ptr_iterator copy(*this); ++(*this); return copy; }
-			ptr_iterator& operator += (size_t ofs)  { this->idx = (this->idx + ofs) % this->len; return *this; }
+			iterator& operator ++ ()            { this->idx = (this->idx + 1) % this->len; return *this; }
+			iterator operator ++ (int)          { iterator copy(*this); ++(*this); return copy; }
+			iterator& operator += (size_t ofs)  { this->idx = (this->idx + ofs) % this->len; return *this; }
 
-			bool operator == (const ptr_iterator& other) const { return other.pointer == this->pointer && other.idx == this->idx; }
-			bool operator != (const ptr_iterator& other) const { return !(*this == other); }
+			bool operator == (const iterator& other) const { return other.pointer == this->pointer && other.idx == this->idx; }
+			bool operator != (const iterator& other) const { return !(*this == other); }
 
 			T& operator * ()                { return pointer[idx]; }
 			const T& operator * () const    { return pointer[idx]; }
@@ -35,8 +35,8 @@ namespace krt
 			T* operator -> ()               { return &pointer[idx]; }
 			const T* operator -> () const   { return &pointer[idx]; }
 
-			ptr_iterator(const ptr_iterator& other) : pointer(other.pointer, other.idx, other.len) { }
-			ptr_iterator(T* ptr, size_t i, size_t l) : pointer(ptr), idx(i), len(l) { }
+			iterator(const iterator& other) : pointer(other.pointer, other.idx, other.len) { }
+			iterator(T* ptr, size_t i, size_t l) : pointer(ptr), idx(i), len(l) { }
 
 			private:
 			T* pointer;
@@ -50,8 +50,8 @@ namespace krt
 			const_iterator operator ++ (int)            { const_iterator copy(*this); ++(*this); return copy; }
 			const_iterator& operator += (size_t ofs)    { this->idx = (this->idx + ofs) % this->len; return *this; }
 
-			bool operator == (const ptr_iterator& other) const { return other.pointer == this->pointer && other.idx == this->idx; }
-			bool operator != (const ptr_iterator& other) const { return !(*this == other); }
+			bool operator == (const const_iterator& other) const { return other.pointer == this->pointer && other.idx == this->idx; }
+			bool operator != (const const_iterator& other) const { return !(*this == other); }
 
 			const T& operator * () const    { return pointer[idx]; }
 			const T* operator -> () const   { return &pointer[idx]; }
@@ -65,11 +65,6 @@ namespace krt
 			size_t len;
 		};
 
-		// impl details
-		private:
-
-
-		public:
 
 		circularbuf(size_t max) : circularbuf(max, nullptr, 0) { }
 		circularbuf(size_t max, T* p, size_t l)
@@ -151,13 +146,21 @@ namespace krt
 
 		void write(const T& x)
 		{
-			this->writeIdx = _write(this->cap, this->ptr, this->writeIdx, x);
+			this->ptr[this->writeIdx] = x;
+			this->writeIdx = (this->writeIdx + 1) % this->cap;
+
+			this->cnt += 1;
 		}
 
 		T read()
 		{
+			if(this->empty()) aborter::abort("read(): empty buffer!");
+
 			auto ret = this->ptr[this->readIdx];
-			// this->readIdx = (hhi-s>
+			this->readIdx = (this->readIdx + 1) % this->cap;
+
+			this->cnt -= 1;
+			return ret;
 		}
 
 		void write(T* xs, size_t n)
@@ -166,6 +169,13 @@ namespace krt
 				this->write(xs[i]);
 		}
 
+		void read(T* buf, size_t n)
+		{
+			if(this->cnt < n) aborter::abort("read(...): not enough elements!");
+
+			for(size_t i = 0; i < n; i++)
+				buf[i] = this->read();
+		}
 
 
 		void clear()
