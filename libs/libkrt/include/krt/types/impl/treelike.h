@@ -250,7 +250,7 @@ namespace krt
 					auto succ = n;
 					while(succ->parent)
 					{
-						if(succ = succ->parent->right)
+						if(succ == succ->parent->right)
 							succ = succ->parent;
 
 						else
