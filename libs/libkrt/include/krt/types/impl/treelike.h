@@ -334,7 +334,7 @@ namespace krt
 						destroyNode(parent->left), parent->left = nullptr;
 
 					else
-						destroyNode(parent->right), parent->left = nullptr;
+						destroyNode(parent->right), parent->right = nullptr;
 
 					rebalance(self, parent);
 				}
