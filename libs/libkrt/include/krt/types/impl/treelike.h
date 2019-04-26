@@ -320,9 +320,9 @@ namespace krt
 
 		static void deleteNode(Container* self, Node* node)
 		{
-			self->cnt -= 1;
 			if(node->left == nullptr && node->right == nullptr)
 			{
+				self->cnt -= 1;
 				if(node->parent == nullptr)
 				{
 					destroyNode(self->root), self->root = nullptr;
