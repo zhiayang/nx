@@ -23,6 +23,8 @@ SKIP_SETUP_SYSROOT=false
 SKIP_SETUP_DISKIMAGE=false
 SKIP_SETUP_TOOLCHAIN=false
 SKIP_SETUP_EFI_TOOLCHAIN=false
+SKIP_SETUP_TOOLCHAIN_BINUTILS=false
+SKIP_SETUP_TOOLCHAIN_GCC=false
 
 # setup colour codes
 _BOLD=`tput bold`
@@ -193,6 +195,10 @@ function build_toolchain() {
 
 
 function build_binutils() {
+	if [ $SKIP_SETUP_TOOLCHAIN_BINUTILS == true ]; then
+		return 0
+	fi
+
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}binutils version: ${_BOLD}$BINUTILS_VERSION${_NORMAL}"
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading binutils${_NORMAL}"
 
@@ -235,6 +241,10 @@ function build_binutils() {
 
 
 function build_gcc() {
+
+	if [ $SKIP_SETUP_TOOLCHAIN_GCC == true ]; then
+		return 0
+	fi
 
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}gcc version: ${_BOLD}$GCC_VERSION${_NORMAL}"
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading gcc${_NORMAL}"
@@ -292,6 +302,7 @@ function build_libstdcpp() {
 		make install-target-libstdc++-v3 2>&1 | pv -t -i 0.5 --name "elapsed" > libstdcpp-install.log || { cat libstdcpp-install.log; return 1; }
 
 		echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
+
 	popd > /dev/null
 }
 
@@ -302,6 +313,8 @@ for i in "$@"; do
 	if [ $i == "--skip-toolchain" ]; then SKIP_SETUP_TOOLCHAIN=true; fi
 	if [ $i == "--skip-diskimage" ]; then SKIP_SETUP_DISKIMAGE=true; fi
 	if [ $i == "--skip-efi-toolchain" ]; then SKIP_SETUP_EFI_TOOLCHAIN=true; fi
+	if [ $i == "--skip-toolchain-binutils" ]; then SKIP_SETUP_TOOLCHAIN_BINUTILS=true; fi
+	if [ $i == "--skip-toolchain-gcc" ]; then SKIP_SETUP_TOOLCHAIN_GCC=true; fi
 done
 
 set -o pipefail

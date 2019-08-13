@@ -53,6 +53,17 @@ static size_t noop_callback(void* ctx, const char* str, size_t amount)
 	return amount;
 }
 
+static int get_digits(int64_t num)
+{
+	int digits = 0;
+	do {
+		num /= 10;
+		digits++;
+	} while(num != 0);
+
+	return digits;
+}
+
 extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, va_list parameters)
 {
 	if(!callback)
@@ -423,7 +434,7 @@ extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_
 			auto whole = (int64_t) value;
 
 			// the number of digits is floor of the log10 of the number + 1
-			int digits = (int) log10(whole) + 1;
+			int digits = get_digits(whole);
 			int decims = precision;
 
 			int total_len = (value < 0 ? 1 : 0) + digits + 1 + decims;

@@ -35,6 +35,16 @@ QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_D
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
 
+# apparently osx echo does not do -e
+UNAME_IDENT         := $(shell uname)
+ifeq ("$(UNAME_IDENT)","Darwin")
+	ECHO_CMD    := "echo"
+else
+	ECHO_CMD    := "echo -e"
+endif
+
+QEMU ?= qemu-system-x86_64
+
 
 .DEFAULT_GOAL = all
 
@@ -46,23 +56,23 @@ INITRD              = $(SYSROOT)/boot/initrd.tar.gz
 all: qemu
 
 debug: diskimage
-	@echo -e "# starting qemu\n"
+	@$(ECHO_CMD) "# starting qemu\n"
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
 
 qemu: diskimage
-	@echo -e "# starting qemu\n"
+	@$(ECHO_CMD) "# starting qemu\n"
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
 
 vbox-debug: diskimage
-	@echo -e "# starting virtualbox (debug)\n"
+	@$(ECHO_CMD) "# starting virtualbox (debug)\n"
 	@$(VIRTUALBOX) --startvm "nx" --debug
 
 vbox: diskimage
-	@echo -e "# starting virtualbox\n"
+	@$(ECHO_CMD) "# starting virtualbox\n"
 	@$(VIRTUALBOX) --startvm "nx"
 
 bochs: diskimage
-	@echo -e "# starting bochs\n"
+	@$(ECHO_CMD) "# starting bochs\n"
 	@$(BOCHS) -qf utils/bochsrc.bxrc
 
 
