@@ -45,7 +45,8 @@ namespace graphics
 					xres = strtol(r.cstr(), &next, 10);
 					if(next == r.cstr() || next == r.cstr() + r.size() || next[0] != 'x')
 					{
-						efi::println("invalid display resolution: '%s'. expected two dimensions, eg. 123x456. ignoring and using defaults", r.cstr());
+						efi::println("invalid display resolution: '%s'. expected two dimensions, eg. 123x456. ignoring and using defaults",
+							r.cstr());
 
 						xres = defX;
 						yres = defY;
@@ -119,19 +120,19 @@ namespace graphics
 			xResolution = bestmodeinfo->HorizontalResolution;
 			yResolution = bestmodeinfo->VerticalResolution;
 
-			fbAddress = gop->Mode->FrameBufferBase;
-			frameBufferSize = gop->Mode->FrameBufferSize;
-
 			efi::println("setting mode %u: %ux%u (scan line %u)", bestMode, xResolution, yResolution, pixelsPerScanline);
-
 
 			// dewit
 			auto stat = gop->SetMode(gop, bestMode);
 			efi::abort_if_error(stat, "failed to set video mode!");
 
+			fbAddress = gop->Mode->FrameBufferBase;
+			frameBufferSize = gop->Mode->FrameBufferSize;
+
 			// i think we can still print stuff right? efi should be smarter than this
 			efi::systable()->ConOut->ClearScreen(efi::systable()->ConOut);
-			efi::println("video mode set! framebuffer: %p\n", fbAddress);
+			efi::println("video mode set! framebuffer: %p, size: %s (%zu pages)\n", fbAddress,
+				efx::humanSizedBytes(frameBufferSize).cstr(), (frameBufferSize + 0xFFF) / 0x1000);
 		}
 	}
 }

@@ -1,0 +1,3 @@
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/build/sysroot/usr/include
+-ffreestanding
+-std=c++17

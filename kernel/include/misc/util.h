@@ -8,6 +8,8 @@
 
 namespace nx
 {
+	struct BootInfo;
+
 	namespace util
 	{
 		nx::string plural(const nx::string& s, size_t count);

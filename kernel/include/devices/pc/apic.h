@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include "stdint.h"
 
+#include "defs.h"
+
 namespace nx
 {
 	namespace acpi

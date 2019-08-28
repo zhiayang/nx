@@ -10,7 +10,7 @@
 #define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
 #include "bootinfo.h"
 
-
+#include "cpu/cpu.h"
 
 
 namespace nx

@@ -43,7 +43,8 @@ else
 	ECHO_CMD    := "echo -e"
 endif
 
-QEMU ?= qemu-system-x86_64
+QEMU       ?= qemu-system-x86_64
+VIRTUALBOX ?= VirtualBoxVM
 
 
 .DEFAULT_GOAL = all

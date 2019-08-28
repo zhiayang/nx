@@ -12,7 +12,7 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#define EFX_VERSION_STRING "0.4.0"
+#define EFX_VERSION_STRING "0.4.1"
 
 
 void efx::init()
@@ -35,9 +35,11 @@ void efx::init()
 
 		fs::discoverVolumes(lip->DeviceHandle);
 		fs::setRootFilesystemFromOpts();
-
-		graphics::setDisplayMode(800, 600);
 	}
+
+	// these are defaults!!
+	graphics::setDisplayMode(800, 600);
+
 
 	size_t bootSvcKey = 0;
 	uint64_t kernelEntry = 0;

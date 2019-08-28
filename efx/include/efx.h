@@ -104,12 +104,12 @@ namespace efx
 
 namespace efi
 {
-	constexpr int MemoryType_LoadedKernel    = 0x80000001;
-	constexpr int MemoryType_BootInfo        = 0x80000002;
-	constexpr int MemoryType_MemoryMap       = 0x80000003;
-	constexpr int MemoryType_VMFrame         = 0x80000004;
-	constexpr int MemoryType_Initrd          = 0x80000005;
-	constexpr int MemoryType_KernelElf       = 0x80000006;
+	constexpr uint32_t MemoryType_LoadedKernel    = 0x80000001;
+	constexpr uint32_t MemoryType_BootInfo        = 0x80000002;
+	constexpr uint32_t MemoryType_MemoryMap       = 0x80000003;
+	constexpr uint32_t MemoryType_VMFrame         = 0x80000004;
+	constexpr uint32_t MemoryType_Initrd          = 0x80000005;
+	constexpr uint32_t MemoryType_KernelElf       = 0x80000006;
 
 	void init(void* image_handle, efi_system_table* systable);
 
