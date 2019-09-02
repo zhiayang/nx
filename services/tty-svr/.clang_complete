@@ -1,0 +1,5 @@
+-Iinclude
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libkrt/include
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/build/sysroot/usr/include
+-std=c++17

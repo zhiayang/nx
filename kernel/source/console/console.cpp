@@ -237,7 +237,7 @@ namespace console
 
 	static void scrollIfNecessary()
 	{
-		if(CursorY + Padding >= FramebufferHeight)
+		if(CursorY + MainFont.vertAdv + Padding >= FramebufferHeight)
 		{
 			// copy.
 			memmove((void*) (Framebuffer + (Padding * FramebufferScanWidth * 4)),
