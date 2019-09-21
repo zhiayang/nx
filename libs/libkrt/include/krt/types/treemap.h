@@ -61,9 +61,9 @@ namespace krt
 			return *this;
 		}
 
-		void clear()    { this->cnt = 0; impl::destroyNode(this->root); }
-		size_t size()   { return this->cnt; }
-		bool empty()    { return this->cnt == 0; }
+		void clear()        { this->cnt = 0; impl::destroyNode(this->root); }
+		size_t size() const { return this->cnt; }
+		bool empty() const  { return this->cnt == 0; }
 
 
 		V& operator [] (const K& k)
