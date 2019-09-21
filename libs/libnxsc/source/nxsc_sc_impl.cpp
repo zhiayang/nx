@@ -48,6 +48,12 @@ namespace syscall
 		__nx_syscall_3(SYSCALL_VFS_WRITE, ret, fd, buf, len);
 		return ret;
 	}
+
+
+	void kernel_log(int lvl, char* sys, size_t slen, char* str, size_t len)
+	{
+		__nx_syscall_5v(SYSCALL_LOG, lvl, sys, slen, str, len);
+	}
 }
 
 

@@ -53,8 +53,6 @@ namespace idt
 
 	void setEntry(uint8_t num, addr_t base, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts)
 	{
-		assert(num < 256);
-
 		// The interrupt routine's base address
 		idt[num].base_low   = (base & 0xFFFF);
 		idt[num].base_mid   = (base >> 16) & 0xFFFF;
@@ -81,13 +79,11 @@ namespace idt
 
 	void enableGate(uint8_t num)
 	{
-		assert(num < 256);
 		idt[num].flags |= 0x80;
 	}
 
 	void disableGate(uint8_t num)
 	{
-		assert(num < 256);
 		idt[num].flags &= ~0x80;
 	}
 }

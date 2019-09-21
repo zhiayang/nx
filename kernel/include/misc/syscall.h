@@ -12,6 +12,8 @@ namespace nx
 	{
 		void init();
 
+		void sc_null();
+
 		void sc_exit(int status);
 		int64_t sc_ipc_send(uint64_t target, void* msg, size_t len);
 		size_t sc_ipc_peek(void* msg, size_t len);
@@ -26,5 +28,8 @@ namespace nx
 
 		ssize_t sc_vfs_read(int fd, void* buf, size_t len);
 		ssize_t sc_vfs_write(int fd, const void* buf, size_t len);
+
+
+		void sc_log(int level, char* sys, size_t syslen, char* buf, size_t buflen);
 	}
 }

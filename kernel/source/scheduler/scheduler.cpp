@@ -22,13 +22,20 @@ namespace scheduler
 
 	static void calibrateTickTimer();
 
+	static Thread* getNextThread(State* ss)
+	{
+		if(interrupts::hasPendingIRQs())
+			return interrupts::getHandlerThread();
+
+		if(ss->ThreadList.empty())  return ss->IdleThread;
+		else                        return ss->ThreadList.popFront();
+	}
 
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
 		auto ss = getSchedState();
 
 		Thread* oldthr = ss->CurrentThread;
-		Thread* newthr = 0;
 
 		// save the current stack.
 		oldthr->kernelStack = stackPointer;
@@ -40,12 +47,11 @@ namespace scheduler
 		if(oldthr->state == ThreadState::Running)
 			ss->ThreadList.append(oldthr);
 
-		if(ss->ThreadList.empty())  newthr = ss->IdleThread;
-		else                        newthr = ss->ThreadList.popFront();
-
+		Thread* newthr = getNextThread(ss);
 		newthr->state = ThreadState::Running;
 
 		cpu::tss::setRSP0(getCPULocalState()->TSSBase, newthr->kernelStackTop);
+		cpu::tss::updateIOPB(getCPULocalState()->TSSBase, newthr->parent->ioPorts);
 
 		// note wrt the selectors:
 		// on intel, writing 0 to %fs clears FSBase. so we must save the current fsbase,
@@ -315,7 +321,8 @@ namespace scheduler
 
 		bool woke = wakeUpThreads();
 
-		bool ret = woke || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
+		// if we have pending IRQs, then we will switch threads to the handler thread.
+		bool ret = woke || interrupts::hasPendingIRQs() || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 
 		if(ret) ss->tickCounter = 0;
 		return ret;

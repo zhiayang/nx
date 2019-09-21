@@ -22,7 +22,8 @@ extern "C" int main()
 		while(!(bufSz = ipc::receive(nullptr, 0)))
 			;
 
-		printf("received a message: %zu\n", bufSz);
+		// printf("received a message: %zu\n", bufSz);
+		printf("(%zu)", bufSz);
 
 		auto buf = malloc(bufSz);
 		auto msgSz = ipc::receive(buf, bufSz);

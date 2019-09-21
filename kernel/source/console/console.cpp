@@ -111,7 +111,7 @@ namespace console
 		CurrentFGColour = 0xE0E0E0;
 		CurrentBGColour = 0x080808;
 
-		FontScale = 16;
+		FontScale = 24;
 
 		cursorLock = nx::mutex();
 

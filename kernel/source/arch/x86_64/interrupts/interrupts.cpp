@@ -50,40 +50,6 @@ namespace interrupts
 		return IsLocalAPICPresent;
 	}
 
-
-	void init()
-	{
-		if constexpr (getArchitecture() == Architecture::x64)
-		{
-			if(IsIOAPICPresent = device::ioapic::init(); IsIOAPICPresent)
-			{
-				// disable the legacy PIC by masking all interrupts.
-				device::pic8259::disable();
-			}
-			else
-			{
-				warn("apic", "system does not have an ioapic; falling back to 8259 PIC");
-				device::pic8259::init();
-			}
-
-			// check for local apic
-			IsLocalAPICPresent = (cpu::hasFeature(cpu::Feature::LocalAPIC) && scheduler::getCurrentCPU()->localApicAddr != 0);
-			if(!IsLocalAPICPresent)
-				warn("apic", "cpu does not have a local apic; this is not a well-supported configuration!");
-
-			for(int i = 0; i < 16; i++)
-			{
-				cpu::idt::setEntry(IRQ_BASE_VECTOR + i, (addr_t) irq_handlers[i],
-					/* cs: */ 0x08, /* ring3: */ false, /* nestable: */ false);
-			}
-		}
-		else
-		{
-			abort("architecture not supported!");
-		}
-	}
-
-
 	void mapIRQVector(int irq, int vector, int apicId)
 	{
 		if constexpr (getArchitecture() == Architecture::x64)
@@ -94,6 +60,34 @@ namespace interrupts
 		else
 		{
 			abort("architecture not supported!");
+		}
+	}
+
+	void init_arch()
+	{
+		// i mean if we link this file, then we are x86...
+		assert(getArchitecture() == Architecture::x64);
+
+		if(IsIOAPICPresent = device::ioapic::init(); IsIOAPICPresent)
+		{
+			// disable the legacy PIC by masking all interrupts.
+			device::pic8259::disable();
+		}
+		else
+		{
+			warn("apic", "system does not have an ioapic; falling back to 8259 PIC");
+			device::pic8259::init();
+		}
+
+		// check for local apic
+		IsLocalAPICPresent = (cpu::hasFeature(cpu::Feature::LocalAPIC) && scheduler::getCurrentCPU()->localApicAddr != 0);
+		if(!IsLocalAPICPresent)
+			warn("apic", "cpu does not have a local apic; this is not a well-supported configuration!");
+
+		for(int i = 0; i < 16; i++)
+		{
+			cpu::idt::setEntry(IRQ_BASE_VECTOR + i, (addr_t) irq_handlers[i],
+				/* cs: */ 0x08, /* ring3: */ false, /* nestable: */ false);
 		}
 	}
 
@@ -145,9 +139,18 @@ namespace interrupts
 			device::pic8259::sendEOI(num);
 	}
 
+
 	extern "C" void nx_x64_handle_irq(int num)
 	{
-		if(num == 0) device::pit8253::tick();
+		if(num == 0)
+		{
+			device::pit8253::tick();
+		}
+		else
+		{
+			// we need to add a queue.
+			enqueueIRQ(num, nullptr);
+		}
 
 		sendEOI(num);
 	}

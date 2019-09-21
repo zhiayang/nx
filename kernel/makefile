@@ -7,18 +7,25 @@ WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-
 
 CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
 
+CFLAGS          = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -std=c++11 -ffreestanding -mno-red-zone -mcmodel=kernel -c
+
 
 SSRC            =  $(shell find source -name "arch" -prune -o -name "*.s" -print)
 SSRC            += $(shell find source/arch/$(ARCH) -iname "*.s")
+
+CSRC            =  $(shell find source -name "arch" -prune -o -name "*.c" -print)
+CSRC            += $(shell find source/arch/$(ARCH) -iname "*.c")
 
 CXXSRC          =  $(shell find source -name "arch" -prune -o -name "*.cpp" -print)
 CXXSRC          += $(shell find source/arch/$(ARCH) -iname "*.cpp")
 
 
 SOBJ            = $(SSRC:.s=.s.o)
+COBJ            = $(CSRC:.c=.c.o)
 CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 
 CXXDEPS         = $(CXXOBJ:.o=.d)
+CDEPS           = $(COBJ:.o=.d)
 
 DEBUG_FLAG      := -msse2 -O0 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
@@ -55,6 +62,9 @@ $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINF
 	@echo "# $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 
+%.c.o: %.c
+	@echo "# $(notdir $<)"
+	@$(CC) $(CFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 
 
 

@@ -45,7 +45,6 @@ namespace nx
 	void error(const char* sys, const char* fmt, ...);
 
 
-
 	void print(const char* fmt, ...);
 	void println(const char* fmt, ...);
 	int vprint(const char* fmt, va_list args);

@@ -11,7 +11,7 @@
 #include "bootinfo.h"
 
 #include "cpu/cpu.h"
-
+#include "devices/pc/apic.h"
 
 namespace nx
 {
@@ -43,13 +43,32 @@ namespace nx
 		// start the ipc dispatcher
 		ipc::init();
 
+		// start the irq dispatcher
+		interrupts::init();
+
+
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
-
 
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
 		scheduler::addThread(worker2);
 
+
+		// todo: make this more dynamic
+		{
+			scheduler::Thread* thr = 0;
+			scheduler::addThread(thr = loader::loadProgram("/initrd/drivers/ps2"));
+
+			scheduler::allowProcessIOPort(thr->parent, 0x60);
+			scheduler::allowProcessIOPort(thr->parent, 0x64);
+
+			{
+				int irq = device::ioapic::getISAIRQMapping(1);
+
+				interrupts::unmaskIRQ(irq);
+				device::ioapic::setIRQMapping(irq, /* vector */ 1, /* lapic id */ 0);
+			}
+		}
 
 		// uint64_t ctr = 0;
 		// while(true) if(++ctr % 5000000 == 0) print("q");
@@ -103,11 +122,10 @@ namespace nx
 			warn("kernel", "cpu does not support no-execute bit");
 
 		scheduler::setupKernelProcess(bootinfo->pml4Address);
-		auto kernelProc = scheduler::getKernelProcess();
 
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
-		vmm::init(kernelProc);
+		vmm::init(scheduler::getKernelProcess());
 		heap::init();
 
 		// init cpuid so we can start detecting features.
@@ -140,8 +158,10 @@ namespace nx
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);
 
-		// initialise the interrupt controller (APIC or PIC)
-		interrupts::init();
+		// initialise the interrupt controller (APIC or PIC).
+		// init_arch allows us to do basic scheduling. after the scheduler
+		// is up, we must call interrupts::init.
+		interrupts::init_arch();
 		interrupts::enable();
 
 
@@ -154,7 +174,7 @@ namespace nx
 
 			syscall::init();
 
-			scheduler::addThread(scheduler::createThread(kernelProc, kernel_main));
+			scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), kernel_main));
 			scheduler::start();
 
 			// we are all done here: the worker thread will take care of the rest of kernel startup.

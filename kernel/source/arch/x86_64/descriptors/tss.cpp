@@ -89,6 +89,9 @@ namespace tss
 		auto tssaddr = vmm::allocate(TSS_SIZE_IN_PAGES, vmm::AddressSpace::Kernel);
 		assert(tssaddr);
 
+		// make all the bits in the IOPB 1 -- which means disallowed.
+		memset((void*) (tssaddr + sizeof(tss_t)), 0xFF, 0x2000);
+
 		// set the tss descriptor in the gdt. this doesn't load it.
 		*tssdesc = makeTSSEntry(tssaddr, (uint16_t) tssSize);
 
@@ -104,6 +107,25 @@ namespace tss
 		tss->rsp0 = rsp0;
 	}
 
+	void updateIOPB(addr_t tssBase, const nx::treemap<uint16_t, uint8_t>& ports)
+	{
+		auto tss = (tss_t*) tssBase;
+		tss->iopbOffset = sizeof(tss_t);
+
+		uint8_t* iopb = (uint8_t*) (tssBase + sizeof(tss_t));
+		for(auto it = ports.begin(); it != ports.end(); it++)
+			iopb[it->key] = it->value;
+	}
+
+	void setIOPortPerms(nx::treemap<uint16_t, uint8_t>* iopb, uint16_t port, bool allowed)
+	{
+		size_t byte = port / 8;
+		size_t ofs  = port % 8;
+		uint8_t bit = (1UL << ofs);
+
+		if(allowed) (*iopb)[byte] &= ~bit;
+		else        (*iopb)[byte] |= bit;
+	}
 
 
 	extern "C" void nx_x64_loadtss(uint16_t);

@@ -104,6 +104,22 @@ namespace scheduler
 
 		return 0;
 	}
+
+
+
+	void allowProcessIOPorts(Process* p, const nx::array<krt::pair<uint16_t, size_t>>& allowedPorts)
+	{
+		for(auto [ port, num ] : allowedPorts)
+		{
+			for(size_t i = 0; i < num; i++)
+				cpu::tss::setIOPortPerms(&p->ioPorts, port + i, true);
+		}
+	}
+
+	void allowProcessIOPort(Process* p, uint16_t port)
+	{
+		cpu::tss::setIOPortPerms(&p->ioPorts, port, true);
+	}
 }
 }
 

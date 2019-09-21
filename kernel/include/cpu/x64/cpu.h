@@ -39,6 +39,9 @@ namespace nx
 			void loadTSS(uint16_t selector);
 
 			void setRSP0(addr_t tssBase, uint64_t rsp0);
+
+			void updateIOPB(addr_t tssBase, const nx::treemap<uint16_t, uint8_t>& ports);
+			void setIOPortPerms(nx::treemap<uint16_t, uint8_t>* iopb, uint16_t port, bool allowed);
 		}
 
 		namespace fpu

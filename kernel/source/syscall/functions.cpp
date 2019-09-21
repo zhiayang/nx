@@ -1,4 +1,4 @@
-// funcs.cpp
+// functions.cpp
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
@@ -25,42 +25,44 @@ namespace syscall
 		println("str: %s", s);
 	}
 
-	extern "C" constexpr void* SyscallTable[] =
+	extern "C" {
+		void* SyscallTable[_SYSCALL_MAX];
+		size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
+	}
+
+	static void init_vectors()
 	{
-		// syscall/sc_misc.cpp
-		[SYSCALL_EXIT]          = (void*) sc_exit,
+		for(size_t i = 0; i < SyscallTableEntryCount; i++)
+			SyscallTable[i] = (void*) sc_null;
+
+		SyscallTable[SYSCALL_EXIT]                = (void*) sc_exit;
+		SyscallTable[SYSCALL_LOG]                 = (void*) sc_log;
 
 		// ipc/sc_handlers.cpp
-		[SYSCALL_IPC_SEND]              = (void*) sc_ipc_send,
-		[SYSCALL_IPC_PEEK]              = (void*) sc_ipc_peek,
-		[SYSCALL_IPC_POLL]              = (void*) sc_ipc_poll,
-		[SYSCALL_IPC_DISCARD]           = (void*) sc_ipc_discard,
-		[SYSCALL_IPC_RECEIVE]           = (void*) sc_ipc_receive,
-		[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) 0,
+		SyscallTable[SYSCALL_IPC_SEND]            = (void*) sc_ipc_send;
+		SyscallTable[SYSCALL_IPC_PEEK]            = (void*) sc_ipc_peek;
+		SyscallTable[SYSCALL_IPC_POLL]            = (void*) sc_ipc_poll;
+		SyscallTable[SYSCALL_IPC_DISCARD]         = (void*) sc_ipc_discard;
+		SyscallTable[SYSCALL_IPC_RECEIVE]         = (void*) sc_ipc_receive;
+		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]   = (void*) 0;
 
 		// syscall/sc_mmap.cpp
-		[SYSCALL_MMAP_ANON]             = (void*) sc_mmap_anon,
-		[SYSCALL_MMAP_FILE]             = (void*) sc_mmap_file,
+		SyscallTable[SYSCALL_MMAP_ANON]           = (void*) sc_mmap_anon;
+		SyscallTable[SYSCALL_MMAP_FILE]           = (void*) sc_mmap_file;
 
 		// syscall/sc_vfs.cpp
-		[SYSCALL_VFS_READ]              = (void*) sc_vfs_read,
-		[SYSCALL_VFS_WRITE]             = (void*) sc_vfs_write,
+		SyscallTable[SYSCALL_VFS_READ]            = (void*) sc_vfs_read;
+		SyscallTable[SYSCALL_VFS_WRITE]           = (void*) sc_vfs_write;
 
-		[11] = (void*) debug_char,
-		[12] = (void*) debug_ptr,
-		[13] = (void*) debug_str
-	};
-
-
-
-
-	extern "C" constexpr size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
-
-
-
+		SyscallTable[11] = (void*) debug_char;
+		SyscallTable[12] = (void*) debug_ptr;
+		SyscallTable[13] = (void*) debug_str;
+	}
 
 	void init()
 	{
+		init_vectors();
+
 		if constexpr (getArchitecture() == Architecture::x64)
 		{
 			// install the interrupt handler:

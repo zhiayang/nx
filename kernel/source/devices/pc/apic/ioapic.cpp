@@ -123,7 +123,7 @@ namespace ioapic
 			return it->value;
 
 		else
-			return isa;;
+			return isa;
 	}
 
 

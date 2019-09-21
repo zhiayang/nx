@@ -10,6 +10,9 @@
 #include "defs.h"
 
 #include "mm.h"
+#include "ipc.h"
+#include "cpu.h"
+#include "synchro.h"
 #include "misc/addrs.h"
 
 namespace nx
@@ -93,6 +96,15 @@ namespace nx
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
+
+			// arch-specific stuff.
+			#ifdef __ARCH_x64__
+
+			// this is a map from the offset to the byte value at that offset, in the iopb.
+			// if there is no value that offset, we presume it to be the default, ie 0xFF.
+			nx::treemap<uint16_t, uint8_t> ioPorts;
+
+			#endif
 		};
 
 		enum class ThreadState
@@ -166,6 +178,10 @@ namespace nx
 		Thread* createThread(Process* p, Fn4Args_t fn, void* a, void* b, void* c, void* d);
 		Thread* createThread(Process* p, Fn5Args_t fn, void* a, void* b, void* c, void* d, void* e);
 		Thread* createThread(Process* p, Fn6Args_t fn, void* a, void* b, void* c, void* d, void* e, void* f);
+
+		void allowProcessIOPorts(Process* p, const nx::array<krt::pair<uint16_t, size_t>>& allowedPorts);
+		void allowProcessIOPort(Process* p, uint16_t port);
+
 
 		Thread* getCurrentThread();
 

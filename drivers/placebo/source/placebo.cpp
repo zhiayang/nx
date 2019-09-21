@@ -43,10 +43,12 @@ extern "C" int main()
 			{
 				using namespace nx::ipc;
 				{
-					auto str = "hello there!";
+					auto str = ".";
 
 					size_t len = sizeof(ttysvr::payload_t) + strlen(str) + 1;
-					char buf[len] = { };
+					char buf[len];
+					memset(buf, 0, len);
+
 
 					auto ttypl = (ttysvr::payload_t*) buf;
 
@@ -56,7 +58,7 @@ extern "C" int main()
 					ttypl->dataSize = strlen(str) + 1;
 					memcpy(ttypl->data, str, strlen(str));
 
-					send(1, buf, len);
+					// send(1, buf, len);
 				}
 			}
 		}
