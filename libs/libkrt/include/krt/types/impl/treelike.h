@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "../../meta.h"
+
 namespace krt
 {
 	template <typename Container, typename KeyTy, typename ValueTy, typename allocator, typename aborter>
@@ -17,11 +19,11 @@ namespace krt
 			ValueTy value;
 
 
-			private:
 			Node* left;
 			Node* right;
 			Node* parent;
 
+			private:
 			long height;
 			long balance;
 
@@ -80,11 +82,11 @@ namespace krt
 			const Node* operator -> () const { return (const Node*) node; }
 
 			const_iterator(const const_iterator& other) : node(other.node), self(other.self) { }
-			const_iterator(Node* n, Container* c) : node(n), self(c) { }
+			const_iterator(Node* n, const Container* c) : node(n), self(c) { }
 
 			private:
 			Node* node;
-			Container* self;
+			const Container* self;
 		};
 
 		static Node* copyNode(Node* n)
@@ -143,8 +145,8 @@ namespace krt
 					n = rotateRightThenLeft(n);
 			}
 
-			if(n->parent != NULL)   rebalance(self, n->parent);
-			else                    self->root = n;
+			if(n->parent != nullptr) rebalance(self, n->parent);
+			else                     self->root = n;
 		}
 
 
@@ -227,7 +229,7 @@ namespace krt
 			n->balance = height(n->right) - height(n->left);
 		}
 
-		static Node* successor(Container* self, Node* n)
+		static Node* successor(const Container* self, Node* n)
 		{
 			if(!n) return nullptr;
 

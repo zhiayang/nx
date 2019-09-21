@@ -89,8 +89,8 @@ namespace krt
 		const_iterator find(const K& k) const   { auto n = impl::find(this, k); return const_iterator(n, this); }
 
 
-		iterator begin()                { auto n = this->root; while(n->left) n = n->left; return iterator(n, this); }
-		const_iterator begin() const    { auto n = this->root; while(n->left) n = n->left; return const_iterator(n, this); }
+		iterator begin()                { auto n = this->root; while(n && n->left) n = n->left; return iterator(n, this); }
+		const_iterator begin() const    { auto n = this->root; while(n && n->left) n = n->left; return const_iterator(n, this); }
 		const_iterator cbegin() const   { return this->begin(); }
 
 		iterator end()                  { return iterator(nullptr, this); }

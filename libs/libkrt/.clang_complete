@@ -1,0 +1,8 @@
+-Iinclude
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libkrt/include
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libm/include
+-ffreestanding
+-std=c++17
+-D__orionx__
+-DORION_KERNEL
+-D__ARCH_x64__
