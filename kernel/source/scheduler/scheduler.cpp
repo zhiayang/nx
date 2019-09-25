@@ -9,7 +9,7 @@
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
-extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* );
+extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState);
 
 namespace nx {
 namespace scheduler

@@ -7,20 +7,19 @@
 #include <stddef.h>
 #include "stdint.h"
 
+#include "acpi/tables.h"
+
 namespace nx
 {
 	struct BootInfo;
 	namespace acpi
 	{
-		struct header_t;
 		struct MADTable;
 
 		void init(BootInfo* bi);
 		bool checkTable(header_t* table);
 
 		void readMADT(MADTable* table);
-
-
 
 
 
@@ -44,21 +43,6 @@ namespace nx
 
 		} __attribute__((packed));
 
-
-		struct header_t
-		{
-			char        signature[4];
-			uint32_t    length;
-			uint8_t     revision;
-			uint8_t     checksum;
-			char        oemId[6];
-			char        oemTableId[8];
-			uint32_t    oemRevision;
-			uint32_t    creatorId;
-			uint32_t    creatorRevision;
-
-		} __attribute__((packed));
-
 		struct RSDTable
 		{
 			header_t    header;
@@ -78,18 +62,20 @@ namespace nx
 
 
 
-		struct madt_record_header_t
-		{
-			uint8_t     type;
-			uint8_t     length;
-		} __attribute__((packed));
-
 		struct MADTable
 		{
 			header_t    header;
 			uint32_t    localApicAddr;
 			uint32_t    flags;
 
+			static constexpr const char* name = "APIC";
+
+		} __attribute__((packed));
+
+		struct madt_record_header_t
+		{
+			uint8_t     type;
+			uint8_t     length;
 		} __attribute__((packed));
 
 		struct MADT_LAPIC

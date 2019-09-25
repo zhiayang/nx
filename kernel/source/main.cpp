@@ -46,7 +46,6 @@ namespace nx
 		// start the irq dispatcher
 		interrupts::init();
 
-
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 

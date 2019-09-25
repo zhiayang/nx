@@ -110,11 +110,18 @@ namespace tss
 	void updateIOPB(addr_t tssBase, const nx::treemap<uint16_t, uint8_t>& ports)
 	{
 		auto tss = (tss_t*) tssBase;
-		tss->iopbOffset = sizeof(tss_t);
+		if(ports.empty())
+		{
+			tss->iopbOffset = 0;
+		}
+		else
+		{
+			tss->iopbOffset = sizeof(tss_t);
 
-		uint8_t* iopb = (uint8_t*) (tssBase + sizeof(tss_t));
-		for(auto it = ports.begin(); it != ports.end(); it++)
-			iopb[it->key] = it->value;
+			uint8_t* iopb = (uint8_t*) (tssBase + sizeof(tss_t));
+			for(auto it = ports.begin(); it != ports.end(); it++)
+				iopb[it->key] = it->value;
+		}
 	}
 
 	void setIOPortPerms(nx::treemap<uint16_t, uint8_t>* iopb, uint16_t port, bool allowed)

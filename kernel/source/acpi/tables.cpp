@@ -27,14 +27,16 @@ namespace acpi
 
 	static void readTable(header_t* table)
 	{
-		if(strncmp(table->signature, "APIC", 4) == 0)
+		if(strncmp(table->signature, MADTable::name, 4) == 0)
 		{
 			readMADT((MADTable*) table);
 		}
-		else if(strncmp(table->signature, "HPET", 4) == 0)
+		else if(strncmp(table->signature, FADTable::name, 4) == 0)
 		{
 			// println("found hpet");
 		}
+
+		// todo: bit 1 in a >= v3 FADT tells if we have an 8042 ps/2 controller
 	}
 
 
