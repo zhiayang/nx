@@ -65,14 +65,14 @@ extern "C" {
 /* mmap entry, type is stored in least significant tetrad (half byte) of size
  * this means size described in 16 byte units (not a problem, most modern
  * firmware report memory in pages, 4096 byte units anyway). */
-typedef struct {
+struct MMapEnt {
 	uint64_t   ptr;
 	uint64_t   size;
-} __attribute__((packed)) MMapEnt;
-#define MMapEnt_Ptr(a)  (a->ptr)
-#define MMapEnt_Size(a) (a->size & 0xFFFFFFFFFFFFFFF0)
-#define MMapEnt_Type(a) (a->size & 0xF)
-#define MMapEnt_IsFree(a) ((a->size&0xF)==1)
+} __attribute__((packed));
+#define MMapEnt_Ptr(a)  ((a)->ptr)
+#define MMapEnt_Size(a) ((a)->size & 0xFFFFFFFFFFFFFFF0)
+#define MMapEnt_Type(a) ((a)->size & 0xF)
+#define MMapEnt_IsFree(a) (((a)->size&0xF)==1)
 
 #define MMAP_USED     0   /* don't use. Reserved or unknown regions */
 #define MMAP_FREE     1   /* usable memory */
@@ -81,7 +81,7 @@ typedef struct {
 
 #define INITRD_MAXSIZE 16 /* Mb */
 
-typedef struct {
+struct BOOTBOOT {
 	/* first 64 bytes is platform independent */
 	uint8_t    magic[4];    /* 'BOOT' magic */
 	uint32_t   size;        /* length of bootboot structure, minimum 128 */
@@ -128,7 +128,7 @@ typedef struct {
 	/* use like this:
 	 * MMapEnt *mmap_ent = &bootboot.mmap; mmap_ent++;
 	 * until you reach bootboot->size */
-} __attribute__((packed)) BOOTBOOT;
+} __attribute__((packed));
 
 
 #ifdef  __cplusplus

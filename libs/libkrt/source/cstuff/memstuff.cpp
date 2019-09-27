@@ -77,6 +77,7 @@ extern "C" void* memrchr(const void* ptr, int c, size_t n)
 
 extern "C" void* memset(void* ptr, int value, size_t num)
 {
+	#if 1
 	// 'stosl' will use the value in eax but we only want the value in al
 	// so we make eax = al << 24 | al << 16 | al << 8 | al
 	if((value & 0xff) == 0)
@@ -92,6 +93,14 @@ extern "C" void* memset(void* ptr, int value, size_t num)
 	void* temporaryPtr = ptr;
 	asm volatile("rep stosl ; mov %3, %2 ; rep stosb" : "+D"(temporaryPtr) : "a"(value), "c"(num / 4), "r"(num % 4) : "cc", "memory");
 	return ptr;
+	#else
+
+	for(size_t i = 0; i < num; i++)
+		((char*) ptr)[i] = (char) value;
+
+	return ptr;
+
+	#endif
 }
 
 extern "C" void* memcpy(void* __restrict__ dstptr, const void* __restrict__ srcptr, size_t length)

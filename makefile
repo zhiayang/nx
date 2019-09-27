@@ -67,7 +67,7 @@ qemu: diskimage
 
 bios: diskimage
 	@$(ECHO_CMD) "# starting qemu (bios)\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial mon:stdio
 
 vbox-debug: diskimage
 	@$(ECHO_CMD) "# starting virtualbox (debug)\n"

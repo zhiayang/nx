@@ -5,34 +5,57 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "bfx.h"
+#include "krt.h"
+
 #include "bootboot.h"
 
-// imported virtual addresses, see linker script
-extern BOOTBOOT bootboot;
+#define BFX_VERSION_STRING "0.1.0"
+
+void bfx::init(BOOTBOOT* bbinfo)
+{
+	println("bfx bootloader");
+	println("version %s\n", BFX_VERSION_STRING);
+
+	idt::init();
+	exceptions::init();
+
+	// start the pmm
+	{
+		MMapEnt* mmapEntries = &bbinfo->mmap;
+		size_t numEntries = ((((uint8_t*) bbinfo) + bbinfo->size) - (uint8_t*) mmapEntries) / sizeof(MMapEnt);
+
+		pmm::init(mmapEntries, numEntries);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// handled by the linker script
+extern "C" BOOTBOOT bootboot;
 
 // entry point. we are in long mode. we modified BOOTBOOT
 // so it doesn't start the APs.
-void _start()
+extern "C" void entry()
 {
+	bfx::println("");
 
-
-
-
-
-
-	int x, y, s=bootboot.fb_scanline, w=bootboot.fb_width, h=bootboot.fb_height;
-
-	// cross-hair to see screen dimension detected correctly
-	for(y=0;y<h;y++) { *((uint32_t*)(bootboot.fb_ptr + s*y + (w*2)))=0x00FFFFFF; }
-	for(x=0;x<w;x++) { *((uint32_t*)(bootboot.fb_ptr + s*(h/2)+x*4))=0x00FFFFFF; }
-
-	// red, green, blue boxes in order
-	for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(bootboot.fb_ptr + s*(y+20) + (x+20)*4))=0x00FF0000; } }
-	for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(bootboot.fb_ptr + s*(y+20) + (x+50)*4))=0x0000FF00; } }
-	for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(bootboot.fb_ptr + s*(y+20) + (x+80)*4))=0x000000FF; } }
-
-	// hang for now
-	while(1);
+	bfx::init(&bootboot);
+	while(true);
 }
 
 

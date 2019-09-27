@@ -1,2 +1,2 @@
-kernel=boot/ebbfxloader
+kernel=boot/bfxloader
 screen=1280x800

@@ -15,6 +15,9 @@ namespace serial
 	void print(char* s, size_t len)
 	{
 		for(size_t i = 0; i < len; i++)
+		{
+			write1b(s[i], 0x3F8);
 			write1b(s[i], 0xE9);
+		}
 	}
 }

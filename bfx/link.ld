@@ -1,5 +1,7 @@
 mmio  = 0xfffffffff8000000;
 fb    = 0xfffffffffc000000;
+ENTRY(entry)
+
 SECTIONS
 {
 	. = 0xffffffffffe00000;

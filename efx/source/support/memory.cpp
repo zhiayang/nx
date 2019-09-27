@@ -225,37 +225,8 @@ namespace memory
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace efi
 {
-	#define BLKHEADER_MAGIC 0xDEADC0DEBEEFFACE
-
-	// add some rudimentary stuff
-	struct blkheader_t
-	{
-		uint64_t magic;
-		size_t length;
-	};
-
 	void* alloc(size_t sz)
 	{
 		if(sz == 0) return nullptr;
@@ -274,3 +245,15 @@ namespace efi
 		if(ptr) efi::systable()->BootServices->FreePool(ptr);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
