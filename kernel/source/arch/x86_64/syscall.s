@@ -65,7 +65,8 @@ nx_x64_syscall_entry:
 
 	// fetch the kernel stack into r11:
 	// when the current thread is scheduled, TSS->RSP0 is set to the top of the kernel stack. we will use
-	// this as the stack pointer. see scheduler.h for the offset for TSSBase in the CPULocalState.
+	// this as the stack pointer. see scheduler.h for the offset for TSSBase in the CPULocalState. it is
+	// currently 0x10.
 	movq %gs:0x10, %r11
 	movq 4(%r11), %r11
 

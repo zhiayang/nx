@@ -27,10 +27,11 @@ MAKEFLAGS += --no-builtin-variables
 MEMORY              = 256
 
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
-QEMU_DISK_IMAGE     = -drive format=raw,file=build/disk.img
+QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
+QEMU_BIOS_DISKIMG   = -drive format=raw,file=build/disk-bios.img
 
 QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
-QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) $(QEMU_UEFI_BIOS) $(QEMU_DISK_IMAGE) -no-shutdown -no-reboot
+QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -no-shutdown -no-reboot
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
@@ -49,7 +50,7 @@ VIRTUALBOX ?= VirtualBoxVM
 
 .DEFAULT_GOAL = all
 
-INITRD              = $(SYSROOT)/boot/initrd.tar.gz
+INITRD              = $(SYSROOT)/boot/initrd.tar
 
 
 .PHONY: all clean build diskimage qemu debug clean-kernel exportheaders
@@ -58,11 +59,15 @@ all: qemu
 
 debug: diskimage
 	@$(ECHO_CMD) "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
 
 qemu: diskimage
 	@$(ECHO_CMD) "# starting qemu\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
+
+bios: diskimage
+	@$(ECHO_CMD) "# starting qemu (bios)\n"
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio
 
 vbox-debug: diskimage
 	@$(ECHO_CMD) "# starting virtualbox (debug)\n"
@@ -90,31 +95,42 @@ exportheaders:
 	@cp -r libs/libm/include/* $(SYSROOT)/usr/include/
 	@cp -r libs/libnxsc/include/* $(SYSROOT)/usr/include/
 	@cp -r kernel/include/export/* $(SYSROOT)/usr/include/nx/
-
 	@cp -r services/*/include/* $(SYSROOT)/usr/include/svr/
 
 build: exportheaders
+	@mkdir -p $(INITRD_DIR)/sys
+	@mkdir -p $(INITRD_DIR)/boot
+	@mkdir -p $(INITRD_DIR)/drivers
+	@mkdir -p $(INITRD_DIR)/services
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C libs/libnxsc
 	@$(MAKE) -s -C libs/tinflate
 	@$(MAKE) -s -C efx
+	@$(MAKE) -s -C bfx
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
 	@$(MAKE) -s -C services
-	@tar -cf - -C $(INITRD_DIR)/ . | gzip -9 - > $(INITRD)
+	@cp $(SYSROOT)/boot/bfxloader $(INITRD_DIR)/boot/
+	@cp $(SYSROOT)/boot/nxkernel64 $(INITRD_DIR)/boot/
+	@cp utils/bootboot_config $(INITRD_DIR)/sys/config
+	@cd $(INITRD_DIR); tar -cf $(INITRD) *
+	@gzip -cf9 $(INITRD) > $(INITRD).gz
 
 clean:
 	@find "efx" -name "*.o" -delete
 	@find "libs" -name "*.o" -delete
+	@find "bfx" -name "*.o" -delete
 	@find "kernel" -name "*.o" -delete
 
 	@find "efx" -name "*.cpp.d" -delete
 	@find "libs" -name "*.cpp.d" -delete
+	@find "bfx" -name "*.cpp.d" -delete
 	@find "kernel" -name "*.cpp.d" -delete
 
 	@rm -f $(SYSROOT)/boot/efxloader
+	@rm -f $(SYSROOT)/boot/bfxloader
 	@rm -f $(SYSROOT)/boot/nxkernel64
 	@rm -f $(SYSROOT)/usr/lib/*.a
 	@rm -rf $(SYSROOT)/usr/include/*

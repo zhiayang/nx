@@ -117,9 +117,13 @@ namespace acpi
 				abort("acpi: lapic msr says we are not the bootstrap processor??");
 			}
 
+			// testing shows that the base address we get already sets both of these flags, but just to be
+			// safe we set them again. note that if the enable bit is 0, then CPUID will report the CPU as
+			// *not having* the LAPIC.
 			base &= vmm::PAGE_ALIGN;
-			base |= 0x800;
-			base |= 0x100;
+			base |= 0x800;      // this is bit 11, the enable bit
+			base |= 0x100;      // this is bit 8, the BSP bit. probably not modifiable,
+								// but set it just in case?
 
 			cpu::writeMSR(cpu::MSR_APIC_BASE, base);
 

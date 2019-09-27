@@ -14,6 +14,7 @@ namespace nx {
 namespace device {
 namespace apic
 {
+	constexpr addr_t REG_APIC_ID        = 0x20;
 	constexpr addr_t REG_EOI            = 0xB0;
 	constexpr addr_t REG_SPURIOUS       = 0xF0;
 
@@ -147,7 +148,6 @@ namespace apic
 			writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
 			writeLAPIC(base, REG_TIMER_INITIAL, timerTicks);
 		}
-
 
 		// set the interrupt to trigger on IRQ0, periodic mode, and unmask it.
 		uint32_t config = 0;

@@ -9,10 +9,11 @@ _GREEN=`tput setaf 2`
 
 REFIND_VERSION=0.11.4
 
-OUTPUT_DISK=disk.img
+UEFI_OUTPUT_DISK=disk.img
+BIOS_OUTPUT_DISK=disk-bios.img
 
 
-if [ $PROJECT_DIR == "" ]; then
+if [ -z "$PROJECT_DIR" ] || [ -z "$PREFIX" ]; then
 	echo "please set the project directory! (or invoke using './bootstrap --skip-toolchain --skip-libc --skip-sysroot' to only run this script"
 	exit 1
 fi
@@ -62,12 +63,12 @@ echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating disk image${_NORMAL}"
 mkdir -p $PROJECT_DIR/build
 pushd $PROJECT_DIR/build > /dev/null
 
-	if [ -e $OUTPUT_DISK ]; then rm $OUTPUT_DISK; fi
+	if [ -e $UEFI_OUTPUT_DISK ]; then rm $UEFI_OUTPUT_DISK; fi
 
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}image size: $(expr $SECTOR_COUNT \* $SECTOR_SIZE / 1024 / 1024) mb${_NORMAL}"
 	echo ""
 
-	dd if=/dev/zero of=$OUTPUT_DISK bs=$SECTOR_SIZE count=$SECTOR_COUNT $DD_STATUS
+	dd if=/dev/zero of=$UEFI_OUTPUT_DISK bs=$SECTOR_SIZE count=$SECTOR_COUNT $DD_STATUS
 
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading rEFInd${_NORMAL}"
@@ -114,10 +115,10 @@ pushd $PROJECT_DIR/build > /dev/null
 		# 21. y                   - confirm
 
 
-		echo -e "o\ny\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nef00\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\n0700\nx\nc\n1\n$ESP_PART_UUID\nc\n2\n$ROOT_PART_UUID\nw\ny\n" | gdisk disk.img > /dev/null
+		echo -e "o\ny\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nef00\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\n0700\nx\nc\n1\n$ESP_PART_UUID\nc\n2\n$ROOT_PART_UUID\nw\ny\n" | gdisk $UEFI_OUTPUT_DISK > /dev/null
 
 		ESP_IDENT=$(hdiutil attach -nomount esp-part.img)
-		newfs_msdos -F 32 -v "EFIPART" $ESP_IDENT > /dev/null
+		newfs_msdos -F 16 -v "EFIPART" $ESP_IDENT > /dev/null
 
 		ROOT_IDENT=$(hdiutil attach -nomount root-part.img)
 		newfs_msdos -F 32 -v "NX" $ROOT_IDENT > /dev/null
@@ -156,7 +157,7 @@ pushd $PROJECT_DIR/build > /dev/null
 		# 24. w                   - write changes and quit
 
 		echo -e "g\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\nt\n1\n01\nt\n2\n11\nx\nu\n1\n\
-$ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
+$ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $UEFI_OUTPUT_DISK > /dev/null
 
 		mkfs.vfat -n "EFIPART" -F 32 esp-part.img > /dev/null
 		mkfs.vfat -n "NX" -F 32 root-part.img > /dev/null
@@ -166,9 +167,16 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 		exit 1
 	fi
 
-	# copy refind to the ESP
 
 	export MTOOLS_SKIP_CHECK=1
+
+	# note that we create one image for UEFI, and one image for BIOS.
+	cp esp-part.img bios-part.img
+	cp $UEFI_OUTPUT_DISK $BIOS_OUTPUT_DISK
+
+	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating uefi boot partition${_NORMAL}"
+
+	# # this is the UEFI part:
 	mmd -D O -i esp-part.img ::/EFI
 	mmd -D O -i esp-part.img ::/EFI/BOOT
 	mmd -D O -i esp-part.img ::/EFI/BOOT/refind
@@ -177,12 +185,55 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $OUTPUT_DISK > /dev/null
 	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/tools_x64 ::/EFI/BOOT/refind/
 	mcopy -snQ -i esp-part.img $PROJECT_DIR/utils/refind-bin-$REFIND_VERSION/refind/refind_x64.efi ::/EFI/BOOT/bootx64.efi
 
+	dd if=esp-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$UEFI_OUTPUT_DISK \
+		count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc $DD_STATUS
 
-	dd if=esp-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$OUTPUT_DISK count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc $DD_STATUS
-	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$OUTPUT_DISK count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc $DD_STATUS
+	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$UEFI_OUTPUT_DISK \
+		count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc $DD_STATUS
 
+
+	# this is the BIOS part:
+	# first download & compile mkboot
+	if [ ! -e "bootboot/mkboot" ]; then
+		mkdir -p bootboot
+		pushd bootboot > /dev/null
+
+		if [ ! $(command -v xxd) ]; then
+			echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}'xxd' not found${_NORMAL}"
+			exit 1
+		fi
+
+		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading bootboot${_NORMAL}" \
+				"(https://gitlab.com/bztsrc/bootboot)"
+		wget -qnc https://gitlab.com/bztsrc/bootboot/raw/master/boot.bin
+		wget -qnc https://gitlab.com/bztsrc/bootboot/raw/master/x86_64-bios/mkboot.c
+
+		xxd -i boot.bin | sed 's/boot_bin/_binary____boot_bin_start/g' > boot_include.c
+		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}compiling mkboot${_NORMAL}"
+
+		cc -o mkboot mkboot.c boot_include.c
+
+		popd > /dev/null
+	fi
+
+	# note that the BIOS version uses uncompressed initrd, since the gzip decompression
+	# takes too damn long for some reason.
+	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}creating bios boot partition${_NORMAL}"
+	mmd -D O -i bios-part.img ::/BOOTBOOT
+	mcopy -snQ -i bios-part.img $PROJECT_DIR/utils/bootboot.bin ::/BOOTBOOT/LOADER
+	mcopy -snQ -i bios-part.img sysroot/boot/initrd.tar         ::/BOOTBOOT/INITRD
+
+	# we can reuse the same geometry numbers, but start at 0.
+	dd if=bios-part.img bs=$SECTOR_SIZE seek=$ESP_PARTITION_START of=$BIOS_OUTPUT_DISK \
+		count=$(expr $ESP_PARTITION_END - $ESP_PARTITION_START + 1) conv=notrunc $DD_STATUS
+
+	dd if=root-part.img bs=$SECTOR_SIZE seek=$ROOT_PARTITION_START of=$BIOS_OUTPUT_DISK \
+		count=$(expr $ROOT_PARTITION_END - $ROOT_PARTITION_START + 1) conv=notrunc $DD_STATUS
+
+	bootboot/mkboot disk-bios.img
+
+	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}done!${_NORMAL}"
 	$PROJECT_DIR/utils/tools/update-diskimage.sh
-
 
 popd > /dev/null
 

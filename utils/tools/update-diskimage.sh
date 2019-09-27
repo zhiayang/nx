@@ -9,7 +9,8 @@ _GREEN=`tput setaf 2`
 
 REFIND_VERSION=0.11.4
 
-OUTPUT_DISK=disk.img
+UEFI_OUTPUT_DISK=disk.img
+BIOS_OUTPUT_DISK=disk-bios.img
 
 
 if [ $PROJECT_DIR == "" ]; then
@@ -30,23 +31,27 @@ echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}updating disk image${_NORMAL}"
 mkdir -p $PROJECT_DIR/build
 pushd $PROJECT_DIR/build > /dev/null
 
-	if [ ! -e $OUTPUT_DISK ] || [ ! -e esp-part.img ] || [ ! -e root-part.img ]; then
+	if [ ! -e $UEFI_OUTPUT_DISK ]; then
 		echo "${_BOLD}${_RED}!> ${_NORMAL}${_BOLD}disk image not found -- please run ./bootstrap.sh${_NORMAL}"
 		exit 1
 	fi
 
 	export MTOOLS_SKIP_CHECK=1
-	ESP_IMG_OFFSET=disk.img@@$(expr $ESP_PARTITION_START \* $SECTOR_SIZE)
-	ROOT_IMG_OFFSET=disk.img@@$(expr $ROOT_PARTITION_START \* $SECTOR_SIZE)
+	ESP_IMG_OFFSET=$UEFI_OUTPUT_DISK@@$(expr $ESP_PARTITION_START \* $SECTOR_SIZE)
+	ROOT_IMG_OFFSET=$UEFI_OUTPUT_DISK@@$(expr $ROOT_PARTITION_START \* $SECTOR_SIZE)
+
+	BIOS_ESP_IMG_OFFSET=$BIOS_OUTPUT_DISK@@$(expr $ESP_PARTITION_START \* $SECTOR_SIZE)
+	BIOS_ROOT_IMG_OFFSET=$BIOS_OUTPUT_DISK@@$(expr $ROOT_PARTITION_START \* $SECTOR_SIZE)
 
 	mcopy -D o -snQ -i $ESP_IMG_OFFSET $PROJECT_DIR/utils/refind.conf ::/EFI/BOOT/refind.conf
 
-	mdeltree -i $ROOT_IMG_OFFSET ::/*
+	mcopy -D o -snQ -i $BIOS_ESP_IMG_OFFSET $SYSROOT/boot/initrd.tar ::/BOOTBOOT/INITRD
 
+	mdeltree -i $ROOT_IMG_OFFSET ::/*
 	mcopy -D o -snQ -i $ROOT_IMG_OFFSET $PROJECT_DIR/build/sysroot/* ::/
 
-
-	cp disk.img disk2.img
+	mdeltree -i $BIOS_ROOT_IMG_OFFSET ::/*
+	mcopy -D o -snQ -i $BIOS_ROOT_IMG_OFFSET $PROJECT_DIR/build/sysroot/* ::/
 
 popd > /dev/null
 
