@@ -159,7 +159,7 @@ pushd $PROJECT_DIR/build > /dev/null
 		echo -e "g\nn\n1\n$ESP_PARTITION_START\n$ESP_PARTITION_END\nn\n2\n$ROOT_PARTITION_START\n$ROOT_PARTITION_END\nt\n1\n01\nt\n2\n11\nx\nu\n1\n\
 $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $UEFI_OUTPUT_DISK > /dev/null
 
-		mkfs.vfat -n "EFIPART" -F 32 esp-part.img > /dev/null
+		mkfs.vfat -n "EFIPART" -F 16 esp-part.img > /dev/null
 		mkfs.vfat -n "NX" -F 32 root-part.img > /dev/null
 
 	else

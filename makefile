@@ -58,27 +58,27 @@ INITRD              = $(SYSROOT)/boot/initrd.tar
 all: qemu
 
 debug: diskimage
-	@$(ECHO_CMD) "# starting qemu\n"
+	# starting qemu
 	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
 
 qemu: diskimage
-	@$(ECHO_CMD) "# starting qemu\n"
+	# starting qemu
 	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
 
 bios: diskimage
-	@$(ECHO_CMD) "# starting qemu (bios)\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial mon:stdio
+	# starting qemu (bios)
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio
 
 vbox-debug: diskimage
-	@$(ECHO_CMD) "# starting virtualbox (debug)\n"
+	@echo "# starting virtualbox (debug)"
 	@$(VIRTUALBOX) --startvm "nx" --debug
 
 vbox: diskimage
-	@$(ECHO_CMD) "# starting virtualbox\n"
+	# starting virtualbox
 	@$(VIRTUALBOX) --startvm "nx"
 
 bochs: diskimage
-	@$(ECHO_CMD) "# starting bochs\n"
+	# starting bochs
 	@$(BOCHS) -qf utils/bochsrc.bxrc
 
 

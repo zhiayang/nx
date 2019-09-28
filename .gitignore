@@ -12,3 +12,4 @@ toolchain-setup
 utils/refind-bin-*
 
 *.sublime-workspace
+**/.vscode/ipch
