@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "bfx.h"
+#include "string.h"
 
 namespace bfx {
 namespace vmm
@@ -12,30 +13,16 @@ namespace vmm
 	constexpr size_t indexPageDir(uint64_t addr)    { return ((((uint64_t) addr) >> 21) & 0x1FF); }
 	constexpr size_t indexPageTable(uint64_t addr)  { return ((((uint64_t) addr) >> 12) & 0x1FF); }
 
-	constexpr uint64_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
-	{
-		return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
-	}
-
 	constexpr uint64_t PAGE_PRESENT     = 0x1;
 	constexpr uint64_t PAGE_WRITE       = 0x2;
 	constexpr uint64_t PAGE_USER        = 0x4;
 	constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
-
-	constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
-
-
-	constexpr bool isAligned(uint64_t addr)
-	{
-		return addr == (addr & PAGE_ALIGN);
-	}
 
 	constexpr uint64_t HIGHER_HALF_BASE = 0xFFFF'0000'0000'0000ULL;
 
 	constexpr size_t PDPT_SIZE = 0x80'0000'0000ULL;
 	constexpr size_t PDIR_SIZE = 0x4000'0000ULL;
 	constexpr size_t PTAB_SIZE = 0x20'0000ULL;
-
 
 	static uint64_t end(uint64_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
@@ -78,82 +65,10 @@ namespace vmm
 		return (pml_t*) (RecursiveAddr<recursiveIdx>::ptab + (PDIR_SIZE * p4idx) + (PTAB_SIZE * p3idx) + (PAGE_SIZE * p2idx));
 	}
 
-	void invalidateAll()
-	{
-		asm volatile ("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
-	}
-
-	void invalidate(uint64_t addr)
+	static void invalidate(uint64_t addr)
 	{
 		asm volatile ("invlpg (%0)" :: "r"(addr));
 	}
-
-	void switchAddrSpace(uint64_t cr3)
-	{
-		asm volatile ("mov %0, %%cr3" :: "a"(cr3) : "memory");
-	}
-
-
-
-
-	void mapAddress(uint64_t virt, uint64_t phys, size_t num, uint64_t flags)
-	{
-		// note: the flags in the higher-level structures will override those at the lower level
-		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
-		// same applies for PAGE_WRITE (when CR0.WP=1)
-		// also: for 0 <= p4idx <= 255, we set the user-bit on intermediate entries.
-		// for 256 <= p4idx <= 511, we don't set it.
-		constexpr uint64_t DEFAULT_FLAGS_LOW = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
-		constexpr uint64_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
-
-		for(size_t x = 0; x < num; x++)
-		{
-			uint64_t v = virt + (x * PAGE_SIZE);
-			uint64_t p = phys + (x * PAGE_SIZE);
-
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
-
-			if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
-
-			auto pml4 = getPML4();
-			auto pdpt = getPDPT(p4idx);
-			auto pdir = getPDir(p4idx, p3idx);
-			auto ptab = getPTab(p4idx, p3idx, p2idx);
-
-			auto DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
-
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			{
-				pml4->entries[p4idx] = pmm::allocate(1) | DEFAULT_FLAGS;
-				memset(pdpt, 0, PAGE_SIZE);
-			}
-
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			{
-				pdpt->entries[p3idx] = pmm::allocate(1) | DEFAULT_FLAGS;
-				memset(pdir, 0, PAGE_SIZE);
-			}
-
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			{
-				pdir->entries[p2idx] = pmm::allocate(1) | DEFAULT_FLAGS;
-				memset(ptab, 0, PAGE_SIZE);
-			}
-
-
-			if(ptab->entries[p1idx] & PAGE_PRESENT)
-				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
-
-
-			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
-			invalidate((uint64_t) v);
-		}
-	}
-
 
 	void bootstrap(uint64_t physBase, uint64_t v, size_t maxPages)
 	{

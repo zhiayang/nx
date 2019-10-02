@@ -113,12 +113,6 @@ namespace exceptions
 			idt::setEntry(i, (uint64_t) exception_handlers[i],
 				/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false);
 		}
-
-		// note: on x86, we do not remap the IRQs on the PIC first,
-		// because we 'prefer' to use the APIC system. when we call
-		// interrupts::init(), we try to use the APIC unless it does not
-		// exist; if it doesn't, then we call pic8259::init(), which does
-		// the IRQ remapping. if not, we just mask all interrupts from the PIC.
 	}
 
 
@@ -161,13 +155,9 @@ namespace exceptions
 		asm volatile("mov %%cr2, %0" : "=r" (cr2));
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
 
-		// TODO: kill the process if this happens
-		// TODO: also stuff like page faults aren't always bad news
-
 		print("\n\n");
 		print("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
 		print("error code:   %d\n", regs->ErrorCode);
-
 
 		if(regs->InterruptID == 13 && regs->ErrorCode != 0)
 		{

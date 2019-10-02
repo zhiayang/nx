@@ -2,15 +2,14 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#include "string.h"
+
 #include "bfx.h"
 #include "bootboot.h"
 #include "../../kernel/include/misc/addrs.h"
 
 namespace bfx
 {
-	void* allocator::allocate(size_t sz, size_t align)  { return 0; }
-	void allocator::deallocate(void* ptr)               { }
-
 	namespace vmm
 	{
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
@@ -131,10 +130,4 @@ namespace bfx
 
 
 
-#ifdef FUCKIN_WSL_FIX_YOUR_SHIT
-[[nodiscard]] void* operator new    (unsigned long long count, void* ptr)   { return ptr; }
-[[nodiscard]] void* operator new[]  (unsigned long long count, void* ptr)   { return ptr; }
-#else
-[[nodiscard]] void* operator new    (size_t count, void* ptr)   { return ptr; }
-[[nodiscard]] void* operator new[]  (size_t count, void* ptr)   { return ptr; }
-#endif
+

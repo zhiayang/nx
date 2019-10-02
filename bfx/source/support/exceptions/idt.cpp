@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "bfx.h"
+#include "string.h"
 
 namespace bfx {
 namespace idt
@@ -67,16 +68,6 @@ namespace idt
 		if(nestedInterrupts)    flags |= 0x1;   // setting bit 0 makes the type 0b1111 (ie 0xF), which is trap gate -- with nested interrupts
 
 		idt[num].flags = flags;
-	}
-
-	void enableGate(uint8_t num)
-	{
-		idt[num].flags |= 0x80;
-	}
-
-	void disableGate(uint8_t num)
-	{
-		idt[num].flags &= ~0x80;
 	}
 }
 }

@@ -4,6 +4,7 @@
 
 #include "bfx.h"
 #include "elf.h"
+#include "string.h"
 
 #include "bootboot.h"
 #include "../../kernel/include/misc/addrs.h"

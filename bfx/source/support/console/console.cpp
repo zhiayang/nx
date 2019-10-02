@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "bfx.h"
+#include "string.h"
 
 namespace bfx {
 namespace console
@@ -49,7 +50,8 @@ namespace console
 		CurrentBGColour = 0x080808;
 
 		// and clear!
-		krt::util::memfill4b((uint32_t*) FramebufferAddr, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
+		for(size_t i = 0; i < FramebufferScanWidth * FramebufferHeight; i++)
+			((uint32_t*) FramebufferAddr)[i] = CurrentBGColour;
 	}
 
 
@@ -64,7 +66,10 @@ namespace console
 		if(c == ' ' || c > 126)
 		{
 			for(int i = y; i < (y + CharHeight); i++)
-				krt::util::memfill4b((uint32_t*) (FramebufferAddr + (i * FramebufferScanWidth + x) * 4), bg, CharWidth);
+			{
+				for(size_t w = 0; w < CharWidth; w++)
+					((uint32_t*) (FramebufferAddr + (i * FramebufferScanWidth + x) * 4))[w] = bg;
+			}
 		}
 
 		uint32_t* rowAddress = (uint32_t *) FramebufferAddr + x + (y * FramebufferScanWidth);
@@ -96,8 +101,11 @@ namespace console
 				((VT_Height - 1) * CharHeight) * FramebufferScanWidth * 4);
 
 			// memset the last row to 0.
-			krt::util::memfill4b((uint32_t*) (FramebufferAddr + (Padding + ((VT_Height - 1) * CharHeight)) * FramebufferScanWidth * 4),
-				CurrentBGColour, FramebufferScanWidth * CharHeight);
+			for(size_t i = 0; i < FramebufferScanWidth * CharHeight; i++)
+			{
+				((uint32_t*) (FramebufferAddr + (Padding + ((VT_Height - 1) * CharHeight))
+					* FramebufferScanWidth * 4))[i] = CurrentBGColour;
+			}
 
 			CursorY -= 1;
 		}
@@ -150,16 +158,6 @@ namespace console
 				scrollIfNecessary();
 			}
 		}
-	}
-
-	void background(uint32_t bg)
-	{
-		CurrentBGColour = bg;
-	}
-
-	void foreground(uint32_t fg)
-	{
-		CurrentFGColour = fg;
 	}
 }
 }

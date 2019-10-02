@@ -46,6 +46,9 @@ namespace nx
 	constexpr uint64_t BOOTINFO_FLAG_UEFI = 0x1;
 	constexpr uint64_t BOOTINFO_FLAG_BIOS = 0x2;
 
+
+	// unless specifically stated, all pointers point to virtual addresses, which are guaranteed
+	// to be mapped in the startup address space.
 	struct BootInfo
 	{
 		// 'e', 'f', 'x'
@@ -96,7 +99,8 @@ namespace nx
 
 		struct {
 
-			// pointer to either the rsdp or the xsdp
+			// pointer to either the RSDT or the XSDT. note: not the pointer, the table itself!
+			// no extra information (like which one it is), so we must check the signature before using.
 			void* acpiTable;
 
 		} bios;
@@ -104,7 +108,7 @@ namespace nx
 
 		#if NX_BOOTINFO_VERSION >= 2
 
-			// pointer to the kernel ELF executable (identity mapped)
+			// pointer to the kernel ELF executable
 			void* kernelElf;
 
 			// the size of the kernel executable

@@ -57,19 +57,6 @@ namespace extmm
 		st->numExtents += 1;
 	}
 
-	void dump(State* st)
-	{
-		println("dumping extmm state %s (%p):", st->owner, st);
-		auto ext = st->head;
-		while(ext)
-		{
-			println("    %p - %p", ext->addr, end(ext));
-			ext = ext->next;
-		}
-		println("");
-	}
-
-
 	void init(State* st, const char* owner, uint64_t base, uint64_t top)
 	{
 		st->head = 0;
@@ -81,28 +68,6 @@ namespace extmm
 		st->bootstrapStart = base;
 		st->bootstrapEnd = top;
 	}
-
-	void destroy(State* st)
-	{
-		// just loop through all the extents and destroy them.
-		auto ext = st->head;
-		while(ext)
-		{
-			if(!(((uint64_t) ext) >= st->bootstrapStart && ((uint64_t) ext) < st->bootstrapEnd))
-			{
-				// delete ext;
-			}
-
-			// else do nothing.
-
-			ext = ext->next;
-		}
-
-		st->head = 0;
-		st->numExtents = 0;
-		st->bootstrapWatermark = st->bootstrapStart;
-	}
-
 
 	uint64_t allocate(State* st, size_t num, bool (*satisfies)(uint64_t, size_t))
 	{
@@ -129,48 +94,6 @@ namespace extmm
 		println("extmm/%s::allocate(): out of pages!", st->owner);
 		return 0;
 	}
-
-	uint64_t allocateSpecific(State* st, uint64_t start, size_t num)
-	{
-		auto ext = st->head;
-		while(ext)
-		{
-			if(ext->addr <= start && end(ext) >= end(start, num))
-			{
-				if(ext->addr == start)
-				{
-					// simple -- just move the pointer up
-					ext->addr += (num * PAGE_SIZE);
-					ext->size -= num;
-				}
-				else if(end(start, num) == end(ext))
-				{
-					// also simple -- just subtract the size.
-					ext->size -= num;
-				}
-				else
-				{
-					// bollocks, it's somewhere in the middle.
-					size_t numFrontPages = (start - ext->addr) / PAGE_SIZE;
-					size_t numBackPages = (end(ext) - end(start, num)) / PAGE_SIZE;
-
-					// decrease the front block
-					ext->size = numFrontPages;
-
-					// make a new block
-					addExtent(st, end(start, num), numBackPages);
-				}
-
-				return start;
-			}
-
-			ext = ext->next;
-		}
-
-		println("extmm/%s::allocateSpecific(): could not fulfil request!", st->owner);
-		return 0;
-	}
-
 
 	void deallocate(State* st, uint64_t addr, size_t num)
 	{
@@ -253,12 +176,10 @@ namespace pmm
 			{
 				// println("%p - %p", MMapEnt_Ptr(entry), MMapEnt_Ptr(entry) + MMapEnt_Size(entry));
 
-				deallocate(MMapEnt_Ptr(entry), MMapEnt_Size(entry) / PAGE_SIZE);
+				extmm::deallocate(&extmmState, MMapEnt_Ptr(entry), MMapEnt_Size(entry) / PAGE_SIZE);
 				totalMem += MMapEnt_Size(entry);
 			}
 		}
-
-		// println("bfx pmm initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
 	}
 
 	uint64_t allocate(size_t num, bool below4G)
@@ -268,11 +189,6 @@ namespace pmm
 		return extmm::allocate(&extmmState, num, below4G ? [](uint64_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](uint64_t, size_t) -> bool { return true; });
-	}
-
-	void deallocate(uint64_t addr, size_t num)
-	{
-		extmm::deallocate(&extmmState, addr, num);
 	}
 }
 

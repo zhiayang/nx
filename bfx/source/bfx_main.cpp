@@ -11,7 +11,7 @@
 #include "bootboot.h"
 #include "../../kernel/include/bootinfo.h"
 
-#define BFX_VERSION_STRING "0.1.1"
+#define BFX_VERSION_STRING "0.1.2"
 #define KERNEL_FILENAME    "boot/nxkernel64"
 
 extern "C" void kernel_trampoline(uint64_t cr3, uint64_t entry, uint64_t bootinfo);
