@@ -1,2 +1,2 @@
 #!/bin/sh
-cloc --exclude-ext=d,o,json kernel efx drivers services libs/libkrt libs/libnxsc
+cloc --exclude-ext=d,o,json kernel bfx efx drivers services libs/libkrt libs/libnxsc

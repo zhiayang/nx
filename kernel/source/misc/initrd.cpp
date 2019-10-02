@@ -28,6 +28,31 @@ struct gzip_header_t
 
 } __attribute__((packed));
 
+struct tarent_t
+{
+	// original format
+	char name[100];
+	char mode[8];
+	char uid[8];
+	char gid[8];
+	char size[12];
+	char mtime[12];
+	char check[8];
+	char typr;
+	char link_name[100];
+
+	// ustar format
+	char ustar[8];
+	char owner[32];
+	char group[32];
+	char major[8];
+	char minor[8];
+	char name_prefix[155];
+
+// should already be packed anyway.
+} __attribute__((packed));
+
+
 namespace nx {
 namespace initrd
 {
@@ -45,44 +70,71 @@ namespace initrd
 		size_t inpSz = bi->initrdSize;
 		void* initrd = bi->initrdBuffer;
 
-		size_t uncompressedSize = 0;
+		void* finalPtr = 0;
+		size_t finalSz = 0;
 
-		// note: we do this to avoid unaligned access, which ubsan complains about.
+
+		// check if it's gzip first.
+		if(((gzip_header_t*) initrd)->magic[0] == 0x1F && ((gzip_header_t*) initrd)->magic[1] == 0x8B)
 		{
-			uint32_t tmp = 0;
-			memcpy(&tmp, (void*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)), sizeof(uint32_t));
+			log("initrd", "format: gzip");
 
-			uncompressedSize = tmp;
+			// note: we do this to avoid unaligned access, which ubsan complains about.
+			size_t uncompressedSize = 0;
+			{
+				uint32_t tmp = 0;
+				memcpy(&tmp, (void*) (((addr_t) initrd) + inpSz - sizeof(uint32_t)), sizeof(uint32_t));
+
+				uncompressedSize = tmp;
+			}
+
+			// make a thing.
+			void* buf = (void*) vmm::allocate((uncompressedSize + PAGE_SIZE) / PAGE_SIZE, vmm::AddressSpace::Kernel);
+			{
+				auto hdr = (gzip_header_t*) initrd;
+				assert(hdr->magic[0] == 0x1F);
+				assert(hdr->magic[1] == 0x8B);
+
+				if(hdr->compression != 8) abort("initrd in unsupported format!");
+
+				uint8_t* data = (uint8_t*) (hdr + 1);
+				if(hdr->flags & 0x4)
+					data += *((uint16_t*) data);
+
+				if(hdr->flags & 0x8)    { while(*data) data++; data++; }
+				if(hdr->flags & 0x10)   { while(*data) data++; data++; }
+				if(hdr->flags & 0x20)   { abort("initrd is encrypted?!"); }
+
+				unsigned int len = (int) uncompressedSize;
+				int ret = tinf_uncompress(buf, &len, data, (int) inpSz);
+				if(ret != TINF_OK || len != (unsigned int) uncompressedSize)
+					abort("failed to decompress initrd!");
+			}
+
+			finalPtr = buf;
+			finalSz = uncompressedSize;
+		}
+		else if(memcmp(((tarent_t*) initrd)->ustar, "ustar\0""00", 8) == 0)
+		{
+			log("initrd", "format: tar");
+
+			void* buf = (void*) vmm::allocate((inpSz + PAGE_SIZE) / PAGE_SIZE, vmm::AddressSpace::Kernel);
+			memcpy(buf, initrd, inpSz);
+
+			finalPtr = buf;
+			finalSz = inpSz;
+		}
+		else
+		{
+			error("initrd", "unsupported format");
+			abort("failed to load initrd!");
 		}
 
-		// make a thing.
-		void* buf = (void*) vmm::allocate((uncompressedSize + PAGE_SIZE) / PAGE_SIZE, vmm::AddressSpace::Kernel);
-		{
-			auto hdr = (gzip_header_t*) initrd;
-			assert(hdr->magic[0] == 0x1F);
-			assert(hdr->magic[1] == 0x8B);
+		log("initrd", "size: %s", humanSizedBytes(finalSz).cstr());
 
-			if(hdr->compression != 8) abort("initrd in unsupported format!");
-
-			uint8_t* data = (uint8_t*) (hdr + 1);
-			if(hdr->flags & 0x4)
-				data += *((uint16_t*) data);
-
-			if(hdr->flags & 0x8)    { while(*data) data++; data++; }
-			if(hdr->flags & 0x10)   { while(*data) data++; data++; }
-			if(hdr->flags & 0x20)   { abort("initrd is encrypted?!"); }
-
-			unsigned int len = (int) uncompressedSize;
-			int ret = tinf_uncompress(buf, &len, data, (int) inpSz);
-			if(ret != TINF_OK || len != (unsigned int) uncompressedSize)
-				abort("failed to decompress initrd!");
-		}
-
-		log("initrd", "decompressed initrd: %s", humanSizedBytes(uncompressedSize).cstr());
-
-		auto tarfs = vfs::tarfs::create((uint8_t*) buf, uncompressedSize);
-		vfs::mount(tarfs, "/initrd", true);
-
+		auto tarfs = vfs::tarfs::create((uint8_t*) finalPtr, finalSz);
+		if(!vfs::mount(tarfs, "/initrd", true))
+			abort("failed to mount initrd!");
 
 		// free the old buffer.
 		pmm::freeEarlyMemory(bi, MemoryType::Initrd);

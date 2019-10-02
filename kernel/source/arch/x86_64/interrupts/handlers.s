@@ -1,5 +1,5 @@
 // Interrupts.s
-// Copyright (c) 2013 - 2016, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 
 .include "macros.s"

@@ -21,12 +21,10 @@ namespace tarfs
 		char size[12];
 		char mtime[12];
 		char check[8];
-		char link;
+		char type;
 		char link_name[100];
 
 		// ustar format
-		char type;
-		char also_link_name[100];
 		char ustar[8];
 		char owner[32];
 		char group[32];
@@ -39,8 +37,8 @@ namespace tarfs
 	{
 		string name;
 
-		size_t offset;
 		size_t size;
+		size_t offset;
 	};
 
 	struct driverdata_t
@@ -89,15 +87,25 @@ namespace tarfs
 				continue;
 			}
 
-			tarfile_t file;
-
 			auto ent = (tarent_t*) (dd->buffer + i);
-			file.name = string(ent->name_prefix) + string(ent->name);
-			file.size = octalToNumber(ent->size);
-			file.offset = i + 512;
+			if(memcmp(ent->ustar, "ustar\0""00", 8) != 0)
+			{
+				error("tarfs", "non-ustar format unsupported: '%.5s'", ent->ustar);
+				return false;
+			}
+
+
+			tarfile_t file {
+				.name   = string(ent->name_prefix) + string(ent->name),
+				.size   = octalToNumber(ent->size),
+				.offset = i + 512
+			};
 
 			if(file.name[0] == '.')
 				file.name.erase_at(0, 1);
+
+			if(file.name[0] != '/')
+				file.name = "/" + file.name;
 
 			if(file.size > 0) dd->files.append(file);
 

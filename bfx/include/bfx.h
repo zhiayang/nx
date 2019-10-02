@@ -9,7 +9,7 @@
 
 #include "krt.h"
 
-#define NX_BOOTINFO_VERSION 3
+#define NX_BOOTINFO_VERSION 2
 #include "../../kernel/include/bootinfo.h"
 
 
@@ -49,7 +49,7 @@ namespace bfx
 
 
 
-	constexpr uint64_t PAGE_SIZE        = 0x1000;
+	constexpr uint64_t PAGE_SIZE = 0x1000;
 
 	namespace idt
 	{
@@ -57,9 +57,20 @@ namespace bfx
 		void setEntry(uint8_t num, uint64_t base, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts);
 	}
 
+	namespace console
+	{
+		void init(void* fb, int x, int y, int scanx);
+		void putchar(char c);
+	}
+
 	namespace exceptions
 	{
 		void init();
+	}
+
+	namespace initrd
+	{
+		krt::pair<void*, size_t> findKernel(void* ptr, size_t sz, const char* name);
 	}
 
 	namespace pmm
@@ -72,14 +83,30 @@ namespace bfx
 
 	namespace vmm
 	{
+		struct pml_t
+		{
+			uint64_t entries[512];
+		};
+
 		void bootstrap(uint64_t physBase, uint64_t virt, size_t maxPages);
-
 		void mapAddress(uint64_t virt, uint64_t phys, size_t num, uint64_t flags);
-		void unmapAddress(uint64_t virt, size_t num, bool freePhys);
-		uint64_t getPhysAddr(uint64_t virt);
-		bool isMapped(uint64_t virt, size_t num);
 
+
+		void setupCR3(BOOTBOOT* bbinfo);
+		void mapKernel(uint64_t phys, uint64_t virt, size_t num, uint64_t flags);
+
+		uint64_t getPML4Address();
 	}
+
+	namespace mmap
+	{
+		void init(MMapEnt* ents, size_t bbents);
+		void addEntry(uint64_t base, size_t pages, uint64_t type);
+		void finalise(nx::BootInfo* bi);
+	}
+
+	nx::BootInfo* setupBootInfo(BOOTBOOT* bbinfo);
+	void loadKernel(uint8_t* input, size_t len, uint64_t* entry_out);
 }
 
 

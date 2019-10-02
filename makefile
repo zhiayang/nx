@@ -31,7 +31,7 @@ QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
 QEMU_BIOS_DISKIMG   = -drive format=raw,file=build/disk-bios.img
 
 QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
-QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -no-shutdown -no-reboot
+QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -no-shutdown -no-reboot -vga std
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
@@ -67,7 +67,7 @@ qemu: diskimage
 
 bios: diskimage
 	@$(ECHO_CMD) "# starting qemu (bios)\n"
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial mon:stdio
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio #-s -S
 
 vbox-debug: diskimage
 	@$(ECHO_CMD) "# starting virtualbox (debug)\n"

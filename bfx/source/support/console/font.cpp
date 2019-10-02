@@ -1,13 +1,12 @@
-// Font8x16_Thick.cpp
+// font.cpp
 // Copyright (c) 2013 - 2016, zhiayang
 // Licensed under the Apache License Version 2.0.
 // Original Font obtained from: http://terminus-font.sourceforge.net/shots.html
 
-#include "defs.h"
+#include "bfx.h"
 
-namespace nx {
-namespace console {
-namespace fallback
+namespace bfx {
+namespace console
 {
 	extern const uint8_t TheFont[256][16] =
 	{
@@ -142,7 +141,7 @@ namespace fallback
 	};
 }
 }
-}
+
 
 
 

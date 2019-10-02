@@ -13,8 +13,9 @@ namespace bfx
 {
 	static size_t cb_print(void* ctx, const char* s, size_t len)
 	{
-		// mirror to the serial port as well.
 		serial::print((char*) s, len);
+		for(size_t i = 0; i < len; i++)
+			console::putchar(s[i]);
 
 		return len;
 	}

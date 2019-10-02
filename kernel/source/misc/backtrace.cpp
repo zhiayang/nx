@@ -5,10 +5,8 @@
 #include "nx.h"
 #include "elf.h"
 
-
-#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
 #include "bootinfo.h"
-
 
 namespace nx {
 namespace util
@@ -78,11 +76,6 @@ namespace util
 	void printStackTrace(uint64_t _rbp)
 	{
 		serial::debugprintf("\nbacktrace:\n");
-		if(!heap::initialised())
-		{
-			serial::debugprintf("    unavailable\n");
-			return;
-		}
 
 		int counter = 0;
 		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
@@ -93,10 +86,18 @@ namespace util
 
 			if(rip)
 			{
-				auto s = getSymbolAtAddr1(rip);
-				if(!s) break;
+				if(heap::initialised())
+				{
+					auto s = getSymbolAtAddr1(rip);
+					if(!s) break;
 
-				serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s->cstr());
+					serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s->cstr());
+				}
+				else
+				{
+					serial::debugprintf("    %2d: %p\n", counter, rip);
+				}
+
 				counter += 1;
 			}
 

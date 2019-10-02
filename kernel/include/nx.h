@@ -28,7 +28,8 @@
 
 #include "platform-specific.h"
 
-#define NX_SUPPORTED_BOOTINFO_VERSION   3
+#define NX_MIN_BOOTINFO_VERSION         1
+#define NX_MAX_BOOTINFO_VERSION         3
 #define NX_SYSCALL_INTERRUPT_VECTOR     0xF8
 
 namespace nx

@@ -12,7 +12,7 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#define EFX_VERSION_STRING "0.4.1"
+#define EFX_VERSION_STRING "0.5.0"
 
 
 void efx::init()

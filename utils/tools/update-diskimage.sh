@@ -46,6 +46,7 @@ pushd $PROJECT_DIR/build > /dev/null
 	mcopy -D o -snQ -i $ESP_IMG_OFFSET $PROJECT_DIR/utils/refind.conf ::/EFI/BOOT/refind.conf
 
 	mcopy -D o -snQ -i $BIOS_ESP_IMG_OFFSET $SYSROOT/boot/initrd.tar ::/BOOTBOOT/INITRD
+	mcopy -D o -snQ -i $BIOS_ESP_IMG_OFFSET $PROJECT_DIR/utils/bootboot_config ::/BOOTBOOT/CONFIG
 
 	mdeltree -i $ROOT_IMG_OFFSET ::/*
 	mcopy -D o -snQ -i $ROOT_IMG_OFFSET $PROJECT_DIR/build/sysroot/* ::/

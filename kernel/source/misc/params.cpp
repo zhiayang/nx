@@ -5,7 +5,7 @@
 #include "nx.h"
 #include "misc/params.h"
 
-#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
 #include "bootinfo.h"
 
 namespace nx {
@@ -22,6 +22,12 @@ namespace params
 	void init(BootInfo* bi)
 	{
 		Options = array<Option>();
+
+		if(bi->version < 3)
+		{
+			warn("kernel", "bootinfo version '%d' does not support kernel parameters", bi->version);
+			return;
+		}
 
 		char* ptr = bi->kernelParams;
 		for(uint64_t i = 0; i < bi->numKernelParams; i++)

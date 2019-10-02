@@ -103,15 +103,15 @@ namespace nx
 		println("bootloader ident: '%c%c%c', version: %d\n",
 			bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2], bootinfo->version);
 
-		if(bootinfo->version < NX_SUPPORTED_BOOTINFO_VERSION)
+		if(bootinfo->version < NX_MIN_BOOTINFO_VERSION)
 		{
 			abort("invalid bootloader version: %d; at least version %d is required!",
-				bootinfo->version, NX_SUPPORTED_BOOTINFO_VERSION);
+				bootinfo->version, NX_MIN_BOOTINFO_VERSION);
 		}
-		else if(bootinfo->version > NX_SUPPORTED_BOOTINFO_VERSION)
+		else if(bootinfo->version > NX_MAX_BOOTINFO_VERSION)
 		{
 			warn("kernel", "bootloader version %d is newer than supported version %d",
-				bootinfo->version, NX_SUPPORTED_BOOTINFO_VERSION);
+				bootinfo->version, NX_MAX_BOOTINFO_VERSION);
 		}
 
 		// set the wp bit so we don't go around writing stuff.
@@ -162,7 +162,6 @@ namespace nx
 		// is up, we must call interrupts::init.
 		interrupts::init_arch();
 		interrupts::enable();
-
 
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!

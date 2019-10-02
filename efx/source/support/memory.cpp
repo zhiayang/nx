@@ -120,7 +120,8 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo, efi::MemoryType_MemoryMap, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo,
+				efi::MemoryType_MemoryMap, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
 			{
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 			}
@@ -131,7 +132,8 @@ namespace memory
 				mapVirtual(entry->PhysicalStart, v, entry->NumberOfPages);
 			}
 
-			// efi::println("%2d: %p - %p   |   %d", i, entry->PhysicalStart, entry->PhysicalStart + (0x1000 * entry->NumberOfPages), entry->Type);
+			// efi::println("%2d: %p - %p   |   %d", i, entry->PhysicalStart, entry->PhysicalStart
+			//	+ (0x1000 * entry->NumberOfPages), entry->Type);
 		}
 	}
 
@@ -171,7 +173,7 @@ namespace memory
 		auto stat = efi::systable()->RuntimeServices->SetVirtualAddressMap((uint64_t) entries - scratch, sizeof(efi_memory_descriptor),
 			1, (efi_memory_descriptor*) scratch);
 
-		bi->canCallEFIRuntime = (stat == EFI_SUCCESS);
+		bi->efi.canCallEFIRuntime = (stat == EFI_SUCCESS);
 	}
 
 	uint64_t getPML4Address()

@@ -3,47 +3,46 @@ OUTPUT_FORMAT(elf64-x86-64)
 
 SECTIONS
 {
-	Kernel_VMA = 0xFFFFFFFFF8000000;
-	. = Kernel_VMA;
+	KERNEL_VADDR = 0xFFFFFFFFF8000000;
+	. = KERNEL_VADDR;
 
-	.text ALIGN(0x1000) : AT(ADDR(.text) - Kernel_VMA)
+	.text ALIGN(0x1000) : AT(ADDR(.text) - KERNEL_VADDR)
 	{
 		*(.text*)
 		*(.gnu.linkonce.t*)
 	}
 
-	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - Kernel_VMA)
+	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_VADDR)
 	{
 		*(.rodata*)
 		*(.gnu.linkonce.r*)
 	}
 
-	.stuff ALIGN(0x1000) : AT(ADDR(.stuff) - Kernel_VMA)
+	.stuff ALIGN(0x1000) : AT(ADDR(.stuff) - KERNEL_VADDR)
 	{
-		start_ctors = .;
+		CTORS_BEGIN = .;
+
 		*(SORT(.ctors))
 		*(SORT(.ctors*))
-		end_ctors = .;
 
-		start_dtors = .;
+		CTORS_END   = .;
+		DTORS_BEGIN = .;
+
 		*(SORT(.dtors))
-		end_dtors = .;
+
+		DTORS_END   = .;
 	}
 
-	.data ALIGN(0x1000) : AT(ADDR(.data) - Kernel_VMA)
+	.data ALIGN(0x1000) : AT(ADDR(.data) - KERNEL_VADDR)
 	{
 		*(.data*)
 		*(.gnu.linkonce.d*)
 	}
 
-	.bss ALIGN(0x1000) : AT(ADDR(.bss) - Kernel_VMA)
+	.bss ALIGN(0x1000) : AT(ADDR(.bss) - KERNEL_VADDR)
 	{
-		StartBSS = .;
 		*(COMMON)
 		*(.bss*)
 		*(.gnu.linkonce.b*)
-		EndBSS = .;
 	}
-
-	KernelEnd = .;
 }

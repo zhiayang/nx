@@ -92,18 +92,19 @@ namespace efx
 
 
 		// then, fill in some stuff.
-		bi->ident[0]    = 'e';
-		bi->ident[1]    = 'f';
-		bi->ident[2]    = 'x';
-		bi->version     = NX_BOOTINFO_VERSION;
-		bi->efiSysTable = (void*) efi::systable();
+		bi->ident[0]        = 'e';
+		bi->ident[1]        = 'f';
+		bi->ident[2]        = 'x';
+		bi->version         = NX_BOOTINFO_VERSION;
+		bi->flags           = nx::BOOTINFO_FLAG_UEFI;
+		bi->efi.efiSysTable = (void*) efi::systable();
 
-		bi->fbHorz      = graphics::getX();
-		bi->fbVert      = graphics::getY();
-		bi->fbScanWidth = graphics::getPixelsPerScanline();
-		bi->frameBuffer = nx::addrs::KERNEL_FRAMEBUFFER;
+		bi->fbHorz          = graphics::getX();
+		bi->fbVert          = graphics::getY();
+		bi->fbScanWidth     = graphics::getPixelsPerScanline();
+		bi->frameBuffer     = nx::addrs::KERNEL_FRAMEBUFFER;
 
-		bi->pml4Address = memory::getPML4Address();
+		bi->pml4Address     = memory::getPML4Address();
 
 		return bi;
 	}

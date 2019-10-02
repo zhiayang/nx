@@ -43,6 +43,9 @@ namespace nx
 		#error "define NX_BOOTINFO_VERSION before including bootinfo.h!"
 	#endif
 
+	constexpr uint64_t BOOTINFO_FLAG_UEFI = 0x1;
+	constexpr uint64_t BOOTINFO_FLAG_BIOS = 0x2;
+
 	struct BootInfo
 	{
 		// 'e', 'f', 'x'
@@ -66,11 +69,8 @@ namespace nx
 		// physical address of the PML4T that was set up by the bootloader.
 		uint64_t pml4Address;
 
-		// pointer to EFI system table
-		void* efiSysTable;
-
-		// whether or not we successfully called SetVirtualMemoryMap()
-		bool canCallEFIRuntime;
+		// flags. right now just indicates what firmware we booted from.
+		uint64_t flags;
 
 		// the number of memory map entries
 		uint64_t mmEntryCount;
@@ -84,6 +84,22 @@ namespace nx
 		// pointer to the initrd (identity mapped)
 		void* initrdBuffer;
 
+		struct {
+
+			// pointer to EFI system table
+			void* efiSysTable;
+
+			// whether or not we successfully called SetVirtualMemoryMap()
+			bool canCallEFIRuntime;
+
+		} efi;
+
+		struct {
+
+			// pointer to either the rsdp or the xsdp
+			void* acpiTable;
+
+		} bios;
 
 
 		#if NX_BOOTINFO_VERSION >= 2

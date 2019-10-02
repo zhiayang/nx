@@ -7,11 +7,6 @@
 namespace bfx {
 namespace vmm
 {
-	struct pml_t
-	{
-		uint64_t entries[512];
-	};
-
 	constexpr size_t indexPML4(uint64_t addr)       { return ((((uint64_t) addr) >> 39) & 0x1FF); }
 	constexpr size_t indexPDPT(uint64_t addr)       { return ((((uint64_t) addr) >> 30) & 0x1FF); }
 	constexpr size_t indexPageDir(uint64_t addr)    { return ((((uint64_t) addr) >> 21) & 0x1FF); }
@@ -160,107 +155,6 @@ namespace vmm
 	}
 
 
-
-	void unmapAddress(uint64_t virt, size_t num, bool freePhys)
-	{
-		for(size_t i = 0; i < num; i++)
-		{
-			uint64_t v = virt + (i * PAGE_SIZE);
-
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
-
-			if(p4idx == 510) abort("cannot unmap PML4T at index 510!");
-
-			auto pml4 = getPML4();
-			auto pdpt = getPDPT(p4idx);
-			auto pdir = getPDir(p4idx, p3idx);
-			auto ptab = getPTab(p4idx, p3idx, p2idx);
-
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-				abort("%p was not mapped! (pdpt not present)", virt);
-
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-				abort("%p was not mapped! (pdir not present)", virt);
-
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-				abort("%p was not mapped! (ptab not present)", virt);
-
-			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
-				abort("%p was not mapped! (page not present)", virt);
-
-
-			if(freePhys)
-			{
-				uint64_t phys = ptab->entries[p1idx] & PAGE_ALIGN;
-				pmm::deallocate(phys, 1);
-			}
-
-			ptab->entries[p1idx] = 0;
-			invalidate(v);
-		}
-	}
-
-
-	uint64_t getPhysAddr(uint64_t virt)
-	{
-		// right.
-		auto p4idx = indexPML4(virt);
-		auto p3idx = indexPDPT(virt);
-		auto p2idx = indexPageDir(virt);
-		auto p1idx = indexPageTable(virt);
-
-		auto pml4 = getPML4();
-		auto pdpt = getPDPT(p4idx);
-		auto pdir = getPDir(p4idx, p3idx);
-		auto ptab = getPTab(p4idx, p3idx, p2idx);
-
-		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (pdpt not present)", virt);
-
-		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (pdir not present)", virt);
-
-		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (ptab not present)", virt);
-
-		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (page not present)", virt);
-
-		return ptab->entries[p1idx] & PAGE_ALIGN;
-	}
-
-
-	bool isMapped(uint64_t virt, size_t num)
-	{
-		for(size_t i = 0; i < num; i++)
-		{
-			uint64_t v = virt + (i * PAGE_SIZE);
-
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
-
-			auto pml4 = getPML4();
-			auto pdpt = getPDPT(p4idx);
-			auto pdir = getPDir(p4idx, p3idx);
-			auto ptab = getPTab(p4idx, p3idx, p2idx);
-
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))  return false;
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))  return false;
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))  return false;
-			if(!(ptab->entries[p1idx] & PAGE_PRESENT))  return false;
-		}
-
-		return true;
-	}
-
-
 	void bootstrap(uint64_t physBase, uint64_t v, size_t maxPages)
 	{
 		// over here, we need to setup the recursive mapping.
@@ -318,8 +212,6 @@ namespace vmm
 		// ok it should be set right now
 		// hopefully we do not triple fault!!!!
 		memset((void*) v, 0, PAGE_SIZE);
-
-		println("vmm bootstrapped");
 	}
 }
 }

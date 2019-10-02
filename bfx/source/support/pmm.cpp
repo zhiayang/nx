@@ -258,7 +258,7 @@ namespace pmm
 			}
 		}
 
-		println("bfx pmm initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
+		// println("bfx pmm initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
 	}
 
 	uint64_t allocate(size_t num, bool below4G)
@@ -273,6 +273,108 @@ namespace pmm
 	void deallocate(uint64_t addr, size_t num)
 	{
 		extmm::deallocate(&extmmState, addr, num);
+	}
+}
+
+
+namespace mmap
+{
+	using mmapentry_t = nx::MemMapEntry;
+
+	static mmapentry_t* entryArray  = 0;
+	static uint64_t entryArrayPages = 0;
+
+	static size_t numEntries = 0;
+	static size_t maxEntries = 0;
+
+	void init(MMapEnt* ents, size_t bbents)
+	{
+		// loop through all the entries first.
+		size_t neededEnts = 0;
+
+		for(size_t i = 0; i < bbents; i++)
+		{
+			if(MMapEnt_Type(&ents[i]) == MMAP_ACPI || MMapEnt_Type(&ents[i]) == MMAP_MMIO)
+				neededEnts++;
+		}
+
+		// add all the free memory. good thing pmm is in the same file.
+		// note: we never free memory, so the number of extents will never increase.
+		neededEnts += pmm::extmmState.numExtents;
+
+		// add extents for the bootinfo, memory map, loaded kernel, framebuffer and initrd:
+		// (they will be contiguous, so one extent each is sufficient)
+		neededEnts += 5;
+
+		entryArrayPages = (neededEnts * sizeof(mmapentry_t) + PAGE_SIZE - 1) / PAGE_SIZE;
+		entryArray      = (mmapentry_t*) pmm::allocate(entryArrayPages);
+
+		// add the acpi and mmio regions first, cos those won't change:
+		for(size_t i = 0; i < bbents; i++)
+		{
+			uint64_t memtype = 0;
+
+			if(MMapEnt_Type(&ents[i]) == MMAP_ACPI)
+				memtype = (uint64_t) nx::MemoryType::ACPI;
+
+			else if(MMapEnt_Type(&ents[i]) == MMAP_MMIO)
+				memtype = (uint64_t) nx::MemoryType::MMIO;
+
+			if(memtype != 0)
+			{
+				entryArray[numEntries] = {
+					.address    = MMapEnt_Ptr(&ents[i]),
+					.numPages   = MMapEnt_Size(&ents[i]) / PAGE_SIZE,
+					.memoryType = (nx::MemoryType) memtype
+				};
+				numEntries++;
+			}
+		}
+
+		maxEntries = (entryArrayPages * PAGE_SIZE) / sizeof(mmapentry_t);
+	}
+
+	void addEntry(uint64_t base, size_t pages, uint64_t type)
+	{
+		if(numEntries == maxEntries)
+			abort("too many mmap entries!");
+
+		entryArray[numEntries] = {
+			.address    = base,
+			.numPages   = pages,
+			.memoryType = (nx::MemoryType) type
+		};
+
+		numEntries++;
+	}
+
+	void finalise(nx::BootInfo* bi)
+	{
+		// all we need to do now is to add the pmm extents.
+		auto ext = pmm::extmmState.head;
+		while(ext)
+		{
+			addEntry(ext->addr, ext->size, (uint64_t) nx::MemoryType::Available);
+			ext = ext->next;
+		}
+
+		addEntry((uint64_t) entryArray, entryArrayPages, (uint64_t) nx::MemoryType::MemoryMap);
+		vmm::mapKernel((uint64_t) entryArray, (uint64_t) entryArray, entryArrayPages, 0);
+
+		// must make all the entries page-aligned!
+		for(size_t i = 0; i < numEntries; i++)
+		{
+			auto ent = &entryArray[i];
+
+			// numpages was already rounded down, so we just need to round up the address.
+			ent->address = (ent->address + 0xFFF) & 0xFFFF'FFFF'FFFF'F000;
+		}
+
+		// setup the memory map:
+		bi->mmEntries = entryArray;
+		bi->mmEntryCount = numEntries;
+
+		println("created kernel memory map, with %d entries", numEntries);
 	}
 }
 }

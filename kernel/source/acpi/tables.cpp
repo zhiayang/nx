@@ -47,6 +47,70 @@ namespace acpi
 
 
 
+	static void* findTablesFromUEFI(BootInfo* bi, bool* isXSDT)
+	{
+		assert(bi->flags & BOOTINFO_FLAG_UEFI);
+
+		void* rsdp = 0;
+		void* xsdp = 0;
+
+		auto st = (efi_system_table*) bi->efi.efiSysTable;
+		auto ct = st->ConfigurationTable;
+		{
+			efi_guid rsdp_guid = ACPI_TABLE_GUID;
+			efi_guid rsdp2_guid = ACPI_20_TABLE_GUID;
+
+
+			for(size_t i = 0; i < st->NumberOfTableEntries; i++)
+			{
+				auto ent = &ct[i];
+				if(memcmp(&rsdp_guid.data[0], &ent->VendorGuid.data[0], 16) == 0)
+					rsdp = ent->VendorTable;
+
+				else if(memcmp(&rsdp2_guid.data[0], &ent->VendorGuid.data[0], 16) == 0)
+					xsdp = ent->VendorTable;
+			}
+		}
+
+		if(xsdp) *isXSDT = true;
+
+		auto table = (RSDPointer2*) (xsdp ? xsdp : rsdp);
+		if(strncmp(table->version1.signature, "RSD PTR ", 8) != 0)
+			abort("invalid rsdp: signature '%.8s' mismatch", table->version1.signature);
+
+		assert(!isXSDT || table->version1.revision > 1);
+
+		if(isXSDT && table->version1.revision > 1)
+		{
+			return (void*) table->xsdtAddr;
+		}
+		else
+		{
+			return (void*) (addr_t) table->version1.rsdtAddr;
+		}
+	}
+
+
+	static void* findTablesFromBIOS(BootInfo* bi, bool* isXSDT)
+	{
+		assert(bi->flags & BOOTINFO_FLAG_BIOS);
+
+		auto hdr = (header_t*) bi->bios.acpiTable;
+
+		if(strncmp(hdr->signature, "RSDT", 4) == 0)
+		{
+			return hdr;
+		}
+		else if(strncmp(hdr->signature, "XSDT", 4) == 0)
+		{
+			*isXSDT = true;
+			return hdr;
+		}
+		else
+		{
+			abort("invalid rsdt/xsdt: signature '%.4s' mismatch", hdr->signature);
+		}
+	}
 
 
 
@@ -69,59 +133,33 @@ namespace acpi
 			}
 		}
 
+		void* table = 0;
+		bool isXSDT = false;
+		if(bi->flags & BOOTINFO_FLAG_BIOS)      table = findTablesFromBIOS(bi, &isXSDT);
+		else if(bi->flags & BOOTINFO_FLAG_UEFI) table = findTablesFromUEFI(bi, &isXSDT);
 
-		auto st = (efi_system_table*) bi->efiSysTable;
-		auto ct = st->ConfigurationTable;
-
-
+		if(!table)
 		{
-			efi_guid rsdp_guid = ACPI_TABLE_GUID;
-			efi_guid rsdp2_guid = ACPI_20_TABLE_GUID;
+			abort("RSDP not found; system likely does not support ACPI!");
+		}
 
-			void* rsdp = 0;
-			void* rsdp2 = 0;
+		if(isXSDT)
+		{
+			auto xsdt = (XSDTable*) table;
+			size_t numHdrs = (xsdt->header.length - sizeof(header_t)) / sizeof(uint64_t);
 
-			for(size_t i = 0; i < st->NumberOfTableEntries; i++)
-			{
-				auto ent = &ct[i];
-				if(memcmp(&rsdp_guid.data[0], &ent->VendorGuid.data[0], 16) == 0)
-					rsdp = ent->VendorTable;
+			log("acpi", "reading xsdt (%zu tables)", numHdrs);
+			for(size_t i = 0; i < numHdrs; i++)
+				readTable((header_t*) xsdt->tables[i]);
+		}
+		else
+		{
+			auto rsdt = (RSDTable*) table;
+			size_t numHdrs = (rsdt->header.length - sizeof(header_t)) / sizeof(uint32_t);
 
-				else if(memcmp(&rsdp2_guid.data[0], &ent->VendorGuid.data[0], 16) == 0)
-					rsdp2 = ent->VendorTable;
-			}
-
-			// prefer the rsdp version 2
-			if(rsdp2)
-			{
-				auto table = (RSDPointer2*) rsdp2;
-				if(strncmp(table->version1.signature, "RSD PTR ", 8) != 0)
-					abort("invalid rsdp: signature '%.8s' mismatch", table->version1.signature);
-
-				auto xsdt = (XSDTable*) table->xsdtAddr;
-				size_t numHdrs = (xsdt->header.length - sizeof(header_t)) / sizeof(uint64_t);
-
-				log("acpi", "reading xsdt (%zu tables)", numHdrs);
-				for(size_t i = 0; i < numHdrs; i++)
-					readTable((header_t*) xsdt->tables[i]);
-			}
-			else if(rsdp)
-			{
-				auto table = (RSDPointer*) rsdp;
-				if(strncmp(table->signature, "RSD PTR ", 8) != 0)
-					abort("invalid rsdp: signature '%.8s' mismatch", table->signature);
-
-				auto rsdt = (RSDTable*) (addr_t) table->rsdtAddr;
-				size_t numHdrs = (rsdt->header.length - sizeof(header_t)) / sizeof(uint32_t);
-
-				log("acpi", "reading rsdt (%zu tables)", numHdrs);
-				for(size_t i = 0; i < numHdrs; i++)
-					readTable((header_t*) (addr_t) rsdt->tables[i]);
-			}
-			else
-			{
-				abort("RSDP not found; system likely does not support ACPI!");
-			}
+			log("acpi", "reading rsdt (%zu tables)", numHdrs);
+			for(size_t i = 0; i < numHdrs; i++)
+				readTable((header_t*) (addr_t) rsdt->tables[i]);
 		}
 
 		log("acpi", "finished parsing acpi tables");

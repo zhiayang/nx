@@ -54,6 +54,7 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == MemoryType::Available)
 			{
+				// log("pmm", "extent: %p (%zu)", entry->address, entry->numPages);
 				deallocate(entry->address, entry->numPages);
 				totalMem += entry->numPages * 0x1000;
 			}
