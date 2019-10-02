@@ -181,6 +181,7 @@ function main() {
 function build_toolchain() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}building orionx toolchain${_NORMAL}"
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}staging directory: $1${_NORMAL}"
+	echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}jobs: $NUM_MAKE_JOBS${_NORMAL}"
 	echo ""
 
 	mkdir -p $1
