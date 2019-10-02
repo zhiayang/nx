@@ -34,7 +34,7 @@ The sixth rewrite of what never was, OrionOS. x86_64 kernel.
 
 ## License ##
 
-The licenses for the various components of \[nx\] can be found in `LICENSE.md`, including those of our various libraries and dependencies.
+The licenses for the various components of \[nx\] can be found in `LICENSE.md`, including those of libraries and external dependencies.
 
 
 
