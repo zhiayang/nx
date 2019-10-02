@@ -1,13 +1,13 @@
 # [nx] #
 
-The sixth rewrite of what never was, OrionOS.
+The sixth rewrite of what never was, OrionOS. x86_64 kernel.
 
 
 ## Current Features ##
-- EFI loader (efxloader)
+- EFI loader (efxloader) and BIOS loader (bfxloader, running on top of [BOOTBOOT](https://gitlab.com/bztsrc/bootboot))
 - Higher-half 64-bit kernel
-- PMM, VMM, heap allocator
 - tarfs initrd, basic VFS
+- Some level of userspace, with rudimentary (non-signalling) IPC
 
 
 ## Trying out [nx] ##
@@ -26,7 +26,7 @@ The sixth rewrite of what never was, OrionOS.
 
 #### Building the kernel ####
 - Once the bootstrap script is done, you should be able to run 'make' in the root directory and have it run, using QEMU.
-- It currently does nothing spectacular.
+- It currently does nothing spectacular. Possible epilepsy warning.
 
 
 
