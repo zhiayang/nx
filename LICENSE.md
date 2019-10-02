@@ -1,6 +1,6 @@
 # [nx] #
 
-The \[nx\] kernel, efx loader, libkrt, parts of libc, and any other parts of the project (unless explicitly marked as such) are licensed
+The \[nx\] kernel, bfx and efx loaders, libkrt, parts of libc, and any other parts of the project (unless explicitly marked as such) are licensed
 under the Apache License 2.0:
 
 
