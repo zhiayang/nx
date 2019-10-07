@@ -1,0 +1,7 @@
+# line-terminated, equal-separated. equals are optional if there is no value.
+# inter-mingling whitespace is passed as-is; names and values are trimmed.
+
+root = UUID(871a56d0-2069-ee41-ac8e-0b67c148a150)
+# no_symbols
+# no_acpi
+
