@@ -10,7 +10,7 @@
 #include "krt/meta.h"
 #include "krt/macros.h"
 
-#define NX_BOOTINFO_VERSION 2
+#define NX_BOOTINFO_VERSION 3
 #include "../../kernel/include/bootinfo.h"
 
 
@@ -40,13 +40,13 @@ namespace bfx
 
 	namespace initrd
 	{
-		krt::pair<void*, size_t> findKernel(void* ptr, size_t sz, const char* name);
+		krt::pair<void*, size_t> findFile(void* ptr, size_t sz, const char* name);
 	}
 
 	namespace pmm
 	{
 		void init(MMapEnt* ents, size_t numEnts);
-		uint64_t allocate(size_t num, bool below4G = false);
+		uint64_t allocate(size_t num);
 	}
 
 	namespace vmm
@@ -62,6 +62,7 @@ namespace bfx
 		void mapKernel(uint64_t phys, uint64_t virt, size_t num, uint64_t flags);
 
 		uint64_t getPML4Address();
+		uint64_t getIdentityMaxAddr();
 	}
 
 	namespace mmap
@@ -75,6 +76,11 @@ namespace bfx
 	{
 		void init(void* fb, int x, int y, int scanx);
 		void putchar(char c);
+	}
+
+	namespace params
+	{
+		void readParams(nx::BootInfo* bi, void* initrdPtr, size_t initrdSize);
 	}
 
 	nx::BootInfo* setupBootInfo(BOOTBOOT* bbinfo);

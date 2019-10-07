@@ -53,7 +53,7 @@ namespace nx
 		void invalidateAll();
 
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
-		void unmapAddress(addr_t virt, size_t num, bool freePhys, scheduler::Process* proc = 0);
+		void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
 		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
 		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
 

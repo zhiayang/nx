@@ -60,7 +60,15 @@ namespace pmm
 			}
 		}
 
-		log("pmm", "initialised with %zu extents, %zu bytes", extmmState.numExtents, totalMem);
+		// we should have > 1KB, if not UEFI wouldn't boot anyway.
+		double num = totalMem / 1024.0; int unit = 0;
+		char units[] = { 'K', 'M', 'G', 'T', 'P' };
+
+		while(num >= 1024)
+			num /= 1024.0, unit++;
+
+		log("pmm", "initialised with %zu extents, %zu bytes (%.2f %cB)", extmmState.numExtents, totalMem,
+			num, units[unit]);
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
@@ -83,6 +91,8 @@ namespace pmm
 	{
 		freeEarlyMemory(bootinfo, MemoryType::MemoryMap);
 
+		uint64_t maxIdentMem = bootinfo->maximumIdentityMap;
+
 		auto addr = (addr_t) bootinfo;
 		assert((addr & vmm::PAGE_ALIGN) == addr);
 
@@ -90,6 +100,11 @@ namespace pmm
 		deallocate(addr, 1);
 
 		log("pmm", "freed all bootloader memory");
+
+		// ask the vmm to unmap all identity memory.
+		vmm::unmapAddress(0, maxIdentMem / PAGE_SIZE, /* freePhys: */ false, /* ignoreUnmapped: */ true);
+
+		log("vmm", "unmapped all identity-mapped memory");
 	}
 
 

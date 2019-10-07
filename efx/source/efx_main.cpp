@@ -59,6 +59,9 @@ void efx::init()
 
 		kernelBootInfo = prepareKernelBootInfo();
 
+		// this is fixed, we always identity-map 4 mb.
+		kernelBootInfo->maximumIdentityMap = 0x400000;
+
 		// copy the kernel away.
 		{
 			uint64_t out = 0;

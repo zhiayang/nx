@@ -11,7 +11,7 @@
 #include "bootboot.h"
 #include "../../kernel/include/bootinfo.h"
 
-#define BFX_VERSION_STRING "0.1.2"
+#define BFX_VERSION_STRING "0.2.3"
 #define KERNEL_FILENAME    "boot/nxkernel64"
 
 extern "C" void kernel_trampoline(uint64_t cr3, uint64_t entry, uint64_t bootinfo);
@@ -75,12 +75,11 @@ void bfx::init(BOOTBOOT* bbinfo)
 			kbootinfo->initrdSize = initrdSz;
 		}
 
-		// the initrd just needs to find the kernel file.
 		void* kernelPtr = 0;
 		size_t kernelSize = 0;
 
 		{
-			auto [ ptr, sz ] = initrd::findKernel(initrdPtr, initrdSz, KERNEL_FILENAME);
+			auto [ ptr, sz ] = initrd::findFile(initrdPtr, initrdSz, KERNEL_FILENAME);
 
 			if(ptr == 0 || sz == 0)
 				abort("failed to load kernel ('%s') from initrd!", KERNEL_FILENAME);
@@ -104,6 +103,8 @@ void bfx::init(BOOTBOOT* bbinfo)
 		kbootinfo->kernelElfSize = kernelSize;
 
 		println("");
+
+		params::readParams(kbootinfo, initrdPtr, initrdSz);
 	}
 
 	// finally, setup the memory map.

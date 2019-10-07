@@ -39,6 +39,12 @@ namespace bfx
 			return (uint64_t) pml4t_addr;
 		}
 
+		constexpr uint64_t IDENTITY_MAP_ADDR_MAX = 0x0100'0000;
+		uint64_t getIdentityMaxAddr()
+		{
+			return IDENTITY_MAP_ADDR_MAX;
+		}
+
 		void setupCR3(BOOTBOOT* bbinfo)
 		{
 			// pml4:    256 tb
@@ -47,18 +53,18 @@ namespace bfx
 			// pt:      2 mb
 			// pe:      4 kb
 
-			// identity map the first 16 mb -- requiring 8 page-table entries.
 			auto pml4 = (pml_t*) allocate_pagetab(0);
 			auto pdpt = (pml_t*) ((pml4->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
 			auto pagedir = (pml_t*) ((pdpt->entries[0] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
 
-			// we need 8 page tables.
-			pml_t* pts[8];
-			for(int i = 0; i < 8; i++)
+			constexpr size_t numPageTables = IDENTITY_MAP_ADDR_MAX / 0x200000;
+
+			pml_t* pts[numPageTables];
+			for(int i = 0; i < numPageTables; i++)
 				pts[i] = (pml_t*) ((pagedir->entries[i] = allocate_pagetab(PAGE_PRESENT | PAGE_WRITE)) & PAGE_ALIGN);
 
 			// identity map them.
-			for(int k = 0; k < 8; k++)
+			for(int k = 0; k < numPageTables; k++)
 			{
 				for(uint64_t i = 0; i < 512; i++)
 					pts[k]->entries[i] = ((i + 512*k) * 0x1000) | PAGE_PRESENT | PAGE_WRITE;

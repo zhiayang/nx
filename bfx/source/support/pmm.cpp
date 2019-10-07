@@ -174,21 +174,23 @@ namespace pmm
 			auto entry = &ents[i];
 			if(MMapEnt_Type(entry) == MMAP_FREE)
 			{
-				// println("%p - %p", MMapEnt_Ptr(entry), MMapEnt_Ptr(entry) + MMapEnt_Size(entry));
-
 				extmm::deallocate(&extmmState, MMapEnt_Ptr(entry), MMapEnt_Size(entry) / PAGE_SIZE);
 				totalMem += MMapEnt_Size(entry);
 			}
+
+			// println("%p - %p (%d)", MMapEnt_Ptr(entry), MMapEnt_Ptr(entry) + MMapEnt_Size(entry), MMapEnt_Type(entry));
 		}
 	}
 
-	uint64_t allocate(size_t num, bool below4G)
+	// note: to make things simple (and because we'll never need that much bootstrap memory), only return
+	// pages in the lower 4GB, since that's what is identity mapped for us by BOOTBOOT.
+	uint64_t allocate(size_t num)
 	{
 		// lol. we can't have capturing lambdas without some kind of std::function
 		// and nobody knows how to implement that shit.
-		return extmm::allocate(&extmmState, num, below4G ? [](uint64_t a, size_t l) -> bool {
+		return extmm::allocate(&extmmState, num, [](uint64_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
-		} : [](uint64_t, size_t) -> bool { return true; });
+		});
 	}
 }
 
@@ -222,6 +224,7 @@ namespace mmap
 		// (they will be contiguous, so one extent each is sufficient)
 		neededEnts += 5;
 
+		// note: we ask for mem below 4 gb, because BOOTBOOT doesn't identity map stuff above it.
 		entryArrayPages = (neededEnts * sizeof(mmapentry_t) + PAGE_SIZE - 1) / PAGE_SIZE;
 		entryArray      = (mmapentry_t*) pmm::allocate(entryArrayPages);
 
@@ -238,6 +241,7 @@ namespace mmap
 
 			if(memtype != 0)
 			{
+				println("entryarr = %p, ent = %p", entryArray, entryArray + numEntries);
 				entryArray[numEntries] = {
 					.address    = MMapEnt_Ptr(&ents[i]),
 					.numPages   = MMapEnt_Size(&ents[i]) / PAGE_SIZE,

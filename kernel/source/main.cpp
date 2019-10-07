@@ -185,7 +185,11 @@ namespace nx
 
 
 
+/*
+	TODO:
 
+	• irq mapping and stuff for systems without acpi and apic should be more robust.
+*/
 
 
 

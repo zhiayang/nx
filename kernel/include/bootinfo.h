@@ -81,6 +81,9 @@ namespace nx
 		// pointer to the first memory map entry (identity mapped)
 		MemMapEntry* mmEntries;
 
+		// the highest address that is identity mapped (exclusive)
+		uint64_t maximumIdentityMap;
+
 		// the size of the initrd
 		uint64_t initrdSize;
 

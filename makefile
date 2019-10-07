@@ -24,20 +24,22 @@ export ARCH             := x86_64
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-MEMORY              = 256
+MEMORY              = 64
 
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
 QEMU_BIOS_DISKIMG   = -drive format=raw,file=build/disk-bios.img
 
 QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
-QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -no-shutdown -no-reboot -vga std
+QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
 
+INITRD              = $(SYSROOT)/boot/initrd.tar
+
 # apparently osx echo does not do -e
-UNAME_IDENT         := $(shell uname)
+UNAME_IDENT     := $(shell uname)
 ifeq ("$(UNAME_IDENT)","Darwin")
 	ECHO_CMD    := "echo"
 else
@@ -49,8 +51,6 @@ VIRTUALBOX ?= VirtualBoxVM
 
 
 .DEFAULT_GOAL = all
-
-INITRD              = $(SYSROOT)/boot/initrd.tar
 
 
 .PHONY: all clean build diskimage qemu debug clean-kernel exportheaders
@@ -68,6 +68,10 @@ qemu: diskimage
 bios: diskimage
 	# starting qemu (bios)
 	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio
+
+bios-debug: diskimage
+	# starting qemu (bios)
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
 
 vbox-debug: diskimage
 	# starting virtualbox (debug)
@@ -112,9 +116,10 @@ build: exportheaders
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
 	@$(MAKE) -s -C services
-	@cp $(SYSROOT)/boot/bfxloader $(INITRD_DIR)/boot/
-	@cp $(SYSROOT)/boot/nxkernel64 $(INITRD_DIR)/boot/
-	@cp utils/bootboot_config $(INITRD_DIR)/sys/config
+	@cp $(SYSROOT)/boot/bfxloader   $(INITRD_DIR)/boot/
+	@cp $(SYSROOT)/boot/nxkernel64  $(INITRD_DIR)/boot/
+	@cp utils/bootboot_config       $(INITRD_DIR)/sys/config
+	@cp utils/bfx_kernel_params     $(INITRD_DIR)/boot/
 	@cd $(INITRD_DIR); tar -cf $(INITRD) *
 	@gzip -cf9 $(INITRD) > $(INITRD).gz
 

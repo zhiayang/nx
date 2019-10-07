@@ -217,7 +217,7 @@ namespace vmm
 
 
 
-	void unmapAddress(addr_t virt, size_t num, bool freePhys, scheduler::Process* proc)
+	void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignore, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -245,17 +245,28 @@ namespace vmm
 			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			{
+				if(ignore) continue;
 				abort("%p was not mapped! (pdpt not present)", virt);
+			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			{
+				if(ignore) continue;
 				abort("%p was not mapped! (pdir not present)", virt);
+			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			{
+				if(ignore) continue;
 				abort("%p was not mapped! (ptab not present)", virt);
+			}
 
 			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
+			{
+				if(ignore) continue;
 				abort("%p was not mapped! (page not present)", virt);
-
+			}
 
 			if(freePhys)
 			{

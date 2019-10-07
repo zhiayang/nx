@@ -97,6 +97,8 @@ namespace bfx
 
 		bi->bios.acpiTable = (void*) bbinfo->arch.x86_64.acpi_ptr;
 
+		bi->maximumIdentityMap = vmm::getIdentityMaxAddr();
+
 		return bi;
 	}
 }

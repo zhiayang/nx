@@ -155,7 +155,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		unmapAddress(addr, num, /* freePhys: */ true, proc);
+		unmapAddress(addr, num, /* freePhys: */ true, /* ignoreIfNotMapped: */ false, proc);
 		deallocateAddrSpace(addr, num, proc);
 	}
 }

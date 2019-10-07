@@ -16,7 +16,7 @@ COBJ        = $(CSRC:.c=.c.o)
 CXXOBJ      = $(CXXSRC:.cpp=.cpp.o)
 SOBJ        = $(SSRC:.s=.s.o)
 
-COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar -fno-strict-aliasing -MMD -MP
+COMMONFLAGS = -ffreestanding -maccumulate-outgoing-args -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -I$(EFI_DIR) -Wno-pragmas -O2 -fPIC -mno-red-zone -fno-exceptions -fshort-wchar -fno-strict-aliasing -g -MMD -MP
 
 CFLAGS      = -std=c11 $(COMMONFLAGS)
 CXXFLAGS    = -std=c++17 $(COMMONFLAGS)

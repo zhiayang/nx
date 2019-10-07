@@ -49,7 +49,7 @@ namespace initrd
 	static uint8_t* initrdPtr = 0;
 	static size_t initrdSize = 0;
 
-	krt::pair<void*, size_t> findKernel(void* ptr, size_t sz, const char* kernel_name)
+	krt::pair<void*, size_t> findFile(void* ptr, size_t sz, const char* kernel_name)
 	{
 		// note: bootboot always decompresses the initrd for us, so it will always
 		// come out as a tar file. no need to bother with un-gzipping this.
