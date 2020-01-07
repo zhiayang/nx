@@ -8,18 +8,21 @@
 #include "stdint.h"
 #include "string.h"
 
+#include "krt/types/impl/iterutils.h"
 #include "krt/types/impl/arraylike.h"
 
 namespace krt
 {
 	template <typename T, typename allocator, typename aborter>
-	struct array
+	struct array : iter_remove_fns<array<T, allocator, aborter>, T>
 	{
 		using impl = arraylike_impl<array, T, allocator, aborter>;
 		friend impl;
 
+		using elem_type = T;
 		using iterator = ptr_iterator<T>;
 		using const_iterator = const_ptr_iterator<T>;
+
 
 		array() : array(nullptr, 0) { }
 		array(T* p, size_t l)
@@ -119,6 +122,14 @@ namespace krt
 
 		const T& front() const                              { return impl::front_const(this); }
 		const T& back() const                               { return impl::back_const(this); }
+
+		iterator erase(iterator it)
+		{
+			// note: our iterator only stores the pointer. since this array is order-preserving, the next
+			// element will be at the same address, so we can return the same iterator.
+			impl::erase_at(this, it - begin(), 1);
+			return it;
+		}
 
 		void erase_at(size_t idx, size_t num)               { impl::erase_at(this, idx, num); }
 		bool operator == (const array& other) const         { return impl::op_cmpeq(this, other); }

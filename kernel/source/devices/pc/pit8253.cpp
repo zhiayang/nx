@@ -5,7 +5,7 @@
 #include "nx.h"
 #include "devices/pc/pit8253.h"
 
-#include "math.h"
+// #include "math.h"
 
 namespace nx {
 namespace device {

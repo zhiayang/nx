@@ -7,7 +7,7 @@
 
 #include "loader.h"
 
-#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
 #include "bootinfo.h"
 
 #include "cpu/cpu.h"
@@ -47,7 +47,7 @@ namespace nx
 		interrupts::init();
 
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
-		scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
+		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
 		scheduler::addThread(worker2);
@@ -69,10 +69,15 @@ namespace nx
 			}
 		}
 
+		// after a while (5s), terminate placebo.
+		scheduler::sleep(5000'000'000);
+		log("kernel", "woken from slumber, committing murder...");
+		ipc::signalProcessCritical(placebo->parent, ipc::SIGNAL_TERMINATE, { });
+
+
 		// uint64_t ctr = 0;
 		// while(true) if(++ctr % 5000000 == 0) print("q");
 		while(true);
-
 	}
 
 

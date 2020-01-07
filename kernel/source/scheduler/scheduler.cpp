@@ -70,6 +70,7 @@ namespace scheduler
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
+		// log("sched", "-> %lu", newthr->parent->processId);
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer);
 	}
 
@@ -179,8 +180,28 @@ namespace scheduler
 		t->state = ThreadState::AboutToExit;
 		getSchedState()->DestructionQueue.append(t);
 
-		yield(); while(1);
+		yield(); while(true);
 	}
+
+	void terminate(Process* p)
+	{
+		// schedule all threads to die.
+		for(auto& t : p->threads)
+		{
+			t.state = ThreadState::AboutToExit;
+			getSchedState()->DestructionQueue.append(&t);
+		}
+
+		log("sched", "terminating process %lu", p->processId);
+
+		// if you are terminating yourself, then we need to yield.
+		if(getCurrentProcess() == p)
+		{
+			yield();
+			while(true);
+		}
+	}
+
 
 	void block(mutex* mtx)
 	{
@@ -268,9 +289,10 @@ namespace scheduler
 		return getSchedState()->CurrentThread;
 	}
 
-	void addThread(Thread* t)
+	Thread* addThread(Thread* t)
 	{
 		getSchedState()->ThreadList.append(t);
+		return t;
 	}
 
 	State* getSchedState()

@@ -110,6 +110,9 @@ GlobalHandler:
 	swapgs_if_necessary 0x10    // note: extra offset for the int number
 	push_all_regs
 
+	// TODO: in reality we should save/restore FPU before entering the kernel, since
+	// we cannot guarantee that the kernel doesn't use any floating-point registers!!!
+
 	movq 120(%rsp), %rdi
 	call nx_x64_handle_irq
 

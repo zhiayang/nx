@@ -60,7 +60,9 @@ namespace tss
 			.type           = (uint8_t)  (0x80 | (dpl << 5) | 0x9), // 0x80 is present; 0x9 is type (0b1001) -- 64-bit tss available.
 			.flags          = (uint8_t)  ((limit & 0xF0000) >> 16 | (1 << 5)),
 			.base_high      = (uint8_t)  ((base & 0xFF000000) >> 24),
-			.base_highest   = (uint32_t) ((base & 0xFFFFFFFF00000000) >> 32)
+			.base_highest   = (uint32_t) ((base & 0xFFFFFFFF00000000) >> 32),
+
+			.reserved = 0
 		};
 	}
 

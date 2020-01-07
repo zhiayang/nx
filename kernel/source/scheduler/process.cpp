@@ -25,6 +25,9 @@ namespace scheduler
 		// allocate a cr3 for it.
 		proc->cr3 = pmm::allocate(1);
 
+		// use sizeof here, since it's a static array.
+		memset(proc->signalHandlers, 0, sizeof(proc->signalHandlers));
+
 		vmm::init(proc);
 
 		AllProcesses.append(proc);
@@ -41,15 +44,8 @@ namespace scheduler
 		pmm::deallocate(proc->cr3, 1);
 
 		// TODO: remove it from its cpu list as well
-
-		for(auto it = AllProcesses.begin(); it != AllProcesses.end(); ++it)
-		{
-			if(*it == proc)
-			{
-				AllProcesses.erase(it);
-				break;
-			}
-		}
+		AllProcesses.remove_all(proc);
+		getSchedState()->ProcessList.remove_all(proc);
 
 		log("sched", "destroyed process '%s' (pid: %lu)", proc->processName.cstr(), proc->processId);
 		delete proc;

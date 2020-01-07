@@ -3,7 +3,7 @@
 # This makefile is licensed under the WTFPL
 
 
-WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros -Werror=return-type # -pedantic-errors
+WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros -Werror=return-type -Wno-unused-parameter -Wno-unused-but-set-parameter -Wextra
 
 CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
 
@@ -27,7 +27,7 @@ CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS         = $(CXXOBJ:.o=.d)
 CDEPS           = $(COBJ:.o=.d)
 
-DEBUG_FLAG      := -msse2 -O0 -g
+DEBUG_FLAG      := -O0 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1

@@ -42,18 +42,33 @@ namespace nx
 			scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), dispatcher));
 		}
 
-		void addMessage(uint64_t senderId, uint64_t targetId, void* payload, size_t len)
+		void addMessage(const message_t& umsg, bool makeCopy)
 		{
+			auto len = umsg.payloadSize;
+
 			// ok then...
-			auto copy = (void*) heap::allocate(len, 1);
-			memcpy(copy, payload, len);
+			void* buffer = 0;
 
 			auto msg = message_t();
-			msg.payload = copy;
+
+			msg.flags = umsg.flags;
 			msg.payloadSize = len;
 
-			msg.senderId = senderId;
-			msg.targetId = targetId;
+			if(makeCopy)
+			{
+				buffer = (void*) heap::allocate(len, 1);
+				memcpy(buffer, umsg.payload, len);
+
+				msg.flags |= MSG_FLAG_OWNED_MEM;
+			}
+			else
+			{
+				buffer = umsg.payload;
+			}
+
+			msg.payload     = buffer;
+			msg.senderId    = umsg.senderId;
+			msg.targetId    = umsg.targetId;
 
 			{
 				autolock lk(&queueLock);
@@ -63,7 +78,9 @@ namespace nx
 
 		void disposeMessage(message_t& message)
 		{
-			heap::deallocate((addr_t) message.payload);
+			// only deallocate if we own the memory.
+			if(message.flags & MSG_FLAG_OWNED_MEM)
+				heap::deallocate((addr_t) message.payload);
 		}
 	}
 }

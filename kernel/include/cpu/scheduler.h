@@ -97,6 +97,9 @@ namespace nx
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
 
+			// these functions point to USERSPACE CODE!
+			ipc::signal_handler_fn_t signalHandlers[ipc::MAX_SIGNAL_TYPES] = { 0 };
+
 			// arch-specific stuff.
 			#ifdef __ARCH_x64__
 
@@ -201,13 +204,16 @@ namespace nx
 
 		[[noreturn]] void exit(int status);
 
+		void terminate(Process* p);
+
 		void yield();
 		void sleep(uint64_t ns);
 
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);
 
-		void addThread(Thread* t);
+		// returns t.
+		Thread* addThread(Thread* t);
 
 		void destroyThread(Thread* t);
 		void destroyProcess(Process* p);
@@ -239,7 +245,7 @@ namespace nx
 		nx::array<CPU>& getAllCPUs();
 
 		void initCPU(CPU* cpu);
-	};
+	}
 }
 
 

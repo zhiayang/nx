@@ -8,7 +8,7 @@
 
 #include "efi/system-table.h"
 
-#define NX_BOOTINFO_VERSION NX_SUPPORTED_BOOTINFO_VERSION
+#define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
 #include "bootinfo.h"
 
 namespace nx {

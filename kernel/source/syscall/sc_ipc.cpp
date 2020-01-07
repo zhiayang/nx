@@ -73,10 +73,16 @@ namespace nx
 			return -1;
 		}
 
-		auto senderId = scheduler::getCurrentProcess()->processId;
+		auto senderId = (uint64_t) scheduler::getCurrentProcess()->processId;
 
-		// ok, add it
-		addMessage(senderId, target, buf, len);
+		// ok, add it. since
+		addMessage(message_t {
+			.senderId       = senderId,
+			.targetId       = target,
+			.flags          = 0,
+			.payload        = buf,
+			.payloadSize    = len
+		});
 
 		return 0;
 	}

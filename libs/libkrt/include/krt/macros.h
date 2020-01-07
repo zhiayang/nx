@@ -4,8 +4,8 @@
 
 #pragma once
 
-#define __min(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
-#define __max(a ,b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#define __min(a, b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+#define __max(a, b)     ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define __abs(a)        ({ __typeof__ (a) _a = (a); _a < 0 ? -_a : _a; })
 
 

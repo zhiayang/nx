@@ -9,14 +9,17 @@
 #include "string.h"
 
 #include "krt/types/impl/listlike.h"
+#include "krt/types/impl/iterutils.h"
 
 namespace krt
 {
 	template <typename T, typename allocator, typename aborter>
-	struct list
+	struct list : iter_remove_fns<list<T, allocator, aborter>, T>
 	{
 		using impl = listlike_impl<list, T, allocator, aborter>;
 		friend impl;
+
+		using elem_type = T;
 
 		using node_t = typename impl::Node;
 		using iterator = typename impl::iterator;

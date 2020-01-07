@@ -20,10 +20,12 @@ namespace krt
 		ptr_iterator operator -- (int)  { ptr_iterator copy(*this); this->pointer--; return copy; }
 
 		ptr_iterator& operator += (size_t ofs) { this->pointer += ofs; return *this; }
-		ptr_iterator& operator -= (size_t ofs) { this->pointer += ofs; return *this; }
+		ptr_iterator& operator -= (size_t ofs) { this->pointer -= ofs; return *this; }
 
 		ptr_iterator operator + (size_t ofs) const { return ptr_iterator(this->pointer + ofs); }
-		ptr_iterator operator - (size_t ofs) const { return ptr_iterator(this->pointer + ofs); }
+		ptr_iterator operator - (size_t ofs) const { return ptr_iterator(this->pointer - ofs); }
+		size_t operator - (ptr_iterator oth) const { return this->pointer - oth.pointer; }
+
 		bool operator == (const ptr_iterator& other) const { return other.pointer == this->pointer; }
 		bool operator != (const ptr_iterator& other) const { return other.pointer != this->pointer; }
 
@@ -50,10 +52,12 @@ namespace krt
 		const_ptr_iterator operator -- (int){ const_ptr_iterator copy(*this); this->pointer--; return copy; }
 
 		const_ptr_iterator& operator += (size_t ofs)    { this->pointer += ofs; return *this; }
-		const_ptr_iterator& operator -= (size_t ofs)    { this->pointer += ofs; return *this; }
+		const_ptr_iterator& operator -= (size_t ofs)    { this->pointer -= ofs; return *this; }
 
 		const_ptr_iterator operator + (size_t ofs) const    { return const_ptr_iterator(this->pointer + ofs); }
-		const_ptr_iterator operator - (size_t ofs) const    { return const_ptr_iterator(this->pointer + ofs); }
+		const_ptr_iterator operator - (size_t ofs) const    { return const_ptr_iterator(this->pointer - ofs); }
+		size_t operator - (const_ptr_iterator oth) const    { return this->pointer - oth.pointer; }
+
 		bool operator == (const const_ptr_iterator& other) const    { return other.pointer == this->pointer; }
 		bool operator != (const const_ptr_iterator& other) const    { return other.pointer != this->pointer; }
 

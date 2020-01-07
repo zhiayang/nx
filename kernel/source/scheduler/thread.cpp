@@ -13,27 +13,27 @@ namespace scheduler
 
 	Thread* createThread(Process* p, Fn0Args_t fn)
 	{
-		return createThread(p, (Fn6Args_t) fn, 0, 0, 0, 0, 0, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, 0, 0, 0, 0, 0, 0);
 	}
 	Thread* createThread(Process* p, Fn1Arg_t fn, void* a)
 	{
-		return createThread(p, (Fn6Args_t) fn, a, 0, 0, 0, 0, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, a, 0, 0, 0, 0, 0);
 	}
 	Thread* createThread(Process* p, Fn2Args_t fn, void* a, void* b)
 	{
-		return createThread(p, (Fn6Args_t) fn, a, b, 0, 0, 0, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, a, b, 0, 0, 0, 0);
 	}
 	Thread* createThread(Process* p, Fn3Args_t fn, void* a, void* b, void* c)
 	{
-		return createThread(p, (Fn6Args_t) fn, a, b, c, 0, 0, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, a, b, c, 0, 0, 0);
 	}
 	Thread* createThread(Process* p, Fn4Args_t fn, void* a, void* b, void* c, void* d)
 	{
-		return createThread(p, (Fn6Args_t) fn, a, b, c, d, 0, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, a, b, c, d, 0, 0);
 	}
 	Thread* createThread(Process* p, Fn5Args_t fn, void* a, void* b, void* c, void* d, void* e)
 	{
-		return createThread(p, (Fn6Args_t) fn, a, b, c, d, e, 0);
+		return createThread(p, (Fn6Args_t) (void*) fn, a, b, c, d, e, 0);
 	}
 
 
@@ -256,17 +256,17 @@ namespace scheduler
 		// kill the sse state
 		vmm::deallocate(thr->fpuSavedStateBuffer, 1, proc);
 
+		// save this for later.
 		auto id = thr->threadId;
 
-		// ok. erase it from the parent.
-		for(size_t i = 0; i < proc->threads.size(); i++)
-		{
-			if(proc->threads[i].threadId == thr->threadId)
-			{
-				proc->threads.erase_at(i, 1);
-				break;
-			}
-		}
+
+		// it needs to disappear from the scheduler state too
+		proc->threads.remove_all_if([&thr](const auto& t) -> bool {
+			return t.threadId == thr->threadId;
+		});
+
+		getSchedState()->ThreadList.remove_all(thr);
+
 
 		log("sched", "destroyed thread %lu", id);
 

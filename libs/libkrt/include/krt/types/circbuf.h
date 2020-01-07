@@ -65,6 +65,7 @@ namespace krt
 			size_t len;
 		};
 
+		using elem_type = T;
 
 		circularbuf(size_t max) : circularbuf(max, nullptr, 0) { }
 		circularbuf(size_t max, T* p, size_t l)

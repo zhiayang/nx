@@ -6,6 +6,9 @@
 -I/Users/zhiayang/Desktop/Stuff/Code/nx/efx/zircon-efi
 -ffreestanding
 -std=c++17
+-Wall
+-Wno-missing-braces
+-Wno-unused
 -D__orionx__
 -DORION_KERNEL
 -D__ARCH_x64__
