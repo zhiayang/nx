@@ -97,8 +97,13 @@ namespace nx
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
 
+			// signal stuff.
 			// these functions point to USERSPACE CODE!
 			ipc::signal_handler_fn_t signalHandlers[ipc::MAX_SIGNAL_TYPES] = { 0 };
+
+			nx::list<ipc::signal_message_t> pendingSignalQueue;
+			nx::list<cpu::InterruptedState> savedSignalStateStack;
+
 
 			// arch-specific stuff.
 			#ifdef __ARCH_x64__
@@ -142,6 +147,8 @@ namespace nx
 			addr_t kernelStack;
 			addr_t fsBase;
 			addr_t fpuSavedStateBuffer;
+
+			bool pendingSignalRestore = false;
 		};
 
 

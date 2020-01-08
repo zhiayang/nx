@@ -31,7 +31,7 @@ extern "C" int main()
 		if(ctr++ % 20000000 == 0)
 		{
 			ctr2++;
-			uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
+			uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
 			for(int y = 0; y < 300; y++)
 			{
 				for(int x = 0; x < 800; x++)

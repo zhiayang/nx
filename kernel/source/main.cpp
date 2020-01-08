@@ -69,10 +69,10 @@ namespace nx
 			}
 		}
 
-		// after a while (5s), terminate placebo.
-		scheduler::sleep(5000'000'000);
+		// after a while (3s), terminate placebo.
+		scheduler::sleep(3000'000'000);
 		log("kernel", "woken from slumber, committing murder...");
-		ipc::signalProcessCritical(placebo->parent, ipc::SIGNAL_TERMINATE, { });
+		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, { });
 
 
 		// uint64_t ctr = 0;
@@ -91,10 +91,17 @@ namespace nx
 
 
 
+	static BootInfo* globalBootInfo = 0;
+	BootInfo* getBootInfo()
+	{
+		return globalBootInfo;
+	}
 
 
 	void init(BootInfo* bootinfo)
 	{
+		globalBootInfo = bootinfo;
+
 		// open all hatches, extend all flaps and drag fins
 
 		// init the fallback console

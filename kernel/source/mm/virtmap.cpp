@@ -4,6 +4,9 @@
 
 #include "nx.h"
 
+#define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
+#include "bootinfo.h"
+
 namespace nx {
 namespace vmm
 {
@@ -12,6 +15,9 @@ namespace vmm
 	constexpr size_t PDPT_SIZE = 0x80'0000'0000ULL;
 	constexpr size_t PDIR_SIZE = 0x4000'0000ULL;
 	constexpr size_t PTAB_SIZE = 0x20'0000ULL;
+
+	extern "C" uint8_t nx_user_kernel_stubs_begin;
+	extern "C" uint8_t nx_user_kernel_stubs_end;
 
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
@@ -87,7 +93,36 @@ namespace vmm
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
 		// so getting pdpt 511 should not fault us.
-		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
+		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_WRITE | PAGE_PRESENT;
+
+
+		// fuckin nasty man. bad hack!! we need to move this elsewhere
+		{
+			auto bi = nx::getBootInfo();
+			auto numPgs = (bi->fbScanWidth * bi->fbVert + PAGE_SIZE - 1) / PAGE_SIZE;
+
+			mapAddress(addrs::USER_FRAMEBUFFER, getPhysAddr(addrs::KERNEL_FRAMEBUFFER),
+				numPgs, PAGE_USER | PAGE_WRITE | PAGE_PRESENT, proc);
+		}
+
+		// fuckin nasty hack part 2!!! we also need to move this elsewhere!!
+		{
+			auto stubs_begin = (uintptr_t) &nx_user_kernel_stubs_begin;
+			auto stubs_end   = (uintptr_t) &nx_user_kernel_stubs_end;
+
+			assert(isAligned(stubs_begin));
+			auto numPgs = (stubs_end - stubs_begin + PAGE_SIZE - 1) / PAGE_SIZE;
+
+			// we do not allocate memory -- just map the physical pages here.
+			for(size_t i = 0; i < numPgs; i++)
+			{
+				auto kv = stubs_begin + (i * PAGE_SIZE);
+				auto kp = getPhysAddr(kv);
+
+				auto uv = addrs::USER_KERNEL_STUBS + (i * PAGE_SIZE);
+				mapAddress(uv, kp, 1, PAGE_USER | PAGE_PRESENT, proc);
+			}
+		}
 
 
 		// next, we need to map the lapic's base address as well, so we don't need to

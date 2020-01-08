@@ -10,7 +10,6 @@
 namespace nx
 {
 	constexpr uint64_t SYSCALL_EXIT                 = 0;
-	constexpr uint64_t SYSCALL_LOG                  = 99;
 
 	constexpr uint64_t SYSCALL_IPC_SEND             = 1;
 	constexpr uint64_t SYSCALL_IPC_PEEK             = 2;
@@ -24,6 +23,10 @@ namespace nx
 
 	constexpr uint64_t SYSCALL_VFS_READ             = 9;
 	constexpr uint64_t SYSCALL_VFS_WRITE            = 10;
+
+
+	constexpr uint64_t SYSCALL_USER_SIGNAL_LEAVE    = 98;
+	constexpr uint64_t SYSCALL_LOG                  = 99;
 
 	constexpr uint64_t _SYSCALL_MAX                 = 100;
 }

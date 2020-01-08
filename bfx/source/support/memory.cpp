@@ -80,11 +80,10 @@ namespace bfx
 			// ok, map the framebuffer as well.
 			if(auto fbaddr = (uint64_t) bbinfo->fb_ptr; fbaddr != 0)
 			{
-				// TODO: hack! map the framebuffer as user
 				auto fbsz = (bbinfo->fb_scanline * bbinfo->fb_height);
 				auto pgs = (fbsz + 0xFFF) / 0x1000;
 
-				mapKernel(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, pgs, PAGE_USER);
+				mapKernel(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, pgs, 0);
 				mmap::addEntry(fbaddr, pgs, (uint64_t) nx::MemoryType::Framebuffer);
 			}
 

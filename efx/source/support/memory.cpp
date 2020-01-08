@@ -82,10 +82,7 @@ namespace memory
 
 		// ok, map the framebuffer as well.
 		if(auto fbaddr = graphics::getFramebufferAddress(); fbaddr != 0)
-		{
-			// TODO: hack! map the framebuffer as user
-			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0xFFF) / 0x1000, PAGE_USER);
-		}
+			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0xFFF) / 0x1000, 0);
 	}
 
 	void finaliseMappingExistingMemory()

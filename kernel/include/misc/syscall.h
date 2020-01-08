@@ -15,11 +15,13 @@ namespace nx
 		void sc_null();
 
 		void sc_exit(int status);
-		int64_t sc_ipc_send(uint64_t target, void* msg, size_t len);
-		size_t sc_ipc_peek(void* msg, size_t len);
+		int64_t sc_ipc_send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d);
 		size_t sc_ipc_poll();
 		void sc_ipc_discard();
-		size_t sc_ipc_receive(void* msg, size_t len);
+
+		// returns the sender ID if there was a message, else 0.
+		uint64_t sc_ipc_peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
+		uint64_t sc_ipc_receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
 
 		void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags);
 		void* sc_mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -29,6 +31,7 @@ namespace nx
 		ssize_t sc_vfs_read(int fd, void* buf, size_t len);
 		ssize_t sc_vfs_write(int fd, const void* buf, size_t len);
 
+		void sc_user_signal_leave();
 
 		void sc_log(int level, char* sys, size_t syslen, char* buf, size_t buflen);
 	}

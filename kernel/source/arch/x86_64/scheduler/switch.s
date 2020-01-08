@@ -19,16 +19,32 @@
 // parameters: new rsp (%rdi), new cr3 (%rsi), newthread-sse-state (%rdx)
 nx_x64_switch_to_thread:
 	test %rsi, %rsi
-	jz restore_regs
+	jz restore_state
 
 change_cr3:
 	mov %rsi, %cr3
 
-restore_regs:
+restore_state:
 	mov %rdi, %rsp
+
+	// we can only perform surgery on the stack *after* changing cr3, since the kernel
+	// stack lives in the userproc's address space and not in the kernel addrspace.
+	// we passed the newthr pointer in %rcx.
+
+	// save rdx, cos we still need it for the fpu restore.
+	// the rest can be trashed, no worries.
+	pushq %rdx
+
+	mov %rcx, %rdi
+	call nx_x64_setup_signalled_stack
+
+	// restore the saved rdx.
+	popq %rdx
 
 	mov %rdx, %rdi
 	call _ZN2nx3cpu3fpu7restoreEm
+
+
 
 	pop_all_regs
 

@@ -103,7 +103,7 @@ namespace loader
 
 
 			// allocate the physical pages.
-			size_t numPages = (progHdr->p_memsz + 0xFFF) / 0x1000;
+			size_t numPages = (progHdr->p_memsz + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			auto phys = pmm::allocate(numPages);
 			if(!phys) { error(err, "failed to allocate memory"); return false; }

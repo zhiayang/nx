@@ -31,18 +31,16 @@ namespace nx
 		return proc->pendingMessages.size();
 	}
 
-	size_t syscall::sc_ipc_receive(void* msg, size_t len)
+	uint64_t syscall::sc_ipc_receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
 	{
 		// note: there is no race condition here cos new messages go to the back, and discard pops from the front.
-		auto ret = sc_ipc_peek(msg, len);
-
-		// note: we only discard if we received a proper buffer.
-		if(msg && ret) sc_ipc_discard();
+		auto ret = sc_ipc_peek(a, b, c, d);
+		if(ret) sc_ipc_discard();
 
 		return ret;
 	}
 
-	size_t syscall::sc_ipc_peek(void* buf, size_t len)
+	uint64_t syscall::sc_ipc_peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -50,41 +48,45 @@ namespace nx
 		if(proc->pendingMessages.empty())
 			return 0;
 
-		if(!buf)
-			return proc->pendingMessages.front().payloadSize;
-
 		auto msg = proc->pendingMessages.front();
+		if(a)   *a = msg.body.a;
+		if(b)   *b = msg.body.b;
+		if(c)   *c = msg.body.c;
+		if(d)   *d = msg.body.d;
 
-		// buffer too small u dummy
-		if(msg.payloadSize > len)
-			return 0;
-
-		memcpy(buf, msg.payload, msg.payloadSize);
-		return msg.payloadSize;
+		return msg.senderId;
 	}
 
-	int64_t syscall::sc_ipc_send(uint64_t target, void* buf, size_t len)
+	int64_t syscall::sc_ipc_send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
 	{
-		if(!buf || len == 0) return -1;
-
-		if(len > MAX_MESSAGE_SIZE)
-		{
-			error("ipc", "message size of %zu exceeds max of %zu; discarding", len, MAX_MESSAGE_SIZE);
-			return -1;
-		}
-
+		if(target == 0) return -1;
 		auto senderId = (uint64_t) scheduler::getCurrentProcess()->processId;
 
-		// ok, add it. since
+		// ok, add it.
 		addMessage(message_t {
-			.senderId       = senderId,
-			.targetId       = target,
-			.flags          = 0,
-			.payload        = buf,
-			.payloadSize    = len
+			.senderId   = senderId,
+			.targetId   = target,
+			.flags      = 0,
+			.body = message_body_t {
+				a, b, c, d
+			}
 		});
 
 		return 0;
+	}
+
+
+
+	void syscall::sc_user_signal_leave()
+	{
+		// do nothing?
+		auto thr = scheduler::getCurrentThread();
+		assert(thr);
+
+		log("ipc", "thread %lu finished signalled message", thr->threadId);
+
+		thr->pendingSignalRestore = true;
+		scheduler::yield();
 	}
 }
 

@@ -9,7 +9,15 @@
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
-extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState);
+extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState, nx::scheduler::Thread* thr);
+
+
+extern "C" uint8_t nx_user_kernel_stubs_begin;
+extern "C" uint8_t nx_user_kernel_stubs_end;
+
+// actually, the parameters are not important, we just need its address.
+extern "C" void nx_x64_user_signal_enter(uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c);
+
 
 namespace nx {
 namespace scheduler
@@ -70,11 +78,59 @@ namespace scheduler
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		// log("sched", "-> %lu", newthr->parent->processId);
-		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer);
+		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
+	extern "C" void nx_x64_setup_signalled_stack(Thread* newthr)
+	{
+		// if instead the thread is pending a restore, we must perform reverse reconstructive surgery.
+		if(newthr->pendingSignalRestore)
+		{
+			assert(!newthr->parent->savedSignalStateStack.empty());
+			auto savedstate = newthr->parent->savedSignalStateStack.popFront();
 
+			auto intstate = (cpu::InterruptedState*) newthr->kernelStack;
+			memcpy(intstate, &savedstate, sizeof(savedstate));
+
+			newthr->pendingSignalRestore = false;
+			return;
+		}
+
+		// check if we have pending signals.
+		if(newthr->parent->pendingSignalQueue.empty())
+			return;
+
+		// we only send signals to the first thread.
+		if(&newthr->parent->threads[0] != newthr)
+			return;
+
+
+		// first, save the state.
+		auto intstate = (cpu::InterruptedState*) newthr->kernelStack;
+		newthr->parent->savedSignalStateStack.append(*intstate);
+
+		auto msg = newthr->parent->pendingSignalQueue.popFront();
+
+		// the signature: (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c);
+		//                      ^ rdi           ^ rsi           ^ rdx       ^ rcx       ^ r8
+
+		log("ipc", "sending signalled message to thread %lu", newthr->threadId);
+
+		// perform precision surgery
+		intstate->rdi = msg.senderId;
+		intstate->rsi = msg.body.sigType;
+		intstate->rdx = msg.body.a;
+		intstate->rcx = msg.body.b;
+		intstate->r8  = msg.body.c;
+
+		// ok the last thing is the actual function
+		intstate->r9  = (uintptr_t) newthr->parent->signalHandlers[msg.body.sigType];
+
+		// fixup the rip:
+		intstate->rip = addrs::USER_KERNEL_STUBS + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
+
+		// surgery ok.
+	}
 
 
 
@@ -158,7 +214,7 @@ namespace scheduler
 		auto ss = getSchedState();
 
 		ss->CurrentThread = ss->IdleThread;
-		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer);
+		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer, ss->CurrentThread);
 	}
 
 

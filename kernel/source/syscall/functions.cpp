@@ -37,6 +37,7 @@ namespace syscall
 
 		SyscallTable[SYSCALL_EXIT]                = (void*) sc_exit;
 		SyscallTable[SYSCALL_LOG]                 = (void*) sc_log;
+		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]   = (void*) sc_user_signal_leave;
 
 		// ipc/sc_handlers.cpp
 		SyscallTable[SYSCALL_IPC_SEND]            = (void*) sc_ipc_send;
