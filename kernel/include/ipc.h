@@ -47,8 +47,8 @@ namespace nx
 
 		constexpr uint64_t MAX_SIGNAL_TYPES = 32;
 
-		void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_t& msg);
-		void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_t& msg);
+		void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
+		void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
 	}
 }
 

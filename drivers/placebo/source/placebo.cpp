@@ -13,7 +13,7 @@
 
 void sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
 {
-	printf("received signal!!!!\n");
+	printf("received signal!!!! (%lu, %lu, %lu, %lu, %lu)\n", sender, type, a, b, c);
 }
 
 
@@ -31,6 +31,7 @@ extern "C" int main()
 		0xff'0089cf,
 		0xff'0ab04a,
 	};
+
 	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
 
 	int ctr2 = 0;

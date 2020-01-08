@@ -69,10 +69,10 @@ namespace nx
 			}
 		}
 
-		// after a while (3s), terminate placebo.
-		scheduler::sleep(3000'000'000);
+		// after a while (1s), terminate placebo.
+		scheduler::sleep(1000'000'000);
 		log("kernel", "woken from slumber, committing murder...");
-		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, { });
+		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 
 		// uint64_t ctr = 0;

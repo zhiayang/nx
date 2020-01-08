@@ -53,17 +53,17 @@ namespace nx
 			of the thread to save/restore.
 		*/
 
-		static void enqueue_signal(Process* proc, uint64_t sigType, const signal_message_t& umsg)
+		static void enqueue_signal(Process* proc, uint64_t sigType, const signal_message_body_t& umsg)
 		{
 			// first, construct the final message to send:
 			auto msg = signal_message_t();
 
-			msg.flags           = umsg.flags;
+			msg.flags           = MSG_FLAG_SIGNAL;
 			msg.targetId        = proc->processId;
 			msg.senderId        = scheduler::getCurrentProcess()->processId;
 			msg.body.sigType    = sigType;
 
-			memcpy(msg.body.bytes, umsg.body.bytes, sizeof(umsg.body.bytes));
+			memcpy(msg.body.bytes, umsg.bytes, sizeof(umsg.bytes));
 
 			// ok, we have the message.
 			proc->pendingSignalQueue.append(msg);
@@ -73,22 +73,22 @@ namespace nx
 
 
 		// the default action here if there is no handler installed is to discard the message.
-		void signalProcess(Process* proc, uint64_t sigType, const signal_message_t& msg)
+		void signalProcess(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
 		{
 			if(sigType >= MAX_SIGNAL_TYPES)
 				return;
 
 			// check if there's a handler for it:
 			auto handler = proc->signalHandlers[sigType];
-			// if(!handler)
-			// 	log("ipc", "process %lu has no handle for signal %lu", proc->processId, sigType);
+			if(!handler)
+				log("ipc", "process %lu has no handle for signal %lu", proc->processId, sigType);
 
-			// else
+			else
 				enqueue_signal(proc, sigType, msg);
 		}
 
 		// the default action here is to terminate the process if there's no handler installed.
-		void signalProcessCritical(Process* proc, uint64_t sigType, const signal_message_t& msg)
+		void signalProcessCritical(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
 		{
 			assert(proc);
 
