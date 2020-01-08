@@ -75,7 +75,20 @@ namespace nx
 		return 0;
 	}
 
+	// returns the old handler.
+	void* syscall::sc_ipc_set_signal_handler(uint64_t sigType, void* new_handler)
+	{
+		if(sigType >= MAX_SIGNAL_TYPES)
+			return (void*) -1;
 
+		auto proc = scheduler::getCurrentThread()->parent;
+		auto ret = (void*) proc->signalHandlers[sigType];
+
+		proc->signalHandlers[sigType] = (signal_handler_fn_t) new_handler;
+
+		log("ipc", "proc %lu installed handler for sigType %lu", proc->processId, sigType);
+		return ret;
+	}
 
 	void syscall::sc_user_signal_leave()
 	{

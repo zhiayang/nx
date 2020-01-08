@@ -23,6 +23,10 @@ namespace nx
 		uint64_t sc_ipc_peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
 		uint64_t sc_ipc_receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
 
+		// returns the old handler.
+		void* sc_ipc_set_signal_handler(uint64_t sigType, void* new_handler);
+
+
 		void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags);
 		void* sc_mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);
 

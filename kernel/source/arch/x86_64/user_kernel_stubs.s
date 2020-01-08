@@ -15,7 +15,7 @@ nx_user_kernel_stubs_begin:
 .global nx_x64_user_signal_enter
 .type nx_x64_user_signal_enter, @function
 nx_x64_user_signal_enter:
-	cmp %r9, %r9
+	test %r9, %r9
 	jz 1f
 
 	call *%r9

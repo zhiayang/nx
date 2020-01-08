@@ -114,7 +114,7 @@ namespace scheduler
 		// the signature: (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c);
 		//                      ^ rdi           ^ rsi           ^ rdx       ^ rcx       ^ r8
 
-		log("ipc", "sending signalled message to thread %lu", newthr->threadId);
+		log("ipc", "sending signalled message (sigType %lu) to thread %lu", msg.body.sigType, newthr->threadId);
 
 		// perform precision surgery
 		intstate->rdi = msg.senderId;

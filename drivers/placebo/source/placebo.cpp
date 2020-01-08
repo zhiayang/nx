@@ -11,8 +11,16 @@
 #include <svr/tty.h>
 #include <syscall.h>
 
+void sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
+{
+	printf("received signal!!!!\n");
+}
+
+
 extern "C" int main()
 {
+	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_TERMINATE, &sig_handler);
+
 	uint64_t ctr = 0;
 
 	constexpr uint32_t colours[] = {

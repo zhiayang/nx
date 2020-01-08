@@ -46,6 +46,7 @@ namespace syscall
 		SyscallTable[SYSCALL_IPC_DISCARD]         = (void*) sc_ipc_discard;
 		SyscallTable[SYSCALL_IPC_RECEIVE]         = (void*) sc_ipc_receive;
 		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]   = (void*) 0;
+		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER] = (void*) sc_ipc_set_signal_handler;
 
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]           = (void*) sc_mmap_anon;
@@ -55,9 +56,9 @@ namespace syscall
 		SyscallTable[SYSCALL_VFS_READ]            = (void*) sc_vfs_read;
 		SyscallTable[SYSCALL_VFS_WRITE]           = (void*) sc_vfs_write;
 
-		SyscallTable[11] = (void*) debug_char;
-		SyscallTable[12] = (void*) debug_ptr;
-		SyscallTable[13] = (void*) debug_str;
+		// SyscallTable[11] = (void*) debug_char;
+		// SyscallTable[12] = (void*) debug_ptr;
+		// SyscallTable[13] = (void*) debug_str;
 	}
 
 	void init()

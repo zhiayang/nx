@@ -17,12 +17,13 @@ namespace nx
 	constexpr uint64_t SYSCALL_IPC_DISCARD          = 4;
 	constexpr uint64_t SYSCALL_IPC_RECEIVE          = 5;
 	constexpr uint64_t SYSCALL_IPC_RECEIVE_BLOCK    = 6;
+	constexpr uint64_t SYSCALL_IPC_SET_SIG_HANDLER  = 7;
 
-	constexpr uint64_t SYSCALL_MMAP_ANON            = 7;
-	constexpr uint64_t SYSCALL_MMAP_FILE            = 8;
+	constexpr uint64_t SYSCALL_MMAP_ANON            = 10;
+	constexpr uint64_t SYSCALL_MMAP_FILE            = 11;
 
-	constexpr uint64_t SYSCALL_VFS_READ             = 9;
-	constexpr uint64_t SYSCALL_VFS_WRITE            = 10;
+	constexpr uint64_t SYSCALL_VFS_READ             = 20;
+	constexpr uint64_t SYSCALL_VFS_WRITE            = 21;
 
 
 	constexpr uint64_t SYSCALL_USER_SIGNAL_LEAVE    = 98;

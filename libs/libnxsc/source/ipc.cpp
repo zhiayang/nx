@@ -14,10 +14,10 @@
 namespace nx {
 namespace ipc
 {
-	int send(uint64_t target, void* buf, size_t len)
+	int send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
 	{
 		int64_t ret = 0;
-		__nx_syscall_3(SYSCALL_IPC_SEND, ret, target, buf, len);
+		__nx_syscall_5(SYSCALL_IPC_SEND, ret, target, a, b, c, d);
 
 		return ret;
 	}
@@ -27,18 +27,18 @@ namespace ipc
 		__nx_syscall_0v(SYSCALL_IPC_DISCARD);
 	}
 
-	size_t peek(void* buf, size_t len)
+	uint64_t peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
 	{
-		size_t ret = 0;
-		__nx_syscall_2(SYSCALL_IPC_PEEK, ret, buf, len);
+		uint64_t ret = 0;
+		__nx_syscall_4(SYSCALL_IPC_PEEK, ret, a, b, c, d);
 
 		return ret;
 	}
 
-	size_t receive(void* buf, size_t len)
+	uint64_t receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
 	{
-		size_t ret = 0;
-		__nx_syscall_2(SYSCALL_IPC_RECEIVE, ret, buf, len);
+		uint64_t ret = 0;
+		__nx_syscall_4(SYSCALL_IPC_PEEK, ret, a, b, c, d);
 
 		return ret;
 	}
@@ -47,6 +47,14 @@ namespace ipc
 	{
 		size_t ret = 0;
 		__nx_syscall_0(SYSCALL_IPC_POLL, ret);
+
+		return ret;
+	}
+
+	void* install_intr_signal_handler(uint64_t sigType, signal_handler_fn_t handler)
+	{
+		void* ret = 0;
+		__nx_syscall_2(SYSCALL_IPC_SET_SIG_HANDLER, ret, sigType, handler);
 
 		return ret;
 	}
