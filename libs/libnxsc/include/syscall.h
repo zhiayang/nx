@@ -29,8 +29,21 @@ namespace syscall
 	ssize_t vfs_read(int fd, void* buf, size_t len);
 	ssize_t vfs_write(int fd, const void* buf, size_t len);
 
-	void kernel_log(int lvl, char* sys, size_t slen, char* str, size_t len);
+	void kernel_log(int lvl, const char* sys, size_t slen, const char* str, size_t len);
+
+	uint64_t nanosecond_timestamp();
 }
 #else
 	#error unsupported
 #endif
+
+
+
+
+
+
+
+
+
+
+

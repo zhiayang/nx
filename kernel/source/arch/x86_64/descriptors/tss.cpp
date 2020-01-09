@@ -122,7 +122,11 @@ namespace tss
 
 			uint8_t* iopb = (uint8_t*) (tssBase + sizeof(tss_t));
 			for(auto it = ports.begin(); it != ports.end(); it++)
-				iopb[it->key] = it->value;
+			{
+				// below, we reversed the convention -- bit set=allowed, bit clear=not allowed
+				// so when setting the actual iopb for the CPU, just NOT it.
+				iopb[it->key] = ~it->value;
+			}
 		}
 	}
 
@@ -132,8 +136,10 @@ namespace tss
 		size_t ofs  = port % 8;
 		uint8_t bit = (1UL << ofs);
 
-		if(allowed) (*iopb)[byte] &= ~bit;
-		else        (*iopb)[byte] |= bit;
+		// ok, here's the thing: the default values of these idiots are 0, ie. all allowed!!
+		// so, in OUR TREEMAP, a set bit means allowed, and a clear bit means NOT ALLOWED.
+		if(allowed) (*iopb)[byte] |=  bit;
+		else        (*iopb)[byte] &= ~bit;
 	}
 
 

@@ -122,7 +122,7 @@ namespace gdt
 			addDescriptor(makeGDTEntry(0, 0, 0, 0));                // 0x18: stupid null descriptor
 
 			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, false, 3));   // 0x20: ring 3 data segment
-			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x18: ring 3 code segment
+			addDescriptor(makeGDTEntry(0, 0xFFFFFFFF, true, 3));    // 0x28: ring 3 code segment
 		}
 
 

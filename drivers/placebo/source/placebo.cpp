@@ -13,7 +13,16 @@
 
 void sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
 {
-	printf("received signal!!!! (%lu, %lu, %lu, %lu, %lu)\n", sender, type, a, b, c);
+	syscall::kernel_log(0, "lmao", 4, "OMG", 3); // (%lu, %lu, %lu, %lu, %lu)\n", sender, type, a, b, c);
+
+	uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
+	for(int y = 20; y < 40; y++)
+	{
+		for(int x = 1420; x < 1440; x++)
+		{
+			*(fb + y * 1440 + x) = 0xff'ffffff;
+		}
+	}
 }
 
 
@@ -32,61 +41,30 @@ extern "C" int main()
 		0xff'0ab04a,
 	};
 
+	int ctr2 = 0;
 	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
 
-	int ctr2 = 0;
+	// these are in nanoseconds.
+	uint64_t last_update = 0;
+	constexpr uint64_t update_time = 250'000'000;
+
+
 	while(true)
 	{
-		if(ctr++ % 20000000 == 0)
+		if(auto ts = syscall::nanosecond_timestamp(); last_update + update_time < ts)
 		{
+			last_update = ts;
+
 			ctr2++;
 			uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
-			for(int y = 0; y < 300; y++)
+			for(int y = 0; y < 20; y++)
 			{
-				for(int x = 0; x < 800; x++)
+				for(int x = 1420; x < 1440; x++)
 				{
-					*(fb + y * 800 + x) = colours[ctr2 % 4];
-				}
-			}
-
-			{
-				using namespace nx::ipc;
-				{
-					auto str = ".";
-
-					size_t len = sizeof(ttysvr::payload_t) + strlen(str) + 1;
-					char buf[len];
-					memset(buf, 0, len);
-
-
-					auto ttypl = (ttysvr::payload_t*) buf;
-
-					ttypl->magic = ttysvr::MAGIC;
-					ttypl->tty = 0;
-
-					ttypl->dataSize = strlen(str) + 1;
-					memcpy(ttypl->data, str, strlen(str));
-
-					// send(1, buf, len);
+					*(fb + y * 1440 + x) = colours[ctr2 % numColours];
 				}
 			}
 		}
-
-		// if(ctr2 == 12)
-		// {
-		// 	uint32_t* fb = (uint32_t*) 0xFFFF'FFFF'0000'0000;
-		// 	for(int y = 0; y < 300; y++)
-		// 	{
-		// 		for(int x = 0; x < 800; x++)
-		// 		{
-		// 			*(fb + y * 800 + x) = 0;
-		// 		}
-		// 	}
-
-		// 	// int ret;
-		// 	// __nx_syscall_1(nx::SYSCALL_EXIT, ret, 103);
-		// }
-
 	}
 }
 

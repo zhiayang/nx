@@ -24,7 +24,6 @@
 
 
 
-
 .macro push_all_regs
 	push %r15
 	push %r14

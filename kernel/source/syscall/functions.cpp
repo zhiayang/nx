@@ -35,26 +35,28 @@ namespace syscall
 		for(size_t i = 0; i < SyscallTableEntryCount; i++)
 			SyscallTable[i] = (void*) sc_null;
 
-		SyscallTable[SYSCALL_EXIT]                = (void*) sc_exit;
-		SyscallTable[SYSCALL_LOG]                 = (void*) sc_log;
-		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]   = (void*) sc_user_signal_leave;
+		SyscallTable[SYSCALL_EXIT]                  = (void*) sc_exit;
 
 		// ipc/sc_handlers.cpp
-		SyscallTable[SYSCALL_IPC_SEND]            = (void*) sc_ipc_send;
-		SyscallTable[SYSCALL_IPC_PEEK]            = (void*) sc_ipc_peek;
-		SyscallTable[SYSCALL_IPC_POLL]            = (void*) sc_ipc_poll;
-		SyscallTable[SYSCALL_IPC_DISCARD]         = (void*) sc_ipc_discard;
-		SyscallTable[SYSCALL_IPC_RECEIVE]         = (void*) sc_ipc_receive;
-		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]   = (void*) 0;
-		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER] = (void*) sc_ipc_set_signal_handler;
+		SyscallTable[SYSCALL_IPC_SEND]              = (void*) sc_ipc_send;
+		SyscallTable[SYSCALL_IPC_PEEK]              = (void*) sc_ipc_peek;
+		SyscallTable[SYSCALL_IPC_POLL]              = (void*) sc_ipc_poll;
+		SyscallTable[SYSCALL_IPC_DISCARD]           = (void*) sc_ipc_discard;
+		SyscallTable[SYSCALL_IPC_RECEIVE]           = (void*) sc_ipc_receive;
+		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) 0;
+		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER]   = (void*) sc_ipc_set_signal_handler;
 
 		// syscall/sc_mmap.cpp
-		SyscallTable[SYSCALL_MMAP_ANON]           = (void*) sc_mmap_anon;
-		SyscallTable[SYSCALL_MMAP_FILE]           = (void*) sc_mmap_file;
+		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) sc_mmap_anon;
+		SyscallTable[SYSCALL_MMAP_FILE]             = (void*) sc_mmap_file;
 
 		// syscall/sc_vfs.cpp
-		SyscallTable[SYSCALL_VFS_READ]            = (void*) sc_vfs_read;
-		SyscallTable[SYSCALL_VFS_WRITE]           = (void*) sc_vfs_write;
+		SyscallTable[SYSCALL_VFS_READ]              = (void*) sc_vfs_read;
+		SyscallTable[SYSCALL_VFS_WRITE]             = (void*) sc_vfs_write;
+
+		SyscallTable[SYSCALL_GET_NANOSECOND_TS]     = (void*) sc_nanosecond_timestamp;
+		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]     = (void*) sc_user_signal_leave;
+		SyscallTable[SYSCALL_LOG]                   = (void*) sc_log;
 
 		// SyscallTable[11] = (void*) debug_char;
 		// SyscallTable[12] = (void*) debug_ptr;

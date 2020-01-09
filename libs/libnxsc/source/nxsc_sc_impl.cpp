@@ -50,9 +50,17 @@ namespace syscall
 	}
 
 
-	void kernel_log(int lvl, char* sys, size_t slen, char* str, size_t len)
+	void kernel_log(int lvl, const char* sys, size_t slen, const char* str, size_t len)
 	{
 		__nx_syscall_5v(SYSCALL_LOG, lvl, sys, slen, str, len);
+	}
+
+	uint64_t nanosecond_timestamp()
+	{
+		uint64_t ret = 0;
+		__nx_syscall_0(SYSCALL_GET_NANOSECOND_TS, ret);
+
+		return ret;
 	}
 }
 

@@ -29,11 +29,16 @@
 	xor %rdi, %rdi
 .endm
 
+.global nx_x64_is_in_syscall
+nx_x64_is_in_syscall:
+	.byte 0
+
 .macro do_syscall_jump_table
 
 	cmpq (SyscallTableEntryCount), %rax
 	jge 1f
 
+	movb $1, nx_x64_is_in_syscall
 
 	// setup the arguments. since the syscall entries are C functions, they expect
 	// parameters in %rdi, %rsi, %rdx, %rcx, %r8, %r9
@@ -42,6 +47,8 @@
 
 	shl $3, %rax
 	call *SyscallTable(%rax)
+
+	movb $0, nx_x64_is_in_syscall
 1:
 .endm
 
@@ -58,42 +65,66 @@
 .global nx_x64_syscall_entry
 .type nx_x64_syscall_entry, @function
 nx_x64_syscall_entry:
+	// note: no need for explicit cli, because SF_MASK already handles that for us.
 	swapgs
+
+	// b *0xfffffffff800037b if $gs_base == 0; b *0x7fffffff0006; c
 
 	// here, because we did not interrupt, literally nothing has changed except some segments, and rcx holds the return
 	// address (which we need to preserve)
 
-	// fetch the kernel stack into r11:
 	// when the current thread is scheduled, TSS->RSP0 is set to the top of the kernel stack. we will use
 	// this as the stack pointer. see scheduler.h for the offset for TSSBase in the CPULocalState. it is
 	// currently 0x10.
-	movq %gs:0x10, %r11
-	movq 4(%r11), %r11
 
-	// make that our stack pointer. now %r11 contains the user stack
-	xchg %rsp, %r11
+	// but first, save the user stack into CPULocalState->tmpUserRsp, offset 0x38.
+	movq %rsp, %gs:0x38
 
-	// we are now on the kernel stack. save the user rsp and user rip.
-	pushq %r11
-	pushq %rcx
+	// then, set the stack pointer to the syscall stack, which is pointed to by
+	// CPULocalState->syscallStack at offset 0x28
+	movq %gs:0x28, %rsp
 
-	// interrupts r safe
-	sti
+	// we are now on a safe stack, and can push.
+	pushq %gs:0x38  // user stack
+	push %r11       // user flags
+	push %rcx       // user rip
+
+
+	// %gs:0x38 still contains the user stack pointer, and we need to also save it to the thread structure, in case we get
+	// signalled while preempted in a syscall and thus need to know the current bottom of the user stack to run the
+	// signal handler in. these offsets are in scheduler.h.
+
+	// note: this can't be done in one instruction, so use rax and rbx as tmp registers.
+	push %rax
+	push %rbx
+
+	// %gs:0x40 is CPULocalState->currentThread
+	// 8(%gs:0x40) is CPULocalState->currentThread->syscallSavedUserStack
+	movq %gs:0x40, %rax
+	movq %gs:0x38, %rbx
+	movq %rbx, 8(%rax)
+
+	pop %rbx
+	pop %rax
+
+
+	// clear it.
+	movq $0, %gs:0x38
 
 	// ok great we can do stack stuff now.
 	save_regs
+	sti
 
 	do_syscall_jump_table
 
+	cli
 	restore_regs
 
-	// and off we go
-	cli
+	// restore the things in prep for sysret.
+	pop %rcx
+	pop %r11
+	pop %rsp
 
-	// note that we always set rflags to 0x202; IF set, bit 1 (reserved) set, everything else clear
-	popq %rcx
-	popq %rsp
-	movq $0x202, %r11
 
 	swapgs
 	sysretq
@@ -107,7 +138,7 @@ nx_x64_syscall_entry:
 .global nx_x64_syscall_intr_entry
 .type nx_x64_syscall_intr_entry, @function
 nx_x64_syscall_intr_entry:
-	swapgs
+	swapgs_if_necessary
 	sti
 
 	save_regs
@@ -117,7 +148,7 @@ nx_x64_syscall_intr_entry:
 	restore_regs
 
 	cli
-	swapgs
+	swapgs_if_necessary
 	iretq
 
 

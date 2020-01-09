@@ -24,7 +24,7 @@ export ARCH             := x86_64
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-MEMORY              = 64
+MEMORY              = 128
 
 QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
@@ -101,7 +101,7 @@ exportheaders:
 	@cp -r kernel/include/export/* $(SYSROOT)/usr/include/nx/
 	@cp -r services/*/include/* $(SYSROOT)/usr/include/svr/
 
-build: exportheaders
+compile: exportheaders
 	@mkdir -p $(INITRD_DIR)/sys
 	@mkdir -p $(INITRD_DIR)/boot
 	@mkdir -p $(INITRD_DIR)/drivers
@@ -116,12 +116,16 @@ build: exportheaders
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
 	@$(MAKE) -s -C services
+
+make_initrd: compile
 	@cp $(SYSROOT)/boot/bfxloader   $(INITRD_DIR)/boot/
 	@cp $(SYSROOT)/boot/nxkernel64  $(INITRD_DIR)/boot/
 	@cp utils/bootboot_config       $(INITRD_DIR)/sys/config
 	@cp utils/bfx_kernel_params     $(INITRD_DIR)/boot/
 	@cd $(INITRD_DIR); tar -cf $(INITRD) *
 	@gzip -cf9 $(INITRD) > $(INITRD).gz
+
+build: make_initrd
 
 clean:
 	@find "efx" -name "*.o" -delete

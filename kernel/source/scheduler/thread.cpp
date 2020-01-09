@@ -48,7 +48,8 @@ namespace scheduler
 
 	//* note: we don't bother rounding this up, we just divide by PAGE_SIZE
 	//* so don't be stupid; set these to a multiple of 0x1000, thanks.
-	constexpr size_t KERNEL_STACK_SIZE           = 0x2000;
+	constexpr size_t KERNEL_STACK_SIZE           = 0x1000;
+	constexpr size_t SYSCALL_STACK_SIZE          = 0x1000;
 	constexpr size_t USER_STACK_SIZE             = 0x4000;
 
 	static pid_t ThreadIdCounter = 0;
@@ -70,7 +71,8 @@ namespace scheduler
 		// we don't really care what the address is, as long as we got the space.
 		// we do the phys and virt allocation separately because we want the physical address as well.
 
-		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_NX | (isUserProc ? (vmm::PAGE_USER) : 0);
+		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_NX;
+		addr_t user_flags   = (isUserProc ? (vmm::PAGE_USER) : 0);
 
 		// first, just make some space for the user stack.
 		{
@@ -79,8 +81,8 @@ namespace scheduler
 			auto phys = pmm::allocate(n);
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
 
-			// map it in the target address space
-			vmm::mapAddress(virt, phys, n, target_flags, proc);
+			// map it in the target address space. map it user-accessible.
+			vmm::mapAddress(virt, phys, n, target_flags | user_flags, proc);
 
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
@@ -88,7 +90,22 @@ namespace scheduler
 		}
 
 
-		// then, the kernel stack:
+		// then, the syscall stack
+		{
+			auto n = SYSCALL_STACK_SIZE / PAGE_SIZE;
+
+			auto phys = pmm::allocate(n);
+			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
+
+			// map it in the target address space. don't map it user-accessible.
+			vmm::mapAddress(virt, phys, n, target_flags, proc);
+
+			thr->syscallStackBottom = virt;
+			thr->syscallStackTop = virt + SYSCALL_STACK_SIZE;
+		}
+
+
+		// finally, the kernel stack:
 		{
 			auto n = KERNEL_STACK_SIZE / PAGE_SIZE;
 
@@ -98,7 +115,7 @@ namespace scheduler
 			// save it so we can kill it later.
 			thr->kernelStackBottom = virt;
 
-			// map it in the target address space
+			// map it in the target address space. don't map it user-accessible.
 			vmm::mapAddress(virt, phys, n, target_flags, proc);
 
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
@@ -191,8 +208,9 @@ namespace scheduler
 			auto phys = pmm::allocate(numPages);
 			assert(phys);
 
+			// note: we must map this user-accessible!
 			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User, proc);
-			vmm::mapAddress(virt, phys, numPages, target_flags, proc);
+			vmm::mapAddress(virt, phys, numPages, target_flags | user_flags, proc);
 
 			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
 			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
@@ -236,6 +254,7 @@ namespace scheduler
 
 		}
 
+		log("sched", "created thread %lu belonging to proc %lu", thr->threadId, thr->parent->processId);
 		return thr;
 	}
 
@@ -253,19 +272,20 @@ namespace scheduler
 		// kill the kernel stack.
 		vmm::deallocate(thr->kernelStackBottom, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
 
+		// kill the syscall stack.
+		vmm::deallocate(thr->syscallStackBottom, SYSCALL_STACK_SIZE / PAGE_SIZE, proc);
+
 		// kill the sse state
 		vmm::deallocate(thr->fpuSavedStateBuffer, 1, proc);
 
 		// save this for later.
 		auto id = thr->threadId;
 
+		getSchedState()->ThreadList.remove_all(thr);
 
-		// it needs to disappear from the scheduler state too
 		proc->threads.remove_all_if([&thr](const auto& t) -> bool {
 			return t.threadId == thr->threadId;
 		});
-
-		getSchedState()->ThreadList.remove_all(thr);
 
 
 		log("sched", "destroyed thread %lu", id);

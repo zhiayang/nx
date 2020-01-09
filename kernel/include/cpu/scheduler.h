@@ -55,17 +55,32 @@ namespace nx
 			uint64_t tssSelector = 0;       // ofs: 0x18
 
 			addr_t cr3 = 0;                 // ofs: 0x20
-			addr_t unused = 0;              // ofs: 0x28
+			addr_t syscallStack = 0;        // ofs: 0x28
 			CPU* cpu = 0;                   // ofs: 0x30
+			addr_t tmpUserRsp = 0;          // ofs: 0x38
+			Thread* currentThread = 0;      // ofs: 0x40
 		};
+
+		// these need to be used from ASM, so we must make sure they never change!
+		static_assert(offsetof(CPULocalState, self)         == 0x00);
+		static_assert(offsetof(CPULocalState, id)           == 0x08);
+		static_assert(offsetof(CPULocalState, lApicId)      == 0x0C);
+		static_assert(offsetof(CPULocalState, TSSBase)      == 0x10);
+		static_assert(offsetof(CPULocalState, tssSelector)  == 0x18);
+		static_assert(offsetof(CPULocalState, cr3)          == 0x20);
+		static_assert(offsetof(CPULocalState, syscallStack) == 0x28);
+		static_assert(offsetof(CPULocalState, cpu)          == 0x30);
+		static_assert(offsetof(CPULocalState, tmpUserRsp)   == 0x38);
+		static_assert(offsetof(CPULocalState, currentThread)== 0x40);
+
 
 		struct CPU
 		{
-			int id;
-			int lApicId;
+			int id = 0;
+			int lApicId = 0;
 
-			bool isBootstrap;
-			addr_t localApicAddr;
+			bool isBootstrap = 0;
+			addr_t localApicAddr = 0;
 
 			Process* currentProcess = 0;
 
@@ -77,15 +92,15 @@ namespace nx
 
 		struct Process
 		{
-			pid_t processId;
+			pid_t processId = 0;
 			nx::string processName;
 
-			addr_t cr3;
+			addr_t cr3 = 0;
 			nx::array<Thread> threads;
 
-			int flags;
+			int flags = 0;
 
-			addr_t tlsMasterCopy;
+			addr_t tlsMasterCopy = 0;
 			size_t tlsAlign = 0;
 			size_t tlsSize = 0;
 
@@ -126,12 +141,16 @@ namespace nx
 
 		struct Thread
 		{
-			pid_t threadId;
+			pid_t threadId = 0;                 // ofs: 0x0
+			addr_t syscallSavedUserStack = 0;   // ofs: 0x8
 
-			addr_t userStackBottom;
+			addr_t userStackBottom = 0;
 
-			addr_t kernelStackTop;
-			addr_t kernelStackBottom;
+			addr_t syscallStackTop = 0;
+			addr_t syscallStackBottom = 0;
+
+			addr_t kernelStackTop = 0;
+			addr_t kernelStackBottom = 0;
 
 			Process* parent = 0;
 
@@ -150,6 +169,10 @@ namespace nx
 
 			bool pendingSignalRestore = false;
 		};
+
+		// these need to be used from ASM, so we must make sure they never change!
+		static_assert(offsetof(Thread, threadId)                == 0x00);
+		static_assert(offsetof(Thread, syscallSavedUserStack)   == 0x08);
 
 
 		void setupKernelProcess(addr_t cr3);
@@ -221,6 +244,8 @@ namespace nx
 
 		// returns t.
 		Thread* addThread(Thread* t);
+		Thread* pauseThread(Thread* t);
+		Thread* resumeThread(Thread* t);
 
 		void destroyThread(Thread* t);
 		void destroyProcess(Process* p);

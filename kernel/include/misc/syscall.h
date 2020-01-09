@@ -38,5 +38,7 @@ namespace nx
 		void sc_user_signal_leave();
 
 		void sc_log(int level, char* sys, size_t syslen, char* buf, size_t buflen);
+
+		uint64_t sc_nanosecond_timestamp();
 	}
 }

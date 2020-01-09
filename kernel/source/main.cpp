@@ -27,7 +27,7 @@ namespace nx
 	void work_thread2()
 	{
 		top:
-		println("1s");
+		print(".");
 		scheduler::sleep(time::milliseconds(1000).ns());
 		goto top;
 
@@ -48,15 +48,12 @@ namespace nx
 
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
-
-		auto worker2 = scheduler::createThread(scheduler::getKernelProcess(), work_thread2);
-		scheduler::addThread(worker2);
+		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), work_thread2));
 
 
 		// todo: make this more dynamic
 		{
-			scheduler::Thread* thr = 0;
-			scheduler::addThread(thr = loader::loadProgram("/initrd/drivers/ps2"));
+			auto thr = loader::loadProgram("/initrd/drivers/ps2");
 
 			scheduler::allowProcessIOPort(thr->parent, 0x60);
 			scheduler::allowProcessIOPort(thr->parent, 0x64);
@@ -67,11 +64,14 @@ namespace nx
 				interrupts::unmaskIRQ(irq);
 				device::ioapic::setIRQMapping(irq, /* vector */ 1, /* lapic id */ 0);
 			}
+
+			scheduler::addThread(thr);
 		}
 
 		// after a while (1s), terminate placebo.
-		scheduler::sleep(1000'000'000);
-		log("kernel", "woken from slumber, committing murder...");
+		log("kernel", "going to sleep...");
+		scheduler::sleep(500'000'000);
+		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 

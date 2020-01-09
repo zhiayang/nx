@@ -426,6 +426,8 @@ namespace heap
 			chunk->next = 0;
 			chunk->memory = addr;
 
+			memset((void*) addr, 0, sz);
+
 
 			// put the chunk back into the free list.
 			{

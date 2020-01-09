@@ -72,10 +72,17 @@ namespace util
 
 
 
-
+	static bool nested = false;
 	void printStackTrace(uint64_t _rbp)
 	{
 		serial::debugprintf("\nbacktrace:\n");
+		if(nested)
+		{
+			serial::debugprintf("aborting backtrace!\n");
+			return;
+		}
+
+		nested = true;
 
 		int counter = 0;
 		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
@@ -104,6 +111,8 @@ namespace util
 			rbp = *((addr_t*) rbp);
 
 		} while(rbp);
+
+		nested = false;
 	}
 
 

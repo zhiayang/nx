@@ -14,7 +14,8 @@
 namespace krt
 {
 	template <typename T, typename allocator, typename aborter>
-	struct array : iter_remove_fns<array<T, allocator, aborter>, T>
+	struct array :  iter_remove_fns<array<T, allocator, aborter>, T>,
+					iter_find_fns<array<T, allocator, aborter>, T>
 	{
 		using impl = arraylike_impl<array, T, allocator, aborter>;
 		friend impl;

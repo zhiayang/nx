@@ -34,5 +34,10 @@ namespace syscall
 		serial::debugprint(buf, buflen);
 		serial::debugprint("\n");
 	}
+
+	uint64_t sc_nanosecond_timestamp()
+	{
+		return scheduler::getElapsedNanoseconds();
+	}
 }
 }

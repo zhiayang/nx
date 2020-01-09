@@ -45,11 +45,10 @@ extern "C" void exit(int ret)
 	// flush the shits
 	fflush(stdout);
 
-	(void) ret;
 	_fini();
 
 	// do a system call
-	asm volatile("xor %%r10, %%r10; int $0xF8" ::: "%r10");
+	asm volatile("xor %%rax, %%rax; movl %0, %%edi; syscall" :: "r"(ret) : "%rdi", "%rax");
 	while(true);
 }
 
@@ -57,3 +56,8 @@ extern "C" void abort()
 {
 	exit(-42);
 }
+
+
+
+
+

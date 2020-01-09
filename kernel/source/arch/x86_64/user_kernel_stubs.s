@@ -15,6 +15,13 @@ nx_user_kernel_stubs_begin:
 .global nx_x64_user_signal_enter
 .type nx_x64_user_signal_enter, @function
 nx_x64_user_signal_enter:
+	// before we can do anything, we need to adjust the stack.
+	// when we are thrown here from the scheduler, RSP0 always points to the bottom of the user stack.
+	// so, subtract 128 for the red zone:
+	sub $128, %rsp
+
+
+
 	test %r9, %r9
 	jz 1f
 
@@ -22,6 +29,7 @@ nx_x64_user_signal_enter:
 
 1:
 	// this is hardcoded, but it's fine... i guess.
+	// SYSCALL_USER_SIGNAL_LEAVE == 98
 	movq $98, %rax
 	syscall
 

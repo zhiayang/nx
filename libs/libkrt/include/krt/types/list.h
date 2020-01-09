@@ -14,7 +14,8 @@
 namespace krt
 {
 	template <typename T, typename allocator, typename aborter>
-	struct list : iter_remove_fns<list<T, allocator, aborter>, T>
+	struct list :   iter_remove_fns<list<T, allocator, aborter>, T>,
+					iter_find_fns<list<T, allocator, aborter>, T>
 	{
 		using impl = listlike_impl<list, T, allocator, aborter>;
 		friend impl;

@@ -26,6 +26,7 @@ namespace nx
 	constexpr uint64_t SYSCALL_VFS_WRITE            = 21;
 
 
+	constexpr uint64_t SYSCALL_GET_NANOSECOND_TS    = 97;
 	constexpr uint64_t SYSCALL_USER_SIGNAL_LEAVE    = 98;
 	constexpr uint64_t SYSCALL_LOG                  = 99;
 

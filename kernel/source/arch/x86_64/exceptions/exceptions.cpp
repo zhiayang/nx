@@ -161,8 +161,9 @@ namespace exceptions
 			while(1);
 		}
 
-		uint64_t cr2;
-		uint64_t cr3;
+		uint64_t cr2 = 0;
+		uint64_t cr3 = 0;
+		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
 
 		asm volatile("mov %%cr2, %0" : "=r" (cr2));
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
@@ -174,10 +175,15 @@ namespace exceptions
 		debugprintf("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
 		debugprintf("error code:   %d\n", regs->ErrorCode);
 
-		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
+		// note: we must check gs, in case it was some kind of swapgs failure -- we don't want to end up triple-faulting.
+		if(gsbase != 0 && scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted)
 		{
 			debugprintf("pid: %lu / tid: %lu\n", scheduler::getCurrentProcess()->processId,
 				scheduler::getCurrentThread()->threadId);
+		}
+		else
+		{
+			debugprintf("pre-scheduler");
 		}
 
 		if(regs->InterruptID == 13 && regs->ErrorCode != 0)
@@ -226,7 +232,7 @@ namespace exceptions
 
 
 		// if this was a user program, then fuck that guy.
-		if(scheduler::getCurrentProcess() != scheduler::getKernelProcess())
+		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())
 		{
 			auto thr = scheduler::getCurrentThread();
 			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
@@ -241,7 +247,7 @@ namespace exceptions
 			if(faultCount == 1)
 				util::printStackTrace(regs->rbp);
 
-			debugprintf("\n!! error: unrecoverable cpu exception !!");
+			debugprintf("\n!! error: unrecoverable cpu exception !!\n");
 		}
 
 		while(1);

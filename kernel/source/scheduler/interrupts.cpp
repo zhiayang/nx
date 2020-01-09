@@ -206,8 +206,8 @@ namespace interrupts
 	{
 		while(true)
 		{
-			processIRQ();
-			// scheduler::yield();
+			if(hasPendingIRQs())    processIRQ();
+			else                    scheduler::yield();
 		}
 	}
 

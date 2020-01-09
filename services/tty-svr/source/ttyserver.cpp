@@ -11,11 +11,13 @@
 
 #include "tty.h"
 
-extern "C" int main()
+int main()
 {
 	using namespace nx;
 
 	printf("this is the tty server\n");
+	return 73;
+
 	// while(true)
 	// {
 	// 	size_t bufSz = 0;

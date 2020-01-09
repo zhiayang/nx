@@ -245,6 +245,7 @@ namespace krt
 
 		static Node* deleteNode(Container* self, Node* node)
 		{
+		#if 0
 			if(!node) return 0;
 
 			self->cnt -= 1;
@@ -277,6 +278,31 @@ namespace krt
 			allocator::deallocate(node);
 
 			return ret;
+
+		#endif
+
+			if(!node)
+				return 0;
+
+			if(node->prev)
+				node->prev->next = node->next;
+
+			if(node->next)
+				node->next->prev = node->prev;
+
+			if(self->head == node)
+				self->head = node->next;
+
+			if(self->tail == node)
+				self->tail = node->prev;
+
+			auto next = node->next;
+
+			node->~Node();
+			allocator::deallocate(node);
+			self->cnt -= 1;
+
+			return next;
 		}
 
 		static ElmTy& _insertBefore(Container* self, Node* at, Node* node)
@@ -286,10 +312,18 @@ namespace krt
 			{
 				if(self->head)
 				{
-					node->prev = self->tail;
-					node->next = nullptr;
+					if(self->tail)
+					{
+						node->prev = self->tail;
+						self->tail->next = node;
+					}
+					else
+					{
+						node->prev = self->head;
+						self->head->next = node;
+					}
 
-					self->tail->next = node;
+					node->next = nullptr;
 				}
 				else
 				{
