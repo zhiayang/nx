@@ -11,7 +11,7 @@
 #include <svr/tty.h>
 #include <syscall.h>
 
-void sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
+uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
 {
 	syscall::kernel_log(0, "lmao", 4, "OMG", 3); // (%lu, %lu, %lu, %lu, %lu)\n", sender, type, a, b, c);
 
@@ -23,10 +23,12 @@ void sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_
 			*(fb + y * 1440 + x) = 0xff'ffffff;
 		}
 	}
+
+	return 0;
 }
 
 
-extern "C" int main()
+int main()
 {
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_TERMINATE, &sig_handler);
 

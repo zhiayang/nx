@@ -46,12 +46,18 @@ namespace ipc
 	static_assert(sizeof(uint64_t) == 8);
 	static_assert(sizeof(uint8_t) * 8 == sizeof(uint64_t));
 
-	constexpr uint64_t SIGNAL_NORMAL    = 0;
-	constexpr uint64_t SIGNAL_POSIX     = 1;
-	constexpr uint64_t SIGNAL_TERMINATE = 2;
+	constexpr uint64_t SIGNAL_NORMAL        = 0;
+	constexpr uint64_t SIGNAL_POSIX         = 1;
+	constexpr uint64_t SIGNAL_DEVICE_IRQ    = 2;
+
+	constexpr uint64_t SIGNAL_TERMINATE     = 31;
 
 	// params: senderId, msg->sigType, msg->a, msg->b, msg->c.
-	using signal_handler_fn_t = void (*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+	// return: some flags, kernel decides what to do.
+	using signal_handler_fn_t = uint64_t (*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+
+	constexpr uint64_t SIGNAL_NO_PROPOGATE  = 0;
+	constexpr uint64_t SIGNAL_PROPOGATE     = 1;
 }
 }
 

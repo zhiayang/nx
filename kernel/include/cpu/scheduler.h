@@ -154,6 +154,7 @@ namespace nx
 
 			Process* parent = 0;
 
+			uint64_t flags = 0;
 			ThreadState state = ThreadState::Stopped;
 
 			mutex* blockedMtx = 0;

@@ -65,6 +65,12 @@ namespace ps2
 		return port::read1b(DATA_PORT);
 	}
 
+	static inline uint8_t read_data_immediate()
+	{
+		// don't wait for the output bus -- irq handler uses this.
+		return port::read1b(DATA_PORT);
+	}
+
 	static inline uint8_t get_cmd_response(uint8_t cmd)
 	{
 		send_cmd(cmd);
@@ -86,6 +92,7 @@ namespace ps2
 
 	// ports are 1 and 2!
 	bool send_data(int port, uint8_t data);
+	bool send_data(int port, uint8_t data, uint8_t data2);
 }
 
 

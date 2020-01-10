@@ -23,8 +23,8 @@ extern "C" void nx_x64_user_signal_enter(uint64_t sender, uint64_t sigType, uint
 namespace nx {
 namespace scheduler
 {
-	constexpr uint64_t NS_PER_TICK           = time::milliseconds(5).ns();
-	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(15).ns();
+	constexpr uint64_t NS_PER_TICK           = time::milliseconds(1).ns();
+	constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(4).ns();
 
 	static_assert(NS_PER_TICK <= TIMESLICE_DURATION_NS);
 	static_assert(TIMESLICE_DURATION_NS % NS_PER_TICK == 0);    // not strictly necessary
@@ -82,26 +82,28 @@ namespace scheduler
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		// if(nx_x64_is_in_syscall)
-		// 	error("sched", "switching to %lu while in syscall from %lu!", newthr->threadId, oldthr->threadId);
-
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
 	extern "C" void nx_x64_setup_signalled_stack(Thread* newthr)
 	{
-		// if instead the thread is pending a restore, we must perform reverse reconstructive surgery.
+		// if the thread is pending a restore, we must perform reverse reconstructive surgery.
 		// we just restore the entire saved state instead of fiddling with individual things.
 		if(newthr->pendingSignalRestore)
 		{
 			assert(!newthr->parent->savedSignalStateStack.empty());
-			auto savedstate = newthr->parent->savedSignalStateStack.popFront();
+			auto savedstate = newthr->parent->savedSignalStateStack.popBack();
 
 			auto intstate = (cpu::InterruptedState*) newthr->kernelStack;
 			memcpy(intstate, &savedstate, sizeof(savedstate));
 
 			newthr->pendingSignalRestore = false;
-			log("sched", "restoring thread %lu -> %p", newthr->threadId, intstate->rip);
+			// log("sched", "restoring thread %lu (%zu) -> %p", newthr->threadId, newthr->parent->savedSignalStateStack.size(),
+			// 	intstate->rip);
+
+			// intstate->dump();
+			// serial::debugprint("\n");
+
 			return;
 		}
 
@@ -116,6 +118,18 @@ namespace scheduler
 
 		// first, save the state.
 		auto regs = (cpu::InterruptedState*) newthr->kernelStack;
+
+		// if the thread is currently sitting in kernel mode, we cannot signal it.
+		// note: this means that, for now, we cannot send signals to kernel threads!
+		if((regs->cs & 0x3) == 0)
+		{
+			// just quit -- don't modify anything, and wait till the next schedule event
+			// to potentially signal the thread.
+			return;
+		}
+
+
+		// ok, we're in user mode here.
 		newthr->parent->savedSignalStateStack.append(*regs);
 
 		auto msg = newthr->parent->pendingSignalQueue.popFront();
@@ -124,7 +138,16 @@ namespace scheduler
 		// (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c, uint64_t handler);
 		//    ^ rdi            ^ rsi             ^ rdx       ^ rcx       ^ r8        ^ r9
 
-		auto oldrip = regs->rip;
+		// try not to leak info to anybody.
+		regs->rax = 0;
+		regs->rbx = 0;
+		regs->r10 = 0;
+		regs->r11 = 0;
+		regs->r12 = 0;
+		regs->r13 = 0;
+		regs->r14 = 0;
+		regs->r15 = 0;
+		regs->rbp = 0;
 
 		// perform precision surgery
 		regs->rdi = msg.senderId;
@@ -132,57 +155,16 @@ namespace scheduler
 		regs->rdx = msg.body.a;
 		regs->rcx = msg.body.b;
 		regs->r8  = msg.body.c;
+
+		assert(msg.body.sigType < ipc::MAX_SIGNAL_TYPES);
 		regs->r9  = (uintptr_t) newthr->parent->signalHandlers[msg.body.sigType];
 
 		// fixup the rip:
 		regs->rip = addrs::USER_KERNEL_STUBS + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
 
 		// surgery ok.
-		log("ipc", "sending signalled message (sigType %lu) to thread %lu (cs = %02x, rip = %p, rax = %lx)",
-			msg.body.sigType, newthr->threadId, regs->cs, oldrip, regs->rax);
-
-
-		// check whether the signalled thread was in kernel mode:
-		if((regs->cs & 0x3) == 0)
-		{
-			// ok, this means that either (a) we tried to signal a kernel thread, or
-			// (b) we are signalling a thread that got pre-empted in the middle of a syscall.
-
-			if(newthr->parent->flags & Process::PROC_USER)
-			{
-				// we are a user proc in the middle of syscall. because the signal handler must run in ring3,
-				// we cannot simply use the saved RSP value in the iret, because that would give us the syscall
-				// stack, which will page fault the user-mode code. so grab the saved user stack from the syscall
-				// handler, and use that as the returning RSP.
-				auto ursp = regs->rsp;
-				regs->rsp = newthr->syscallSavedUserStack;
-
-				// at the same time, we must make sure that the syscall to sigreturn does not use the top of the
-				// syscall stack! we were already in a outer syscall that pushed a bunch of state to the syscall stack,
-				// so we must start the new syscall at the bottom of this stack to prevent overwriting the outer stuff.
-				// the syscall handler gets is starting RSP from the CPULocalState, so... just set that to the bottom
-				// of the interrupted RSP -- since we were interrupted in the middle of a syscall, that RSP will indeed
-				// refer to the syscall stack like we want.
-				getCPULocalState()->syscallStack = ursp;
-
-				// we don't need to do anything special here -- the next time we schedule the thread, we'll reset this
-				// value to the top of the syscall stack, so it works out.
-			}
-			else
-			{
-				// kernel proc.
-				assert(!"cannot signal a kernel process yet!!");
-			}
-		}
-		else
-		{
-			// otherwise, we don't really need to do anything -- the saved RSP from the interrupt context will already
-			// be the user RSP.
-		}
-
-		// for now, we must always run the signal stub in user mode, because it uses syscall!
-		regs->cs = 0x2b;
-		regs->ss = 0x23;
+		// log("ipc", "sending signalled message (sigType %lu) to tid %lu / pid %lu",
+		// 	msg.body.sigType, newthr->threadId, newthr->parent->processId);
 	}
 
 
@@ -468,9 +450,6 @@ namespace scheduler
 		interrupts::sendEOI(TickIRQ);
 
 		auto ss = getSchedState();
-
-		// if(nx_x64_is_in_syscall)
-		// 	error("sched", "omg tick in syscall!!!");
 
 		ss->tickCounter += 1;
 		ElapsedNanoseconds += NS_PER_TICK;

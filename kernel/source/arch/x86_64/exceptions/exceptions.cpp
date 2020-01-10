@@ -19,6 +19,7 @@ namespace exceptions
 		uint64_t rip, cs, rflags, useresp, ss;
 	};
 
+
 	constexpr const char* ExceptionMessages[] =
 	{
 		"division by zero",
@@ -251,6 +252,27 @@ namespace exceptions
 		}
 
 		while(1);
+	}
+}
+
+namespace cpu
+{
+	void InterruptedState::dump() const
+	{
+		auto r = this;
+
+		using namespace serial;
+
+		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
+		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
+		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
+		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
+		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
+		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
+		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
+		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
+		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
+		debugprintf("ss:       %16.8lx   rflags:   %16.8lx\n", r->ss, r->rflags);
 	}
 }
 }

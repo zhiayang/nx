@@ -125,7 +125,9 @@ namespace interrupts
 		};
 
 		advance_ptr();
-		serial::debugprintf("one irq (%d)", pendingIRQs);
+
+					ipc::signalProcess(scheduler::getProcessWithId(2), ipc::SIGNAL_DEVICE_IRQ,
+						ipc::signal_message_body_t(irq, port::read1b(0x60), 0));
 
 		return true;
 	}
@@ -171,9 +173,6 @@ namespace interrupts
 		auto event = irqBuffer.buffer[irqBuffer.tail];
 		retreat_ptr();
 
-		serial::debugprintf("irq: %d / %d", event.irq, pendingIRQs);
-		port::read1b(0x60);
-
 		irq_state_t* st = 0;
 
 		if(auto it = irqHandlers.find(event.irq); it != irqHandlers.end())
@@ -206,8 +205,8 @@ namespace interrupts
 	{
 		while(true)
 		{
-			if(hasPendingIRQs())    processIRQ();
-			else                    scheduler::yield();
+			processIRQ();
+			scheduler::yield();
 		}
 	}
 
@@ -217,7 +216,7 @@ namespace interrupts
 		memset(&irqBuffer, 0, sizeof(irq_event_buffer_t));
 
 		workerThread = scheduler::createThread(scheduler::getKernelProcess(), irq_sched);
-		// scheduler::addThread(workerThread);
+		scheduler::addThread(workerThread);
 	}
 }
 }

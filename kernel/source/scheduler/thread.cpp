@@ -254,7 +254,8 @@ namespace scheduler
 
 		}
 
-		log("sched", "created thread %lu belonging to proc %lu", thr->threadId, thr->parent->processId);
+		log("sched", "created tid %lu in pid %lu (stks u: %p, s: %p, k: %p)",
+			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->syscallStackBottom, thr->kernelStackBottom);
 		return thr;
 	}
 

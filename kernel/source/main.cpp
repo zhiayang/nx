@@ -26,16 +26,13 @@ namespace nx
 
 	void work_thread2()
 	{
-		top:
-		print(".");
-		scheduler::sleep(time::milliseconds(1000).ns());
-		goto top;
-
-
 		// uint64_t ctr = 0;
 		// while(true) if(++ctr % 5000000 == 0) print("x");
 	}
 
+
+	// TODO: jesus christ get rid of this
+	static scheduler::Process* ps2driverproc = 0;
 	void kernel_main()
 	{
 		log("kernel", "started main worker thread\n");
@@ -46,14 +43,14 @@ namespace nx
 		// start the irq dispatcher
 		interrupts::init();
 
-		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
+		// scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
-		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), work_thread2));
 
 
 		// todo: make this more dynamic
 		{
 			auto thr = loader::loadProgram("/initrd/drivers/ps2");
+			ps2driverproc = thr->parent;
 
 			scheduler::allowProcessIOPort(thr->parent, 0x60);
 			scheduler::allowProcessIOPort(thr->parent, 0x64);
@@ -63,17 +60,34 @@ namespace nx
 
 				interrupts::unmaskIRQ(irq);
 				device::ioapic::setIRQMapping(irq, /* vector */ 1, /* lapic id */ 0);
+
+				// interrupts::addIRQHandler(irq, 0, [](int irq, void*) -> bool {
+
+				// 	// our job here is to signal the process.
+				// 	ipc::signalProcess(ps2driverproc, ipc::SIGNAL_DEVICE_IRQ,
+				// 		ipc::signal_message_body_t(irq, 0, 0));
+
+				// 	return 0;
+				// });
 			}
 
 			scheduler::addThread(thr);
 		}
 
-		// after a while (1s), terminate placebo.
+
+		// scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), []() {
+		// 	while(true)
+		// 	{
+		// 		print(".");
+		// 		scheduler::sleep(time::milliseconds(1000).ns());
+		// 	}
+		// }));
+
+
 		log("kernel", "going to sleep...");
 		scheduler::sleep(500'000'000);
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
-
 
 		// uint64_t ctr = 0;
 		// while(true) if(++ctr % 5000000 == 0) print("q");

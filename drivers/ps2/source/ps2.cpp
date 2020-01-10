@@ -7,22 +7,21 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <ipc.h>
 #include <svr/tty.h>
 #include <syscall.h>
 
 #include "ps2.h"
+#include "keyboard.h"
 
 static void vlog(int lvl, const char* fmt, va_list ap)
 {
 	char* buf = 0;
 	int len = vasprintf(&buf, fmt, ap);
 
-	char sys[5] = { 0 };
-	strcpy(sys, "ps/2");
-
-	syscall::kernel_log(lvl, sys, 4, buf, len);
+	syscall::kernel_log(lvl, "ps/2", 4, buf, len);
 	free(buf);
 }
 
@@ -60,6 +59,8 @@ namespace ps2
 	static bool Port2Working = true;
 
 	static int KeyboardPort = -1;
+
+	static Keyboard* kb = 0;
 
 	// i love c.
 	static constexpr void (*send_fns[2])(uint8_t data) = {
@@ -121,7 +122,7 @@ namespace ps2
 			send_cmd(0xA7);
 		}
 
-		// test the ports.
+		// test the ports. (this takes time)
 		if constexpr (false)
 		{
 			log("testing ports...");
@@ -205,7 +206,7 @@ namespace ps2
 		// enable scanning.
 		send_data(KeyboardPort, 0xF4);
 
-		printf("**\n\n\n\ninitialised\n");
+		log("controller initialised");
 	}
 
 
@@ -214,10 +215,13 @@ namespace ps2
 		send_fns[port - 1](data);
 		uint8_t resp = read_data();
 
-		while(resp == 0xFE)
+		int tries = 5;
+		while(resp == 0xFE && tries > 0)
 		{
 			send_fns[port - 1](data);
 			resp = read_data();
+
+			tries -= 1;
 		}
 
 		if(resp != 0xFA)
@@ -228,17 +232,107 @@ namespace ps2
 
 		return true;
 	}
+
+	bool send_data(int port, uint8_t d1, uint8_t d2)
+	{
+		send_fns[port - 1](d1);
+		send_fns[port - 1](d2);
+
+		uint8_t resp = read_data();
+
+		int tries = 5;
+		while(resp == 0xFE && tries > 0)
+		{
+			send_fns[port - 1](d1);
+			send_fns[port - 1](d2);
+
+			resp = read_data();
+
+			tries -= 1;
+		}
+
+		if(resp != 0xFA)
+		{
+			warn("port %d did not ACK, aborting", port);
+			return false;
+		}
+
+		return true;
+	}
+
+
+	static void square(uint32_t c)
+	{
+		uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
+		for(int y = 40; y < 60; y++)
+		{
+			for(int x = 1420; x < 1440; x++)
+			{
+				*(fb + y * 1440 + x) = 0xff'000000 | c;
+			}
+		}
+	}
+
+
+	// interrupt handler.
+	static size_t cnt = 0;
+	static uint64_t interrupt_handler(uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c)
+	{
+		// the kernel gives us the IRQ number in 'a'
+		if(sigType != nx::ipc::SIGNAL_DEVICE_IRQ)
+			warn("expected %lu, got %lu", nx::ipc::SIGNAL_DEVICE_IRQ, sigType);
+
+		if(a == 1)
+		{
+			// auto x = read_data_immediate();
+			uint8_t x = (uint8_t) b;
+
+			if(KeyboardPort == 1)
+				kb->addByte(x);
+
+
+			// log("rx byte %02x %zu", x, cnt++);
+			square(((uint8_t) cnt) << 16 | ((uint8_t) cnt) << 8 | (uint8_t) cnt);
+			// else            square(0x00ff00);
+		}
+		else if(a == 12)
+		{
+			auto x = read_data_immediate();
+			// if(KeyboardPort == 2)
+			// 	kb->addByte(x);
+		}
+		else
+		{
+			error("unknown irq #%lu", a);
+		}
+
+		/*
+			tofix:
+
+			doing syscalls in signal handlers is apparently still a bad idea. we get all the telltale signs of stack
+			corruption; mostly executing/loading random addresses that lead to page faults...
+
+			need to figure out why. this is probably impossible to step through with a debugger ):
+		*/
+
+		return nx::ipc::SIGNAL_NO_PROPOGATE;
+	}
 }
 
 
-extern "C" int main()
+int main()
 {
 	ps2::init_controller();
+	ps2::kb = new ps2::Keyboard();
 
-	while(1)
+	// set scancode 2 for the keyboard.
+	if(auto port = ps2::KeyboardPort; port != -1)
+		ps2::send_data(port, 0xF0, 2);
+
+	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_DEVICE_IRQ, &ps2::interrupt_handler);
+
+	while(true)
 		;
-
-	return 0;
 }
 
 

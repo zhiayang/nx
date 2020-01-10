@@ -68,8 +68,6 @@ nx_x64_syscall_entry:
 	// note: no need for explicit cli, because SF_MASK already handles that for us.
 	swapgs
 
-	// b *0xfffffffff800037b if $gs_base == 0; b *0x7fffffff0006; c
-
 	// here, because we did not interrupt, literally nothing has changed except some segments, and rcx holds the return
 	// address (which we need to preserve)
 
@@ -80,32 +78,13 @@ nx_x64_syscall_entry:
 	// but first, save the user stack into CPULocalState->tmpUserRsp, offset 0x38.
 	movq %rsp, %gs:0x38
 
-	// then, set the stack pointer to the syscall stack, which is pointed to by
-	// CPULocalState->syscallStack at offset 0x28
-	movq %gs:0x28, %rsp
+	movq %gs:0x10, %rsp
+	movq 4(%rsp), %rsp
 
 	// we are now on a safe stack, and can push.
 	pushq %gs:0x38  // user stack
 	push %r11       // user flags
 	push %rcx       // user rip
-
-
-	// %gs:0x38 still contains the user stack pointer, and we need to also save it to the thread structure, in case we get
-	// signalled while preempted in a syscall and thus need to know the current bottom of the user stack to run the
-	// signal handler in. these offsets are in scheduler.h.
-
-	// note: this can't be done in one instruction, so use rax and rbx as tmp registers.
-	push %rax
-	push %rbx
-
-	// %gs:0x40 is CPULocalState->currentThread
-	// 8(%gs:0x40) is CPULocalState->currentThread->syscallSavedUserStack
-	movq %gs:0x40, %rax
-	movq %gs:0x38, %rbx
-	movq %rbx, 8(%rax)
-
-	pop %rbx
-	pop %rax
 
 
 	// clear it.
@@ -139,15 +118,15 @@ nx_x64_syscall_entry:
 .type nx_x64_syscall_intr_entry, @function
 nx_x64_syscall_intr_entry:
 	swapgs_if_necessary
-	sti
 
 	save_regs
+	sti
 
 	do_syscall_jump_table
 
+	cli
 	restore_regs
 
-	cli
 	swapgs_if_necessary
 	iretq
 

@@ -9,7 +9,9 @@ namespace nx {
 namespace console
 {
 	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
-	constexpr int Padding = 4;
+
+	constexpr int PaddingX = 8;
+	constexpr int PaddingY = 4;
 
 	static bool Initialised = false;
 
@@ -105,8 +107,8 @@ namespace console
 		// VT_Width = (FramebufferWidth - 2*Padding) / CharWidth;
 		// VT_Height = (FramebufferHeight - 2*Padding) / CharHeight;
 
-		CursorX = Padding;
-		CursorY = Padding;
+		CursorX = PaddingX;
+		CursorY = PaddingY;
 
 		CurrentFGColour = 0xE0E0E0;
 		CurrentBGColour = 0x080808;
@@ -229,7 +231,7 @@ namespace console
 		}
 
 		Initialised = true;
-		VT_Height = (FramebufferHeight - 2*Padding) / MainFont.vertAdv;
+		VT_Height = (FramebufferHeight - 2*PaddingY) / MainFont.vertAdv;
 
 		// clear it
 		krt::util::memfill4b((uint32_t*) Framebuffer, CurrentBGColour, FramebufferScanWidth * FramebufferHeight);
@@ -237,15 +239,15 @@ namespace console
 
 	static void scrollIfNecessary()
 	{
-		if(CursorY + MainFont.vertAdv + Padding >= FramebufferHeight)
+		if(CursorY + MainFont.vertAdv + PaddingY >= FramebufferHeight)
 		{
 			// copy.
-			memmove((void*) (Framebuffer + (Padding * FramebufferScanWidth * 4)),
-				(void*) (Framebuffer + (4 * FramebufferScanWidth * (Padding + MainFont.vertAdv))),
+			memmove((void*) (Framebuffer + (PaddingY * FramebufferScanWidth * 4)),
+				(void*) (Framebuffer + (4 * FramebufferScanWidth * (PaddingY + MainFont.vertAdv))),
 				((VT_Height - 1) * MainFont.vertAdv) * FramebufferScanWidth * 4);
 
 			// memset the last row to 0.
-			krt::util::memfill4b((uint32_t*) (Framebuffer + (Padding + ((VT_Height - 1) * MainFont.vertAdv)) * FramebufferScanWidth * 4),
+			krt::util::memfill4b((uint32_t*) (Framebuffer + (PaddingY + ((VT_Height - 1) * MainFont.vertAdv)) * FramebufferScanWidth * 4),
 				CurrentBGColour, FramebufferScanWidth * MainFont.vertAdv);
 
 			CursorY -= MainFont.vertAdv;
@@ -264,11 +266,11 @@ namespace console
 
 			if(c == '\r')
 			{
-				CursorX = Padding;
+				CursorX = PaddingX;
 			}
 			else if(c == '\n')
 			{
-				CursorX = Padding;
+				CursorX = PaddingX;
 				CursorY += MainFont.vertAdv;
 
 				scrollIfNecessary();
@@ -280,8 +282,8 @@ namespace console
 
 				CursorX += g->horzAdv;
 
-				if(CursorX + Padding >= FramebufferWidth)
-					CursorY += MainFont.vertAdv, CursorX = Padding;
+				if(CursorX + PaddingX >= FramebufferWidth)
+					CursorY += MainFont.vertAdv, CursorX = PaddingX;
 
 				scrollIfNecessary();
 			}

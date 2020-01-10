@@ -96,7 +96,7 @@ namespace nx
 		auto thr = scheduler::getCurrentThread();
 		assert(thr);
 
-		log("ipc", "thread %lu finished signalled message", thr->threadId);
+		// log("ipc", "tid %lu sigreturn", thr->threadId);
 
 		thr->pendingSignalRestore = true;
 		scheduler::yield();

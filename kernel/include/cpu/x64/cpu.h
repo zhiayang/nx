@@ -124,6 +124,8 @@ namespace nx
 			uint64_t rflags;
 			uint64_t rsp;
 			uint64_t ss;
+
+			void dump() const;
 		};
 
 		#else
