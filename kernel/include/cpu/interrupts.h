@@ -12,6 +12,7 @@ namespace nx
 	namespace scheduler
 	{
 		struct Thread;
+		struct Process;
 	}
 
 	namespace interrupts
@@ -35,20 +36,18 @@ namespace nx
 		void mapIRQVector(int irq, int vector, int apicId);
 
 		// note: the handler can return false to stop further processing.
-		void addIRQHandler(int irq, int priority, bool (*)(int, void*));
+		void addIRQHandler(int irq, int priority, scheduler::Thread* thr);
+		void addIRQHandler(int irq, int priority, scheduler::Process* proc);
 
-		// this one discards the new IRQ if we are full. returns false if
-		// we had to discard anything.
-		bool enqueueIRQ(int num, void* data);
+		// returns true if there was at least one target to handle the IRQ.
+		bool processIRQ(int num, void* data);
 
-		// this one discards the oldest pending IRQ if we are full.
-		// returns false if we had to discard anything.
-		bool enqueueImptIRQ(int num, void* data);
+		// tells the interrupt "manager" that one of the signalled processes did not process
+		// the irq successfully (eg. it was not from that particular device)
+		void signalIRQIgnored(int num);
 
-		bool hasPendingIRQs();
-		void processIRQ();
-
-		scheduler::Thread* getHandlerThread();
+		// tells the interrupt "manager" that somebody successfully handled the device irq.
+		void signalIRQHandled(int num);
 	}
 }
 

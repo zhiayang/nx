@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "cpu/interrupts.h"
 
 namespace nx
 {
@@ -81,22 +82,30 @@ namespace nx
 		if(sigType >= MAX_SIGNAL_TYPES)
 			return (void*) -1;
 
-		auto proc = scheduler::getCurrentThread()->parent;
-		auto ret = (void*) proc->signalHandlers[sigType];
+		auto thr = scheduler::getCurrentThread();
+		auto ret = (void*) thr->signalHandlers[sigType];
 
-		proc->signalHandlers[sigType] = (signal_handler_fn_t) new_handler;
+		thr->signalHandlers[sigType] = (signal_handler_fn_t) new_handler;
 
-		log("ipc", "proc %lu installed handler for sigType %lu", proc->processId, sigType);
+		log("ipc", "thr %lu installed handler for sigType %lu", thr->threadId, sigType);
 		return ret;
 	}
 
-	void syscall::sc_user_signal_leave()
+	void syscall::sc_user_signal_leave(uint64_t returnCode)
 	{
 		// do nothing?
 		auto thr = scheduler::getCurrentThread();
 		assert(thr);
 
-		// log("ipc", "tid %lu sigreturn", thr->threadId);
+
+		// handled:
+		if(returnCode & SIGNAL_IRQ_HANDLED_FLAG)
+			interrupts::signalIRQHandled((uint32_t) returnCode);
+
+		// ignored:
+		if(returnCode & SIGNAL_IRQ_IGNORED_FLAG)
+			interrupts::signalIRQIgnored((uint32_t) returnCode);
+
 
 		thr->pendingSignalRestore = true;
 		scheduler::yield();

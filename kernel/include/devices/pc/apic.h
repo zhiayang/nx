@@ -25,7 +25,8 @@ namespace nx
 			void sendEOI(int num);
 
 			// setup and calibrate the local apic timer
-			void calibrateLAPICTimer();
+			// returns the IRQ number that we used.
+			int calibrateLAPICTimer();
 
 			// does basic setup
 			void initLAPIC();
@@ -62,7 +63,7 @@ namespace nx
 
 			// sets up the ioapic to trigger interrupt 'vector' on the cpu with id 'apicId',
 			// when it receives 'irq' from a device. note: 'vector' is in IRQ space! (0 => IRQ_BASE_VECTOR)
-			void setIRQMapping(int irq, int vector, int apicId);
+			void setIRQMapping(int irq, int vector, int apicId, bool activeLow = false, bool levelTriggered = false);
 
 			// sets the pin mapping from the legacy ISA interrupt number to the IOAPIC interrupt number.
 			// uses the intr source info in the MADT.

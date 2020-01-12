@@ -140,7 +140,7 @@ namespace ioapic
 		return nullptr;
 	}
 
-	void setIRQMapping(int irq, int vector, int apicId)
+	void setIRQMapping(int irq, int vector, int apicId, bool activeLow, bool levelTriggered)
 	{
 		vector += IRQ_BASE_VECTOR;
 
@@ -162,6 +162,8 @@ namespace ioapic
 		uint32_t polarity   = low & (1 << 13);
 		uint32_t trigger    = low & (1 << 15);
 
+		log("ioapic", "irq %d -> int %d: pol %x, trig %x", irq, vector, polarity, trigger);
+
 		// reuse it.
 		low = 0;
 
@@ -176,8 +178,11 @@ namespace ioapic
 		// [56:59]  - destination (4 bit apic id)
 
 		low = (vector & 0xFF);
-		low |= polarity;
-		low |= trigger;
+		if(activeLow)       low |= (1 << 13);
+		if(levelTriggered)  low |= (1 << 15);
+
+		// low |= polarity;
+		// low |= trigger;
 
 		// TODO: should we mask it by default? right now we don't.
 		// low |= (1 << 16);

@@ -6,6 +6,7 @@
 
 namespace nx
 {
+	using Thread = scheduler::Thread;
 	using Process = scheduler::Process;
 
 	namespace ipc
@@ -53,63 +54,76 @@ namespace nx
 			of the thread to save/restore.
 		*/
 
-		static void enqueue_signal(Process* proc, uint64_t sigType, const signal_message_body_t& umsg)
+		static void enqueue_signal(Thread* thr, uint64_t sigType, const signal_message_body_t& umsg)
 		{
 			// first, construct the final message to send:
 			auto msg = signal_message_t();
 
+			msg.targetId        = thr->threadId;
 			msg.flags           = MSG_FLAG_SIGNAL;
-			msg.targetId        = proc->processId;
-			msg.senderId        = scheduler::getCurrentProcess()->processId;
+			msg.senderId        = scheduler::getCurrentThread()->threadId;
 			msg.body.sigType    = sigType;
 
 			memcpy(msg.body.bytes, umsg.bytes, sizeof(umsg.bytes));
 
 			// ok, we have the message.
-			proc->pendingSignalQueue.append(msg);
+			thr->pendingSignalQueue.append(msg);
 
 			// that's it for this function.
 		}
 
-
 		// the default action here if there is no handler installed is to discard the message.
-		void signalProcess(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+		void signalThread(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
 		{
 			if(sigType >= MAX_SIGNAL_TYPES)
 				return;
 
 			// check if there's a handler for it:
-			auto handler = proc->signalHandlers[sigType];
+			auto handler = thr->signalHandlers[sigType];
 			if(!handler)
-				log("ipc", "process %lu has no handle for signal %lu", proc->processId, sigType);
+				log("ipc", "thread %lu has no handle for signal %lu", thr->threadId, sigType);
 
 			else
-				enqueue_signal(proc, sigType, msg);
+				enqueue_signal(thr, sigType, msg);
 		}
 
-		// the default action here is to terminate the process if there's no handler installed.
-		void signalProcessCritical(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+		// the default action here is to terminate the thread if there's no handler installed.
+		void signalThreadCritical(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
 		{
-			assert(proc);
+			assert(thr);
 
 			// yo wtf
 			if(sigType >= MAX_SIGNAL_TYPES)
 				return;
 
 			// check if there's a handler for it:
-			auto handler = proc->signalHandlers[sigType];
+			auto handler = thr->signalHandlers[sigType];
 			if(!handler)
 			{
 				// terminate that mofo.
-				log("ipc", "process %lu did not handle critical signal %lu -- terminating",
-					proc->processId, sigType);
+				log("ipc", "thread %lu did not handle critical signal %lu -- terminating",
+					thr->threadId, sigType);
 
 				// the scheduler will handle the case where we end up needing to terminate ourselves.
-				scheduler::terminate(proc);
+				scheduler::terminate(thr);
 			}
 
 			// ok, time to call the handler i guess?
-			enqueue_signal(proc, sigType, msg);
+			enqueue_signal(thr, sigType, msg);
+		}
+
+
+		// TODO:
+		// we don't support signalling processes "directly", for now. a stopgap measure is that
+		// we signal the first thread in the process, always.
+		void signalProcess(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+		{
+			signalThread(&proc->threads[0], sigType, msg);
+		}
+
+		void signalProcessCritical(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+		{
+			signalThreadCritical(&proc->threads[0], sigType, msg);
 		}
 	}
 }

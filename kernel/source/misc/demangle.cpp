@@ -1085,6 +1085,11 @@ namespace util
 			case 'g':   s.remove_prefix(1); while(isdigit(s[0]) || (s[0] >= 'a' && s[0] <= 'f')) s.remove_prefix(1); break;
 		}
 
+		if(s.find("_Z") == 0)
+		{
+			s.remove_prefix(2);
+			ret = parseEncoding(s, st);
+		}
 
 		assert(s[0] == 'E');
 		s.remove_prefix(1);

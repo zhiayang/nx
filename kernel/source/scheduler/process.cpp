@@ -25,8 +25,6 @@ namespace scheduler
 		// allocate a cr3 for it.
 		proc->cr3 = pmm::allocate(1);
 
-		// use sizeof here, since it's a static array.
-		memset(proc->signalHandlers, 0, sizeof(proc->signalHandlers));
 
 		vmm::init(proc);
 

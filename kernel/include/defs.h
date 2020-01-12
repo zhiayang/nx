@@ -22,6 +22,12 @@ namespace nx
 		static void deallocate(void* pt);
 	};
 
+	struct _fixed_allocator
+	{
+		static void* allocate(size_t sz, size_t align);
+		static void deallocate(void* pt);
+	};
+
 	struct _aborter
 	{
 		static void abort(const char* fmt, ...);

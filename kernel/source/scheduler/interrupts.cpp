@@ -3,49 +3,51 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "devices/pc/apic.h"
 
 namespace nx {
 namespace interrupts
 {
+	// TODO: NEEDS LOCKING
+
 	struct irq_handler_t
 	{
-		int num                     = 0;
-		int priority                = 0;
-		bool (*handler)(int, void*) = 0;
+		int num                 = 0;
+		int priority            = 0;
+		scheduler::Thread* thr  = 0;
 
 		irq_handler_t* next  = 0;
 	};
-
-	struct irq_event_t
-	{
-		int irq            = 0;
-		void* data         = 0;
-		uint64_t timestamp = 0;
-	};
-
-	static constexpr size_t IRQ_BUFFER_SIZE = 1024;
 
 	struct irq_state_t
 	{
 		irq_handler_t* handlers = 0;
 	};
 
-	struct irq_event_buffer_t
+	struct pending_irq_t
 	{
-		size_t head = 0;
-		size_t tail = 0;
-		bool full = false;
+		// the irq number.
+		int irq;
 
-		irq_event_t buffer[IRQ_BUFFER_SIZE];
+		// how many drivers that are pending a check-in to tell us
+		// whether they ignored or handled.
+		int remaining;
+
+		bool handled;
 	};
 
-	static size_t pendingIRQs = 0;
-	static irq_event_buffer_t irqBuffer;
-
+	static nx::mutex handlerLock;
 	static nx::treemap<int, irq_state_t> irqHandlers;
+
+	// we need the special allocator for this, since we call this inside IRQ handlers.
+	static nx::spinlock inflightLock;
+	static krt::list<pending_irq_t, _fixed_allocator, _aborter> inflightIRQs;
+
 
 	static irq_handler_t* insertHandler(irq_handler_t* begin, irq_handler_t* x)
 	{
+		autolock lk(&handlerLock);
+
 		auto h = begin;
 
 		while(h != 0)
@@ -69,14 +71,22 @@ namespace interrupts
 		return begin;
 	}
 
-	void addIRQHandler(int num, int priority, bool (*callback)(int, void*))
+	void addIRQHandler(int irq, int priority, scheduler::Process* proc)
 	{
+		// TODO: for now we just... use the first thread.
+		addIRQHandler(irq, priority, &proc->threads[0]);
+	}
+
+	void addIRQHandler(int num, int priority, scheduler::Thread* thr)
+	{
+		autolock lk(&handlerLock);
+
 		auto hand = new irq_handler_t();
 
-		hand->num      = num;
-		hand->priority = priority;
-		hand->handler  = callback;
-		hand->next     = 0;
+		hand->num       = num;
+		hand->thr       = thr;
+		hand->priority  = priority;
+		hand->next      = 0;
 
 		if(auto it = irqHandlers.find(num); it != irqHandlers.end())
 		{
@@ -91,132 +101,109 @@ namespace interrupts
 		}
 	}
 
-	static void advance_ptr()
+	void signalIRQIgnored(int num)
 	{
-		if(irqBuffer.full)
+		autolock lk(&inflightLock);
+
+		// grab the first pending irq that matches, and decrease the count.
+		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
+			return p.irq == num;
+		});
+
+		if(it != inflightIRQs.end())
 		{
-			irqBuffer.tail = (irqBuffer.tail + 1) % IRQ_BUFFER_SIZE;
+			it->remaining--;
+
+			if(it->remaining == 0)
+			{
+				inflightIRQs.erase(it);
+				if(!it->handled)
+				{
+					warn("irq", "no drivers handled irq %d", num);
+					sendEOI(num);
+				}
+			}
 		}
-
-		irqBuffer.head = (irqBuffer.head + 1) % IRQ_BUFFER_SIZE;
-		irqBuffer.full = (irqBuffer.head == irqBuffer.tail);
+		else
+		{
+			error("irq", "failed to find matching inflight irq");
+		}
 	}
 
-	static void retreat_ptr()
+
+	void signalIRQHandled(int num)
 	{
-		irqBuffer.full = false;
-		irqBuffer.tail = (irqBuffer.tail + 1) % IRQ_BUFFER_SIZE;
+		sendEOI(num);
+
+		autolock lk(&inflightLock);
+
+		// grab the first pending irq that matches, and decrease the count.
+		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
+			return p.irq == num;
+		});
+
+		if(it != inflightIRQs.end())
+		{
+			it->handled = true;
+			it->remaining--;
+
+			if(it->remaining == 0)
+				inflightIRQs.erase(it);
+		}
+		else
+		{
+			error("irq", "failed to find matching inflight irq");
+		}
 	}
 
-	// TODO: NEEDS LOCKING
 
-
-	// this discards the incoming (new) IRQ if the buffer was full.
-	bool enqueueIRQ(int irq, void* data)
+	bool processIRQ(int irq, void*)
 	{
-		if(irqBuffer.full)
-			return false;
-
-		pendingIRQs += 1;
-		irqBuffer.buffer[irqBuffer.head] = {
-			.irq       = irq,
-			.data      = data,
-			.timestamp = scheduler::getElapsedNanoseconds()
-		};
-
-		advance_ptr();
-
-					ipc::signalProcess(scheduler::getProcessWithId(2), ipc::SIGNAL_DEVICE_IRQ,
-						ipc::signal_message_body_t(irq, port::read1b(0x60), 0));
-
-		return true;
-	}
-
-	// this discards old pending IRQs if the buffer was full.
-	// returns false if we had to discard.
-	bool enqueueImptIRQ(int irq, void* data)
-	{
-		bool ret = !(irqBuffer.full);
-
-		// note: if we had to discard, then the number of pending irqs
-		// doesn't change.
-		if(ret) pendingIRQs += 1;
-
-		irqBuffer.buffer[irqBuffer.head] = {
-			.irq       = irq,
-			.data      = data,
-			.timestamp = scheduler::getElapsedNanoseconds()
-		};
-
-		advance_ptr();
-		return ret;
-	}
-
-	bool hasPendingIRQs()
-	{
-		return pendingIRQs > 0;
-	}
-
-	size_t getPendingIRQs()
-	{
-		return pendingIRQs;
-	}
-
-	void processIRQ()
-	{
-		if(pendingIRQs == 0)
-			return;
-
-		assert(irqBuffer.full || (irqBuffer.head != irqBuffer.tail));
-		pendingIRQs--;
-
-		auto event = irqBuffer.buffer[irqBuffer.tail];
-		retreat_ptr();
-
 		irq_state_t* st = 0;
 
-		if(auto it = irqHandlers.find(event.irq); it != irqHandlers.end())
+		if(auto it = irqHandlers.find(irq); it != irqHandlers.end())
 			st = &it->value;
 
 		else
-			return;
+			return false;
 
+
+		bool ok = false;
 		auto hand = st->handlers;
 
+		pending_irq_t pending {
+			.irq = irq,
+			.remaining = 0,
+			.handled = false
+		};
+
+		// just... signal all the handlers.
 		while(hand)
 		{
-			bool cont = hand->handler(event.irq, event.data);
-			if(!cont) break;
+			// of course, this just queues the thread to get signalled, nothing happens immediately.
+			ipc::signalThread(hand->thr, ipc::SIGNAL_DEVICE_IRQ,
+				ipc::signal_message_body_t(irq, 0, 0));
 
 			hand = hand->next;
+			ok = true;
+
+			pending.remaining++;
 		}
-	}
 
+		// add this.
+		autolock lk(&inflightLock);
+		inflightIRQs.append(pending);
 
-	static scheduler::Thread* workerThread = 0;
-
-	scheduler::Thread* getHandlerThread()
-	{
-		assert(workerThread);
-		return workerThread;
-	}
-
-	static void irq_sched()
-	{
-		while(true)
-		{
-			processIRQ();
-			scheduler::yield();
-		}
+		return ok;
 	}
 
 	void init()
 	{
+		inflightIRQs = krt::list<pending_irq_t, _fixed_allocator, _aborter>();
 		irqHandlers = nx::treemap<int, irq_state_t>();
-		memset(&irqBuffer, 0, sizeof(irq_event_buffer_t));
 
-		workerThread = scheduler::createThread(scheduler::getKernelProcess(), irq_sched);
-		scheduler::addThread(workerThread);
+		handlerLock = nx::mutex();
+		inflightLock = nx::spinlock();
 	}
 }
 }

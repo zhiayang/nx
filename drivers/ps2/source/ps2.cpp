@@ -49,7 +49,13 @@ static void error(const char* fmt, ...)
 	va_end(ap);
 }
 
-
+static volatile uint64_t counter = 0;
+static void busy_wait(uint64_t cnt)
+{
+	counter = cnt;
+	while(counter > 0)
+		counter--;
+}
 
 
 
@@ -199,12 +205,19 @@ namespace ps2
 			return;
 		}
 
+		// enable scanning.
+		send_data(KeyboardPort, 0xF4);
+
+		// set scancode 2 for the keyboard.
+		// if(KeyboardPort != -1)
+		// 	ps2::send_data(KeyboardPort, 0xF0, 2);
+
+
 		// enable interrupts for the keyboard port.
 		if(KeyboardPort == 1)       send_cmd(0xAE), write_config(read_config() | 0x1);
 		else if(KeyboardPort == 2)  send_cmd(0xA8), write_config(read_config() | 0x2);
 
-		// enable scanning.
-		send_data(KeyboardPort, 0xF4);
+
 
 		log("controller initialised");
 	}
@@ -235,8 +248,8 @@ namespace ps2
 
 	bool send_data(int port, uint8_t d1, uint8_t d2)
 	{
-		send_fns[port - 1](d1);
-		send_fns[port - 1](d2);
+		send_fns[port - 1](d1); // busy_wait(10000);
+		send_fns[port - 1](d2); // busy_wait(10000);
 
 		uint8_t resp = read_data();
 
@@ -276,46 +289,28 @@ namespace ps2
 
 	// interrupt handler.
 	static size_t cnt = 0;
-	static uint64_t interrupt_handler(uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c)
+	static uint64_t interrupt_handler(uint64_t sender, uint64_t sigType, uint64_t irq, uint64_t b, uint64_t c)
 	{
 		// the kernel gives us the IRQ number in 'a'
 		if(sigType != nx::ipc::SIGNAL_DEVICE_IRQ)
 			warn("expected %lu, got %lu", nx::ipc::SIGNAL_DEVICE_IRQ, sigType);
 
-		if(a == 1)
+		if(irq == 0x10)
 		{
-			// auto x = read_data_immediate();
-			uint8_t x = (uint8_t) b;
+			auto x = read_data_immediate();
 
 			if(KeyboardPort == 1)
 				kb->addByte(x);
 
-
-			// log("rx byte %02x %zu", x, cnt++);
 			square(((uint8_t) cnt) << 16 | ((uint8_t) cnt) << 8 | (uint8_t) cnt);
-			// else            square(0x00ff00);
-		}
-		else if(a == 12)
-		{
-			auto x = read_data_immediate();
-			// if(KeyboardPort == 2)
-			// 	kb->addByte(x);
 		}
 		else
 		{
-			error("unknown irq #%lu", a);
+			error("unknown irq #%lu", irq);
+			return nx::ipc::SIGNAL_IRQ_IGNORED(irq);
 		}
 
-		/*
-			tofix:
-
-			doing syscalls in signal handlers is apparently still a bad idea. we get all the telltale signs of stack
-			corruption; mostly executing/loading random addresses that lead to page faults...
-
-			need to figure out why. this is probably impossible to step through with a debugger ):
-		*/
-
-		return nx::ipc::SIGNAL_NO_PROPOGATE;
+		return nx::ipc::SIGNAL_IRQ_HANDLED(irq);
 	}
 }
 
@@ -324,10 +319,6 @@ int main()
 {
 	ps2::init_controller();
 	ps2::kb = new ps2::Keyboard();
-
-	// set scancode 2 for the keyboard.
-	if(auto port = ps2::KeyboardPort; port != -1)
-		ps2::send_data(port, 0xF0, 2);
 
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_DEVICE_IRQ, &ps2::interrupt_handler);
 

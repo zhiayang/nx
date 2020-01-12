@@ -27,6 +27,10 @@ nx_x64_user_signal_enter:
 
 	call *%r9
 
+	// btw: there is actually a return code, so move that to %rdi as a parameter
+	// to the sigreturn syscall.
+	mov %rax, %rdi
+
 1:
 	// this is hardcoded, but it's fine... i guess.
 	// SYSCALL_USER_SIGNAL_LEAVE == 98
@@ -39,3 +43,7 @@ nx_x64_user_signal_enter:
 .global nx_user_kernel_stubs_end
 nx_user_kernel_stubs_end:
 	.byte 0
+
+
+
+

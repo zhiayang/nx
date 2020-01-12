@@ -231,6 +231,8 @@ namespace fpu
 				area->xcompBV |= area->xstateBV;
 			}
 		}
+
+		log("fpu", "fpu configured");
 	}
 
 	size_t getFPUStateSize()

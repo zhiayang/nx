@@ -186,6 +186,8 @@ namespace vmm
 		assert(isAligned(virt));
 		assert(isAligned(phys));
 
+		autolock lk(&proc->addrSpaceLock);
+
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc) performTempMapping(proc);
 
@@ -257,6 +259,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
+		autolock lk(&proc->addrSpaceLock);
+
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc) performTempMapping(proc);
 
@@ -325,6 +329,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
+		autolock lk(&proc->addrSpaceLock);
+
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc) performTempMapping(proc);
 
@@ -366,6 +372,8 @@ namespace vmm
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
+
+		autolock lk(&proc->addrSpaceLock);
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		if(isOtherProc) performTempMapping(proc);

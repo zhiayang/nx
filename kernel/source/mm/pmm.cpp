@@ -60,9 +60,9 @@ namespace pmm
 			}
 		}
 
-		// we should have > 1KB, if not UEFI wouldn't boot anyway.
-		double num = totalMem / 1024.0; int unit = 0;
-		char units[] = { 'K', 'M', 'G', 'T', 'P' };
+		// we should have > 1MB, if not UEFI wouldn't boot anyway.
+		double num = totalMem / (1024.0 * 1024.0); int unit = 0;
+		char units[] = { 'M', 'G', 'T', 'P' };
 
 		while(num >= 1024)
 			num /= 1024.0, unit++;

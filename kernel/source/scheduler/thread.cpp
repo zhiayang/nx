@@ -48,8 +48,7 @@ namespace scheduler
 
 	//* note: we don't bother rounding this up, we just divide by PAGE_SIZE
 	//* so don't be stupid; set these to a multiple of 0x1000, thanks.
-	constexpr size_t KERNEL_STACK_SIZE           = 0x1000;
-	constexpr size_t SYSCALL_STACK_SIZE          = 0x1000;
+	constexpr size_t KERNEL_STACK_SIZE           = 0x2000;
 	constexpr size_t USER_STACK_SIZE             = 0x4000;
 
 	static pid_t ThreadIdCounter = 0;
@@ -87,21 +86,6 @@ namespace scheduler
 			// we don't need to map it in our address space, because we don't need to write anything there.
 			// (yet!) -- eventually we want to write a return address that will kill the thread.
 			thr->userStackBottom = virt;
-		}
-
-
-		// then, the syscall stack
-		{
-			auto n = SYSCALL_STACK_SIZE / PAGE_SIZE;
-
-			auto phys = pmm::allocate(n);
-			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
-
-			// map it in the target address space. don't map it user-accessible.
-			vmm::mapAddress(virt, phys, n, target_flags, proc);
-
-			thr->syscallStackBottom = virt;
-			thr->syscallStackTop = virt + SYSCALL_STACK_SIZE;
 		}
 
 
@@ -254,8 +238,8 @@ namespace scheduler
 
 		}
 
-		log("sched", "created tid %lu in pid %lu (stks u: %p, s: %p, k: %p)",
-			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->syscallStackBottom, thr->kernelStackBottom);
+		log("sched", "created tid %lu in pid %lu (stks u: %p, k: %p)",
+			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->kernelStackBottom);
 		return thr;
 	}
 
@@ -272,9 +256,6 @@ namespace scheduler
 
 		// kill the kernel stack.
 		vmm::deallocate(thr->kernelStackBottom, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
-
-		// kill the syscall stack.
-		vmm::deallocate(thr->syscallStackBottom, SYSCALL_STACK_SIZE / PAGE_SIZE, proc);
 
 		// kill the sse state
 		vmm::deallocate(thr->fpuSavedStateBuffer, 1, proc);

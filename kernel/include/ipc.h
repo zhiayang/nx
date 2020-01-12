@@ -49,6 +49,9 @@ namespace nx
 
 		void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
 		void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
+
+		void signalThread(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
+		void signalThreadCritical(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
 	}
 }
 

@@ -72,6 +72,8 @@ namespace extmm
 
 	void destroy(State* st)
 	{
+		autolock lk(&st->lock);
+
 		// just loop through all the extents and destroy them.
 		auto ext = st->head;
 		while(ext)
@@ -95,6 +97,8 @@ namespace extmm
 	addr_t allocate(State* st, size_t num, bool (*satisfies)(addr_t, size_t))
 	{
 		if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", st->owner);
+
+		autolock lk(&st->lock);
 
 		auto ext = st->head;
 		while(ext)
@@ -120,6 +124,8 @@ namespace extmm
 
 	addr_t allocateSpecific(State* st, addr_t start, size_t num)
 	{
+		autolock lk(&st->lock);
+
 		auto ext = st->head;
 		while(ext)
 		{
@@ -162,6 +168,8 @@ namespace extmm
 
 	void deallocate(State* st, addr_t addr, size_t num)
 	{
+		autolock lk(&st->lock);
+
 		// loop through every extent. we can match in two cases:
 		// 1. 'addr' is 'num' pages *below* the base of the extent
 		// 2. 'addr' is *size* pages above the *end* of the extent

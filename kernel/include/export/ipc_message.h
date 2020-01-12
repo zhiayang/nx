@@ -56,8 +56,11 @@ namespace ipc
 	// return: some flags, kernel decides what to do.
 	using signal_handler_fn_t = uint64_t (*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
-	constexpr uint64_t SIGNAL_NO_PROPOGATE  = 0;
-	constexpr uint64_t SIGNAL_PROPOGATE     = 1;
+	constexpr uint64_t SIGNAL_IRQ_HANDLED_FLAG = 0x1'0000'0000;
+	constexpr uint64_t SIGNAL_IRQ_IGNORED_FLAG = 0x2'0000'0000;
+
+	constexpr uint64_t SIGNAL_IRQ_HANDLED(uint64_t irq) { return (uint32_t) irq | SIGNAL_IRQ_HANDLED_FLAG; }
+	constexpr uint64_t SIGNAL_IRQ_IGNORED(uint64_t irq) { return (uint32_t) irq | SIGNAL_IRQ_IGNORED_FLAG; }
 }
 }
 

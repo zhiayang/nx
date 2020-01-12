@@ -28,6 +28,8 @@ namespace apic
 	constexpr addr_t REG_TIMER_CURRENT  = 0x390;
 	constexpr addr_t REG_TIMER_DIVISOR  = 0x3E0;
 
+	constexpr uint8_t TIMER_VECTOR = 0xFE;
+
 
 	static void writeLAPIC(addr_t base, addr_t reg, uint32_t value)
 	{
@@ -76,7 +78,7 @@ namespace apic
 		writeLAPIC(base, REG_SPURIOUS, 0x100 | 0xFF);
 	}
 
-	void calibrateLAPICTimer()
+	int calibrateLAPICTimer()
 	{
 		auto base = scheduler::getCurrentCPU()->localApicAddr;
 		assert(base);
@@ -158,13 +160,16 @@ namespace apic
 		// 16       -- set to mask
 		// 17:18    -- timer mode (00 = one-shot, 01 = periodic, 10 = tsc deadline)
 
-		config |= (IRQ_BASE_VECTOR + 0) & 0xFF;     // vector
-		config |= 0x20000;                          // timer mode
+		// timer vector is 0xFE, so it already takes the IRQ_BASE into account.
+		config |= (TIMER_VECTOR) & 0xFF;    // vector
+		config |= 0x20000;                  // timer mode
 
 		writeLAPIC(base, REG_LVT_TIMER, config);
 
-		scheduler::setTickIRQ(0);
-		sendEOI(0);
+		scheduler::setTickIRQ(TIMER_VECTOR - IRQ_BASE_VECTOR);
+		sendEOI(TIMER_VECTOR - IRQ_BASE_VECTOR);
+
+		return TIMER_VECTOR - IRQ_BASE_VECTOR;
 	}
 }
 }

@@ -19,7 +19,6 @@ extern "C" uint8_t nx_user_kernel_stubs_end;
 // actually, the parameters are not important, we just need its address.
 extern "C" void nx_x64_user_signal_enter(uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c);
 
-
 namespace nx {
 namespace scheduler
 {
@@ -33,9 +32,6 @@ namespace scheduler
 
 	static Thread* getNextThread(State* ss)
 	{
-		if(interrupts::hasPendingIRQs())
-			return interrupts::getHandlerThread();
-
 		if(ss->ThreadList.empty())  return ss->IdleThread;
 		else                        return ss->ThreadList.popFront();
 	}
@@ -60,7 +56,6 @@ namespace scheduler
 		newthr->state = ThreadState::Running;
 
 		getCPULocalState()->currentThread = newthr;
-		getCPULocalState()->syscallStack = newthr->syscallStackTop;
 
 		cpu::tss::setRSP0(getCPULocalState()->TSSBase, newthr->kernelStackTop);
 		cpu::tss::updateIOPB(getCPULocalState()->TSSBase, newthr->parent->ioPorts);
@@ -91,8 +86,8 @@ namespace scheduler
 		// we just restore the entire saved state instead of fiddling with individual things.
 		if(newthr->pendingSignalRestore)
 		{
-			assert(!newthr->parent->savedSignalStateStack.empty());
-			auto savedstate = newthr->parent->savedSignalStateStack.popBack();
+			assert(!newthr->savedSignalStateStack.empty());
+			auto savedstate = newthr->savedSignalStateStack.popBack();
 
 			auto intstate = (cpu::InterruptedState*) newthr->kernelStack;
 			memcpy(intstate, &savedstate, sizeof(savedstate));
@@ -108,13 +103,8 @@ namespace scheduler
 		}
 
 		// check if we have pending signals.
-		if(newthr->parent->pendingSignalQueue.empty())
+		if(newthr->pendingSignalQueue.empty())
 			return;
-
-		// we only send signals to the first thread.
-		if(&newthr->parent->threads[0] != newthr)
-			return;
-
 
 		// first, save the state.
 		auto regs = (cpu::InterruptedState*) newthr->kernelStack;
@@ -128,11 +118,10 @@ namespace scheduler
 			return;
 		}
 
-
 		// ok, we're in user mode here.
-		newthr->parent->savedSignalStateStack.append(*regs);
+		newthr->savedSignalStateStack.append(*regs);
 
-		auto msg = newthr->parent->pendingSignalQueue.popFront();
+		auto msg = newthr->pendingSignalQueue.popFront();
 
 		// the signature: nx_x64_user_signal_enter
 		// (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c, uint64_t handler);
@@ -157,7 +146,7 @@ namespace scheduler
 		regs->r8  = msg.body.c;
 
 		assert(msg.body.sigType < ipc::MAX_SIGNAL_TYPES);
-		regs->r9  = (uintptr_t) newthr->parent->signalHandlers[msg.body.sigType];
+		regs->r9  = (uintptr_t) newthr->signalHandlers[msg.body.sigType];
 
 		// fixup the rip:
 		regs->rip = addrs::USER_KERNEL_STUBS + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
@@ -232,7 +221,7 @@ namespace scheduler
 	void installTickHandlers()
 	{
 		// install the tick handler
-		cpu::idt::setEntry(IRQ_BASE_VECTOR + 0, (addr_t) nx_x64_tick_handler,
+		cpu::idt::setEntry(IRQ_BASE_VECTOR + getTickIRQ(), (addr_t) nx_x64_tick_handler,
 			/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
 
 		// install the yield handler
@@ -274,8 +263,28 @@ namespace scheduler
 		yield(); while(true);
 	}
 
+	void terminate(Thread* t)
+	{
+		assert(t);
+
+		t->state = ThreadState::AboutToExit;
+		getSchedState()->DestructionQueue.append(t);
+
+		log("sched", "terminating tid %lu", t->threadId);
+
+		// if you are terminating yourself, then we need to yield.
+		if(getCurrentThread() == t)
+		{
+			yield();
+			while(true);
+		}
+	}
+
+
 	void terminate(Process* p)
 	{
+		assert(p);
+
 		// schedule all threads to die.
 		for(auto& t : p->threads)
 		{
@@ -309,6 +318,12 @@ namespace scheduler
 
 	void unblock(mutex* mtx)
 	{
+		// note: we allow you to call unblock before the scheduler is up,
+		// because we unconditionally call unblock() when releasing a mutex,
+		// and we use mutexes in code that is called during early-init.
+		if(getInitPhase() < SchedulerInitPhase::SchedulerStarted)
+			return;
+
 		// hmm.
 		auto& bthrs = getSchedState()->BlockedThreads;
 
@@ -377,6 +392,9 @@ namespace scheduler
 
 	Thread* getCurrentThread()
 	{
+		if(getInitPhase() < SchedulerInitPhase::SchedulerStarted)
+			return 0;
+
 		return getSchedState()->CurrentThread;
 	}
 
@@ -431,6 +449,11 @@ namespace scheduler
 		TickIRQ = irq;
 	}
 
+	int getTickIRQ()
+	{
+		return TickIRQ;
+	}
+
 	static uint64_t ElapsedNanoseconds = 0;
 	uint64_t getElapsedNanoseconds()
 	{
@@ -445,6 +468,7 @@ namespace scheduler
 
 	// returns true if it's time to preempt somebody
 	// note: this is called from asm-land
+
 	extern "C" uint64_t nx_x64_scheduler_tick()
 	{
 		interrupts::sendEOI(TickIRQ);
@@ -456,8 +480,9 @@ namespace scheduler
 
 		bool woke = wakeUpThreads();
 
-		// if we have pending IRQs, then we will switch threads to the handler thread.
-		bool ret = woke || interrupts::hasPendingIRQs() || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
+		// other people can "expedite" a schedule event if necessary by setting this flag.
+		bool ret = woke || ss->expediteSchedule || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
+		ss->expediteSchedule = false;
 
 		if(ret) ss->tickCounter = 0;
 		return ret;
@@ -482,7 +507,8 @@ namespace scheduler
 				device::apic::initLAPIC();
 
 				// calibrate the local apic timer for our scheduler ticks
-				device::apic::calibrateLAPICTimer();
+				auto vec = device::apic::calibrateLAPICTimer();
+				setTickIRQ(vec);
 			}
 			else
 			{

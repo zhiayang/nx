@@ -5,6 +5,7 @@
 #pragma once
 
 #include "defs.h"
+#include "synchro.h"
 #include "misc/addrs.h"
 
 namespace nx
@@ -13,6 +14,19 @@ namespace nx
 	enum class MemoryType : uint64_t;
 
 	namespace heap
+	{
+		void init();
+		addr_t allocate(size_t size, size_t align);
+		void deallocate(addr_t addr);
+
+		bool initialised();
+
+		size_t getNumAllocatedBytes();
+	}
+
+	// this is just a separate copy of 'heap' that never locks, only for use
+	// in IRQ contexts.
+	namespace fixed_heap
 	{
 		void init();
 		addr_t allocate(size_t size, size_t align);
@@ -127,6 +141,8 @@ namespace nx
 			addr_t bootstrapStart = 0;
 			addr_t bootstrapWatermark = 0;
 			addr_t bootstrapEnd = 0;
+
+			mutex lock;
 		};
 
 		void dump(State* st);

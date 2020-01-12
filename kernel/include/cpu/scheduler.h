@@ -37,6 +37,7 @@ namespace nx
 			nx::list<Process*> ProcessList;
 
 			uint64_t tickCounter = 0;
+			bool expediteSchedule = false;
 		};
 
 		// this might need to change on non-x64
@@ -55,7 +56,7 @@ namespace nx
 			uint64_t tssSelector = 0;       // ofs: 0x18
 
 			addr_t cr3 = 0;                 // ofs: 0x20
-			addr_t syscallStack = 0;        // ofs: 0x28
+			addr_t unused = 0;              // ofs: 0x28
 			CPU* cpu = 0;                   // ofs: 0x30
 			addr_t tmpUserRsp = 0;          // ofs: 0x38
 			Thread* currentThread = 0;      // ofs: 0x40
@@ -68,7 +69,7 @@ namespace nx
 		static_assert(offsetof(CPULocalState, TSSBase)      == 0x10);
 		static_assert(offsetof(CPULocalState, tssSelector)  == 0x18);
 		static_assert(offsetof(CPULocalState, cr3)          == 0x20);
-		static_assert(offsetof(CPULocalState, syscallStack) == 0x28);
+		// 0x28 is currently unused.
 		static_assert(offsetof(CPULocalState, cpu)          == 0x30);
 		static_assert(offsetof(CPULocalState, tmpUserRsp)   == 0x38);
 		static_assert(offsetof(CPULocalState, currentThread)== 0x40);
@@ -107,17 +108,11 @@ namespace nx
 			nx::mutex msgQueueLock;
 			nx::list<ipc::message_t> pendingMessages;
 
+			nx::mutex addrSpaceLock;
 			extmm::State vmmStates[vmm::NumAddressSpaces];
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
-
-			// signal stuff.
-			// these functions point to USERSPACE CODE!
-			ipc::signal_handler_fn_t signalHandlers[ipc::MAX_SIGNAL_TYPES] = { 0 };
-
-			nx::list<ipc::signal_message_t> pendingSignalQueue;
-			nx::list<cpu::InterruptedState> savedSignalStateStack;
 
 
 			// arch-specific stuff.
@@ -146,9 +141,6 @@ namespace nx
 
 			addr_t userStackBottom = 0;
 
-			addr_t syscallStackTop = 0;
-			addr_t syscallStackBottom = 0;
-
 			addr_t kernelStackTop = 0;
 			addr_t kernelStackBottom = 0;
 
@@ -168,7 +160,19 @@ namespace nx
 			addr_t fsBase;
 			addr_t fpuSavedStateBuffer;
 
+
+			// signal stuff.
+			// these functions point to USERSPACE CODE!
+			ipc::signal_handler_fn_t signalHandlers[ipc::MAX_SIGNAL_TYPES] = { 0 };
+
 			bool pendingSignalRestore = false;
+
+
+			// these things get touched in critical sections, so we use the special
+			// allocator to make sure they don't try to acquire locks in the main
+			// kernel heap, which would be a bad thing.
+			krt::list<ipc::signal_message_t, _fixed_allocator, _aborter> pendingSignalQueue;
+			krt::list<cpu::InterruptedState, _fixed_allocator, _aborter> savedSignalStateStack;
 		};
 
 		// these need to be used from ASM, so we must make sure they never change!
@@ -228,6 +232,7 @@ namespace nx
 		void start();
 
 		void setTickIRQ(int irq);
+		int getTickIRQ();
 
 		uint64_t getElapsedNanoseconds();
 		uint64_t getNanosecondsPerTick();
@@ -235,6 +240,7 @@ namespace nx
 
 		[[noreturn]] void exit(int status);
 
+		void terminate(Thread* p);
 		void terminate(Process* p);
 
 		void yield();

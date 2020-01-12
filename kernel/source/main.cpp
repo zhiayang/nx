@@ -59,16 +59,9 @@ namespace nx
 				int irq = device::ioapic::getISAIRQMapping(1);
 
 				interrupts::unmaskIRQ(irq);
-				device::ioapic::setIRQMapping(irq, /* vector */ 1, /* lapic id */ 0);
+				device::ioapic::setIRQMapping(irq, /* vector */ 0x10, /* lapic id */ 0);
 
-				// interrupts::addIRQHandler(irq, 0, [](int irq, void*) -> bool {
-
-				// 	// our job here is to signal the process.
-				// 	ipc::signalProcess(ps2driverproc, ipc::SIGNAL_DEVICE_IRQ,
-				// 		ipc::signal_message_body_t(irq, 0, 0));
-
-				// 	return 0;
-				// });
+				interrupts::addIRQHandler(0x10, 0, thr);
 			}
 
 			scheduler::addThread(thr);
@@ -89,9 +82,8 @@ namespace nx
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
-		// uint64_t ctr = 0;
-		// while(true) if(++ctr % 5000000 == 0) print("q");
-		while(true);
+		while(true)
+			asm volatile("pause");
 	}
 
 
@@ -151,7 +143,9 @@ namespace nx
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);
 		vmm::init(scheduler::getKernelProcess());
+
 		heap::init();
+		fixed_heap::init();
 
 		// init cpuid so we can start detecting features.
 		cpu::initCPUID();
