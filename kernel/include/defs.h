@@ -20,12 +20,16 @@ namespace nx
 	{
 		static void* allocate(size_t sz, size_t align);
 		static void deallocate(void* pt);
+
+		template <typename T> static T* allocate(size_t n) { return (T*) allocate(n * sizeof(T), alignof(T)); }
 	};
 
 	struct _fixed_allocator
 	{
 		static void* allocate(size_t sz, size_t align);
 		static void deallocate(void* pt);
+
+		template <typename T> static T* allocate(size_t n) { return (T*) allocate(n * sizeof(T), alignof(T)); }
 	};
 
 	struct _aborter

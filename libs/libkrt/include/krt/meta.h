@@ -43,6 +43,34 @@ namespace krt
 		V third;
 	};
 
+	template <typename T = void>
+	struct less
+	{
+		constexpr bool operator () (const T& lhs, const T& rhs) const
+		{
+			return compare(lhs, rhs);
+		}
+
+		static constexpr bool compare(const T& lhs, const T& rhs)
+		{
+			return lhs < rhs;
+		}
+	};
+
+	template <typename T = void>
+	struct greater
+	{
+		constexpr bool operator () (const T& lhs, const T& rhs) const
+		{
+			return compare(lhs, rhs);
+		}
+
+		static constexpr bool compare(const T& lhs, const T& rhs)
+		{
+			return lhs > rhs;
+		}
+	};
+
 
 	template <typename T>
 	bool match(const T& first)

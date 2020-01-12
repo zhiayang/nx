@@ -61,7 +61,7 @@ namespace nx
 				interrupts::unmaskIRQ(irq);
 				device::ioapic::setIRQMapping(irq, /* vector */ 0x10, /* lapic id */ 0);
 
-				interrupts::addIRQHandler(0x10, 0, thr);
+				interrupts::addIRQHandler(0x10, thr);
 			}
 
 			scheduler::addThread(thr);
@@ -156,10 +156,6 @@ namespace nx
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);
 
-		// find the symbol table & demangle symbols for backtracing purposes
-		if(!params::haveOption("no_symbols"))
-			util::initSymbols(bootinfo);
-
 		// setup the vfs and the initrd (for fonts)
 		vfs::init();
 		initrd::init(bootinfo);
@@ -173,6 +169,10 @@ namespace nx
 		// read the acpi tables -- includes multiproc (MADT), timer (HPET)
 		if(!params::haveOption("no_acpi"))
 			acpi::init(bootinfo);
+
+		// find the symbol table & demangle symbols for backtracing purposes
+		if(!params::haveOption("no_symbols"))
+			util::initSymbols(bootinfo);
 
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);

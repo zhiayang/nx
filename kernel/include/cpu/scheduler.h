@@ -31,6 +31,7 @@ namespace nx
 			Thread* CurrentThread = 0;
 
 			nx::list<Thread*> ThreadList;
+
 			nx::list<Thread*> BlockedThreads;
 			nx::list<Thread*> DestructionQueue;
 
@@ -134,6 +135,45 @@ namespace nx
 			AboutToExit     = 4,
 		};
 
+		struct Priority
+		{
+			// the base priority of the item.
+			uint64_t basePriority = 0;
+
+			// when was the last time (in terms of the system nanosecond timestamp)
+			// this thing was given a chance to run.
+			uint64_t lastScheduled = 0;
+
+			// how much extra priority we should get, using the formula
+			// (currentTime() - lastScheduled) / starvationRewardDivisor
+			// note: this is a divisor cos the times are in nanoseconds, and everything will
+			// quickly balloon if we just use the raw values.
+			uint64_t starvationRewardDivisor = 1;
+
+			// you can use this to boost the thread's priority for the next schedule event;
+			// will be reset with reset().
+			uint64_t temporaryBoost = 0;
+
+			// how much to boost at a time when you call boost()
+			uint64_t boostMultiplier = 0;
+
+			// call this when you get scheduled.
+			void reset();
+
+			// boosts the thread's priority
+			void boost(uint64_t amt = 1);
+
+			// get the effective priority of the thread.
+			uint64_t effective() const;
+
+
+			bool operator > (const Priority& other) const { return this->effective() > other.effective(); }
+
+			static Priority low();
+			static Priority normal();
+			static Priority high();
+		};
+
 		struct Thread
 		{
 			pid_t threadId = 0;                 // ofs: 0x0
@@ -143,6 +183,8 @@ namespace nx
 
 			addr_t kernelStackTop = 0;
 			addr_t kernelStackBottom = 0;
+
+			Priority priority = Priority::normal();
 
 			Process* parent = 0;
 

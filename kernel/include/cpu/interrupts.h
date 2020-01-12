@@ -35,9 +35,8 @@ namespace nx
 		// note: 'vector' is in IRQ space! (0 => IRQ_BASE_VECTOR)
 		void mapIRQVector(int irq, int vector, int apicId);
 
-		// note: the handler can return false to stop further processing.
-		void addIRQHandler(int irq, int priority, scheduler::Thread* thr);
-		void addIRQHandler(int irq, int priority, scheduler::Process* proc);
+		void addIRQHandler(int irq, scheduler::Thread* thr);
+		void addIRQHandler(int irq, scheduler::Process* proc);
 
 		// returns true if there was at least one target to handle the IRQ.
 		bool processIRQ(int num, void* data);

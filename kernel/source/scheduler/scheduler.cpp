@@ -32,8 +32,21 @@ namespace scheduler
 
 	static Thread* getNextThread(State* ss)
 	{
-		if(ss->ThreadList.empty())  return ss->IdleThread;
-		else                        return ss->ThreadList.popFront();
+		if(ss->ThreadList.empty())
+			return ss->IdleThread;
+
+		// no point sorting, cos the list might change frequently.
+		// just linear search to find the thread with the highest priority.
+		Thread* next = 0;
+		Priority max;
+		for(auto thr : ss->ThreadList)
+		{
+			if(!next || thr->priority > max)
+				next = thr, max = thr->priority;
+		}
+
+		assert(next);
+		return next;
 	}
 
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
@@ -54,6 +67,7 @@ namespace scheduler
 
 		Thread* newthr = getNextThread(ss);
 		newthr->state = ThreadState::Running;
+		newthr->priority.reset();
 
 		getCPULocalState()->currentThread = newthr;
 

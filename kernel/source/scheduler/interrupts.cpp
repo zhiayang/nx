@@ -8,15 +8,13 @@
 namespace nx {
 namespace interrupts
 {
-	// TODO: NEEDS LOCKING
-
 	struct irq_handler_t
 	{
 		int num                 = 0;
-		int priority            = 0;
 		scheduler::Thread* thr  = 0;
 
 		irq_handler_t* next  = 0;
+
 	};
 
 	struct irq_state_t
@@ -44,40 +42,13 @@ namespace interrupts
 	static krt::list<pending_irq_t, _fixed_allocator, _aborter> inflightIRQs;
 
 
-	static irq_handler_t* insertHandler(irq_handler_t* begin, irq_handler_t* x)
-	{
-		autolock lk(&handlerLock);
-
-		auto h = begin;
-
-		while(h != 0)
-		{
-			if(h->priority <= x->priority && (!h->next || h->next->priority > x->priority))
-			{
-				x->next = h->next;
-				h->next = x;
-
-				return begin;
-			}
-			else if(x->priority < h->priority)
-			{
-				x->next = h;
-				return x;
-			}
-
-			h = h->next;
-		}
-
-		return begin;
-	}
-
-	void addIRQHandler(int irq, int priority, scheduler::Process* proc)
+	void addIRQHandler(int irq, scheduler::Process* proc)
 	{
 		// TODO: for now we just... use the first thread.
-		addIRQHandler(irq, priority, &proc->threads[0]);
+		addIRQHandler(irq, &proc->threads[0]);
 	}
 
-	void addIRQHandler(int num, int priority, scheduler::Thread* thr)
+	void addIRQHandler(int num, scheduler::Thread* thr)
 	{
 		autolock lk(&handlerLock);
 
@@ -85,25 +56,27 @@ namespace interrupts
 
 		hand->num       = num;
 		hand->thr       = thr;
-		hand->priority  = priority;
 		hand->next      = 0;
 
 		if(auto it = irqHandlers.find(num); it != irqHandlers.end())
 		{
-			it->value.handlers = insertHandler(it->value.handlers, hand);
+			auto head = it->value.handlers;
+			hand->next = head;
+
+			it->value.handlers = hand;
 		}
 		else
 		{
 			auto st = irq_state_t();
-			st.handlers = hand;
 
+			st.handlers = hand;
 			irqHandlers.insert(num, st);
 		}
 	}
 
 	void signalIRQIgnored(int num)
 	{
-		autolock lk(&inflightLock);
+		interrupts::disable();
 
 		// grab the first pending irq that matches, and decrease the count.
 		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
@@ -128,14 +101,16 @@ namespace interrupts
 		{
 			error("irq", "failed to find matching inflight irq");
 		}
+
+		interrupts::enable();
 	}
 
 
 	void signalIRQHandled(int num)
 	{
-		sendEOI(num);
+		interrupts::disable();
 
-		autolock lk(&inflightLock);
+		sendEOI(num);
 
 		// grab the first pending irq that matches, and decrease the count.
 		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
@@ -154,6 +129,8 @@ namespace interrupts
 		{
 			error("irq", "failed to find matching inflight irq");
 		}
+
+		interrupts::enable();
 	}
 
 
@@ -183,6 +160,8 @@ namespace interrupts
 			// of course, this just queues the thread to get signalled, nothing happens immediately.
 			ipc::signalThread(hand->thr, ipc::SIGNAL_DEVICE_IRQ,
 				ipc::signal_message_body_t(irq, 0, 0));
+
+			hand->thr->priority.boost();
 
 			hand = hand->next;
 			ok = true;

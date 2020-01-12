@@ -278,6 +278,53 @@ namespace scheduler
 			destroyProcess(proc);
 		}
 	}
+
+
+
+	uint64_t Priority::effective() const
+	{
+		return this->basePriority
+			+ this->temporaryBoost
+			+ (getElapsedNanoseconds() - this->lastScheduled) / this->starvationRewardDivisor;
+	}
+
+	void Priority::boost(uint64_t amt)
+	{
+		this->temporaryBoost += this->boostMultiplier * amt;
+	}
+
+	void Priority::reset()
+	{
+		this->lastScheduled = getElapsedNanoseconds();
+	}
+
+	Priority Priority::low()
+	{
+		return Priority {
+			.basePriority               = 50000,
+			.starvationRewardDivisor    =  9000,
+			.boostMultiplier            = 12000
+		};
+	}
+
+	Priority Priority::normal()
+	{
+		return Priority {
+			.basePriority               = 100000,
+			.starvationRewardDivisor    =   8000,
+			.boostMultiplier            =  15000,
+		};
+	}
+
+	Priority Priority::high()
+	{
+		return Priority {
+			.basePriority               = 150000,
+			.starvationRewardDivisor    =   7000,
+			.boostMultiplier            =  18000
+		};
+	}
+
 }
 }
 
