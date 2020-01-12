@@ -19,6 +19,10 @@ namespace util
 	nx::array<Substitution> builtinTypeSubsts;
 	nx::array<Substitution> stdlibTemplateSubsts;
 
+	nx::array<Substitution> unaryOperators;
+	nx::array<Substitution> binaryOperators;
+	nx::array<Substitution> ternaryOperators;
+
 	void initDemangler()
 	{
 		operatorSubsts = array<Substitution>();
@@ -35,50 +39,52 @@ namespace util
 		operatorSubsts.append(Substitution("da", " delete[]"));
 
 		// unary operators
-		operatorSubsts.append(Substitution("ps", "+"));
-		operatorSubsts.append(Substitution("ng", "-"));
-		operatorSubsts.append(Substitution("ad", "&"));
-		operatorSubsts.append(Substitution("de", "*"));
-		operatorSubsts.append(Substitution("co", "~"));
-		operatorSubsts.append(Substitution("nt", "!"));
-		operatorSubsts.append(Substitution("pp", "++"));
-		operatorSubsts.append(Substitution("mm", "--"));
+		operatorSubsts.append(Substitution("ps", "+"));     unaryOperators.append(Substitution("ps", "+"));
+		operatorSubsts.append(Substitution("ng", "-"));     unaryOperators.append(Substitution("ng", "-"));
+		operatorSubsts.append(Substitution("ad", "&"));     unaryOperators.append(Substitution("ad", "&"));
+		operatorSubsts.append(Substitution("de", "*"));     unaryOperators.append(Substitution("de", "*"));
+		operatorSubsts.append(Substitution("co", "~"));     unaryOperators.append(Substitution("co", "~"));
+		operatorSubsts.append(Substitution("nt", "!"));     unaryOperators.append(Substitution("nt", "!"));
+		operatorSubsts.append(Substitution("pp", "++"));    unaryOperators.append(Substitution("pp", "++"));
+		operatorSubsts.append(Substitution("mm", "--"));    unaryOperators.append(Substitution("mm", "--"));
 
 		// binary ops
-		operatorSubsts.append(Substitution("pl", "+"));
-		operatorSubsts.append(Substitution("mi", "-"));
-		operatorSubsts.append(Substitution("ml", "*"));
-		operatorSubsts.append(Substitution("dv", "/"));
-		operatorSubsts.append(Substitution("rm", "%"));
-		operatorSubsts.append(Substitution("an", "&"));
-		operatorSubsts.append(Substitution("or", "|"));
-		operatorSubsts.append(Substitution("eo", "^"));
-		operatorSubsts.append(Substitution("aS", "="));
-		operatorSubsts.append(Substitution("pL", "+="));
-		operatorSubsts.append(Substitution("mI", "-="));
-		operatorSubsts.append(Substitution("mL", "*="));
-		operatorSubsts.append(Substitution("dV", "/="));
-		operatorSubsts.append(Substitution("rM", "%="));
-		operatorSubsts.append(Substitution("aN", "&="));
-		operatorSubsts.append(Substitution("oR", "|="));
-		operatorSubsts.append(Substitution("eO", "^="));
-		operatorSubsts.append(Substitution("ls", "<<"));
-		operatorSubsts.append(Substitution("rs", ">>"));
-		operatorSubsts.append(Substitution("lS", "<<="));
-		operatorSubsts.append(Substitution("rS", ">>="));
-		operatorSubsts.append(Substitution("eq", "=="));
-		operatorSubsts.append(Substitution("ne", "!="));
-		operatorSubsts.append(Substitution("lt", "<"));
-		operatorSubsts.append(Substitution("gt", ">"));
-		operatorSubsts.append(Substitution("le", "<="));
-		operatorSubsts.append(Substitution("ge", ">="));
-		operatorSubsts.append(Substitution("aa", "&&"));
-		operatorSubsts.append(Substitution("oo", "||"));
-		operatorSubsts.append(Substitution("cm", ","));
-		operatorSubsts.append(Substitution("pm", "->*"));
-		operatorSubsts.append(Substitution("ix", "[]"));
+		operatorSubsts.append(Substitution("pl", "+"));     binaryOperators.append(Substitution("pl", "+"));
+		operatorSubsts.append(Substitution("mi", "-"));     binaryOperators.append(Substitution("mi", "-"));
+		operatorSubsts.append(Substitution("ml", "*"));     binaryOperators.append(Substitution("ml", "*"));
+		operatorSubsts.append(Substitution("dv", "/"));     binaryOperators.append(Substitution("dv", "/"));
+		operatorSubsts.append(Substitution("rm", "%"));     binaryOperators.append(Substitution("rm", "%"));
+		operatorSubsts.append(Substitution("an", "&"));     binaryOperators.append(Substitution("an", "&"));
+		operatorSubsts.append(Substitution("or", "|"));     binaryOperators.append(Substitution("or", "|"));
+		operatorSubsts.append(Substitution("eo", "^"));     binaryOperators.append(Substitution("eo", "^"));
+		operatorSubsts.append(Substitution("aS", "="));     binaryOperators.append(Substitution("aS", "="));
+		operatorSubsts.append(Substitution("pL", "+="));    binaryOperators.append(Substitution("pL", "+="));
+		operatorSubsts.append(Substitution("mI", "-="));    binaryOperators.append(Substitution("mI", "-="));
+		operatorSubsts.append(Substitution("mL", "*="));    binaryOperators.append(Substitution("mL", "*="));
+		operatorSubsts.append(Substitution("dV", "/="));    binaryOperators.append(Substitution("dV", "/="));
+		operatorSubsts.append(Substitution("rM", "%="));    binaryOperators.append(Substitution("rM", "%="));
+		operatorSubsts.append(Substitution("aN", "&="));    binaryOperators.append(Substitution("aN", "&="));
+		operatorSubsts.append(Substitution("oR", "|="));    binaryOperators.append(Substitution("oR", "|="));
+		operatorSubsts.append(Substitution("eO", "^="));    binaryOperators.append(Substitution("eO", "^="));
+		operatorSubsts.append(Substitution("ls", "<<"));    binaryOperators.append(Substitution("ls", "<<"));
+		operatorSubsts.append(Substitution("rs", ">>"));    binaryOperators.append(Substitution("rs", ">>"));
+		operatorSubsts.append(Substitution("lS", "<<="));   binaryOperators.append(Substitution("lS", "<<="));
+		operatorSubsts.append(Substitution("rS", ">>="));   binaryOperators.append(Substitution("rS", ">>="));
+		operatorSubsts.append(Substitution("eq", "=="));    binaryOperators.append(Substitution("eq", "=="));
+		operatorSubsts.append(Substitution("ne", "!="));    binaryOperators.append(Substitution("ne", "!="));
+		operatorSubsts.append(Substitution("lt", "<"));     binaryOperators.append(Substitution("lt", "<"));
+		operatorSubsts.append(Substitution("gt", ">"));     binaryOperators.append(Substitution("gt", ">"));
+		operatorSubsts.append(Substitution("le", "<="));    binaryOperators.append(Substitution("le", "<="));
+		operatorSubsts.append(Substitution("ge", ">="));    binaryOperators.append(Substitution("ge", ">="));
+		operatorSubsts.append(Substitution("aa", "&&"));    binaryOperators.append(Substitution("aa", "&&"));
+		operatorSubsts.append(Substitution("oo", "||"));    binaryOperators.append(Substitution("oo", "||"));
+		operatorSubsts.append(Substitution("cm", ","));     binaryOperators.append(Substitution("cm", ","));
+		operatorSubsts.append(Substitution("pm", "->*"));   binaryOperators.append(Substitution("pm", "->*"));
+		operatorSubsts.append(Substitution("ix", "[]"));    binaryOperators.append(Substitution("ix", "[]"));
 
-		operatorSubsts.append(Substitution("qu", "?"));
+		// ternary.
+		operatorSubsts.append(Substitution("qu", "?"));     ternaryOperators.append(Substitution("qu", "?"));
+
 
 		operatorSubsts.append(Substitution("pt", "->"));
 		operatorSubsts.append(Substitution("cl", "()"));
@@ -152,6 +158,7 @@ namespace util
 	static nx::string parseLambdaType(nx::string_view& s, State& st);
 	static nx::string parseMangledName(nx::string_view& s, State& st);
 	static nx::string parseBareFunctionType(nx::string_view& s, State& st);
+	static nx::string parseUnqualifiedName(nx::string_view& s, State& st, bool type);
 
 	static nx::string collapseRefs(const nx::string& thing, const nx::string& ref);
 
@@ -254,7 +261,8 @@ namespace util
 
 	static nx::string parseSubstitution(nx::string_view& s, State& st)
 	{
-		assert(s[0] == 'S');
+		if(s[0] != 'S')
+			return "";
 
 		string ret;
 
@@ -285,6 +293,7 @@ namespace util
 		{
 			auto x = s.substring(0, 2);
 			bool found = false;
+
 			for(const auto& sub : stdlibTemplateSubsts)
 			{
 				if(x == sub.str)
@@ -297,19 +306,22 @@ namespace util
 			if(!found) abort("invalid substitution! (current: %s)", s.data());
 
 			s.remove_prefix(2);
+			return ret;
 		}
 
 		return ret;
 	}
 
-	static nx::string parseTemplateSubstitution(nx::string_view& s, State& st)
+	static nx::string parseTemplateParam(nx::string_view& s, State& st)
 	{
 		/*
 			<template-param>    ::= T_	# first template parameter
 								::= T <parameter-2 non-negative number> _
 		*/
 
-		assert(s[0] == 'T');
+		if(s[0] != 'T')
+			return "";
+
 		s.remove_prefix(1);
 
 		string ret;
@@ -369,7 +381,11 @@ namespace util
 			s.remove_prefix(1);
 			auto ret = parseExpr(s, st);
 
-			assert(s[0] == 'E');
+			if(s[0] != 'E')
+			{
+				assert(s[0] == 'E');
+			}
+
 			s.remove_prefix(1);
 
 			st.templateSubs.append(ret);
@@ -409,7 +425,9 @@ namespace util
 			<template-args> ::= I <template-arg>+ E
 		*/
 
-		assert(s[0] == 'I');
+		if(s[0] != 'I')
+			return "";
+
 		s.remove_prefix(1);
 
 		string ret = "<";
@@ -437,7 +455,8 @@ namespace util
 	static nx::string parseSourceName(nx::string_view& s, State& st)
 	{
 		int len = parseLength(s);
-		assert(len > 0);
+		if(len == 0)
+			return "";
 
 		auto ret = s.substring(0, len).str();
 		s.remove_prefix(len);
@@ -515,7 +534,7 @@ namespace util
 		return ret + "}";
 	}
 
-	static nx::string trySubstituteOperators(nx::string_view& s, State& st)
+	static nx::string trySubstituteOperators(nx::string_view& s, State& st, bool prependOperator = true)
 	{
 		// cast operator needs special handling.
 		if(s.find("cv") == 0)
@@ -535,7 +554,7 @@ namespace util
 				if(strncmp(sub.str.cstr(), s.data(), sub.str.size()) == 0)
 				{
 					s.remove_prefix(sub.str.size());
-					return "operator" + sub.replacement;
+					return (prependOperator ? "operator" : "") + sub.replacement;
 				}
 			}
 		}
@@ -890,7 +909,7 @@ namespace util
 		}
 		else if(s[0] == 'T')
 		{
-			return parseTemplateSubstitution(s, st);
+			return parseTemplateParam(s, st);
 		}
 		else
 		{
@@ -980,7 +999,146 @@ namespace util
 		return parseEncoding(s, st);
 	}
 
+	static nx::string parseDecltype(nx::string_view& s, State& st)
+	{
+		if(s.find("Dt") == 0 || s.find("DT") == 0)
+		{
+			s.remove_prefix(2);
+			nx::string ret = "decltype(";
 
+			ret += parseExpr(s, st);
+			assert(s[0] == 'E');
+
+			return ret + ")";
+		}
+
+		return "";
+	}
+
+	static nx::string parseUnresolvedName(nx::string_view& s, State& st)
+	{
+		/*
+
+			<unresolved-name>   ::= [gs] <base-unresolved-name>                     # x or (with "gs") ::x
+								::= sr <unresolved-type> <base-unresolved-name>     # T::x / decltype(p)::x
+
+								# T::N::x /decltype(p)::N::x
+								::= srN <unresolved-type> <unresolved-qualifier-level>+ E <base-unresolved-name>
+
+								# A::x, N::y, A<T>::z; "gs" means leading "::"
+								::= [gs] sr <unresolved-qualifier-level>+ E <base-unresolved-name>
+
+			<unresolved-type>   ::= <template-param> [ <template-args> ]            # T:: or T<X,Y>::
+								::= <decltype>                                      # decltype(p)::
+								::= <substitution>
+
+			<unresolved-qualifier-level> ::= <simple-id>
+
+			<simple-id> ::= <source-name> [ <template-args> ]
+
+			<base-unresolved-name>  ::= <simple-id>                                # unresolved name
+			                      	::= on <operator-name>                         # unresolved operator-function-id
+			                      	::= on <operator-name> <template-args>         # unresolved operator template-id
+			                      	::= dn <destructor-name>                       # destructor or pseudo-destructor;
+			                                                                       # e.g. ~X or ~X<N-1>
+
+			<destructor-name>       ::= <unresolved-type>                               # e.g., ~T or ~decltype(f())
+									::= <simple-id>                                     # e.g., ~A<2*N>
+		*/
+
+		nx::string ret;
+		if(s.find("gs") == 0)
+			ret += "::", s.remove_prefix(2);
+
+		auto parse_unresolved_type = [](nx::string_view& s, State& st) -> nx::string {
+			if(auto tp = parseTemplateParam(s, st); !tp.empty())
+				return tp + parseTemplateArgumentList(s, st);
+
+			else if(auto dt = parseDecltype(s, st); !dt.empty())
+				return dt;
+
+			else if(auto sb = parseSubstitution(s, st); !sb.empty())
+				return sb;
+
+			return "";
+		};
+
+		auto parse_simple_id = [](nx::string_view& s, State& st) -> nx::string {
+			auto ret = parseSourceName(s, st);
+			ret += parseTemplateArgumentList(s, st);
+
+			return ret;
+		};
+
+		auto parse_base_unresolved_name = [&parse_unresolved_type, &parse_simple_id]
+			(nx::string_view& s, State& st) -> nx::string
+		{
+			if(s.find("on") == 0)
+			{
+				s.remove_prefix(2);
+
+				// parseTemplateArgumentList returns "" if there's no list. (ie. it doesn't start with 'I')
+				return trySubstituteOperators(s, st).append(parseTemplateArgumentList(s, st));
+			}
+			else if(s.find("dn") == 0)
+			{
+				if(auto ut = parse_unresolved_type(s, st); !ut.empty())
+					return "~" + ut;
+
+				return "~" + parse_simple_id(s, st);
+			}
+			else
+			{
+				return parse_simple_id(s, st);
+			}
+		};
+
+
+		if(s.find("srN") == 0)
+		{
+			s.remove_prefix(3);
+			ret += parse_unresolved_type(s, st);
+
+			while(s[0] != 'E')
+				ret += "::" + parse_simple_id(s, st);
+
+			return "::" + ret + parse_base_unresolved_name(s, st);
+		}
+		else if(s.find("sr") == 0)
+		{
+			bool have_qual_levels = (ret == "::");
+			s.remove_prefix(2);
+
+			if(have_qual_levels)
+			{
+				ret = "";
+				while(s[0] != 'E')
+					ret += "::" + parse_simple_id(s, st);
+
+				assert(s[0] == 'E');
+				return "::" + ret + parse_base_unresolved_name(s, st);
+			}
+			else
+			{
+				ret += parse_unresolved_type(s, st);
+				ret += parse_base_unresolved_name(s, st);
+
+				// hack: idk, but it appears we can have additional source names (6foozle) after this...
+				auto sn = parse_simple_id(s, st);
+				while(!sn.empty())
+				{
+					ret += "::" + sn;
+					sn = parse_simple_id(s, st);
+				}
+
+				return ret;
+			}
+		}
+		else
+		{
+			return parse_base_unresolved_name(s, st);
+		}
+	}
 
 
 	// welcome to the fucked up part: expression parsing.
@@ -995,6 +1153,7 @@ namespace util
 							::= <ternary operator-name> <expression> <expression> <expression>
 							::= pp_ <expression>                             # prefix ++
 							::= mm_ <expression>                             # prefix --
+
 							::= cl <expression>+ E                           # expression (expr-list), call
 							::= cv <type> <expression>                       # type (expression), conversion with one argument
 							::= cv <type> _ <expression>* E                  # type (expr-list), conversion with other than one argument
@@ -1034,13 +1193,53 @@ namespace util
 							::= <expr-primary>
 		*/
 
-		if(s[0] == 'T')
+		// note: prefix ++ and -- have the same string prefix (i think) as their suffix counterparts,
+		// so try them first.
+		if(s.find("pp_") == 0)  { s.remove_prefix(3); return "++" + parseExpr(s, st); }
+		if(s.find("mm_") == 0)  { s.remove_prefix(3); return "--" + parseExpr(s, st); }
+
+		for(const auto& un : unaryOperators)
 		{
-			// template subst.
-			return parseTemplateSubstitution(s, st);
+			if(s.find(un.str.cstr()) == 0)
+			{
+				s.remove_prefix(un.str.size());
+				return un.replacement + parseExpr(s, st);
+			}
 		}
 
-		return "";
+		for(const auto& bi : binaryOperators)
+		{
+			if(s.find(bi.str.cstr()) == 0)
+			{
+				s.remove_prefix(bi.str.size());
+				return bi.replacement + parseExpr(s, st).append(parseExpr(s, st));
+			}
+		}
+
+		for(const auto& te : ternaryOperators)
+		{
+			if(s.find(te.str.cstr()) == 0)
+			{
+				s.remove_prefix(te.str.size());
+				return te.replacement + parseExpr(s, st).append(parseExpr(s, st)).append(parseExpr(s, st));
+			}
+		}
+
+
+
+
+
+
+
+
+
+		if(s[0] == 'T')
+			return parseTemplateParam(s, st);
+
+		if(auto un = parseUnresolvedName(s, st); !un.empty())
+			return un;
+
+		return parsePrimaryExpr(s, st);
 	}
 
 	static nx::string parsePrimaryExpr(nx::string_view& s, State& st)
@@ -1153,6 +1352,7 @@ namespace util
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
 		// _ZN3krt4moveIRcEEONS_16remove_referenceIT_E4typeEOS3_
+		// _ZN3krt15prio_q_internal11skip_vectorIN2nx10interrupts13irq_handler_tELm32ENS2_10_allocatorENS2_8_aborterEE7destroyIS4_EENSt9enable_ifIXntsrSt6is_podIT_E5valueEvE4typeEv
 
 		State st;
 		return parseMangledName(input, st);
