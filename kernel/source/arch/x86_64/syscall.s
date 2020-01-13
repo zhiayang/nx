@@ -96,6 +96,11 @@ nx_x64_syscall_entry:
 
 	do_syscall_jump_table
 
+	// we need to handle the return value here. the "convention" i think is to
+	// let the kernel return -ERRNO, and return -1; so we need to negate the return
+	// value, set the userspace errno (if we are going to have that concept?), and change
+	// the return value to -1?
+
 	cli
 	restore_regs
 

@@ -42,3 +42,13 @@ namespace nx
 		uint64_t sc_nanosecond_timestamp();
 	}
 }
+
+
+
+
+
+
+
+
+
+

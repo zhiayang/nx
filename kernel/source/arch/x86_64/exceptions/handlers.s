@@ -7,6 +7,9 @@
 .section .text
 
 
+
+
+
 .global nx_x64_exception_handler_0
 .type nx_x64_exception_handler_0, @function
 nx_x64_exception_handler_0:
@@ -232,9 +235,7 @@ nx_x64_exception_handler_31:
 	jmp GlobalHandler
 
 
-
-
-GlobalHandler:
+.macro exception_handler_begin
 	swapgs_if_necessary 0x18
 
 	push_all_regs
@@ -247,9 +248,10 @@ GlobalHandler:
 
 	// pass the stack pointer as an argument, aka pointer to structure.
 	movq %rsp, %rdi
+.endm
 
-	call nx_x64_handle_exception
 
+.macro exception_handler_end
 	addq $8, %rsp	// remove cr2
 	addq $8, %rsp	// Don't pop %rsp, may not be defined.
 
@@ -261,6 +263,35 @@ GlobalHandler:
 	// note: the offset for this swapgs is the default (0x8) because we already removed the error code and number
 	// from the stack above.
 	swapgs_if_necessary
+.endm
+
+
+
+.global nx_x64_pagefault_handler
+.type nx_x64_pagefault_handler, @function
+nx_x64_pagefault_handler:
+	// error code pushed by cpu
+	pushq $14
+	exception_handler_begin
+
+	call nx_x64_handle_page_fault_internal
+
+	exception_handler_end
+	iretq
+
+
+
+
+
+
+
+
+GlobalHandler:
+	exception_handler_begin
+
+	call nx_x64_handle_exception
+
+	exception_handler_end
 	iretq
 
 

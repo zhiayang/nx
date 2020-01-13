@@ -122,6 +122,21 @@ namespace syscall
 			abort("arch not supported!");
 		}
 	}
+
+
+	// we have no protections in place; for now, just a memcpy.
+	// TODO: data protections!!!!!!!!!!!!!!!!
+	bool copy_from_user(const void* user, void* kernel, size_t len)
+	{
+		memcpy(kernel, user, len);
+		return true;
+	}
+
+	bool copy_to_user(const void* kernel, void* user, size_t len)
+	{
+		memcpy(user, kernel, len);
+		return true;
+	}
 }
 }
 

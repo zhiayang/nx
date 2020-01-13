@@ -252,6 +252,129 @@ namespace vmm
 			performTempUnmapping(proc);
 	}
 
+	void markAllocated(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		assert(isAligned(virt));
+
+		autolock lk(&proc->addrSpaceLock);
+
+		bool isOtherProc = (proc != scheduler::getCurrentProcess());
+		if(isOtherProc) performTempMapping(proc);
+
+		// make sure don't put present in the flags, that defeats the whole purpose uwu
+		flags &= ~PAGE_PRESENT;
+
+
+		// note: the flags in the higher-level structures will override those at the lower level
+		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
+		// same applies for PAGE_WRITE (when CR0.WP=1)
+		// also: for 0 <= p4idx <= 255, we set the user-bit on intermediate entries.
+		// for 256 <= p4idx <= 511, we don't set it.
+		constexpr addr_t DEFAULT_FLAGS_LOW = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
+		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
+
+		log("vmm", "region %p - %p marked lazy", virt, virt + (num * PAGE_SIZE));
+
+		for(size_t x = 0; x < num; x++)
+		{
+			addr_t v = virt + (x * PAGE_SIZE);
+
+			// right.
+			auto p4idx = indexPML4(v);
+			auto p3idx = indexPDPT(v);
+			auto p2idx = indexPageDir(v);
+			auto p1idx = indexPageTable(v);
+
+			if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
+
+			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
+			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
+			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
+			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
+
+			auto DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
+
+			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			{
+				pml4->entries[p4idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				memset(pdpt, 0, PAGE_SIZE);
+			}
+
+			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			{
+				pdpt->entries[p3idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				memset(pdir, 0, PAGE_SIZE);
+			}
+
+			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			{
+				pdir->entries[p2idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				memset(ptab, 0, PAGE_SIZE);
+			}
+
+
+			if(ptab->entries[p1idx] & PAGE_PRESENT)
+				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
+
+			// make sure the page wasn't already filled in!
+			if(auto phys = ptab->entries[p1idx] & PAGE_ALIGN; phys != 0)
+				abort("virtual addr %p was already mapped (to phys %p!) (lazy alloc!)", v, phys);
+
+			ptab->entries[p1idx] = (flags | PAGE_LAZY_ALLOC);
+			invalidate((addr_t) v);
+		}
+
+		// undo
+		if(isOtherProc)
+			performTempUnmapping(proc);
+	}
+
+	uint64_t getPageFlags(addr_t virt, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		assert(isAligned(virt));
+
+		autolock lk(&proc->addrSpaceLock);
+
+		bool isOtherProc = (proc != scheduler::getCurrentProcess());
+		if(isOtherProc) performTempMapping(proc);
+
+		// right.
+		auto p4idx = indexPML4(virt);
+		auto p3idx = indexPDPT(virt);
+		auto p2idx = indexPageDir(virt);
+		auto p1idx = indexPageTable(virt);
+
+		if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
+
+		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
+		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
+		auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
+		auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
+
+		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
+			return 0;
+
+		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+			return 0;
+
+		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+			return 0;
+
+		auto ret = ptab->entries[p1idx] & 0xFFF;
+
+		// undo
+		if(isOtherProc)
+			performTempUnmapping(proc);
+
+		return ret;
+	}
+
 
 
 	void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignore, scheduler::Process* proc)

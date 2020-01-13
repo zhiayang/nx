@@ -88,7 +88,7 @@ namespace tss
 		assert(scheduler::getCurrentProcess() == scheduler::getKernelProcess());
 
 		// ok, since this is the kernel process, we are free to map all tsses in the address space.
-		auto tssaddr = vmm::allocate(TSS_SIZE_IN_PAGES, vmm::AddressSpace::Kernel);
+		auto tssaddr = vmm::allocateEager(TSS_SIZE_IN_PAGES, vmm::AddressSpace::Kernel);
 		assert(tssaddr);
 
 		// make all the bits in the IOPB 1 -- which means disallowed.

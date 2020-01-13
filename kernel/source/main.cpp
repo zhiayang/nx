@@ -11,6 +11,7 @@
 #include "bootinfo.h"
 
 #include "cpu/cpu.h"
+#include "cpu/exceptions.h"
 #include "devices/pc/apic.h"
 
 namespace nx
@@ -176,6 +177,9 @@ namespace nx
 
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);
+
+		// setup our lazy page fault handler.
+		exceptions::setupPageFaultHandler();
 
 		// initialise the interrupt controller (APIC or PIC).
 		// init_arch allows us to do basic scheduling. after the scheduler

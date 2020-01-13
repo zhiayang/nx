@@ -128,6 +128,21 @@ namespace nx
 			void dump() const;
 		};
 
+		// this is the same as the interrupted state, but includes cr2, the interrupt id,
+		// and the error code.
+		struct ExceptionState
+		{
+			uint64_t cr2;
+			uint64_t rsp;
+			uint64_t rdi, rsi, rbp;
+			uint64_t rax, rbx, rcx, rdx, r8, r9, r10, r11, r12, r13, r14, r15;
+
+			uint64_t InterruptID, ErrorCode;
+			uint64_t rip, cs, rflags, useresp, ss;
+
+			void dump() const;
+		};
+
 		#else
 
 		#endif

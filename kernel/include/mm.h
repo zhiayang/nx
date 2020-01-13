@@ -67,6 +67,12 @@ namespace nx
 		void invalidateAll();
 
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+
+		// sets bits in the page table to tell our page fault handler that there is actually a physical page,
+		// just that it was lazily allocated.
+		void markAllocated(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		uint64_t getPageFlags(addr_t virt, scheduler::Process* proc = 0);
+
 		void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
 		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
 		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
@@ -79,9 +85,17 @@ namespace nx
 
 		addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
-		// these will allocate an address space, *AND* allocate a physical page *AND* map it!
+		// this will allocate a region of memory, and map the physical pages LAZILY
 		addr_t allocate(size_t num, AddressSpace type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		addr_t allocateEager(size_t num, AddressSpace type, uint64_t flags = 0, scheduler::Process* proc = 0);
+
 		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
+
+
+		bool handlePageFault(uint64_t cr2, uint64_t errorCode);
+
+
+
 
 		constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
 		constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
@@ -110,6 +124,7 @@ namespace nx
 		constexpr uint64_t PAGE_PRESENT     = 0x1;
 		constexpr uint64_t PAGE_WRITE       = 0x2;
 		constexpr uint64_t PAGE_USER        = 0x4;
+		constexpr uint64_t PAGE_LAZY_ALLOC  = 0x200;
 		constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
 
 		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;

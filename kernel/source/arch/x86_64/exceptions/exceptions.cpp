@@ -7,19 +7,6 @@
 namespace nx {
 namespace exceptions
 {
-	// note! corresponds to the order (in reverse) in handlers.s
-	struct RegState_t
-	{
-		uint64_t cr2;
-		uint64_t rsp;
-		uint64_t rdi, rsi, rbp;
-		uint64_t rax, rbx, rcx, rdx, r8, r9, r10, r11, r12, r13, r14, r15;
-
-		uint64_t InterruptID, ErrorCode;
-		uint64_t rip, cs, rflags, useresp, ss;
-	};
-
-
 	constexpr const char* ExceptionMessages[] =
 	{
 		"division by zero",
@@ -94,6 +81,9 @@ namespace exceptions
 	extern "C" void nx_x64_exception_handler_30();
 	extern "C" void nx_x64_exception_handler_31();
 
+	extern "C" void nx_x64_pagefault_handler();
+
+
 	constexpr void (*exception_handlers[32])() = {
 		nx_x64_exception_handler_0,  nx_x64_exception_handler_1,  nx_x64_exception_handler_2,  nx_x64_exception_handler_3,
 		nx_x64_exception_handler_4,  nx_x64_exception_handler_5,  nx_x64_exception_handler_6,  nx_x64_exception_handler_7,
@@ -123,35 +113,8 @@ namespace exceptions
 	}
 
 
-
-	static void dumpRegs(RegState_t* r)
-	{
-		using namespace serial;
-
-		debugprintf("\n");
-		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
-		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
-		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
-		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
-		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
-		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
-		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
-		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
-		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
-		debugprintf("ss:       %16.8lx   u-rsp:    %16.8lx\n", r->ss, r->useresp);
-		debugprintf("rflags:   %16.8lx   cr2:      %16.8lx\n", r->rflags, r->cr2);
-		debugprintf("\n");
-
-		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
-		auto kgsbase = cpu::readMSR(cpu::MSR_KERNEL_GS_BASE);
-		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
-		debugprintf("gs_base:  %16.8lx   kgs_base: %16.8lx\n", gsbase, kgsbase);
-		debugprintf("fs_base:  %16.8lx\n", fsbase);
-	}
-
-
 	static int faultCount = 0;
-	extern "C" void nx_x64_handle_exception(RegState_t* regs)
+	extern "C" void nx_x64_handle_exception(cpu::ExceptionState* regs)
 	{
 		using namespace serial;
 
@@ -202,7 +165,7 @@ namespace exceptions
 			debugprintf(", selector: %x\n", err & 0xfff8);
 		}
 
-		dumpRegs(regs);
+		regs->dump();
 
 		if(regs->InterruptID == 14)
 		{
@@ -253,10 +216,55 @@ namespace exceptions
 
 		while(1);
 	}
+
+
+
+	extern "C" void nx_x64_handle_page_fault_internal(cpu::ExceptionState* regs)
+	{
+		// check if we handle it without crashing:
+		if(vmm::handlePageFault(regs->cr2, regs->ErrorCode))
+			return;
+
+		// we couldn't, lmao -- just crash normally.
+		nx_x64_handle_exception(regs);
+	}
+
+	void setupPageFaultHandler()
+	{
+		// set entry 14.
+		cpu::idt::setEntry(14, (uint64_t) &nx_x64_pagefault_handler,
+			/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false);
+	}
 }
 
 namespace cpu
 {
+	void ExceptionState::dump() const
+	{
+		auto r = this;
+		using namespace serial;
+
+		debugprintf("\n");
+		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
+		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
+		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
+		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
+		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
+		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
+		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
+		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
+		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
+		debugprintf("ss:       %16.8lx   u-rsp:    %16.8lx\n", r->ss, r->useresp);
+		debugprintf("rflags:   %16.8lx   cr2:      %16.8lx\n", r->rflags, r->cr2);
+		debugprintf("\n");
+
+		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
+		auto kgsbase = cpu::readMSR(cpu::MSR_KERNEL_GS_BASE);
+		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
+		debugprintf("gs_base:  %16.8lx   kgs_base: %16.8lx\n", gsbase, kgsbase);
+		debugprintf("fs_base:  %16.8lx\n", fsbase);
+	}
+
 	void InterruptedState::dump() const
 	{
 		auto r = this;

@@ -9,6 +9,44 @@
 namespace nx {
 namespace syscall
 {
+	// creates a shared memory buffer for use by other programs. outputs the pointer to the beginning of
+	// the region in *ptr. returns a handle to the shared memory that you can give to other processes
+	// that can be passed to open_shared_buffer or closed_shared_buffer.
+	int64_t sc_create_shared_buffer(void** ptr, size_t size, int prot, int flags)
+	{
+
+		return -1;
+	}
+
+	void* sc_open_shared_buffer(int64_t handle, size_t ofs, size_t len, int prot, int flags)
+	{
+
+		return (void*) -1;
+	}
+
+	void sc_close_shared_buffer(int64_t handle)
+	{
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+		there's some stuff we need to handle for unix-like mmap. i believe the linux behaviour
+		is that MAP_SHARED is only designed to work with files; if you do MAP_ANON | MAP_SHARED,
+		the memory is only visible to the child process after a fork...
+
+		i think.
+	*/
+
 	void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags)
 	{
 		if(length == 0)
@@ -24,7 +62,7 @@ namespace syscall
 			auto addr = ((addr_t) req_addr) & vmm::PAGE_ALIGN;
 			auto numPages = (length + PAGE_SIZE - 1) / PAGE_SIZE;
 
-			// TODO: mark non-present if we get swapping and stuff
+			// TODO: mark non-present when we get swapping and stuff
 			uint64_t flg = vmm::PAGE_PRESENT | vmm::PAGE_USER;
 
 			if(prot & PROT_WRITE)   flg |= vmm::PAGE_WRITE;

@@ -141,6 +141,18 @@ namespace vmm
 		auto virt = allocateAddrSpace(num, type, proc);
 		if(virt == 0) return 0;
 
+		markAllocated(virt, num, flags | PAGE_WRITE, proc);
+		return virt;
+	}
+
+	addr_t allocateEager(size_t num, AddressSpace type, uint64_t flags, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		auto virt = allocateAddrSpace(num, type, proc);
+		if(virt == 0) return 0;
+
 		auto phys = pmm::allocate(num);
 		if(phys == 0) return 0;
 

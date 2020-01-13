@@ -14,5 +14,6 @@ namespace nx
 	namespace exceptions
 	{
 		void init();
+		void setupPageFaultHandler();
 	}
 }

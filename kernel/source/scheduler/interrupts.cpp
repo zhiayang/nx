@@ -161,7 +161,9 @@ namespace interrupts
 			ipc::signalThread(hand->thr, ipc::SIGNAL_DEVICE_IRQ,
 				ipc::signal_message_body_t(irq, 0, 0));
 
-			hand->thr->priority.boost();
+			// not sure how many times we should boost; using '5' should
+			// pretty much put it at the front of the queue.
+			hand->thr->priority.boost(5);
 
 			hand = hand->next;
 			ok = true;
