@@ -134,6 +134,18 @@ namespace nx
 		{
 			return addr == (addr & PAGE_ALIGN);
 		}
+
+
+
+
+
+		struct VMRegion
+		{
+			addr_t addr;
+			size_t length;
+
+			nx::array<addr_t> backingPhysPages;
+		};
 	}
 
 	constexpr size_t SIZE_IN_PAGES(size_t bytes)
@@ -142,34 +154,6 @@ namespace nx
 	}
 
 
-
-	namespace extmm
-	{
-		struct extent_t;
-		struct State
-		{
-			extent_t* head = 0;
-			size_t numExtents = 0;
-
-			const char* owner = 0;
-
-			addr_t bootstrapStart = 0;
-			addr_t bootstrapWatermark = 0;
-			addr_t bootstrapEnd = 0;
-
-			mutex lock;
-		};
-
-		void dump(State* st);
-
-		void init(State* st, const char* owner, addr_t baseAddr, addr_t maxAddr);
-		void destroy(State* st);
-
-		addr_t allocate(State* state, size_t num, bool (*satisfies)(addr_t, size_t));
-		addr_t allocateSpecific(State* state, addr_t start, size_t num);
-
-		void deallocate(State* state, addr_t addr, size_t num);
-	}
 
 }
 

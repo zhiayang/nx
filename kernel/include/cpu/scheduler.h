@@ -110,11 +110,14 @@ namespace nx
 			nx::list<ipc::message_t> pendingMessages;
 
 			nx::mutex addrSpaceLock;
-			extmm::State vmmStates[vmm::NumAddressSpaces];
+			extmm::State<void> vmmStates[vmm::NumAddressSpaces];
+
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
 
+
+			nx::list<vmm::VMRegion> vmregions;
 
 			// arch-specific stuff.
 			#ifdef __ARCH_x64__

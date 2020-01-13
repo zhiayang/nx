@@ -10,6 +10,7 @@
 namespace nx {
 namespace extmm
 {
+#if 0
 	struct extent_t
 	{
 		uint64_t addr;
@@ -26,7 +27,7 @@ namespace extmm
 		extent_t* ext = 0;
 		if(st->bootstrapWatermark + sizeof(extent_t) <= st->bootstrapEnd)
 		{
-			ext = (extent_t*) st->bootstrapWatermark;
+			ext = new ((extent_t*) st->bootstrapWatermark) extent_t();
 			st->bootstrapWatermark += sizeof(extent_t);
 		}
 		else
@@ -196,7 +197,7 @@ namespace extmm
 		// oops. make a new extent.
 		addExtent(st, addr, num);
 	}
-
+#endif
 }
 }
 

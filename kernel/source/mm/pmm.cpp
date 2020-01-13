@@ -17,7 +17,7 @@ namespace pmm
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
-	static extmm::State extmmState;
+	static extmm::State<void> extmmState;
 
 	void init(BootInfo* bootinfo)
 	{
@@ -45,7 +45,7 @@ namespace pmm
 		if(!bootstrapped) abort("failed to bootstrap pmm!!");
 
 		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
-		extmm::init(&extmmState, "pmm", addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
+		extmmState.init("pmm", addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
 
 		// ok, now loop through each memory entry for real.
 		size_t totalMem = 0;
@@ -112,14 +112,14 @@ namespace pmm
 	{
 		// lol. we can't have capturing lambdas without some kind of std::function
 		// and nobody knows how to implement that shit.
-		return extmm::allocate(&extmmState, num, below4G ? [](addr_t a, size_t l) -> bool {
+		return extmmState.allocate(num, below4G ? [](addr_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](addr_t, size_t) -> bool { return true; });
 	}
 
 	void deallocate(addr_t addr, size_t num)
 	{
-		extmm::deallocate(&extmmState, addr, num);
+		extmmState.deallocate(addr, num);
 	}
 
 }

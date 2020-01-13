@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "extmm.h"
 
 namespace nx {
 namespace vmm
@@ -18,7 +19,9 @@ namespace vmm
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
-	static extmm::State* getAddrSpace(addr_t addr, size_t num, extmm::State* states)
+	using extmmState = extmm::State<void>;
+
+	static extmmState* getAddrSpace(addr_t addr, size_t num, extmmState* states)
 	{
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
@@ -33,7 +36,7 @@ namespace vmm
 	void init(scheduler::Process* proc)
 	{
 		bool isFirst = (proc == scheduler::getKernelProcess());
-		memset(proc->vmmStates, 0, sizeof(extmm::State) * NumAddressSpaces);
+		memset(proc->vmmStates, 0, sizeof(extmmState) * NumAddressSpaces);
 
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
@@ -42,14 +45,14 @@ namespace vmm
 			if(isFirst)
 			{
 				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_WRITE | PAGE_PRESENT, proc);
-				extmm::init(s, extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
+				s->init(extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
 			}
 			else
 			{
-				extmm::init(s, extmmNames[i], 0, 0);
+				s->init(extmmNames[i], 0, 0);
 			}
 
-			extmm::deallocate(s, AddressSpaces[i][0], (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
+			s->deallocate(AddressSpaces[i][0], (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
 		}
 
 		// unmap the null page.
@@ -72,7 +75,7 @@ namespace vmm
 		assert(proc->processId != 0);       // yo wtf that's illegal
 
 		for(size_t i = 0; i < NumAddressSpaces; i++)
-			extmm::destroy(&proc->vmmStates[i]);
+			proc->vmmStates[i].destroy();
 
 		// note: we don't need to un-setupAddrSpace, because that doesn't
 		// allocate any memory -- only address spaces.
@@ -91,13 +94,13 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		extmm::State* st = 0;
+		extmmState* st = 0;
 		if(type == AddressSpace::User)              st = &proc->vmmStates[0];
 		else if(type == AddressSpace::KernelHeap)   st = &proc->vmmStates[1];
 		else if(type == AddressSpace::Kernel)       st = &proc->vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
-		auto ret = extmm::allocate(st, num, [](addr_t, size_t) -> bool { return true; });
+		auto ret = st->allocate(num, [](addr_t, size_t) -> bool { return true; });
 		assert(isAligned(ret));
 
 		return ret;
@@ -110,10 +113,10 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		extmm::State* st = getAddrSpace(addr, num, proc->vmmStates);
+		extmmState* st = getAddrSpace(addr, num, proc->vmmStates);
 		if(!st) abort("deallocateAddrSpace(): address not in any of the address spaces!");
 
-		return extmm::deallocate(st, addr, num);
+		return st->deallocate(addr, num);
 	}
 
 
@@ -127,10 +130,10 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		extmm::State* st = getAddrSpace(addr, num, proc->vmmStates);
+		extmmState* st = getAddrSpace(addr, num, proc->vmmStates);
 		if(!st) abort("allocateSpecific(): no address space to allocate address '%p'", addr);
 
-		return extmm::allocateSpecific(st, addr, num);
+		return st->allocateSpecific(addr, num);
 	}
 
 	addr_t allocate(size_t num, AddressSpace type, uint64_t flags, scheduler::Process* proc)
