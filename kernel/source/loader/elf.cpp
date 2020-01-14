@@ -121,12 +121,12 @@ namespace loader
 
 			// give us some scratch space:
 			{
-				virtBase = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+				virtBase = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);
 
 				// since this is not the final mapping, we don't need user perms.
 				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
-				offsetVirt = virtBase + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
+				offsetVirt = virtBase + (progHdr->p_vaddr - vmm::PAGE_ALIGN(progHdr->p_vaddr));
 			}
 
 			assert(offsetVirt);
@@ -144,25 +144,25 @@ namespace loader
 				if(progHdr->p_type == PT_TLS)
 				{
 					// for TLS, we don't care what the address is.
-					auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User, proc);
+					auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
 					if(!virt) { error(err, "failed to allocate address space"); return false; }
 
 					vmm::mapAddress(virt, phys, numPages, virtFlags, proc);
 
-					proc->tlsMasterCopy = virt + (progHdr->p_vaddr - (progHdr->p_vaddr & vmm::PAGE_ALIGN));
+					proc->tlsMasterCopy = virt + (progHdr->p_vaddr - vmm::PAGE_ALIGN(progHdr->p_vaddr));
 					proc->tlsAlign = __max(progHdr->p_align, (uint64_t) 1);
 					proc->tlsSize = progHdr->p_memsz;
 				}
 				else
 				{
-					if(vmm::allocateSpecific(progHdr->p_vaddr & vmm::PAGE_ALIGN, numPages, proc) == 0)
+					if(vmm::allocateSpecific(vmm::PAGE_ALIGN(progHdr->p_vaddr), numPages, proc) == 0)
 					{
 						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 						pmm::deallocate(phys, numPages);
 						return false;
 					}
 
-					vmm::mapAddress(progHdr->p_vaddr & vmm::PAGE_ALIGN, phys, numPages, virtFlags, proc);
+					vmm::mapAddress(vmm::PAGE_ALIGN(progHdr->p_vaddr), phys, numPages, virtFlags, proc);
 				}
 			}
 		}

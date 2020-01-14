@@ -12,11 +12,29 @@
 #include "mm.h"
 #include "ipc.h"
 #include "cpu.h"
+#include "extmm.h"
 #include "synchro.h"
 #include "misc/addrs.h"
 
 namespace nx
 {
+	namespace mm
+	{
+		struct SharedMemoryBuffer
+		{
+			int64_t handle = 0;
+
+			// we don't need an explicit refcount, the list of referring processes
+			// will just act as the refcount anyway.
+			nx::list<scheduler::Process*> procs;
+
+
+			// i think this might come back to bite us in the ass when we do on-demand
+			// paging?? eventually we definitely don't want to eagerly allocate every
+			// page here... for now this will suffice ):
+		};
+	}
+
 	namespace scheduler
 	{
 		struct Thread;
@@ -31,7 +49,6 @@ namespace nx
 			Thread* CurrentThread = 0;
 
 			nx::list<Thread*> ThreadList;
-
 			nx::list<Thread*> BlockedThreads;
 			nx::list<Thread*> DestructionQueue;
 
@@ -97,7 +114,6 @@ namespace nx
 			pid_t processId = 0;
 			nx::string processName;
 
-			addr_t cr3 = 0;
 			nx::array<Thread> threads;
 
 			int flags = 0;
@@ -109,15 +125,18 @@ namespace nx
 			nx::mutex msgQueueLock;
 			nx::list<ipc::message_t> pendingMessages;
 
-			nx::mutex addrSpaceLock;
-			extmm::State<void> vmmStates[vmm::NumAddressSpaces];
+			// see the paragraphs in _heap_impl.h on why this is a spinlock and not
+			// a mutex -- the same concept applies, cos we might need to call mapAddress() to
+			// expand the heap.
+			nx::spinlock addrSpaceLock;
+			extmm::State<> vmmStates[vmm::NumAddressSpaces];
 
+			vfs::IOCtx* ioctx = 0;
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
 
-
-			nx::list<vmm::VMRegion> vmregions;
+			vmm::AddressSpace addrspace;
 
 			// arch-specific stuff.
 			#ifdef __ARCH_x64__

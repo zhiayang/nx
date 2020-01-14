@@ -103,6 +103,7 @@ namespace apic
 			interrupts::unmaskIRQ(0);
 		}
 
+		interrupts::enable();
 		double nanosecondsPerTimerTick = 0;
 		{
 			auto measurementPeriodNS = 2 * __max(scheduler::getNanosecondsPerTick(), device::pit8253::getNanosecondsPerTick());
@@ -135,6 +136,7 @@ namespace apic
 			// kill the old PIT
 			device::pit8253::disable();
 		}
+		interrupts::disable();
 
 
 

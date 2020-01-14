@@ -107,10 +107,10 @@ namespace acpi
 			// bit 11 is set if the LAPIC is already enabled.
 
 			addr_t base = cpu::readMSR(cpu::MSR_APIC_BASE);
-			if((base & vmm::PAGE_ALIGN) != lApicAddr)
+			if(vmm::PAGE_ALIGN(base) != lApicAddr)
 			{
 				abort("acpi: invalid configuration, lapic base address in MSR (%p) does not match madt (%p)",
-					base & vmm::PAGE_ALIGN, lApicAddr);
+					vmm::PAGE_ALIGN(base), lApicAddr);
 			}
 			else if(!(base & 0x100))
 			{
@@ -120,7 +120,7 @@ namespace acpi
 			// testing shows that the base address we get already sets both of these flags, but just to be
 			// safe we set them again. note that if the enable bit is 0, then CPUID will report the CPU as
 			// *not having* the LAPIC.
-			base &= vmm::PAGE_ALIGN;
+			base = vmm::PAGE_ALIGN(base);
 			base |= 0x800;      // this is bit 11, the enable bit
 			base |= 0x100;      // this is bit 8, the BSP bit. probably not modifiable,
 								// but set it just in case?
@@ -130,11 +130,13 @@ namespace acpi
 			// note: this 'enabling' doesn't start accepting interrupts; it just means 'not disabled'.
 			// we actually enable it later.
 
-			// we need to actually map this to some virtual address -- just use the same one.
-			if(vmm::allocateSpecific(base & vmm::PAGE_ALIGN, 1) == 0)
-				abort("lapic: failed to map base address %p", base & vmm::PAGE_ALIGN);
+			auto alignedBase = vmm::PAGE_ALIGN(base);
 
-			vmm::mapAddress(base & vmm::PAGE_ALIGN, base & vmm::PAGE_ALIGN, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+			// we need to actually map this to some virtual address -- just use the same one.
+			if(vmm::allocateSpecific(alignedBase, 1) == 0)
+				abort("lapic: failed to map base address %p", alignedBase);
+
+			vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 		}
 	}
 }

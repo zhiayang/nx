@@ -127,6 +127,7 @@ namespace nx
 
 	void vabort_nohalt(const char* fmt, va_list args)
 	{
+		interrupts::disable();
 		serial::debugprintf("\n\nkernel abort! error: ");
 		vprint(fmt, args);
 		va_end(args);

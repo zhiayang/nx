@@ -19,7 +19,7 @@ namespace vmm
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
-	using extmmState = extmm::State<void>;
+	using extmmState = extmm::State<>;
 
 	static extmmState* getAddrSpace(addr_t addr, size_t num, extmmState* states)
 	{
@@ -89,15 +89,15 @@ namespace vmm
     // KERNEL_HEAP_BASE             ->      KERNEL_HEAP_END
 	// KERNEL_VMM_ADDRSPACE_BASE    ->      KERNEL_VMM_ADDRSPACE_END
 
-	addr_t allocateAddrSpace(size_t num, AddressSpace type, scheduler::Process* proc)
+	addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
 		extmmState* st = 0;
-		if(type == AddressSpace::User)              st = &proc->vmmStates[0];
-		else if(type == AddressSpace::KernelHeap)   st = &proc->vmmStates[1];
-		else if(type == AddressSpace::Kernel)       st = &proc->vmmStates[2];
+		if(type == AddressSpaceType::User)              st = &proc->vmmStates[0];
+		else if(type == AddressSpaceType::KernelHeap)   st = &proc->vmmStates[1];
+		else if(type == AddressSpaceType::Kernel)       st = &proc->vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
 		auto ret = st->allocate(num, [](addr_t, size_t) -> bool { return true; });
@@ -136,7 +136,7 @@ namespace vmm
 		return st->allocateSpecific(addr, num);
 	}
 
-	addr_t allocate(size_t num, AddressSpace type, uint64_t flags, scheduler::Process* proc)
+	addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -148,7 +148,7 @@ namespace vmm
 		return virt;
 	}
 
-	addr_t allocateEager(size_t num, AddressSpace type, uint64_t flags, scheduler::Process* proc)
+	addr_t allocateEager(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);

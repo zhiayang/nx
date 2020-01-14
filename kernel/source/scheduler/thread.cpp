@@ -78,7 +78,7 @@ namespace scheduler
 			auto n = USER_STACK_SIZE / PAGE_SIZE;
 
 			auto phys = pmm::allocate(n);
-			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
+			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
 
 			// map it in the target address space. map it user-accessible.
 			vmm::mapAddress(virt, phys, n, target_flags | user_flags, proc);
@@ -94,7 +94,7 @@ namespace scheduler
 			auto n = KERNEL_STACK_SIZE / PAGE_SIZE;
 
 			auto phys = pmm::allocate(n);
-			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpace::User, proc);
+			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
 
 			// save it so we can kill it later.
 			thr->kernelStackBottom = virt;
@@ -103,7 +103,7 @@ namespace scheduler
 			vmm::mapAddress(virt, phys, n, target_flags, proc);
 
 			// ok, now allocate some space here -- as scratch so we can modify the pages.
-			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpace::User);
+			auto scratch = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User);
 
 			vmm::mapAddress(scratch, phys, n, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
@@ -153,10 +153,10 @@ namespace scheduler
 			assert(sseSz <= PAGE_SIZE);
 
 			auto phys = pmm::allocate(1);
-			auto virt = vmm::allocateAddrSpace(1, vmm::AddressSpace::User, proc);
+			auto virt = vmm::allocateAddrSpace(1, vmm::AddressSpaceType::User, proc);
 
 			// map scratch space.
-			auto scratch = vmm::allocateAddrSpace(1, vmm::AddressSpace::User);
+			auto scratch = vmm::allocateAddrSpace(1, vmm::AddressSpaceType::User);
 			vmm::mapAddress(scratch, phys, 1, vmm::PAGE_WRITE);
 
 			cpu::fpu::initState(scratch);
@@ -193,10 +193,10 @@ namespace scheduler
 			assert(phys);
 
 			// note: we must map this user-accessible!
-			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User, proc);
+			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
 			vmm::mapAddress(virt, phys, numPages, target_flags | user_flags, proc);
 
-			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
+			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);
 			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
 			// setup the tcb first
@@ -220,16 +220,16 @@ namespace scheduler
 
 			if(proc->tlsSize > 0)
 			{
-				auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpace::User);
-				vmm::mapAddress(scratchMaster, vmm::getPhysAddr(proc->tlsMasterCopy & vmm::PAGE_ALIGN, proc), numPages,
+				auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);
+				vmm::mapAddress(scratchMaster, vmm::getPhysAddr(vmm::PAGE_ALIGN(proc->tlsMasterCopy), proc), numPages,
 					vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
-				scratchMaster += (proc->tlsMasterCopy - (proc->tlsMasterCopy & vmm::PAGE_ALIGN));
+				scratchMaster += (proc->tlsMasterCopy - vmm::PAGE_ALIGN(proc->tlsMasterCopy));
 
 				// ok now do the tls
 				memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
 
-				vmm::unmapAddress(scratchMaster & vmm::PAGE_ALIGN, numPages, /* freePhys: */ false);
+				vmm::unmapAddress(vmm::PAGE_ALIGN(scratchMaster), numPages, /* freePhys: */ false);
 			}
 
 
@@ -263,12 +263,9 @@ namespace scheduler
 		// save this for later.
 		auto id = thr->threadId;
 
-		getSchedState()->ThreadList.remove_all(thr);
-
 		proc->threads.remove_all_if([&thr](const auto& t) -> bool {
 			return t.threadId == thr->threadId;
 		});
-
 
 		log("sched", "destroyed thread %lu", id);
 

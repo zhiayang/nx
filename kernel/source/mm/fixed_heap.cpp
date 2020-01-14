@@ -9,7 +9,7 @@ namespace nx {
 namespace fixed_heap
 {
 	constexpr size_t BucketSizes[] = {
-		16, 32, 64, 128, 256
+		32, 64, 128, 256
 	};
 
 	constexpr size_t BucketCount        = sizeof(BucketSizes) / sizeof(BucketSizes[0]);

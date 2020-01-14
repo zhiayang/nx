@@ -137,15 +137,20 @@ namespace interrupts
 
 
 
-
+	// todo: this needs to be a per-cpu value!!
+	// note: we will prime this with an interrupts::disable() during kernel startup.
+	static int stiLevel = 0;
 	void enable()
 	{
-		asm volatile("sti");
+		stiLevel += 1;
+		if(stiLevel >= 0)
+			asm volatile("sti");
 	}
 
 	void disable()
 	{
 		asm volatile("cli");
+		stiLevel -= 1;
 	}
 
 

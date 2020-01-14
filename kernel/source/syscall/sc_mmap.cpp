@@ -59,7 +59,7 @@ namespace syscall
 				return MAP_FAILED;
 
 			// align the memory
-			auto addr = ((addr_t) req_addr) & vmm::PAGE_ALIGN;
+			auto addr = vmm::PAGE_ALIGN((addr_t) req_addr);
 			auto numPages = (length + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			// TODO: mark non-present when we get swapping and stuff
@@ -86,7 +86,7 @@ namespace syscall
 					return MAP_FAILED;
 			}
 
-			auto ret = vmm::allocate(numPages, vmm::AddressSpace::User, flg);
+			auto ret = vmm::allocate(numPages, vmm::AddressSpaceType::User, flg);
 			if(!ret) return MAP_FAILED;
 
 			return (void*) ret;
@@ -110,7 +110,7 @@ namespace syscall
 	{
 		// well, let's just unmap it page-by-page.
 
-		auto addr = ((addr_t) req_addr) & vmm::PAGE_ALIGN;
+		auto addr = vmm::PAGE_ALIGN((addr_t) req_addr);
 		auto numPages = (length + PAGE_SIZE - 1) / PAGE_SIZE;
 
 

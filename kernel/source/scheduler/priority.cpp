@@ -37,6 +37,7 @@ namespace scheduler
 	void Priority::reset()
 	{
 		this->lastScheduled = getElapsedNanoseconds();
+		this->temporaryBoost = 0;
 	}
 
 	Priority Priority::low()

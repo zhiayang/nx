@@ -78,17 +78,17 @@ namespace vmm
 	void setupAddrSpace(scheduler::Process* proc)
 	{
 		// make sure we allocated it.
-		assert(proc->cr3);
+		assert(proc->addrspace.cr3);
 
 		// ok, give me some temp space.
-		auto virt = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(virt, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+		auto virt = allocateAddrSpace(1, AddressSpaceType::User);
+		mapAddress(virt, proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
 		auto pml4 = (pml_t*) virt;
 		memset(pml4, 0, PAGE_SIZE);
 
 		// setup recursive paging
-		pml4->entries[510] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
+		pml4->entries[510] = proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
 
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
@@ -145,37 +145,83 @@ namespace vmm
 
 
 
+	/*
+		note: these functions are a bit dangerous to use, because they implicitly disable interrupts!!
+		this is because we only have one temporary mapping space -- pml4[509]. if we are preempted while
+		performing an external-process mapping, we'll get our temporary mapping stomped!
 
-	static void performTempMapping(scheduler::Process* proc)
+		imagine: we map our page, then in the middle, we get preempted. the other guy comes in and also
+		wants to map pages; they stomp over our original mapping, and once they're done they unmap it
+		completely -- when we come back, everything is gone.
+
+		to make sure this happens safely (ie. we are not accidentally trapped without interrupts
+		enabled), make an RAII wrapper for this.
+
+		note: we also don't need to use the addrspace spinlock here, since we are disabling interrupts
+		entirely.
+	*/
+	struct TempMapper
 	{
-		getPML4()->entries[509] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
+		TempMapper(scheduler::Process* p) : proc(p) { if(this->proc) this->map(); }
+		~TempMapper()                               { if(this->proc) this->unmap(); }
 
-		// we need to temp-map the 509th entry of the target pml4 to itself as well
-		// to achieve that, get a temp thing to modify it.
+		TempMapper(const TempMapper&) = delete;
+		TempMapper(const TempMapper&&) = delete;
 
-		auto tmp = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
-
-		((pml_t*) tmp)->entries[509] = proc->cr3 | PAGE_PRESENT | PAGE_WRITE;
-
-		unmapAddress(tmp, 1, /* freePhys: */ false);
-	}
+		TempMapper& operator= (const TempMapper&) = delete;
+		TempMapper& operator= (const TempMapper&&) = delete;
 
 
-	static void performTempUnmapping(scheduler::Process* proc)
+	private:
+		scheduler::Process* proc;
+
+		void map()
+		{
+			interrupts::disable();
+
+			getPML4()->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
+
+			// we need to temp-map the 509th entry of the target pml4 to itself as well
+			// to achieve that, get a temp thing to modify it.
+
+			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
+			mapAddress(tmp, this->proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+
+			((pml_t*) tmp)->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
+
+			unmapAddress(tmp, 1, /* freePhys: */ false);
+		}
+
+		void unmap()
+		{
+			getPML4()->entries[509] = 0;
+
+			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
+			mapAddress(tmp, this->proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+
+			((pml_t*) tmp)->entries[509] = 0;
+
+			unmapAddress(tmp, 1, /* freePhys: */ false);
+			invalidateAll();
+
+			interrupts::enable();
+		}
+	};
+
+
+
+
+
+	static addr_t alloc_phys_tracked(scheduler::Process* proc)
 	{
-		getPML4()->entries[509] = 0;
+		auto x = pmm::allocate(1);
 
-		auto tmp = allocateAddrSpace(1, AddressSpace::User);
-		mapAddress(tmp, proc->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+		// don't track the kernel!
+		if(proc->processId > 0 || scheduler::getInitPhase() > scheduler::SchedulerInitPhase::SchedulerStarted)
+			proc->addrspace.allocatedPhysPages.append(x);
 
-		((pml_t*) tmp)->entries[509] = 0;
-
-		unmapAddress(tmp, 1, /* freePhys: */ false);
-		invalidateAll();
-	}
-
-
+		return x;
+	};
 
 
 	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
@@ -186,18 +232,15 @@ namespace vmm
 		assert(isAligned(virt));
 		assert(isAligned(phys));
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
-
+		TempMapper tm(isOtherProc ? proc : 0);
 
 		// note: the flags in the higher-level structures will override those at the lower level
 		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
 		// same applies for PAGE_WRITE (when CR0.WP=1)
 		// also: for 0 <= p4idx <= 255, we set the user-bit on intermediate entries.
 		// for 256 <= p4idx <= 511, we don't set it.
-		constexpr addr_t DEFAULT_FLAGS_LOW = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
+		constexpr addr_t DEFAULT_FLAGS_LOW  = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
 		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
 
 		for(size_t x = 0; x < num; x++)
@@ -218,26 +261,39 @@ namespace vmm
 			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
 			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
-			auto DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
+			addr_t DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
+			if(p4idx > 255 && (flags & PAGE_USER))
+				abort("cannot map high address space as user-readable!");
 
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
-				pml4->entries[p4idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				auto pp = alloc_phys_tracked(proc);
+				pml4->entries[p4idx] = pp | DEFAULT_FLAGS;
 				memset(pdpt, 0, PAGE_SIZE);
+
+				if(pml4->entries[p4idx] & PAGE_NX)
+					abort("somehow page %p has a NX pdpt! (p=%p)", v, pp);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
-				pdpt->entries[p3idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				auto pp = alloc_phys_tracked(proc);
+				pdpt->entries[p3idx] = pp | DEFAULT_FLAGS;
 				memset(pdir, 0, PAGE_SIZE);
+
+				if(pdpt->entries[p3idx] & PAGE_NX)
+					abort("somehow page %p has a NX pdir! (p=%p)", v, pp);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
-				pdir->entries[p2idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				auto pp = alloc_phys_tracked(proc);
+				pdir->entries[p2idx] = pp | DEFAULT_FLAGS;
 				memset(ptab, 0, PAGE_SIZE);
-			}
 
+				if(pdir->entries[p2idx] & PAGE_NX)
+					abort("somehow page %p has a NX ptab! (p=%p)", v, pp);
+			}
 
 			if(ptab->entries[p1idx] & PAGE_PRESENT)
 				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
@@ -246,10 +302,6 @@ namespace vmm
 			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
 			invalidate((addr_t) v);
 		}
-
-		// undo
-		if(isOtherProc)
-			performTempUnmapping(proc);
 	}
 
 	void markAllocated(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc)
@@ -259,10 +311,8 @@ namespace vmm
 
 		assert(isAligned(virt));
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
+		TempMapper tm(isOtherProc ? proc : 0);
 
 		// make sure don't put present in the flags, that defeats the whole purpose uwu
 		flags &= ~PAGE_PRESENT;
@@ -299,19 +349,19 @@ namespace vmm
 
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
-				pml4->entries[p4idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				pml4->entries[p4idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
 				memset(pdpt, 0, PAGE_SIZE);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
-				pdpt->entries[p3idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				pdpt->entries[p3idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
 				memset(pdir, 0, PAGE_SIZE);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
-				pdir->entries[p2idx] = pmm::allocate(1) | DEFAULT_FLAGS;
+				pdir->entries[p2idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
 				memset(ptab, 0, PAGE_SIZE);
 			}
 
@@ -320,16 +370,12 @@ namespace vmm
 				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
 
 			// make sure the page wasn't already filled in!
-			if(auto phys = ptab->entries[p1idx] & PAGE_ALIGN; phys != 0)
+			if(auto phys = vmm::PAGE_ALIGN(ptab->entries[p1idx]); phys != 0)
 				abort("virtual addr %p was already mapped (to phys %p!) (lazy alloc!)", v, phys);
 
 			ptab->entries[p1idx] = (flags | PAGE_LAZY_ALLOC);
 			invalidate((addr_t) v);
 		}
-
-		// undo
-		if(isOtherProc)
-			performTempUnmapping(proc);
 	}
 
 	uint64_t getPageFlags(addr_t virt, scheduler::Process* proc)
@@ -339,18 +385,14 @@ namespace vmm
 
 		assert(isAligned(virt));
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
+		TempMapper tm(isOtherProc ? proc : 0);
 
 		// right.
 		auto p4idx = indexPML4(virt);
 		auto p3idx = indexPDPT(virt);
 		auto p2idx = indexPageDir(virt);
 		auto p1idx = indexPageTable(virt);
-
-		if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
 
 		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
@@ -366,13 +408,7 @@ namespace vmm
 		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			return 0;
 
-		auto ret = ptab->entries[p1idx] & 0xFFF;
-
-		// undo
-		if(isOtherProc)
-			performTempUnmapping(proc);
-
-		return ret;
+		return ptab->entries[p1idx] & (PAGE_NX | 0xFFF);
 	}
 
 
@@ -382,10 +418,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
+		TempMapper tm(isOtherProc ? proc : 0);
 
 		assert(isAligned(virt));
 
@@ -409,30 +443,30 @@ namespace vmm
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("%p was not mapped! (pdpt not present)", virt);
+				abort("unmap: %p was not mapped! (pdpt not present)", virt);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("%p was not mapped! (pdir not present)", virt);
+				abort("unmap: %p was not mapped! (pdir not present)", virt);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("%p was not mapped! (ptab not present)", virt);
+				abort("unmap: %p was not mapped! (ptab not present)", virt);
 			}
 
 			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("%p was not mapped! (page not present)", virt);
+				abort("unmap: %p was not mapped! (page not present)", virt);
 			}
 
 			if(freePhys)
 			{
-				addr_t phys = ptab->entries[p1idx] & PAGE_ALIGN;
+				addr_t phys = vmm::PAGE_ALIGN(ptab->entries[p1idx]);
 				assert(phys);
 
 				pmm::deallocate(phys, 1);
@@ -441,9 +475,6 @@ namespace vmm
 			ptab->entries[p1idx] = 0;
 			invalidate(v);
 		}
-
-		if(isOtherProc)
-			performTempUnmapping(proc);
 	}
 
 
@@ -452,10 +483,9 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
+		TempMapper tm(isOtherProc ? proc : 0);
+
 
 		assert(isAligned(virt));
 
@@ -471,23 +501,18 @@ namespace vmm
 		auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
 		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (pdpt not present)", virt);
+			abort("getPhys: %p was not mapped! (pdpt not present)", virt);
 
 		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (pdir not present)", virt);
+			abort("getPhys: %p was not mapped! (pdir not present)", virt);
 
 		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (ptab not present)", virt);
+			abort("getPhys: %p was not mapped! (ptab not present)", virt);
 
 		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
-			abort("%p was not mapped! (page not present)", virt);
+			abort("getPhys: %p was not mapped! (page not present)", virt);
 
-		auto phys = ptab->entries[p1idx] & PAGE_ALIGN;
-
-		if(isOtherProc)
-			performTempUnmapping(proc);
-
-		return phys;
+		return vmm::PAGE_ALIGN(ptab->entries[p1idx]);
 	}
 
 
@@ -496,10 +521,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		autolock lk(&proc->addrSpaceLock);
-
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		if(isOtherProc) performTempMapping(proc);
+		TempMapper tm(isOtherProc ? proc : 0);
 
 		assert(isAligned(virt));
 
@@ -522,9 +545,6 @@ namespace vmm
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))  return false;
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))  return false;
 			if(!(ptab->entries[p1idx] & PAGE_PRESENT))  return false;
-
-			if(isOtherProc)
-				performTempUnmapping(proc);
 		}
 
 		return true;

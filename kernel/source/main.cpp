@@ -44,7 +44,7 @@ namespace nx
 		// start the irq dispatcher
 		interrupts::init();
 
-		// scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
+		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 
@@ -107,6 +107,9 @@ namespace nx
 
 	void init(BootInfo* bootinfo)
 	{
+		interrupts::disable();
+
+
 		globalBootInfo = bootinfo;
 
 		// open all hatches, extend all flaps and drag fins
@@ -185,7 +188,6 @@ namespace nx
 		// init_arch allows us to do basic scheduling. after the scheduler
 		// is up, we must call interrupts::init.
 		interrupts::init_arch();
-		interrupts::enable();
 
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!

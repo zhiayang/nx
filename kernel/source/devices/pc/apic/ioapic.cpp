@@ -70,9 +70,9 @@ namespace ioapic
 		{
 			auto ioa = &_ioa;
 
-			if(mappedBases.find(ioa->baseAddr & vmm::PAGE_ALIGN) == mappedBases.end())
+			if(mappedBases.find(vmm::PAGE_ALIGN(ioa->baseAddr)) == mappedBases.end())
 			{
-				auto alignedBase = ioa->baseAddr & vmm::PAGE_ALIGN;
+				auto alignedBase = vmm::PAGE_ALIGN(ioa->baseAddr);
 				if(vmm::allocateSpecific(alignedBase, 1) == 0)
 					abort("ioapic: failed to map base address %p", ioa->baseAddr);
 

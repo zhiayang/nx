@@ -22,6 +22,9 @@ namespace nx
 		// ASLR some day??
 		constexpr uintptr_t EFI_RUNTIME_SERVICES_BASE   = 0xFFFF'8000'0000'0000;
 
+		// pml4[509] = 0xFFFF'FE80'0000'0000
+		// pml4[510] = 0xFFFF'FF00'0000'0000
+
 		// note: pml4[511] starts at 0xFFFF'FF80'0000'0000
 		constexpr uintptr_t KERNEL_HEAP_BASE            = 0xFFFF'FF80'0000'0000;
 		constexpr uintptr_t KERNEL_HEAP_END             = 0xFFFF'FFFF'0000'0000;

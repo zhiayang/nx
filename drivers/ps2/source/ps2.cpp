@@ -321,6 +321,7 @@ int main()
 	ps2::kb = new ps2::Keyboard();
 
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_DEVICE_IRQ, &ps2::interrupt_handler);
+	printf("ps/2 driver ok\n\n");
 
 	while(true)
 		;

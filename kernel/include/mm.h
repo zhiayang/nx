@@ -78,21 +78,21 @@ namespace nx
 		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
 
 		// functions to allocate/free address space in higher half (kernel) and lower half (user)
-		enum class AddressSpace { Kernel, KernelHeap, User };
+		enum class AddressSpaceType { Kernel, KernelHeap, User };
 
-		addr_t allocateAddrSpace(size_t num, AddressSpace type, scheduler::Process* proc = 0);
+		addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
 		void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 		// this will allocate a region of memory, and map the physical pages LAZILY
-		addr_t allocate(size_t num, AddressSpace type, uint64_t flags = 0, scheduler::Process* proc = 0);
-		addr_t allocateEager(size_t num, AddressSpace type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		addr_t allocateEager(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
 
 		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
 
 
-		bool handlePageFault(uint64_t cr2, uint64_t errorCode);
+		bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip);
 
 
 
@@ -127,16 +127,19 @@ namespace nx
 		constexpr uint64_t PAGE_LAZY_ALLOC  = 0x200;
 		constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
 
-		constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
+		// constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
 
+		constexpr addr_t PAGE_ALIGN(addr_t addr)
+		{
+			// check if we have the 62-nd bit set, to determine if we actually had the uppermost bit set.
+			if(addr & 0x4000'0000'0000'0000)    return addr & 0xFFFF'FFFF'FFFF'F000;
+			else                                return addr & 0x7FFF'FFFF'FFFF'F000;
+		}
 
 		constexpr bool isAligned(addr_t addr)
 		{
-			return addr == (addr & PAGE_ALIGN);
+			return addr == (addr & ~((addr_t) 0xFFF));
 		}
-
-
-
 
 
 		struct VMRegion
@@ -145,6 +148,19 @@ namespace nx
 			size_t length;
 
 			nx::array<addr_t> backingPhysPages;
+		};
+
+		struct AddressSpace
+		{
+			addr_t cr3;
+			nx::list<VMRegion> regions;
+			nx::array<addr_t> allocatedPhysPages;
+
+			void init(addr_t cr3 = 0);
+			void destroy();
+
+			// void addRegion(addr_t addr, size_t size);
+			// void freeRegion(addr_t addr, size_t size);
 		};
 	}
 

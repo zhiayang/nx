@@ -17,7 +17,7 @@ namespace pmm
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
-	static extmm::State<void> extmmState;
+	static extmm::State<> extmmState;
 
 	void init(BootInfo* bootinfo)
 	{
@@ -54,7 +54,7 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == MemoryType::Available)
 			{
-				// log("pmm", "extent: %p (%zu)", entry->address, entry->numPages);
+				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
 				deallocate(entry->address, entry->numPages);
 				totalMem += entry->numPages * 0x1000;
 			}
@@ -94,7 +94,7 @@ namespace pmm
 		uint64_t maxIdentMem = bootinfo->maximumIdentityMap;
 
 		auto addr = (addr_t) bootinfo;
-		assert((addr & vmm::PAGE_ALIGN) == addr);
+		assert(vmm::isAligned(addr));
 
 		// we assume the kernel boot info is one page long!!
 		deallocate(addr, 1);
@@ -110,15 +110,16 @@ namespace pmm
 
 	addr_t allocate(size_t num, bool below4G)
 	{
-		// lol. we can't have capturing lambdas without some kind of std::function
-		// and nobody knows how to implement that shit.
-		return extmmState.allocate(num, below4G ? [](addr_t a, size_t l) -> bool {
+		auto ret = extmmState.allocate(num, below4G ? [](addr_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](addr_t, size_t) -> bool { return true; });
+
+		return ret;
 	}
 
 	void deallocate(addr_t addr, size_t num)
 	{
+		assert(vmm::isAligned(addr));
 		extmmState.deallocate(addr, num);
 	}
 

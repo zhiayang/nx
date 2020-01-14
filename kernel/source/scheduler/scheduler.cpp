@@ -32,18 +32,18 @@ namespace scheduler
 
 	static Thread* getNextThread(State* ss)
 	{
-		if(ss->ThreadList.empty())
-			return ss->IdleThread;
-
 		// no point sorting, cos the list might change frequently.
 		// just linear search to find the thread with the highest priority.
 		Thread* next = 0;
 		Priority max;
 		for(auto thr : ss->ThreadList)
 		{
-			if(!next || thr->priority > max)
+			if(thr->state == ThreadState::Stopped && (!next || thr->priority > max))
 				next = thr, max = thr->priority;
 		}
+
+		if(!next)
+			return ss->IdleThread;
 
 		assert(next);
 		return next;
@@ -57,16 +57,15 @@ namespace scheduler
 
 		// save the current stack.
 		oldthr->kernelStack = stackPointer;
+		oldthr->state = ThreadState::Stopped;
 
 		// save the fpu state
 		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
 
-		// only put it back in the runqueue if we didn't block or sleep
-		if(oldthr->state == ThreadState::Running)
-			ss->ThreadList.append(oldthr);
-
 		Thread* newthr = getNextThread(ss);
 		newthr->state = ThreadState::Running;
+
+		// reset the priority, since it just got scheduled
 		newthr->priority.reset();
 
 		getCPULocalState()->currentThread = newthr;
@@ -85,12 +84,13 @@ namespace scheduler
 		// load the new fsbase
 		cpu::writeFSBase(newthr->fsBase);
 
-		auto oldcr3 = oldthr->parent->cr3;
-		auto newcr3 = newthr->parent->cr3;
+		auto oldcr3 = oldthr->parent->addrspace.cr3;
+		auto newcr3 = newthr->parent->addrspace.cr3;
 
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
+		// serial::debugprintf("[%d]\n", newthr->threadId);
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
@@ -184,6 +184,15 @@ namespace scheduler
 				auto thr = ss->DestructionQueue.popFront();
 				assert(thr);
 
+				log("sched", "destroying thread %lu", thr->threadId);
+
+				{
+					CriticalSection([ss, thr]() {
+						ss->ThreadList.remove_all(thr);
+					});
+				}
+
+				log("sched", "removed thread %lu", thr->threadId);
 				destroyThread(thr);
 			}
 
@@ -248,10 +257,12 @@ namespace scheduler
 		// the scheduler has started.
 		setInitPhase(SchedulerInitPhase::SchedulerStarted);
 
-
 		auto ss = getSchedState();
-
 		ss->CurrentThread = ss->IdleThread;
+
+		// primed & ready.
+		interrupts::enable();
+
 		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer, ss->CurrentThread);
 	}
 
@@ -269,12 +280,13 @@ namespace scheduler
 		auto t = getCurrentThread();
 		assert(t);
 
-		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
-
 		t->state = ThreadState::AboutToExit;
 		getSchedState()->DestructionQueue.append(t);
 
-		yield(); while(true);
+		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
+		yield();
+
+		while(true);
 	}
 
 	void terminate(Thread* t)
@@ -497,6 +509,8 @@ namespace scheduler
 		// other people can "expedite" a schedule event if necessary by setting this flag.
 		bool ret = woke || ss->expediteSchedule || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 		ss->expediteSchedule = false;
+
+		// serial::debugprint(".");
 
 		if(ret) ss->tickCounter = 0;
 		return ret;

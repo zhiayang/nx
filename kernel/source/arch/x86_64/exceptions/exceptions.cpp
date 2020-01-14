@@ -222,7 +222,7 @@ namespace exceptions
 	extern "C" void nx_x64_handle_page_fault_internal(cpu::ExceptionState* regs)
 	{
 		// check if we handle it without crashing:
-		if(vmm::handlePageFault(regs->cr2, regs->ErrorCode))
+		if(vmm::handlePageFault(regs->cr2, regs->ErrorCode, regs->rip))
 			return;
 
 		// we couldn't, lmao -- just crash normally.

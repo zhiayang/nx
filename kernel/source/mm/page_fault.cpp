@@ -7,7 +7,7 @@
 namespace nx {
 namespace vmm
 {
-	bool handlePageFault(uint64_t cr2, uint64_t errorCode)
+	bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip)
 	{
 		// The error code gives us details of what happened.
 		uint8_t notPresent          = !(errorCode & 0x1); // Page not present
@@ -18,7 +18,8 @@ namespace vmm
 		if(reservedBits || !notPresent)
 			return false;
 
-		cr2 &= PAGE_ALIGN;
+		cr2 = vmm::PAGE_ALIGN(cr2);
+		log("pf", "proc %lu #PF (cr2=%p, ip=%p)", scheduler::getCurrentProcess()->processId, cr2, rip);
 
 		// this will get the flags for the current process's address space, so we
 		// don't need to pass it explicitly.

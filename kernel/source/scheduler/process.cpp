@@ -15,22 +15,20 @@ namespace scheduler
 		if(processIdCounter == 1)
 			AllProcesses = nx::list<Process*>();
 
-
 		auto proc = new Process();
+		proc->addrspace.init();
 
 		proc->processId = processIdCounter++;
 		proc->processName = name;
 		proc->flags = flags;
 
-		// allocate a cr3 for it.
-		proc->cr3 = pmm::allocate(1);
 
 
 		vmm::init(proc);
 
 		AllProcesses.append(proc);
 
-		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->cr3);
+		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->addrspace.cr3);
 		return proc;
 	}
 
@@ -39,7 +37,7 @@ namespace scheduler
 		assert(proc);
 
 		vmm::destroy(proc);
-		pmm::deallocate(proc->cr3, 1);
+		proc->addrspace.destroy();
 
 		// TODO: remove it from its cpu list as well
 		AllProcesses.remove_all(proc);
@@ -62,8 +60,8 @@ namespace scheduler
 	void setupKernelProcess(addr_t cr3)
 	{
 		KernelProcess = Process();
-		KernelProcess.cr3 = cr3;
 		KernelProcess.processId = 0;
+		KernelProcess.addrspace.init(cr3);
 
 		setInitPhase(SchedulerInitPhase::KernelProcessInit);
 	}

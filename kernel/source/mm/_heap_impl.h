@@ -52,7 +52,26 @@ struct heap_impl
 
 	size_t AllocatedByteCount = 0;
 
-	nx::mutex lock;
+
+	/*
+		why is this a spinlock, you ask, instead of a mutex? well, the reason is quite... convoluted. but simple,
+		once you see why it's necessary. maybe it's not the best solution.
+
+		imagine that thread A locks the heap (with a mutex!); in the middle of doing stuff while holding that lock,
+		it gets pre-empted by the scheduler -- while holding that lock. this is normally fine.
+
+		now, thread B comes along and wants to lock the heap also; except it can't, so it gets put to sleep with
+		block(). what does block() do? it puts the thread into the blockedThreadList. adding things to a list can
+		potentially (and, for the linked lists we use, will always) involve allocating memory. can you see now?
+
+		thread B has called block(); we need to get more memory from the heap to append B to the list of blocked
+		threads, so we try to lock the heap.
+
+		except the heap is already locked, so we go to sleep by calling block()... you get the picture.
+
+		a spinlock "solves" this problem by just... not calling block(). it just spins.
+	*/
+	nx::spinlock lock;
 
 
 
@@ -61,7 +80,7 @@ struct heap_impl
 		auto kproc = scheduler::getKernelProcess();
 		assert(kproc);
 
-		return vmm::allocateEager(num, vmm::AddressSpace::KernelHeap, 0, kproc);
+		return vmm::allocateEager(num, vmm::AddressSpaceType::KernelHeap, 0, kproc);
 	}
 
 
@@ -404,6 +423,7 @@ struct heap_impl
 			if(bucket->numFreeChunks == 0)
 			{
 				error(HeapId, "!! out of memory !!");
+				util::printStackTrace();
 				return 0;
 			}
 
@@ -464,7 +484,7 @@ struct heap_impl
 
 
 			// the size is still the size -- but we do some rounding to get the number of pages.
-			assert(addr == (addr & vmm::PAGE_ALIGN));
+			assert(vmm::isAligned(addr));
 			vmm::deallocate(addr, (sz + PAGE_SIZE) / PAGE_SIZE);
 		}
 		else

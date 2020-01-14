@@ -4,12 +4,19 @@
 
 #pragma once
 #include "defs.h"
+#include <type_traits>
 
 namespace nx
 {
 	namespace scheduler
 	{
 		struct Thread;
+	}
+
+	namespace interrupts
+	{
+		void enable();
+		void disable();
 	}
 
 	struct spinlock
@@ -59,7 +66,28 @@ namespace nx
 		T* lk = 0;
 	};
 
+	template <typename T>
+	struct CriticalSection
+	{
+		CriticalSection(T&& x)
+		{
+			interrupts::disable();
+			x();
+		}
+
+		~CriticalSection()
+		{
+			interrupts::enable();
+		}
+
+		CriticalSection(const CriticalSection&) = delete;
+		CriticalSection(const CriticalSection&&) = delete;
+
+		CriticalSection& operator= (const CriticalSection&) = delete;
+		CriticalSection& operator= (const CriticalSection&&) = delete;
+	};
 }
+
 
 
 

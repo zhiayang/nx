@@ -42,7 +42,7 @@ namespace extmm
 
 
 
-	template <typename T>
+	template <typename T = void>
 	struct State : _State<T>
 	{
 		typename _State<T>::extent_t* head = 0;

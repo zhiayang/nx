@@ -8,6 +8,8 @@ namespace nx
 {
 	void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...)
 	{
+		interrupts::disable();
+
 		va_list args; va_start(args, fmt);
 		abort_nohalt("failed assertion\n");
 		print("invariant: %s\nreason:    ", thing);
