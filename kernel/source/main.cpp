@@ -96,26 +96,23 @@ namespace nx
 
 
 
-
-
-	static BootInfo* globalBootInfo = 0;
-	BootInfo* getBootInfo()
-	{
-		return globalBootInfo;
-	}
-
+	// ewwwwwwww
+	uint32_t fbResX = 0;
+	uint32_t fbResY = 0;
+	uint32_t fbScan = 0;
 
 	void init(BootInfo* bootinfo)
 	{
 		interrupts::disable();
 
-
-		globalBootInfo = bootinfo;
-
 		// open all hatches, extend all flaps and drag fins
 
 		// init the fallback console
 		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
+
+		fbResX = bootinfo->fbHorz;
+		fbResY = bootinfo->fbVert;
+		fbScan = bootinfo->fbScanWidth;
 
 		// basically sets up the IDT so we can handle exceptions (instead of seemingly hanging)
 		cpu::idt::init();
@@ -206,16 +203,6 @@ namespace nx
 	}
 }
 
-
-
-
-
-
-/*
-	TODO:
-
-	• irq mapping and stuff for systems without acpi and apic should be more robust.
-*/
 
 
 

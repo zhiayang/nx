@@ -152,7 +152,7 @@ namespace bfx
 
 			// print the params.
 			{
-				print("kernel parameters:");
+				print("kernel parameters: (%p)", paramBuf);
 
 				char* ptr = paramBuf;
 				for(size_t i = 0; i < paramCount; i++)

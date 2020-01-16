@@ -219,6 +219,11 @@ namespace extmm
 					ext->size += num;
 					return;
 				}
+				else if(ext->addr == addr)
+				{
+					// hmm...
+					abort("extmm: potential double free! addr: %p, size: %zu", addr, num);
+				}
 
 				ext = ext->next;
 			}

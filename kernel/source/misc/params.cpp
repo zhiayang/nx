@@ -33,6 +33,7 @@ namespace params
 		for(uint64_t i = 0; i < bi->numKernelParams; i++)
 		{
 			auto str = string(ptr);
+
 			if(auto eqidx = str.find("="); eqidx != (size_t) -1)
 			{
 				Option opt;

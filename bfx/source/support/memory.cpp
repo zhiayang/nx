@@ -39,7 +39,7 @@ namespace bfx
 			return (uint64_t) pml4t_addr;
 		}
 
-		constexpr uint64_t IDENTITY_MAP_ADDR_MAX = 0x0100'0000;
+		constexpr uint64_t IDENTITY_MAP_ADDR_MAX = 0x0200'0000;
 		uint64_t getIdentityMaxAddr()
 		{
 			return IDENTITY_MAP_ADDR_MAX;

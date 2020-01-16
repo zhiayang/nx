@@ -8,6 +8,12 @@
 #include "bootinfo.h"
 
 namespace nx {
+
+// ewwwwww
+extern uint32_t fbResX;
+extern uint32_t fbResY;
+extern uint32_t fbScan;
+
 namespace vmm
 {
 	constexpr addr_t HIGHER_HALF_BASE = 0xFFFF'0000'0000'0000ULL;
@@ -98,8 +104,7 @@ namespace vmm
 
 		// fuckin nasty man. bad hack!! we need to move this elsewhere
 		{
-			auto bi = nx::getBootInfo();
-			auto numPgs = (bi->fbScanWidth * bi->fbVert + PAGE_SIZE - 1) / PAGE_SIZE;
+			auto numPgs = (fbScan * fbResY + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			mapAddress(addrs::USER_FRAMEBUFFER, getPhysAddr(addrs::KERNEL_FRAMEBUFFER),
 				numPgs, PAGE_USER | PAGE_WRITE | PAGE_PRESENT, proc);

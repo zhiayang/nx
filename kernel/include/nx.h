@@ -39,10 +39,6 @@ namespace nx
 		void init(BootInfo* bi);
 	}
 
-	// probably shouldn't exist...
-	BootInfo* getBootInfo();
-
-
 	// some misc stuff.
 	void log(const char* sys, const char* fmt, ...);
 	void warn(const char* sys, const char* fmt, ...);
