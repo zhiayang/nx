@@ -45,7 +45,9 @@ namespace extmm
 	template <typename T = void>
 	struct State : _State<T>
 	{
-		typename _State<T>::extent_t* head = 0;
+		using extent_t = typename _State<T>::extent_t;
+
+		extent_t* head = 0;
 
 		size_t numExtents = 0;
 
@@ -60,6 +62,7 @@ namespace extmm
 
 		void dump()
 		{
+			interrupts::disable();
 			serial::debugprintf("dumping extmm state %s (%p):\n", this->owner, this);
 			auto ext = this->head;
 			while(ext)
@@ -68,6 +71,7 @@ namespace extmm
 				ext = ext->next;
 			}
 			serial::debugprintf("\n");
+			interrupts::enable();
 		}
 
 		void init(const char* owner, addr_t base, addr_t top)
@@ -113,6 +117,8 @@ namespace extmm
 			autolock lk(&this->lock);
 
 			auto ext = this->head;
+			extent_t* prev = 0;
+
 			while(ext)
 			{
 				if(ext->size >= num && satisfies(ext->addr, ext->size))
@@ -124,9 +130,22 @@ namespace extmm
 					ext->addr += (num * PAGE_SIZE);
 					ext->size -= num;
 
+					if(ext->size == 0)
+					{
+						auto pn = ext->next;
+
+						// delete the extent.
+						if(!(((addr_t) ext) >= this->bootstrapStart && ((addr_t) ext) < this->bootstrapEnd))
+							delete ext;
+
+						if(prev)    prev->next = pn;
+						else        this->head = pn;
+					}
+
 					return ret;
 				}
 
+				prev = ext;
 				ext = ext->next;
 			}
 
