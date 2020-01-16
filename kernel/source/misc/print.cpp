@@ -119,7 +119,7 @@ namespace nx
 
 	[[noreturn]] void halt()
 	{
-		serial::debugprintf("\nhalting...");
+		serial::debugprintf("\nhalting...\n\n");
 
 		asm volatile ("cli");
 		while(true) asm volatile ("hlt");

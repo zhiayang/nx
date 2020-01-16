@@ -26,7 +26,7 @@ namespace krt
 			size_t newsz = __max((size_t) 16, __max(atleast, (self->cap * 3) / 2));
 
 
-			auto newptr = (ElmTy*) allocator::allocate(newsz * sizeof(ElmTy), alignof(ElmTy));
+			auto newptr = allocator::template allocate<ElmTy>(newsz);
 			if(!newptr) aborter::abort("reserve(): alloc() returned null!");
 
 			copy_elements(self, newptr, self->ptr, self->cnt);
@@ -200,7 +200,7 @@ namespace krt
 		{
 			if(krt::is_trivially_copyable<ElmTy>::value)
 			{
-				memmove(dest, src, num);
+				memmove(dest, src, num * sizeof(ElmTy));
 			}
 			else
 			{

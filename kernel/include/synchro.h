@@ -26,7 +26,7 @@ namespace nx
 		void unlock();
 		bool trylock();
 
-		private:
+	private:
 		volatile uint8_t value = 0;
 		volatile scheduler::Thread* holder = 0;
 	};
@@ -38,7 +38,7 @@ namespace nx
 		void unlock();
 		bool trylock();
 
-		private:
+	private:
 		volatile uint8_t value = 0;
 		volatile scheduler::Thread* holder = 0;
 	};
@@ -57,13 +57,42 @@ namespace nx
 		~autolock()             { if(this->lk) this->lk->unlock(); }
 
 		autolock(const autolock&) = delete;
-		autolock(const autolock&&) = delete;
+		autolock(autolock&&) = delete;
 
 		autolock& operator= (const autolock&) = delete;
-		autolock& operator= (const autolock&&) = delete;
+		autolock& operator= (autolock&&) = delete;
 
 		private:
 		T* lk = 0;
+	};
+
+	template <typename Lk, typename Functor>
+	struct LockedSection
+	{
+		LockedSection(Lk* x, Functor&& f)
+		{
+			if(x)
+			{
+				this->lk = x;
+				this->lk->lock();
+
+				f();
+			}
+		}
+
+		~LockedSection()
+		{
+			if(this->lk)
+			{
+				this->lk->unlock();
+			}
+		}
+
+		LockedSection(const LockedSection&) = delete;
+		LockedSection(LockedSection&&) = delete;
+
+	private:
+		Lk* lk = 0;
 	};
 
 	template <typename T>
@@ -81,10 +110,10 @@ namespace nx
 		}
 
 		CriticalSection(const CriticalSection&) = delete;
-		CriticalSection(const CriticalSection&&) = delete;
+		CriticalSection(CriticalSection&&) = delete;
 
 		CriticalSection& operator= (const CriticalSection&) = delete;
-		CriticalSection& operator= (const CriticalSection&&) = delete;
+		CriticalSection& operator= (CriticalSection&&) = delete;
 	};
 }
 

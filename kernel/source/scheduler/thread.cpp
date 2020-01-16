@@ -238,8 +238,9 @@ namespace scheduler
 
 		}
 
-		log("sched", "created tid %lu in pid %lu (stks u: %p, k: %p)",
-			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->kernelStackBottom);
+		log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p)",
+			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->userStackBottom + USER_STACK_SIZE,
+			thr->kernelStackBottom, thr->kernelStack);
 		return thr;
 	}
 

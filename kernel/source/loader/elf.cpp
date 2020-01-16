@@ -108,6 +108,11 @@ namespace loader
 			auto phys = pmm::allocate(numPages);
 			if(!phys) { error(err, "failed to allocate memory"); return false; }
 
+			LockedSection(&proc->addrSpaceLock, [&]() {
+				for(size_t i = 0; i < numPages; i++)
+					proc->addrspace.allocatedPhysPages.append(phys + (i * PAGE_SIZE));
+			});
+
 			// figure out how we should map this.
 			uint64_t virtFlags = 0;
 
@@ -158,7 +163,13 @@ namespace loader
 					if(vmm::allocateSpecific(vmm::PAGE_ALIGN(progHdr->p_vaddr), numPages, proc) == 0)
 					{
 						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
+
 						pmm::deallocate(phys, numPages);
+						LockedSection(&proc->addrSpaceLock, [proc, phys, &numPages]() {
+							for(size_t i = 0; i < numPages; i++)
+								proc->addrspace.allocatedPhysPages.remove_all(phys + (i * PAGE_SIZE));
+						});
+
 						return false;
 					}
 

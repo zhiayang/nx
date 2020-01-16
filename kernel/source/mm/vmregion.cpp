@@ -16,6 +16,7 @@ namespace vmm
 	void AddressSpace::destroy()
 	{
 		pmm::deallocate(this->cr3, 1);
+
 		for(auto x : this->allocatedPhysPages)
 			pmm::deallocate(x, 1);
 

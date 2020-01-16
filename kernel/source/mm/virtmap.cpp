@@ -146,24 +146,21 @@ namespace vmm
 
 
 	/*
-		note: these functions are a bit dangerous to use, because they implicitly disable interrupts!!
-		this is because we only have one temporary mapping space -- pml4[509]. if we are preempted while
+		note: we only have one temporary mapping space -- pml4[509]. if we are preempted while
 		performing an external-process mapping, we'll get our temporary mapping stomped!
 
 		imagine: we map our page, then in the middle, we get preempted. the other guy comes in and also
 		wants to map pages; they stomp over our original mapping, and once they're done they unmap it
 		completely -- when we come back, everything is gone.
 
-		to make sure this happens safely (ie. we are not accidentally trapped without interrupts
-		enabled), make an RAII wrapper for this.
-
-		note: we also don't need to use the addrspace spinlock here, since we are disabling interrupts
-		entirely.
+		so, we have a lock specifically to protect the 509 mapping -- hence its name.
 	*/
+
+	static nx::spinlock globalPml509Lock;
 	struct TempMapper
 	{
-		TempMapper(scheduler::Process* p) : proc(p) { if(this->proc) this->map(); }
-		~TempMapper()                               { if(this->proc) this->unmap(); }
+		TempMapper(scheduler::Process* p) : proc(p) { if(this->proc) { globalPml509Lock.lock(); this->map(); } }
+		~TempMapper()                               { if(this->proc) { this->unmap(); globalPml509Lock.unlock(); } }
 
 		TempMapper(const TempMapper&) = delete;
 		TempMapper(const TempMapper&&) = delete;
@@ -177,8 +174,6 @@ namespace vmm
 
 		void map()
 		{
-			interrupts::disable();
-
 			getPML4()->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
 
 			// we need to temp-map the 509th entry of the target pml4 to itself as well
@@ -203,8 +198,6 @@ namespace vmm
 
 			unmapAddress(tmp, 1, /* freePhys: */ false);
 			invalidateAll();
-
-			interrupts::enable();
 		}
 	};
 
@@ -215,10 +208,15 @@ namespace vmm
 	static addr_t alloc_phys_tracked(scheduler::Process* proc)
 	{
 		auto x = pmm::allocate(1);
+		assert(x);
 
 		// don't track the kernel!
 		if(proc->processId > 0 || scheduler::getInitPhase() > scheduler::SchedulerInitPhase::SchedulerStarted)
-			proc->addrspace.allocatedPhysPages.append(x);
+		{
+			LockedSection(&proc->addrSpaceLock, [proc, x]() {
+				proc->addrspace.allocatedPhysPages.append(x);
+			});
+		}
 
 		return x;
 	};
@@ -268,6 +266,8 @@ namespace vmm
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
 				auto pp = alloc_phys_tracked(proc);
+				assert(pp);
+
 				pml4->entries[p4idx] = pp | DEFAULT_FLAGS;
 				memset(pdpt, 0, PAGE_SIZE);
 
@@ -278,6 +278,8 @@ namespace vmm
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
 				auto pp = alloc_phys_tracked(proc);
+				assert(pp);
+
 				pdpt->entries[p3idx] = pp | DEFAULT_FLAGS;
 				memset(pdir, 0, PAGE_SIZE);
 
@@ -288,6 +290,8 @@ namespace vmm
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
 				auto pp = alloc_phys_tracked(proc);
+				assert(pp);
+
 				pdir->entries[p2idx] = pp | DEFAULT_FLAGS;
 				memset(ptab, 0, PAGE_SIZE);
 

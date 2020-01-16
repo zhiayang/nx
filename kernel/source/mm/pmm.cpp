@@ -52,7 +52,7 @@ namespace pmm
 		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
 		{
 			auto entry = &bootinfo->mmEntries[i];
-			if(entry->memoryType == MemoryType::Available)
+			if(entry->memoryType == MemoryType::Available && entry->address > 0)
 			{
 				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
 				deallocate(entry->address, entry->numPages);
@@ -69,6 +69,8 @@ namespace pmm
 
 		log("pmm", "initialised with %zu extents, %zu bytes (%.2f %cB)", extmmState.numExtents, totalMem,
 			num, units[unit]);
+
+		// extmmState.dump();
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
@@ -110,17 +112,23 @@ namespace pmm
 
 	addr_t allocate(size_t num, bool below4G)
 	{
+		// extmmState.dump();
 		auto ret = extmmState.allocate(num, below4G ? [](addr_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](addr_t, size_t) -> bool { return true; });
 
+		assert(ret);
 		return ret;
 	}
 
 	void deallocate(addr_t addr, size_t num)
 	{
+		assert(addr);
+		assert(num);
+
 		assert(vmm::isAligned(addr));
 		extmmState.deallocate(addr, num);
+		// extmmState.dump();
 	}
 
 }
