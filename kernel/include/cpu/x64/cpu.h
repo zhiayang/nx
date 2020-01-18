@@ -13,7 +13,7 @@ namespace nx
 		namespace idt
 		{
 			void init();
-			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts);
+			void setEntry(uint8_t intr, addr_t fn, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts, int IST = 0);
 			void clearEntry(uint8_t intr);
 
 			void enableGate(uint8_t intr);
@@ -38,6 +38,7 @@ namespace nx
 
 			void loadTSS(uint16_t selector);
 
+			// this is used to setup the stack to use when user-threads are interrupted
 			void setRSP0(addr_t tssBase, uint64_t rsp0);
 
 			void updateIOPB(addr_t tssBase, const nx::treemap<uint16_t, uint8_t>& ports);

@@ -34,13 +34,8 @@ namespace tss
 
 		uint64_t reserved1;
 
-		uint64_t ist1;
-		uint64_t ist2;
-		uint64_t ist3;
-		uint64_t ist4;
-		uint64_t ist5;
-		uint64_t ist6;
-		uint64_t ist7;
+		// ist1 to ist7.
+		uint64_t ists[7];
 
 		uint64_t reserved2;
 		uint16_t reserved3;
@@ -88,8 +83,18 @@ namespace tss
 		assert(scheduler::getCurrentProcess() == scheduler::getKernelProcess());
 
 		// ok, since this is the kernel process, we are free to map all tsses in the address space.
-		auto tssaddr = vmm::allocateEager(TSS_SIZE_IN_PAGES, vmm::AddressSpaceType::Kernel);
+		auto tssaddr = vmm::allocateEager(TSS_SIZE_IN_PAGES, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
 		assert(tssaddr);
+
+
+		memset((void*) tssaddr, 0, sizeof(tss_t));
+		// i'm sure it's perfectly reasonable to just allocate 28kb of memory to fill all the 7 ISTs...
+		{
+			auto tss = (tss_t*) tssaddr;
+
+			for(int i = 0; i < 7; i++)
+				tss->ists[i] = PAGE_SIZE + vmm::allocateEager(1, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE | vmm::PAGE_NX);
+		}
 
 		// make all the bits in the IOPB 1 -- which means disallowed.
 		memset((void*) (tssaddr + sizeof(tss_t)), 0xFF, 0x2000);

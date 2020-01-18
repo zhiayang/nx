@@ -79,7 +79,7 @@ namespace nx
 
 
 		log("kernel", "going to sleep...");
-		scheduler::sleep(500'000'000);
+		scheduler::sleep(1000'000'000);
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
@@ -177,9 +177,6 @@ namespace nx
 
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);
-
-		// setup our lazy page fault handler.
-		exceptions::setupPageFaultHandler();
 
 		// initialise the interrupt controller (APIC or PIC).
 		// init_arch allows us to do basic scheduling. after the scheduler

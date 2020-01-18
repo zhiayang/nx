@@ -253,7 +253,7 @@ nx_x64_exception_handler_31:
 
 .macro exception_handler_end
 	addq $8, %rsp	// remove cr2
-	addq $8, %rsp	// Don't pop %rsp, may not be defined.
+	addq $8, %rsp	// Don't pop %rsp
 
 	pop_all_regs
 

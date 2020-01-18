@@ -112,7 +112,6 @@ namespace exceptions
 		// the IRQ remapping. if not, we just mask all interrupts from the PIC.
 	}
 
-
 	static int faultCount = 0;
 	extern "C" void nx_x64_handle_exception(cpu::ExceptionState* regs)
 	{
@@ -219,6 +218,23 @@ namespace exceptions
 
 
 
+	// after we have ISTs, this is necessary.
+	void initWithISTs()
+	{
+		for(int i = 0; i < 32; i++)
+		{
+			int ist = 0;
+
+			if(i == 2 || i == 18)   ist = 7;    // NMI, MCE
+			else if(i == 8)         ist = 6;    // DF
+			else                    ist = 1;    // the rest
+
+			cpu::idt::setEntry(i, (uint64_t) exception_handlers[i], /* cs: */ 0x08,
+				/* isRing3: */ false, /* nestable: */ false, ist);
+		}
+	}
+
+
 	extern "C" void nx_x64_handle_page_fault_internal(cpu::ExceptionState* regs)
 	{
 		// check if we handle it without crashing:
@@ -233,7 +249,7 @@ namespace exceptions
 	{
 		// set entry 14.
 		cpu::idt::setEntry(14, (uint64_t) &nx_x64_pagefault_handler,
-			/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false);
+			/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false, /* ist: */ 1);
 	}
 }
 

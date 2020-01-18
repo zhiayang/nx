@@ -28,7 +28,6 @@ namespace scheduler
 		cpu->localState->tssSelector    = tsssel;
 		cpu->localState->TSSBase        = tssbase;
 
-
 		if(cpu->isBootstrap)
 		{
 			// note: %gs always uses the value in MSR_GS_BASE; swapgs just swaps it with the other MSR.
@@ -40,6 +39,12 @@ namespace scheduler
 			cpu::writeMSR(cpu::MSR_KERNEL_GS_BASE, 0);
 
 			cpu::tss::loadTSS((uint16_t) cpu->localState->tssSelector);
+
+			// now that the TSS is loaded, we can use ISTs...
+			exceptions::initWithISTs();
+
+			// finally, setup our lazy page fault handler.
+			exceptions::setupPageFaultHandler();
 		}
 		else
 		{

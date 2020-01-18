@@ -142,9 +142,9 @@ namespace vmm
 		assert(proc);
 
 		auto virt = allocateAddrSpace(num, type, proc);
-		if(virt == 0) return 0;
+		if(virt == 0) { abort("vmm::allocate(): out of addrspace!"); return 0; }
 
-		markAllocated(virt, num, flags | PAGE_WRITE, proc);
+		markAllocated(virt, num, flags, proc);
 		return virt;
 	}
 
@@ -154,12 +154,12 @@ namespace vmm
 		assert(proc);
 
 		auto virt = allocateAddrSpace(num, type, proc);
-		if(virt == 0) return 0;
+		if(virt == 0) { abort("vmm::allocate(): out of addrspace!"); return 0; }
 
 		auto phys = pmm::allocate(num);
-		if(phys == 0) return 0;
+		if(phys == 0) { abort("vmm::allocate(): no physical pages!"); return 0; }
 
-		mapAddress(virt, phys, num, flags | PAGE_WRITE | PAGE_PRESENT, proc);
+		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
 		return virt;
 	}
 

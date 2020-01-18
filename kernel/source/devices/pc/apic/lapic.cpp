@@ -7,6 +7,7 @@
 #include "devices/acpi.h"
 #include "devices/pc/apic.h"
 #include "devices/pc/pit8253.h"
+#include "devices/pc/pic8259.h"
 
 // #include "math.h"
 
@@ -171,6 +172,7 @@ namespace apic
 		scheduler::setTickIRQ(TIMER_VECTOR - IRQ_BASE_VECTOR);
 		sendEOI(TIMER_VECTOR - IRQ_BASE_VECTOR);
 
+		device::pic8259::sendEOI(0);
 		return TIMER_VECTOR - IRQ_BASE_VECTOR;
 	}
 }

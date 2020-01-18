@@ -31,6 +31,7 @@ uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uin
 int main()
 {
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_TERMINATE, &sig_handler);
+	printf("time for uwu\n");
 
 	uint64_t ctr = 0;
 
@@ -50,10 +51,12 @@ int main()
 	uint64_t last_update = 0;
 	constexpr uint64_t update_time = 250'000'000;
 
-
+	printf("time for owo\n");
 	while(true)
 	{
-		if(auto ts = syscall::nanosecond_timestamp(); last_update + update_time < ts)
+		auto ts = syscall::nanosecond_timestamp();
+
+		if(last_update + update_time < ts)
 		{
 			last_update = ts;
 

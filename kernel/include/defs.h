@@ -59,7 +59,11 @@ namespace nx
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
 
-
+	struct PageExtent
+	{
+		addr_t base;
+		size_t size;
+	};
 
 	namespace scheduler
 	{

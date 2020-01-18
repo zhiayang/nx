@@ -469,7 +469,16 @@ namespace vmm
 
 			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
 			{
-				if(ignore) continue;
+				if(ignore)
+				{
+					continue;
+				}
+				else if(ptab->entries[p1idx] & PAGE_LAZY_ALLOC)
+				{
+					ptab->entries[p1idx] &= ~PAGE_LAZY_ALLOC;
+					continue;
+				}
+
 				abort("unmap: %p was not mapped! (page not present)", virt);
 			}
 

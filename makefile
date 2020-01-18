@@ -31,7 +31,7 @@ QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
 QEMU_BIOS_DISKIMG   = -drive format=raw,file=build/disk-bios.img
 
 QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
-QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std
+QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std # -d exception,cpu_reset,int
 
 QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
@@ -46,8 +46,9 @@ else
 	ECHO_CMD    := "echo -e"
 endif
 
-QEMU       ?= qemu-system-x86_64
-VIRTUALBOX ?= VirtualBoxVM
+BOCHS       ?= bochs
+QEMU        ?= qemu-system-x86_64
+VIRTUALBOX  ?= VirtualBoxVM
 
 
 .DEFAULT_GOAL = all

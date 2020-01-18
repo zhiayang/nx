@@ -128,15 +128,15 @@ namespace nx
 			// see the paragraphs in _heap_impl.h on why this is a spinlock and not
 			// a mutex -- the same concept applies, cos we might need to call mapAddress() to
 			// expand the heap.
-			nx::spinlock addrSpaceLock;
+			nx::spinlock addrSpaceLock; // this locks both of these below.
 			extmm::State<> vmmStates[vmm::NumAddressSpaces];
+			vmm::AddressSpace addrspace;
+
 
 			vfs::IOCtx* ioctx = 0;
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;
-
-			vmm::AddressSpace addrspace;
 
 			// arch-specific stuff.
 			#ifdef __ARCH_x64__
@@ -198,8 +198,7 @@ namespace nx
 
 		struct Thread
 		{
-			pid_t threadId = 0;                 // ofs: 0x0
-			addr_t syscallSavedUserStack = 0;   // ofs: 0x8
+			pid_t threadId = 0;
 
 			addr_t userStackBottom = 0;
 
@@ -219,10 +218,16 @@ namespace nx
 			// we don't really care about the data that goes here.
 			void* userspaceTCB;
 
+
+
 			// saved information from context switches:
 			addr_t kernelStack;
 			addr_t fsBase;
 			addr_t fpuSavedStateBuffer;
+
+
+
+
 
 
 			// signal stuff.
@@ -238,10 +243,6 @@ namespace nx
 			krt::list<ipc::signal_message_t, _fixed_allocator, _aborter> pendingSignalQueue;
 			krt::list<cpu::InterruptedState, _fixed_allocator, _aborter> savedSignalStateStack;
 		};
-
-		// these need to be used from ASM, so we must make sure they never change!
-		static_assert(offsetof(Thread, threadId)                == 0x00);
-		static_assert(offsetof(Thread, syscallSavedUserStack)   == 0x08);
 
 
 		void setupKernelProcess(addr_t cr3);

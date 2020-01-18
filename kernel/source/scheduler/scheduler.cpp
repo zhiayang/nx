@@ -19,6 +19,8 @@ extern "C" uint8_t nx_user_kernel_stubs_end;
 // actually, the parameters are not important, we just need its address.
 extern "C" void nx_x64_user_signal_enter(uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c);
 
+extern "C" void idle_worker();
+
 namespace nx {
 namespace scheduler
 {
@@ -57,7 +59,9 @@ namespace scheduler
 
 		// save the current stack.
 		oldthr->kernelStack = stackPointer;
-		oldthr->state = ThreadState::Stopped;
+
+		if(oldthr->state == ThreadState::Running)
+			oldthr->state = ThreadState::Stopped;
 
 		// save the fpu state
 		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
@@ -218,7 +222,12 @@ namespace scheduler
 			initCPU(&cpu);
 	}
 
-	[[noreturn]] static void idle_worker() { while(true) asm volatile ("hlt"); }
+	// [[noreturn]] static void idle_worker()
+	// {
+	// 	while(true)
+	// 		;
+	// 		// asm volatile ("hlt");
+	// }
 
 	// this should be called once per cpu
 	void init()
@@ -261,7 +270,7 @@ namespace scheduler
 		ss->CurrentThread = ss->IdleThread;
 
 		// primed & ready.
-		interrupts::enable();
+		// interrupts::enable();
 
 		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer, ss->CurrentThread);
 	}
@@ -497,8 +506,6 @@ namespace scheduler
 
 	extern "C" uint64_t nx_x64_scheduler_tick()
 	{
-		interrupts::sendEOI(TickIRQ);
-
 		auto ss = getSchedState();
 
 		ss->tickCounter += 1;
@@ -510,9 +517,13 @@ namespace scheduler
 		bool ret = woke || ss->expediteSchedule || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 		ss->expediteSchedule = false;
 
-		// serial::debugprint(".");
+		// if(ret) serial::debugprint("*");
+		// else    serial::debugprint(".");
 
 		if(ret) ss->tickCounter = 0;
+
+
+		interrupts::sendEOI(TickIRQ);
 		return ret;
 	}
 

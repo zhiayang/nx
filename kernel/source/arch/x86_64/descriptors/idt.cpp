@@ -51,7 +51,7 @@ namespace idt
 
 
 
-	void setEntry(uint8_t num, addr_t base, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts)
+	void setEntry(uint8_t num, addr_t base, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts, int ist)
 	{
 		// The interrupt routine's base address
 		idt[num].base_low   = (base & 0xFFFF);
@@ -62,9 +62,14 @@ namespace idt
 		// is set here, along with any access flags
 
 		idt[num].selector = codeSegment;
-		if(num < IRQ_BASE_VECTOR)   idt[num].ist_offset = 0x0;		// ????? should be 1 or something.
-		else                        idt[num].ist_offset = 0x0;
 
+		// IST goes from 1 to 7.
+		if(ist > 7 || ist < 0)
+			abort("invalid ist index!! (setting IDT entry %02x)", num);
+
+		ist &= 0x7;
+
+		idt[num].ist_offset = ist;
 		idt[num].always0 = 0;
 
 		uint8_t flags = 0x80;   // bit 7 is the present flag

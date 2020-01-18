@@ -6,6 +6,11 @@
 
 .section .text
 
+.global idle_worker
+.type idle_worker, @function
+idle_worker:
+	jmp idle_worker
+
 .global nx_x64_switch_to_thread
 .type nx_x64_switch_to_thread, @function
 

@@ -73,19 +73,36 @@ namespace scheduler
 		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_NX;
 		addr_t user_flags   = (isUserProc ? (vmm::PAGE_USER) : 0);
 
-		// first, just make some space for the user stack.
+
+		/*
+			now, the reason why differentiate between user and kernel threads is because we rely on
+			the CPL3->CPL0 switch to move us to the RSP0 stack in the TSS. if we lazily-allocate the
+			"user stack" for kernel threads, then a few problems happen:
+
+			1.  to begin with, we never switch to the kernel stack after the first usage. we can't
+				exactly "fix" this, which is kinda lame.
+
+				since RSP0 is never used (we're always going CPL0 -> CPL0), after we IRET with the
+				user-rsp to the "user stack", all ticks/interrupts/whatever will leave us on that
+				same stack.
+
+
+			2.  if we lazily allocate this stack, then the very first instruction that the thread
+				runs will probably #PF (since function prologues usually push %rbp). this leads us
+				to the #PF handler, which we can make run using an IST (since that is used unconditionally)
+
+				for some reason, this causes us to be unable to send the EOI to the timer tick? idk
+				wtf the problem is, and i'm too lazy to figure it out.
+
+
+			so the solution here is to just... not have a user stack for kernel threads. we'll put
+			the "user-rsp" value in the IRET stack to be the bottom of the IRET stack itself, and
+			just run with that.
+		*/
+		if(isUserProc)
 		{
-			auto n = USER_STACK_SIZE / PAGE_SIZE;
-
-			auto phys = pmm::allocate(n);
-			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
-
-			// map it in the target address space. map it user-accessible.
-			vmm::mapAddress(virt, phys, n, target_flags | user_flags, proc);
-
-			// we don't need to map it in our address space, because we don't need to write anything there.
-			// (yet!) -- eventually we want to write a return address that will kill the thread.
-			thr->userStackBottom = virt;
+			thr->userStackBottom = vmm::allocate(USER_STACK_SIZE / PAGE_SIZE,
+				vmm::AddressSpaceType::User, target_flags | user_flags, proc);
 		}
 
 
@@ -107,13 +124,22 @@ namespace scheduler
 
 			vmm::mapAddress(scratch, phys, n, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
+			constexpr size_t EXPECTED_STACK_OFFSET = 160;
+
 			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
-			*--kstk     = (isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT); // stack segment
-			*--kstk     = thr->userStackBottom + USER_STACK_SIZE;                   // stack pointer
-			*--kstk     = 0x202;                                                    // flags
-			*--kstk     = (isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT);   // code segment
-			*--kstk     = (addr_t) fn;                                              // return addr
+			auto userRSP = isUserProc
+				? thr->userStackBottom + USER_STACK_SIZE
+				: (virt + KERNEL_STACK_SIZE) - EXPECTED_STACK_OFFSET;
+
+			auto codeSeg = isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT;
+			auto dataSeg = isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT;
+
+			*--kstk     = dataSeg;      // stack segment
+			*--kstk     = userRSP;      // stack pointer
+			*--kstk     = 0x202;        // flags
+			*--kstk     = codeSeg;      // code segment
+			*--kstk     = (addr_t) fn;  // return addr
 
 
 			// now for the registers.
@@ -134,7 +160,6 @@ namespace scheduler
 			*--kstk     = (uint64_t) a; // rdi
 
 
-			constexpr size_t EXPECTED_STACK_OFFSET = 160;
 			assert((addr_t) kstk + EXPECTED_STACK_OFFSET == (scratch + KERNEL_STACK_SIZE));
 
 			// ok. set the stack.

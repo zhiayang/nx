@@ -15,9 +15,9 @@ namespace nx
 
 		constexpr uintptr_t USER_FRAMEBUFFER            = 0x0000'00FF'0000'0000;
 
-		constexpr uintptr_t USER_KERNEL_STUBS           = 0x0000'7FFF'FFFF'0000;
+		constexpr uintptr_t USER_ADDRSPACE_END          = 0x0000'7FFF'FFFF'8000;
 
-		constexpr uintptr_t USER_ADDRSPACE_END          = 0x0000'7FFF'FFFF'F000;
+		constexpr uintptr_t USER_KERNEL_STUBS           = 0x0000'7FFF'FFFF'8000;
 
 		// ASLR some day??
 		constexpr uintptr_t EFI_RUNTIME_SERVICES_BASE   = 0xFFFF'8000'0000'0000;

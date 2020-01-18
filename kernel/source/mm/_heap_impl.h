@@ -80,7 +80,7 @@ struct heap_impl
 		auto kproc = scheduler::getKernelProcess();
 		assert(kproc);
 
-		return vmm::allocateEager(num, vmm::AddressSpaceType::KernelHeap, 0, kproc);
+		return vmm::allocateEager(num, vmm::AddressSpaceType::KernelHeap, vmm::PAGE_WRITE, kproc);
 	}
 
 
