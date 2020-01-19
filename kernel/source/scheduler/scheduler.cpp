@@ -10,7 +10,7 @@
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
 extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState, nx::scheduler::Thread* thr);
-
+extern "C" void nx_x64_clear_segments();
 
 extern "C" uint8_t nx_x64_is_in_syscall;
 extern "C" uint8_t nx_user_kernel_stubs_begin;
@@ -83,7 +83,7 @@ namespace scheduler
 		oldthr->fsBase = cpu::readFSBase();
 
 		// clear the selectors
-		asm volatile ("mov $0, %%ax; mov %%ax, %%ds; mov %%ax, %%es" ::: "%eax");
+		nx_x64_clear_segments();
 
 		// load the new fsbase
 		cpu::writeFSBase(newthr->fsBase);
@@ -94,7 +94,7 @@ namespace scheduler
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		// serial::debugprintf("[%d]\n", newthr->threadId);
+		serial::debugprintf("[%d]", newthr->threadId);
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
@@ -222,13 +222,6 @@ namespace scheduler
 			initCPU(&cpu);
 	}
 
-	// [[noreturn]] static void idle_worker()
-	// {
-	// 	while(true)
-	// 		;
-	// 		// asm volatile ("hlt");
-	// }
-
 	// this should be called once per cpu
 	void init()
 	{
@@ -288,6 +281,8 @@ namespace scheduler
 	{
 		auto t = getCurrentThread();
 		assert(t);
+
+		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
 
 		t->state = ThreadState::AboutToExit;
 		getSchedState()->DestructionQueue.append(t);
@@ -521,7 +516,6 @@ namespace scheduler
 		// else    serial::debugprint(".");
 
 		if(ret) ss->tickCounter = 0;
-
 
 		interrupts::sendEOI(TickIRQ);
 		return ret;

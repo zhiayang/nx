@@ -17,6 +17,8 @@ export STRIP            := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-stri
 export AR               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB           := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
 
+export INITRD           := $(SYSROOT)/boot/initrd.tar
+
 export UNAME            := $(shell uname)
 
 export ARCH             := x86_64
@@ -24,19 +26,18 @@ export ARCH             := x86_64
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-MEMORY              = 128
+MEMORY                  := 128
 
-QEMU_UEFI_BIOS      = -bios utils/ovmf-x64/OVMF-pure-efi.fd
-QEMU_UEFI_DISKIMG   = -drive format=raw,file=build/disk.img
-QEMU_BIOS_DISKIMG   = -drive format=raw,file=build/disk-bios.img
+QEMU_UEFI_BIOS          := -bios utils/ovmf-x64/OVMF-pure-efi.fd
+QEMU_UEFI_DISKIMG       := -drive format=raw,file=build/disk.img
+QEMU_BIOS_DISKIMG       := -drive format=raw,file=build/disk-bios.img
 
-QEMU_CPU_CONFIG     = -smp 4 -cpu qemu64,fsgsbase=true
-QEMU_FLAGS          = $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std # -d exception,cpu_reset,int
+QEMU_CPU_CONFIG         := -smp 4 -cpu qemu64,fsgsbase=true
+QEMU_FLAGS              := $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std # -d exception,cpu_reset,int
 
-QEMU_E9_PORT_STDIO  = -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
-QEMU_E9_PORT_FILE   = -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
+QEMU_E9_PORT_STDIO      := -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
+QEMU_E9_PORT_FILE       := -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
 
-INITRD              = $(SYSROOT)/boot/initrd.tar
 
 # apparently osx echo does not do -e
 UNAME_IDENT     := $(shell uname)
@@ -54,7 +55,7 @@ VIRTUALBOX  ?= VirtualBoxVM
 .DEFAULT_GOAL = all
 
 
-.PHONY: all clean build diskimage qemu debug clean-kernel exportheaders
+.PHONY: all clean build diskimage qemu debug clean-kernel export-headers make-initrd
 
 all: qemu
 
@@ -100,21 +101,29 @@ bochs: diskimage
 diskimage: build
 	@utils/tools/update-diskimage.sh
 
-exportheaders:
-	-@rm -r $(SYSROOT)/usr/include/*
+make-folders:
 	@mkdir -p $(SYSROOT)/usr/include/nx/
 	@mkdir -p $(SYSROOT)/usr/include/svr/
-	@cp -r libs/libc/include/* $(SYSROOT)/usr/include/
-	@cp -r libs/libm/include/* $(SYSROOT)/usr/include/
-	@cp -r libs/libnxsc/include/* $(SYSROOT)/usr/include/
-	@cp -r kernel/include/export/* $(SYSROOT)/usr/include/nx/
-	@cp -r services/*/include/* $(SYSROOT)/usr/include/svr/
-
-compile: exportheaders
 	@mkdir -p $(INITRD_DIR)/sys
 	@mkdir -p $(INITRD_DIR)/boot
 	@mkdir -p $(INITRD_DIR)/drivers
 	@mkdir -p $(INITRD_DIR)/services
+
+export-headers: $(shell find libs/libc/include -type f) $(shell find libs/libm/include -type f) $(shell find libs/libnxsc/include -type f) $(shell find kernel/include/export -type f) $(shell find services/*/include -type f) | make-folders
+	@find $(SYSROOT)/usr/include/ -type f | xargs rm
+	@cp -R libs/libc/include/*          $(SYSROOT)/usr/include/
+	@cp -R libs/libm/include/*          $(SYSROOT)/usr/include/
+	@cp -R libs/libnxsc/include/*       $(SYSROOT)/usr/include/
+	@cp -R kernel/include/export/*      $(SYSROOT)/usr/include/nx/
+	@cp -R services/tty-svr/include/*   $(SYSROOT)/usr/include/svr/
+
+$(SYSROOT)/boot/nxkernel64: $(shell find kernel)
+	@$(MAKE) -s -C kernel
+
+$(SYSROOT)/boot/bfxloader: $(shell find bfx)
+	@$(MAKE) -s -C bfx
+
+compile: export-headers
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
@@ -126,15 +135,13 @@ compile: exportheaders
 	@$(MAKE) -s -C drivers
 	@$(MAKE) -s -C services
 
-make_initrd: compile
-	@cp $(SYSROOT)/boot/bfxloader   $(INITRD_DIR)/boot/
-	@cp $(SYSROOT)/boot/nxkernel64  $(INITRD_DIR)/boot/
-	@cp utils/bootboot_config       $(INITRD_DIR)/sys/config
-	@cp utils/bfx_kernel_params     $(INITRD_DIR)/boot/
-	@cd $(INITRD_DIR); tar -cf $(INITRD) *
-	@gzip -cf9 $(INITRD) > $(INITRD).gz
+$(INITRD).gz: $(shell find $(INITRD_DIR)) compile
+	@utils/tools/update-initrd.sh
 
-build: make_initrd
+
+make-initrd: $(INITRD).gz
+
+build: make-initrd
 
 clean:
 	@find "efx" -name "*.o" -delete

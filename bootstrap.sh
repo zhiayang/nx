@@ -103,7 +103,7 @@ function main() {
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}sysroot: ${_BOLD}$SYSROOT${_NORMAL}"
 	echo ""
 
-	cp -r libs/libc/include/* $SYSROOT/usr/include/
+	cp -R libs/libc/include/* $SYSROOT/usr/include/
 
 	if [ $SKIP_SETUP_TOOLCHAIN == false ]; then
 		export SETUP_DIR=$PROJECT_DIR/toolchain-setup

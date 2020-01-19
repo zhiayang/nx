@@ -27,3 +27,8 @@ nx_x64_loadtss:
 nx_x64_get_gs_base:
 	movq %gs:0, %rax
 	ret
+
+
+
+
+
