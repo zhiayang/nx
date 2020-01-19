@@ -378,15 +378,18 @@ arch/i387/s_modf.o: src/s_modf.c
 
 headers:
 
-libm.a: $(OBJS)
+print-libm:
 	@echo "# libm"
+
+libm.a: $(OBJS)
 	@$(HOSTAR) rcs $@ $(OBJS)
 
-%.o: %.S
+%.o: %.S | print-libm
+	@echo "  $(notdir $<)"
 	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
-%.o: %.c
-	@echo "# $(notdir $<)"
+%.o: %.c | print-libm
+	@echo "  $(notdir $<)"
 	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 clean:

@@ -1,0 +1,225 @@
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/config.sub gcc-9.2.0/config.sub
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/config.sub	2018-12-21 16:47:13.813098800 +0800
++++ gcc-9.2.0/config.sub	2019-02-06 01:18:07.366839500 +0800
+@@ -1339,7 +1339,7 @@
+ 	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
+ 	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]*\
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+-	     | sym* | kopensolaris* | plan9* \
++	     | sym* | kopensolaris* | plan9* | orionx* \
+ 	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
+ 	     | aos* | aros* | cloudabi* | sortix* \
+ 	     | nindy* | vxsim* | vxworks* | ebmon* | hms* | mvs* \
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/fixincludes/mkfixinc.sh gcc-9.2.0/fixincludes/mkfixinc.sh
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/fixincludes/mkfixinc.sh	2018-12-21 16:42:23.739331300 +0800
++++ gcc-9.2.0/fixincludes/mkfixinc.sh	2019-02-06 01:18:07.375841300 +0800
+@@ -11,6 +11,8 @@
+
+ # Check for special fix rules for particular targets
+ case $machine in
++    x86_64-*-orionx* | \
++    aarch64-*-orionx* | \
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+     x86_64-*-mingw32* | \
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/aarch64/orionx64.h gcc-9.2.0/gcc/config/aarch64/orionx64.h
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/aarch64/orionx64.h	1970-01-01 08:00:00.000000000 +0800
++++ gcc-9.2.0/gcc/config/aarch64/orionx64.h	2019-02-06 01:18:07.385844700 +0800
+@@ -0,0 +1,24 @@
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS() \
++	do { \
++		builtin_define_std("orionx"); \
++		builtin_define_std("unix"); \
++		builtin_assert("system=orionx"); \
++		builtin_assert("system=unix"); \
++	} while(0);
++
++
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++#undef  LIB_SPEC
++#define LIB_SPEC "-lc -lm -lnxsc"
++
++#undef  PID_TYPE
++#define PID_TYPE "long int"
++
++#undef  OBJECT_FORMAT_ELF
++#define OBJECT_FORMAT_ELF
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/mingw32.h gcc-9.2.0/gcc/config/i386/mingw32.h
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/mingw32.h	2018-12-21 16:43:34.709612800 +0800
++++ gcc-9.2.0/gcc/config/i386/mingw32.h	2019-02-06 01:18:07.396846100 +0800
+@@ -195,7 +195,14 @@
+ /* For native mingw-version we need to take care that NATIVE_SYSTEM_HEADER_DIR
+    macro contains POSIX-style path.  See bug 52947.  */
+ #undef NATIVE_SYSTEM_HEADER_DIR
+-#define NATIVE_SYSTEM_HEADER_DIR "/mingw/include"
++#define NATIVE_SYSTEM_HEADER_DIR "/usr/include"
++
++#undef WCHAR_TYPE
++#define WCHAR_TYPE "unsigned short"
++
++#undef WCHAR_TYPE_SIZE
++#define WCHAR_TYPE_SIZE 16
++
+
+ /* Output STRING, a string representing a filename, to FILE.
+    We canonicalize it to be in Unix format (backslashes are replaced
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/orionx64.h gcc-9.2.0/gcc/config/i386/orionx64.h
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/orionx64.h	1970-01-01 08:00:00.000000000 +0800
++++ gcc-9.2.0/gcc/config/i386/orionx64.h	2019-02-06 01:18:07.405849600 +0800
+@@ -0,0 +1,24 @@
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS() \
++	do { \
++		builtin_define_std("orionx"); \
++		builtin_define_std("unix"); \
++		builtin_assert("system=orionx"); \
++		builtin_assert("system=unix"); \
++	} while(0);
++
++
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++#undef  LIB_SPEC
++#define LIB_SPEC "-lc -lm -lnxsc"
++
++#undef  PID_TYPE
++#define PID_TYPE "long int"
++
++#undef  OBJECT_FORMAT_ELF
++#define OBJECT_FORMAT_ELF
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/t-mingw-w64 gcc-9.2.0/gcc/config/i386/t-mingw-w64
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/t-mingw-w64	2018-12-21 16:43:34.769717300 +0800
++++ gcc-9.2.0/gcc/config/i386/t-mingw-w64	2019-02-06 01:18:07.415850400 +0800
+@@ -1,3 +1,2 @@
+-MULTILIB_OPTIONS = m64/m32
+-MULTILIB_DIRNAMES = 64 32
+-MULTILIB_OSDIRNAMES = ../lib ../lib32
++MULTILIB_OPTIONS += mno-red-zone
++MULTILIB_DIRNAMES += no-red-zone
+\ No newline at end of file
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/t-x86_64-orionx gcc-9.2.0/gcc/config/i386/t-x86_64-orionx
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config/i386/t-x86_64-orionx	1970-01-01 08:00:00.000000000 +0800
++++ gcc-9.2.0/gcc/config/i386/t-x86_64-orionx	2019-02-06 01:18:07.427853400 +0800
+@@ -0,0 +1,4 @@
++# Add libgcc multilib variant without red-zone requirement
++
++MULTILIB_OPTIONS += mno-red-zone
++MULTILIB_DIRNAMES += no-red-zone
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config.gcc gcc-9.2.0/gcc/config.gcc
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/gcc/config.gcc	2018-12-21 16:43:39.143139600 +0800
++++ gcc-9.2.0/gcc/config.gcc	2019-02-06 01:18:07.440856000 +0800
+@@ -675,6 +675,11 @@
+
+ # Common parts for widely ported systems.
+ case ${target} in
++*-*-orionx*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  ;;
+ *-*-darwin*)
+   tmake_file="t-darwin "
+   tm_file="${tm_file} darwin.h"
+@@ -1648,6 +1653,13 @@
+     tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/rdos.h i386/rdos64.h"
+     tmake_file="i386/t-i386elf t-svr4"
+     ;;
++x86_64-*-orionx*)
++    tmake_file="${tmake_file} i386/t-x86_64-orionx"
++    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/orionx64.h"
++    ;;
++aarch64-*-orionx*)
++    tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h aarch64/aarch64-elf.h aarch64/orionx64.h"
++	;;
+ i[34567]86-*-dragonfly*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h dragonfly.h dragonfly-stdint.h i386/dragonfly.h"
+ 	tmake_file="${tmake_file} i386/t-crtstuff"
+@@ -1940,7 +1952,7 @@
+ 			tmake_file="${tmake_file} i386/t-mingw-w32"
+ 			;;
+ 	esac
+-        native_system_header_dir=/mingw/include
++        native_system_header_dir=/usr/include
+ 	target_gtfiles="\$(srcdir)/config/i386/winnt.c"
+ 	extra_options="${extra_options} i386/cygming.opt i386/mingw.opt"
+ 	case ${target} in
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libgcc/config.host gcc-9.2.0/libgcc/config.host
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libgcc/config.host	2018-12-21 16:42:30.119536600 +0800
++++ gcc-9.2.0/libgcc/config.host	2019-02-06 01:18:07.456860400 +0800
+@@ -343,6 +343,15 @@
+ esac
+
+ case ${host} in
++x86_64-*-orionx*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
++aarch64-*-orionx*)
++	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
++	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
++	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
++	;;
+ aarch64*-*-elf | aarch64*-*-rtems*)
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+ 	extra_parts="$extra_parts crtfastmath.o"
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libstdc++-v3/configure gcc-9.2.0/libstdc++-v3/configure
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libstdc++-v3/configure	2018-12-21 16:43:24.541871200 +0800
++++ gcc-9.2.0/libstdc++-v3/configure	2019-02-06 18:48:09.011141700 +0800
+@@ -5621,6 +5621,7 @@
+
+
+ fi
++enable_dlopen=no
+ case `pwd` in
+   *\ * | *\	*)
+     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Libtool does not cope well with whitespace in \`pwd\`" >&5
+@@ -78614,7 +78615,8 @@
+
+     ;;
+   *)
+-    as_fn_error $? "No support for this host/target combination." "$LINENO" 5
++    # as_fn_error $? "No support for this host/target combination." "$LINENO" 5
++    $as_echo "No support for this host/target combination, but continuing anyway!"
+    ;;
+ esac
+
+diff -urN /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libstdc++-v3/libsupc++/new_opa.cc gcc-9.2.0/libstdc++-v3/libsupc++/new_opa.cc
+--- /home/zhiayang/code/orionx-gcc/gcc-9.2.0-backup/libstdc++-v3/libsupc++/new_opa.cc	2018-01-03 18:03:58.000000000 +0800
++++ gcc-9.2.0/libstdc++-v3/libsupc++/new_opa.cc	2019-08-13 16:38:35.000000000 +0800
+@@ -51,7 +51,7 @@
+ aligned_alloc (std::size_t al, std::size_t sz)
+ { return _aligned_malloc(sz, al); }
+ #elif _GLIBCXX_HAVE_POSIX_MEMALIGN
+-static inline void*
++void*
+ aligned_alloc (std::size_t al, std::size_t sz)
+ {
+   void *ptr;
+@@ -65,7 +65,7 @@
+   return nullptr;
+ }
+ #elif _GLIBCXX_HAVE_MEMALIGN
+-static inline void*
++void*
+ aligned_alloc (std::size_t al, std::size_t sz)
+ {
+ #ifdef __sun
+@@ -79,7 +79,7 @@
+ #else // !HAVE__ALIGNED_MALLOC && !HAVE_POSIX_MEMALIGN && !HAVE_MEMALIGN
+ // The C library doesn't provide any aligned allocation functions, define one.
+ // This is a modified version of code from gcc/config/i386/gmm_malloc.h
+-static inline void*
++void*
+ aligned_alloc (std::size_t al, std::size_t sz)
+ {
+   // We need extra bytes to store the original value returned by malloc.

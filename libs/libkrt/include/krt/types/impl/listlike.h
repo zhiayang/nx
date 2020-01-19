@@ -68,6 +68,13 @@ namespace krt
 			iterator(const iterator& other) : node(other.node), self(other.self) { }
 			iterator(Node* n, Container* c) : node(n), self(c) { }
 
+			iterator& operator = (const iterator& other)
+			{
+				this->node = other.node;
+				this->self = other.self;
+				return *this;
+			}
+
 			private:
 			Node* node;
 			Container* self;
@@ -107,9 +114,16 @@ namespace krt
 			const_iterator(const const_iterator& other) : node(other.node), self(other.self) { }
 			const_iterator(Node* n, Container* c) : node(n), self(c) { }
 
+			const_iterator& operator = (const const_iterator& other)
+			{
+				this->node = other.node;
+				this->self = other.self;
+				return *this;
+			}
+
 			private:
 			Node* node;
-			Container* self;
+			const Container* self;
 		};
 
 

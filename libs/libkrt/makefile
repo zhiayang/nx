@@ -21,19 +21,22 @@ CDEPS       = $(COBJ:.o=.d)
 
 all: $(SYSROOT)/usr/lib/libkrt.a
 
-$(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
+print-libkrt:
 	@echo "# libkrt"
+
+$(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libkrt.a $(SOBJ) $(COBJ) $(CXXOBJ)
 
-%.c.o: %.c
-	@echo "# $(notdir $<)"
+%.c.o: %.c | print-libkrt
+	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.cpp.o: %.cpp
-	@echo "# $(notdir $<)"
+%.cpp.o: %.cpp | print-libkrt
+	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.s.o: %.s
+%.s.o: %.s | print-libkrt
+	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 
 

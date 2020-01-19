@@ -27,7 +27,7 @@ CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS         = $(CXXOBJ:.o=.d)
 CDEPS           = $(COBJ:.o=.d)
 
-DEBUG_FLAG      := -O3
+OPTIMISATIONS   := -O3
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1
@@ -50,21 +50,23 @@ UBSAN_FLAG      = -fsanitize=undefined
 all: $(SYSROOT)/boot/$(KERNEL)
 	@mkdir -p $(SYSROOT)/usr/include/nx
 
-$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINFLATE)
+print-kernel:
 	@echo "# nxkernel"
+
+$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINFLATE)
 	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lm -ltinflate
 
-%.s.o: %.s makefile
-	@echo "# $(notdir $<)"
+%.s.o: %.s makefile | print-kernel
+	@echo "  $(notdir $<)"
 	@$(AS) -Isource/arch/$(ARCH)/include $< -o $@
 
-%.cpp.o: %.cpp makefile
-	@echo "# $(notdir $<)"
-	@$(CXX) $(CXXFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
+%.cpp.o: %.cpp makefile | print-kernel
+	@echo "  $(notdir $<)"
+	@$(CXX) $(CXXFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(OPTIMISATIONS) -MMD -MP -o $@ $<
 
-%.c.o: %.c makefile
-	@echo "# $(notdir $<)"
-	@$(CC) $(CFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
+%.c.o: %.c makefile | print-kernel
+	@echo "  $(notdir $<)"
+	@$(CC) $(CFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(OPTIMISATIONS) -MMD -MP -o $@ $<
 
 
 

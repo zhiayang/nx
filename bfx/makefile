@@ -33,20 +33,22 @@ CDEPS       = $(COBJ:.o=.d)
 
 all: $(LOADER)
 
+print-bfxloader:
+	@echo "# bfxloader"
+
 $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
-	@echo "# $(notdir $@)"
 	@$(LD) -nostdlib -nostartfiles -L $(SYSROOT)/usr/lib -o $@ -T link.ld $(COBJ) $(CXXOBJ) $(SOBJ) -lkrt -lm
 
-%.c.o: %.c
-	@echo "# $(notdir $<)"
+%.c.o: %.c | print-bfxloader
+	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-%.cpp.o: %.cpp
-	@echo "# $(notdir $<)"
+%.cpp.o: %.cpp | print-bfxloader
+	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.s.o: %.s
-	@echo "# $(notdir $<)"
+%.s.o: %.s | print-bfxloader
+	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 
 $(LIBM):

@@ -56,11 +56,11 @@ namespace nx
 		uint64_t readMSR(uint32_t reg);
 		void writeMSR(uint32_t reg, uint64_t value);
 
-		uint32_t readCR0();
-		void writeCR0(uint32_t val);
+		uint64_t readCR0();
+		void writeCR0(uint64_t val);
 
-		uint32_t readCR4();
-		void writeCR4(uint32_t val);
+		uint64_t readCR4();
+		void writeCR4(uint64_t val);
 
 		uint64_t readFSBase();
 		void writeFSBase(uint64_t base);

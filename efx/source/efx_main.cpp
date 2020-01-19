@@ -81,6 +81,7 @@ void efx::init()
 	if(auto path = options::get_option("initrd"); !path.empty())
 	{
 		// load an initrd!
+		efi::println("loading initrd...");
 
 		size_t len = 0;
 		auto buf = fs::readFile(path, &len);

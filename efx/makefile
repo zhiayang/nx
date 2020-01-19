@@ -45,22 +45,24 @@ CDEPS       = $(COBJ:.o=.d)
 
 all: $(LOADER)
 
+print-efxloader:
+	@echo "# efxloader"
+
 $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
-	@echo "# $(notdir $@)"
 	@$(LD) $(LDFLAGS) -T $(EFI_DIR)/platform/elf_$(ARCH)_efi.lds -o efxloader.tmp $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lm
 	@$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 efxloader.tmp $@
 	@rm efxloader.tmp
 
-%.c.o: %.c
-	@echo "# $(notdir $<)"
+%.c.o: %.c | print-efxloader
+	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-%.cpp.o: %.cpp
-	@echo "# $(notdir $<)"
+%.cpp.o: %.cpp | print-efxloader
+	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.s.o: %.s
-	@echo "# $(notdir $<)"
+%.s.o: %.s | print-efxloader
+	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 
 $(LIBM):

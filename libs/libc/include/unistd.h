@@ -34,18 +34,26 @@ int close(int fd);
 ssize_t write(int fildes, const void* buf, size_t nbyte);
 ssize_t read(int fd, void* buf, size_t count);
 
-pid_t getppid();
-pid_t getpid();
+pid_t getppid(void);
+pid_t getpid(void);
 
 off_t lseek(int fildes, off_t offset, int whence);
 off_t tell(int filedes);
 
 int usleep(useconds_t usec);
 
-pid_t fork();
+pid_t fork(void);
 int execv(const char*, char* const[]);
 int execve(const char*, char* const[], char* const[]);
 int execvp(const char*, char* const[]);
+
+
+char *getcwd(char* buf, size_t size);
+char *getwd(char* buf);
+char *get_current_dir_name(void);
+
+int chdir(const char* path);
+int fchdir(int fd);
 
 #ifdef __cplusplus
 }

@@ -20,19 +20,22 @@ CDEPS       = $(COBJ:.o=.d)
 
 all: $(SYSROOT)/usr/lib/libnxsc.a
 
-$(SYSROOT)/usr/lib/libnxsc.a: $(SOBJ) $(COBJ) $(CXXOBJ)
+print-libnxsc:
 	@echo "# libnxsc"
+
+$(SYSROOT)/usr/lib/libnxsc.a: $(SOBJ) $(COBJ) $(CXXOBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libnxsc.a $(SOBJ) $(COBJ) $(CXXOBJ)
 
-%.c.o: %.c
-	@echo "# $(notdir $<)"
+%.c.o: %.c | print-libnxsc
+	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.cpp.o: %.cpp
-	@echo "# $(notdir $<)"
+%.cpp.o: %.cpp | print-libnxsc
+	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.s.o: %.s
+%.s.o: %.s | print-libnxsc
+	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 
 

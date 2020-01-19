@@ -13,10 +13,12 @@ export SYSROOT=$PROJECT_DIR/build/sysroot
 # especially not this
 export TARGET=x86_64-orionx
 
-export BINUTILS_VERSION="2.31.1"
-export GCC_VERSION="8.2.0"
+export BINUTILS_VERSION="2.33.1"
+export GCC_VERSION="9.2.0"
 
-export NUM_MAKE_JOBS=16
+export NUM_MAKE_JOBS=4
+
+GNU_MIRROR_SITE="https://ftp.cse.yzu.edu.tw/gnu"
 
 SKIP_SETUP_LIBC=false
 SKIP_SETUP_SYSROOT=false
@@ -204,7 +206,7 @@ function build_binutils() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading binutils${_NORMAL}"
 
 	if [ ! -f "binutils-$BINUTILS_VERSION.tar.gz" ]; then
-		wget -q --show-progress "http://ftpmirror.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.gz"
+		wget -q --show-progress "$GNU_MIRROR_SITE/binutils/binutils-$BINUTILS_VERSION.tar.gz"
 	fi
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting binutils${_NORMAL}"
@@ -251,7 +253,7 @@ function build_gcc() {
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading gcc${_NORMAL}"
 
 	if [ ! -f "gcc-$GCC_VERSION.tar.gz" ]; then
-		wget -q --show-progress "http://ftpmirror.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz"
+		wget -q --show-progress "$GNU_MIRROR_SITE/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz"
 	fi
 
 	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}extracting gcc${_NORMAL}"

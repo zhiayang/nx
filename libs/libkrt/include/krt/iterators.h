@@ -38,6 +38,8 @@ namespace krt
 		ptr_iterator(const ptr_iterator& other) : pointer(other.pointer) { }
 		ptr_iterator(T* ptr) : pointer(ptr) { }
 
+		ptr_iterator& operator = (const ptr_iterator& other) { this->pointer = other.pointer; return *this; }
+
 		private:
 		T* pointer;
 	};
@@ -66,6 +68,8 @@ namespace krt
 
 		const_ptr_iterator(const const_ptr_iterator& other) : pointer(other.pointer) { }
 		const_ptr_iterator(T* ptr) : pointer(ptr) { }
+
+		const_ptr_iterator& operator = (const const_ptr_iterator& other) { this->pointer = other.pointer; return *this; }
 
 		private:
 		T* pointer;

@@ -1,0 +1,58 @@
+diff -ur binutils-2.33.1/bfd/config.bfd binutils-orionx/bfd/config.bfd
+--- binutils-2.33.1/bfd/config.bfd	2018-07-09 15:44:53.000000000 +0800
++++ binutils-orionx/bfd/config.bfd	2018-12-21 16:16:49.029788600 +0800
+@@ -220,6 +220,16 @@
+ case "${targ}" in
+ # START OF targmatch.h
+ #ifdef BFD64
++  x86_64-*-orionx*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs=i386_elf32_vec
++    want64=true
++    ;;
++  aarch64-*-orionx*)
++    targ_defvec=aarch64_elf64_le_vec
++    targ_selvecs="aarch64_elf64_be_vec aarch64_elf32_le_vec aarch64_elf32_be_vec"
++    want64=true
++    ;;
+   aarch64-*-darwin*)
+     targ_defvec=aarch64_mach_o_vec
+     targ_selvecs="arm_mach_o_vec mach_o_le_vec mach_o_be_vec mach_o_fat_vec"
+diff -ur binutils-2.33.1/config.sub binutils-orionx/config.sub
+--- binutils-2.33.1/config.sub	2018-07-06 15:13:31.000000000 +0800
++++ binutils-orionx/config.sub	2018-12-21 16:16:37.039044100 +0800
+@@ -1368,7 +1368,7 @@
+ 	     | powermax* | dnix* | nx6 | nx7 | sei* | dragonfly* \
+ 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+-	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi*)
++	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* | orionx*)
+ 	# Remember, each alternative MUST END IN *, to match a version number.
+ 		;;
+ 	qnx*)
+diff -ur binutils-2.33.1/gas/configure.tgt binutils-orionx/gas/configure.tgt
+--- binutils-2.33.1/gas/configure.tgt	2018-06-25 02:38:57.000000000 +0800
++++ binutils-orionx/gas/configure.tgt	2018-12-21 16:16:57.271158400 +0800
+@@ -121,6 +121,8 @@
+ generic_target=${cpu_type}-$vendor-$os
+ # Note: This table is alpha-sorted, please try to keep it that way.
+ case ${generic_target} in
++  i386-*-orionx*)           fmt=elf ;;
++  aarch64*-*-orionx*)       fmt=elf ;;
+   aarch64*-*-elf*)			fmt=elf;;
+   aarch64*-*-fuchsia*)			fmt=elf;;
+   aarch64*-*-linux*)			fmt=elf em=linux
+Only in binutils-orionx: .git
+diff -ur binutils-2.33.1/ld/configure.tgt binutils-orionx/ld/configure.tgt
+--- binutils-2.33.1/ld/configure.tgt	2018-07-09 15:44:53.000000000 +0800
++++ binutils-orionx/ld/configure.tgt	2018-12-21 16:30:27.528636400 +0800
+@@ -45,6 +45,9 @@
+ # architecture variants should be kept together even if their names
+ # break the alpha sorting.
+ case "${targ}" in
++x86_64-*-orionx*)   targ_emul=elf_x86_64 ;;
++aarch64-*-orionx*)  targ_emul=aarch64elf
++            targ_extra_emuls="aarch64elfb" ;;
+ aarch64_be-*-elf)	targ_emul=aarch64elfb
+ 			targ_extra_emuls="aarch64elf aarch64elf32 aarch64elf32b armelfb armelf" ;;
+ aarch64-*-elf | aarch64-*-rtems*)

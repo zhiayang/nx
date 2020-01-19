@@ -10,12 +10,14 @@ COBJ		= $(CSRC:.c=.c.o)
 
 all: $(SYSROOT)/usr/lib/libtinflate.a
 
-$(SYSROOT)/usr/lib/libtinflate.a: $(COBJ)
+print-tinflate:
 	@echo "# tinflate"
+
+$(SYSROOT)/usr/lib/libtinflate.a: $(COBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libtinflate.a $(COBJ)
 
-%.c.o: %.c
-	@echo "# $(notdir $<)"
+%.c.o: %.c | print-tinflate
+	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -o $@ $<
 
 
