@@ -61,6 +61,9 @@ namespace nx
 
 	struct PageExtent
 	{
+		PageExtent() : base(0), size(0) { }
+		PageExtent(addr_t base, size_t size) : base(base), size(size) { }
+
 		addr_t base;
 		size_t size;
 	};

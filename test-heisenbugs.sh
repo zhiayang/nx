@@ -10,8 +10,11 @@ trap "rm tmp_output.log" 1 2 3 15
 
 FAIL_COUNT=0
 for i in $(seq 1 $1); do
-	# first, launch the thing in the background:
-	make -j4 | tee tmp_output.log &
+	# first, build the thing, so it doesn't count against the time limit:
+	make -j4 diskimage
+
+	# then launch the thing in the background:
+	make -j4 run-only | tee tmp_output.log &
 
 	# then, wait for N seconds:
 	sleep $2
@@ -39,6 +42,8 @@ for i in $(seq 1 $1); do
 			printf "\033[1m\033[32mtest passed\033[0m ($i/$1)\n"
 		fi
 	fi
+
+	rm tmp_output.log
 done
 
 echo "failed $FAIL_COUNT out of $1"

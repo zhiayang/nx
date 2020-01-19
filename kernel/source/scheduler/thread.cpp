@@ -99,10 +99,17 @@ namespace scheduler
 			the "user-rsp" value in the IRET stack to be the bottom of the IRET stack itself, and
 			just run with that.
 		*/
+
+		addr_t u_stackTop = 0;
+		addr_t k_stackTop = 0;
 		if(isUserProc)
 		{
-			thr->userStackBottom = vmm::allocate(USER_STACK_SIZE / PAGE_SIZE,
-				vmm::AddressSpaceType::User, target_flags | user_flags, proc);
+			auto size = USER_STACK_SIZE / PAGE_SIZE;
+			auto addr = vmm::allocate(size, vmm::AddressSpaceType::User, target_flags | user_flags, proc);
+
+			thr->cleanupPages.append(PageExtent(addr, size));
+
+			u_stackTop = addr + USER_STACK_SIZE;
 		}
 
 
@@ -112,9 +119,6 @@ namespace scheduler
 
 			auto phys = pmm::allocate(n);
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
-
-			// save it so we can kill it later.
-			thr->kernelStackBottom = virt;
 
 			// map it in the target address space. don't map it user-accessible.
 			vmm::mapAddress(virt, phys, n, target_flags, proc);
@@ -128,8 +132,10 @@ namespace scheduler
 
 			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
 
+			k_stackTop = virt + KERNEL_STACK_SIZE;
+
 			auto userRSP = isUserProc
-				? thr->userStackBottom + USER_STACK_SIZE
+				? (u_stackTop)
 				: (virt + KERNEL_STACK_SIZE) - EXPECTED_STACK_OFFSET;
 
 			auto codeSeg = isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT;
@@ -169,6 +175,8 @@ namespace scheduler
 			// clear the temp mapping
 			vmm::unmapAddress(scratch, n, /* freePhys: */ false);
 			vmm::deallocateAddrSpace(scratch, n);
+
+			thr->cleanupPages.append(PageExtent(virt, n));
 		}
 
 
@@ -190,6 +198,8 @@ namespace scheduler
 
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt;
+
+			thr->cleanupPages.append(PageExtent(virt, 1));
 		}
 
 
@@ -261,11 +271,22 @@ namespace scheduler
 			// ok we should be done.
 			vmm::unmapAddress(scratch, numPages, /* freePhys: */ false);
 
+			thr->cleanupPages.append(PageExtent(virt, numPages));
 		}
 
-		log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p)",
-			thr->threadId, thr->parent->processId, thr->userStackBottom, thr->userStackBottom + USER_STACK_SIZE,
-			thr->kernelStackBottom, thr->kernelStack);
+
+		if(isUserProc)
+		{
+			log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p)",
+				thr->threadId, thr->parent->processId, u_stackTop, u_stackTop - USER_STACK_SIZE,
+				k_stackTop, k_stackTop - KERNEL_STACK_SIZE);
+		}
+		else
+		{
+			log("sched", "created kernel tid %lu (stk: %p - %p)",
+				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE);
+		}
+
 		return thr;
 	}
 
@@ -277,14 +298,11 @@ namespace scheduler
 		auto proc = thr->parent;
 		assert(proc);
 
-		// kill the user stack.
-		vmm::deallocate(thr->userStackBottom, USER_STACK_SIZE / PAGE_SIZE, proc);
-
-		// kill the kernel stack.
-		vmm::deallocate(thr->kernelStackBottom, KERNEL_STACK_SIZE / PAGE_SIZE, proc);
-
-		// kill the sse state
-		vmm::deallocate(thr->fpuSavedStateBuffer, 1, proc);
+		for(const auto [ addr, size ] : thr->cleanupPages)
+		{
+			log("sched", "cleaning up %p - %p", addr, addr + size*PAGE_SIZE);
+			vmm::deallocate(addr, size, proc);
+		}
 
 		// save this for later.
 		auto id = thr->threadId;

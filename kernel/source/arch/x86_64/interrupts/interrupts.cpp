@@ -138,7 +138,6 @@ namespace interrupts
 
 
 	// todo: this needs to be a per-cpu value!!
-	// note: we will prime this with an interrupts::disable() during kernel startup.
 	static int stiLevel = 0;
 	void enable()
 	{

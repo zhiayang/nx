@@ -58,6 +58,10 @@ VIRTUALBOX  ?= VirtualBoxVM
 
 all: qemu
 
+run-only:
+	# starting qemu
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
+
 debug: diskimage
 	# starting qemu
 	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio

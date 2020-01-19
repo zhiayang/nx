@@ -109,8 +109,8 @@ namespace extmm
 			this->bootstrapWatermark = this->bootstrapStart;
 		}
 
-
-		addr_t allocate(size_t num, bool (*satisfies)(addr_t, size_t))
+		template <typename Predicate>
+		addr_t allocate(size_t num, const Predicate& satisfies)
 		{
 			if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", this->owner);
 
@@ -121,7 +121,7 @@ namespace extmm
 
 			while(ext)
 			{
-				if(ext->size >= num && satisfies(ext->addr, ext->size))
+				if(ext->size >= num && satisfies(ext->addr, num))
 				{
 					// return this.
 					// take from the bottom.

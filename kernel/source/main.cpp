@@ -103,8 +103,6 @@ namespace nx
 
 	void init(BootInfo* bootinfo)
 	{
-		interrupts::disable();
-
 		// open all hatches, extend all flaps and drag fins
 
 		// init the fallback console

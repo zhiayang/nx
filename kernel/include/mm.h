@@ -46,6 +46,9 @@ namespace nx
 
 		void freeEarlyMemory(BootInfo* bootinfo, MemoryType type);
 		void freeAllEarlyMemory(BootInfo* bootinfo);
+
+		// this returns the single, 0-filled page we use for CoW and lazy allocation purposes.
+		addr_t getZeroPage();
 	}
 
 	namespace vmm
@@ -55,6 +58,7 @@ namespace nx
 			uint64_t entries[512];
 		};
 
+		// virtmap.cpp stuff
 		void setupAddrSpace(scheduler::Process* proc);
 		void bootstrap(addr_t physBase, addr_t virt, size_t maxPages);
 
@@ -66,18 +70,24 @@ namespace nx
 		void invalidate(addr_t addr);
 		void invalidateAll();
 
+		// this one overwrites whatever physical page was there.
+		void mapAddressOverwrite(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+
+		// this one will abort if you try to do anything funny.
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
-		// sets bits in the page table to tell our page fault handler that there is actually a physical page,
-		// just that it was lazily allocated.
-		void markAllocated(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
-		uint64_t getPageFlags(addr_t virt, scheduler::Process* proc = 0);
+		void mapCOW(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void mapLazy(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
+
+		uint64_t getPageFlags(addr_t virt, scheduler::Process* proc = 0);
 		void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
 		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
 		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
 
-		// functions to allocate/free address space in higher half (kernel) and lower half (user)
+
+
+		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
 		enum class AddressSpaceType { Kernel, KernelHeap, User };
 
 		addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
@@ -93,8 +103,6 @@ namespace nx
 
 
 		bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip);
-
-
 
 
 		constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
@@ -121,13 +129,11 @@ namespace nx
 		};
 
 
-		constexpr uint64_t PAGE_PRESENT     = 0x1;
-		constexpr uint64_t PAGE_WRITE       = 0x2;
-		constexpr uint64_t PAGE_USER        = 0x4;
-		constexpr uint64_t PAGE_LAZY_ALLOC  = 0x200;
-		constexpr uint64_t PAGE_NX          = 0x8000'0000'0000'0000;
-
-		// constexpr uint64_t PAGE_ALIGN       = ~0xFFF;
+		constexpr uint64_t PAGE_PRESENT         = 0x1;
+		constexpr uint64_t PAGE_WRITE           = 0x2;
+		constexpr uint64_t PAGE_USER            = 0x4;
+		constexpr uint64_t PAGE_COPY_ON_WRITE   = 0x200;
+		constexpr uint64_t PAGE_NX              = 0x8000'0000'0000'0000;
 
 		constexpr addr_t PAGE_ALIGN(addr_t addr)
 		{

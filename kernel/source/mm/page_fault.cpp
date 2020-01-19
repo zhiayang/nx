@@ -10,35 +10,77 @@ namespace vmm
 	bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip)
 	{
 		// The error code gives us details of what happened.
-		uint8_t notPresent      = !(errorCode & 0x1); // Page not present
-		uint8_t reservedBits    = errorCode & 0x8;    // Overwritten CPU-reserved bits of page entry?
+		uint8_t notPresent  = !(errorCode & 0x1);   // page was not present
+		uint8_t write       = errorCode & 0x2;      // fault happened when writing
+		uint8_t reserved    = errorCode & 0x8;      // something bad happened
 
-		// if you (we?) overwrote reserved bits, or the page was already present
-		// to begin with, then this isn't a lazy-alloc situation.
-
-		if(reservedBits || !notPresent)
+		if(reserved)
 			return false;
 
 
-		log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p)", scheduler::getCurrentProcess()->processId,
-			scheduler::getCurrentThread()->threadId, cr2, rip);
-
-		cr2 = vmm::PAGE_ALIGN(cr2);
+		auto aligned_cr2 = vmm::PAGE_ALIGN(cr2);
 
 		// this will get the flags for the current process's address space, so we
 		// don't need to pass it explicitly.
-		auto flags = vmm::getPageFlags(cr2);
+		auto flags = vmm::getPageFlags(aligned_cr2);
 
-		// if you dun goofed, then we can't help you
-		if(!(flags & PAGE_PRESENT) && (flags & PAGE_LAZY_ALLOC))
+
+		// make sure this is something that's a legitimate situation.
+		if(flags & PAGE_COPY_ON_WRITE)
 		{
-			// ok, we can do stuff here.
-			// set the flags. this uses the current proc also.
+			auto pid = scheduler::getCurrentProcess()->processId;
+			auto tid = scheduler::getCurrentThread()->threadId;
+
+			// if the page wasn't present, then... wtf??
+			if(notPresent || !(flags & PAGE_PRESENT))
+			{
+				error("pf", "access of non-present CoW page? #PF (pid=%lu, tid=%lu, cr2=%p, ip=%p)",
+					pid, tid, cr2, rip);
+				return false;
+			}
+
+			// if we weren't writing, then... wtf??
+			if(!write)
+			{
+				error("pf", "read operation from CoW page caused #PF (pid=%lu, tid=%lu, cr2=%p, ip=%p)",
+					pid, tid, cr2, rip);
+				return false;
+			}
+
+			// ok, we should be sane here. we enable interrupts here, for a number of reasons:
+			// 1. this handler might need to do complex work, so we don't want to hold up the
+			//    entire CPU while that work is happening.
+			// 2. we need to hold some locks (pmm, vmm), so to prevent deadlocking we need
+			//    to be preemptible.
+			asm volatile ("sti");
+
+			// get the old physical address:
+			auto old_phys = vmm::getPhysAddr(aligned_cr2);
+
+			// then, get a new one:
 			auto phys = pmm::allocate(1);
+			vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 
-			log("pf", "allocated phys %p to virt %p", phys, cr2);
+			// if it was not the zero page, then memcopy,
+			// else we're just wasting cycles copying zeroes so don't.
+			if(old_phys != pmm::getZeroPage())
+			{
+				// ok, the dumb part is here we need to map a scratch page...
+				auto scratch = vmm::allocateAddrSpace(1, AddressSpaceType::User);
+				vmm::mapAddress(scratch, old_phys, 1, PAGE_NX | PAGE_USER | PAGE_PRESENT);
 
-			vmm::mapAddress(cr2, phys, 1, (flags & ~PAGE_LAZY_ALLOC));
+				// right, now we can copy:
+				memmove((void*) aligned_cr2, (void*) scratch, PAGE_SIZE);
+
+				// ok, unmap (of course, don't free the old physical page!)
+				vmm::unmapAddress(scratch, 1, /* freePhys: */ false);
+
+				// and free.
+				vmm::deallocateAddrSpace(scratch, 1);
+			}
+
+
+			log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
 			return true;
 		}
 		else

@@ -226,8 +226,7 @@ namespace vmm
 		return x;
 	};
 
-
-	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	static void map_internal(addr_t virt, addr_t phys, uint64_t flags, scheduler::Process* proc, bool overwrite)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -246,146 +245,133 @@ namespace vmm
 		constexpr addr_t DEFAULT_FLAGS_LOW  = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
 		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
 
-		for(size_t x = 0; x < num; x++)
+		// right.
+		auto p4idx = indexPML4(virt);
+		auto p3idx = indexPDPT(virt);
+		auto p2idx = indexPageDir(virt);
+		auto p1idx = indexPageTable(virt);
+
+		if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
+
+		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
+		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
+		auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
+		auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
+
+		addr_t DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
+		if(p4idx > 255 && (flags & PAGE_USER))
+			abort("cannot map high address space as user-readable!");
+
+		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 		{
-			addr_t v = virt + (x * PAGE_SIZE);
-			addr_t p = phys + (x * PAGE_SIZE);
+			auto pp = alloc_phys_tracked(proc);
+			assert(pp);
 
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
+			pml4->entries[p4idx] = pp | DEFAULT_FLAGS;
+			memset(pdpt, 0, PAGE_SIZE);
 
-			if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
+			if(pml4->entries[p4idx] & PAGE_NX)
+				abort("somehow page %p has a NX pdpt! (p=%p)", virt, pp);
+		}
 
-			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
-			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
-			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
-			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
+		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
+		{
+			auto pp = alloc_phys_tracked(proc);
+			assert(pp);
 
-			addr_t DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
-			if(p4idx > 255 && (flags & PAGE_USER))
-				abort("cannot map high address space as user-readable!");
+			pdpt->entries[p3idx] = pp | DEFAULT_FLAGS;
+			memset(pdir, 0, PAGE_SIZE);
 
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			{
-				auto pp = alloc_phys_tracked(proc);
-				assert(pp);
+			if(pdpt->entries[p3idx] & PAGE_NX)
+				abort("somehow page %p has a NX pdir! (p=%p)", virt, pp);
+		}
 
-				pml4->entries[p4idx] = pp | DEFAULT_FLAGS;
-				memset(pdpt, 0, PAGE_SIZE);
+		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
+		{
+			auto pp = alloc_phys_tracked(proc);
+			assert(pp);
 
-				if(pml4->entries[p4idx] & PAGE_NX)
-					abort("somehow page %p has a NX pdpt! (p=%p)", v, pp);
-			}
+			pdir->entries[p2idx] = pp | DEFAULT_FLAGS;
+			memset(ptab, 0, PAGE_SIZE);
 
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			{
-				auto pp = alloc_phys_tracked(proc);
-				assert(pp);
+			if(pdir->entries[p2idx] & PAGE_NX)
+				abort("somehow page %p has a NX ptab! (p=%p)", virt, pp);
+		}
 
-				pdpt->entries[p3idx] = pp | DEFAULT_FLAGS;
-				memset(pdir, 0, PAGE_SIZE);
+		if(!overwrite && (ptab->entries[p1idx] & PAGE_PRESENT))
+			abort("virtual addr %p was already mapped (to phys %p)!", virt, PAGE_ALIGN(ptab->entries[p1idx]));
 
-				if(pdpt->entries[p3idx] & PAGE_NX)
-					abort("somehow page %p has a NX pdir! (p=%p)", v, pp);
-			}
-
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			{
-				auto pp = alloc_phys_tracked(proc);
-				assert(pp);
-
-				pdir->entries[p2idx] = pp | DEFAULT_FLAGS;
-				memset(ptab, 0, PAGE_SIZE);
-
-				if(pdir->entries[p2idx] & PAGE_NX)
-					abort("somehow page %p has a NX ptab! (p=%p)", v, pp);
-			}
-
-			if(ptab->entries[p1idx] & PAGE_PRESENT)
-				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
+		// since this is the internal one, we don't add extra flags.
+		ptab->entries[p1idx] = phys | flags;
+		invalidate(virt);
+	}
 
 
-			ptab->entries[p1idx] = p | flags | PAGE_PRESENT;
-			invalidate((addr_t) v);
+
+	void mapAddressOverwrite(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	{
+		for(size_t i = 0; i < num; i++)
+		{
+			auto v = virt + (i * PAGE_SIZE);
+			auto p = phys + (i * PAGE_SIZE);
+
+			map_internal(v, p, flags | PAGE_PRESENT, proc, /* overwrite: */ true);
 		}
 	}
 
-	void markAllocated(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	{
+		for(size_t i = 0; i < num; i++)
+		{
+			auto v = virt + (i * PAGE_SIZE);
+			auto p = phys + (i * PAGE_SIZE);
+
+			map_internal(v, p, flags | PAGE_PRESENT, proc, /* overwrite: */ false);
+		}
+	}
+
+	void mapCOW(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
 		assert(isAligned(virt));
 
-		bool isOtherProc = (proc != scheduler::getCurrentProcess());
-		TempMapper tm(isOtherProc ? proc : 0);
-
-		// make sure don't put present in the flags, that defeats the whole purpose uwu
 		flags &= ~PAGE_PRESENT;
+		log("vmm", "region %p - %p marked copy-on-write", virt, virt + (num * PAGE_SIZE));
 
+		for(size_t i = 0; i < num; i++)
+		{
+			auto v = virt + (i * PAGE_SIZE);
+			auto p = phys + (i * PAGE_SIZE);
 
-		// note: the flags in the higher-level structures will override those at the lower level
-		// ie. for a given page to be user-accessible, the pdpt, pdir, ptab, and the page itself must be marked PAGE_USER.
-		// same applies for PAGE_WRITE (when CR0.WP=1)
-		// also: for 0 <= p4idx <= 255, we set the user-bit on intermediate entries.
-		// for 256 <= p4idx <= 511, we don't set it.
-		constexpr addr_t DEFAULT_FLAGS_LOW = PAGE_USER | PAGE_WRITE | PAGE_PRESENT;
-		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
+			map_internal(v, p, flags | PAGE_PRESENT | PAGE_COPY_ON_WRITE, proc, /* overwrite: */ false);
+		}
+	}
+
+	void mapLazy(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		assert(isAligned(virt));
+
+		// make sure we don't have write in the provided flags.
+		assert((flags & PAGE_WRITE) == 0);
+		flags &= ~PAGE_WRITE;
 
 		log("vmm", "region %p - %p marked lazy", virt, virt + (num * PAGE_SIZE));
 
-		for(size_t x = 0; x < num; x++)
+		for(size_t i = 0; i < num; i++)
 		{
-			addr_t v = virt + (x * PAGE_SIZE);
+			auto v = virt + (i * PAGE_SIZE);
 
-			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
-
-			if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
-
-			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
-			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
-			auto pdir = (isOtherProc ? getPDir<509>(p4idx, p3idx) : getPDir(p4idx, p3idx));
-			auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
-
-			auto DEFAULT_FLAGS = (p4idx > 255 ? DEFAULT_FLAGS_HIGH : DEFAULT_FLAGS_LOW);
-
-			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			{
-				pml4->entries[p4idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
-				memset(pdpt, 0, PAGE_SIZE);
-			}
-
-			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			{
-				pdpt->entries[p3idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
-				memset(pdir, 0, PAGE_SIZE);
-			}
-
-			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			{
-				pdir->entries[p2idx] = alloc_phys_tracked(proc) | DEFAULT_FLAGS;
-				memset(ptab, 0, PAGE_SIZE);
-			}
-
-
-			if(ptab->entries[p1idx] & PAGE_PRESENT)
-				abort("virtual addr %p was already mapped (to phys %p)!", v, ptab->entries[p1idx]);
-
-			// make sure the page wasn't already filled in!
-			if(auto phys = vmm::PAGE_ALIGN(ptab->entries[p1idx]); phys != 0)
-				abort("virtual addr %p was already mapped (to phys %p!) (lazy alloc!)", v, phys);
-
-			ptab->entries[p1idx] = (flags | PAGE_LAZY_ALLOC);
-			invalidate((addr_t) v);
+			// everybody gets the zero page. note: we mark the page present here, because reading
+			// from a lazy page shouldn't actually do anything -- just return zeroes!
+			map_internal(v, pmm::getZeroPage(), flags | PAGE_PRESENT | PAGE_COPY_ON_WRITE, proc, /* overwrite: */ false);
 		}
 	}
+
 
 	uint64_t getPageFlags(addr_t virt, scheduler::Process* proc)
 	{
@@ -473,9 +459,9 @@ namespace vmm
 				{
 					continue;
 				}
-				else if(ptab->entries[p1idx] & PAGE_LAZY_ALLOC)
+				else if(ptab->entries[p1idx] & PAGE_COPY_ON_WRITE)
 				{
-					ptab->entries[p1idx] &= ~PAGE_LAZY_ALLOC;
+					ptab->entries[p1idx] &= ~PAGE_COPY_ON_WRITE;
 					continue;
 				}
 

@@ -54,15 +54,15 @@ $(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINF
 	@echo "# nxkernel"
 	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lm -ltinflate
 
-%.s.o: %.s
+%.s.o: %.s makefile
 	@echo "# $(notdir $<)"
 	@$(AS) -Isource/arch/$(ARCH)/include $< -o $@
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp makefile
 	@echo "# $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 
-%.c.o: %.c
+%.c.o: %.c makefile
 	@echo "# $(notdir $<)"
 	@$(CC) $(CFLAGS) $(UBSAN_FLAG) $(WARNINGS) $(DEFINES) $(INCLUDES) $(DEBUG_FLAG) -MMD -MP -o $@ $<
 

@@ -144,7 +144,10 @@ namespace vmm
 		auto virt = allocateAddrSpace(num, type, proc);
 		if(virt == 0) { abort("vmm::allocate(): out of addrspace!"); return 0; }
 
-		markAllocated(virt, num, flags, proc);
+		// don't have the write flag.
+		flags &= ~PAGE_WRITE;
+
+		mapLazy(virt, num, flags, proc);
 		return virt;
 	}
 

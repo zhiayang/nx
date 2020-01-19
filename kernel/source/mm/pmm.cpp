@@ -16,8 +16,13 @@ namespace pmm
 	constexpr size_t NumReservedPages = 8;
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
-
 	static extmm::State<> extmmState;
+
+	static addr_t zeroPageAddr = 0;
+	addr_t getZeroPage()
+	{
+		return zeroPageAddr;
+	}
 
 	void init(BootInfo* bootinfo)
 	{
@@ -70,7 +75,18 @@ namespace pmm
 		log("pmm", "initialised with %zu extents, %zu bytes (%.2f %cB)", extmmState.numExtents, totalMem,
 			num, units[unit]);
 
-		// extmmState.dump();
+
+		// find a single page to use as the zero-page. make sure it's within the identity mapped area, so
+		// we can memset it without bothering with paging.
+		auto zp = extmmState.allocate(1, [&bootinfo](addr_t x, size_t l) -> bool {
+			return end(x, l) < bootinfo->maximumIdentityMap;
+		});
+
+		if(!zp) abort("pmm: failed to allocate zero page!");
+		assert(zp < bootinfo->maximumIdentityMap);
+
+		memset((void*) zp, 0, PAGE_SIZE);
+		zeroPageAddr = zp;
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
@@ -127,8 +143,10 @@ namespace pmm
 		assert(num);
 
 		assert(vmm::isAligned(addr));
+		if(addr == zeroPageAddr && num == 1)
+			return;
+
 		extmmState.deallocate(addr, num);
-		// extmmState.dump();
 	}
 
 }

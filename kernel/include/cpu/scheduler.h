@@ -200,10 +200,6 @@ namespace nx
 		{
 			pid_t threadId = 0;
 
-			addr_t userStackBottom = 0;
-
-			addr_t kernelStackTop = 0;
-			addr_t kernelStackBottom = 0;
 
 			Priority priority = Priority::normal();
 
@@ -215,18 +211,19 @@ namespace nx
 			mutex* blockedMtx = 0;
 			uint64_t wakeUpTimestamp = 0;
 
-			// we don't really care about the data that goes here.
-			void* userspaceTCB;
 
+			nx::list<PageExtent> cleanupPages;
 
 
 			// saved information from context switches:
+			addr_t kernelStackTop = 0;
 			addr_t kernelStack;
+
 			addr_t fsBase;
 			addr_t fpuSavedStateBuffer;
 
-
-
+			// we don't really care about the data that goes here.
+			void* userspaceTCB;
 
 
 
