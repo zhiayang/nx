@@ -15,6 +15,9 @@ function plural() {
 
 # check if any of the files in the initrd folder are newer than the output:
 NUM_FILES=$(find ${INITRD_DIR} -newer ${INITRD}.gz -type f | wc -l | xargs)
+if [ ! -f ${INITRD}.gz ]; then
+	NUM_FILES=1
+fi
 
 if [ ${NUM_FILES} -gt 0 ]; then
 	echo "# initrd: updating ${NUM_FILES} $(plural file ${NUM_FILES})"

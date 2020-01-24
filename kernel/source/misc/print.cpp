@@ -73,12 +73,39 @@ namespace nx
 
 
 
+	constexpr const char* COLOUR_RESET          = "\033[0m";
+	constexpr const char* COLOUR_BLACK          = "\033[30m";
+	constexpr const char* COLOUR_RED            = "\033[31m";
+	constexpr const char* COLOUR_GREEN          = "\033[32m";
+	constexpr const char* COLOUR_YELLOW         = "\033[33m";
+	constexpr const char* COLOUR_BLUE           = "\033[34m";
+	constexpr const char* COLOUR_MAGENTA        = "\033[35m";
+	constexpr const char* COLOUR_CYAN           = "\033[36m";
+	constexpr const char* COLOUR_WHITE          = "\033[37m";
+	constexpr const char* COLOUR_BLACK_BOLD     = "\033[1m";
+	constexpr const char* COLOUR_RED_BOLD       = "\033[1m\033[31m";
+	constexpr const char* COLOUR_GREEN_BOLD     = "\033[1m\033[32m";
+	constexpr const char* COLOUR_YELLOW_BOLD    = "\033[1m\033[33m";
+	constexpr const char* COLOUR_BLUE_BOLD      = "\033[1m\033[34m";
+	constexpr const char* COLOUR_MAGENTA_BOLD   = "\033[1m\033[35m";
+	constexpr const char* COLOUR_CYAN_BOLD      = "\033[1m\033[36m";
+	constexpr const char* COLOUR_WHITE_BOLD     = "\033[1m\033[37m";
+	constexpr const char* COLOUR_GREY_BOLD      = "\033[30;1m";
+
+
+	constexpr bool USE_COLOURS = true;
+	constexpr const char* RESET_COLOUR = (USE_COLOURS ? COLOUR_RESET : "");
+	constexpr const char* SUBSYS_COLOUR = (USE_COLOURS ? COLOUR_BLUE_BOLD : "");
+
+	constexpr const char* LOG_COLOUR = (USE_COLOURS ? COLOUR_GREY_BOLD : "");
+	constexpr const char* WRN_COLOUR = (USE_COLOURS ? COLOUR_YELLOW_BOLD : "");
+	constexpr const char* ERR_COLOUR = (USE_COLOURS ? COLOUR_RED_BOLD : "");
 
 
 	void log(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[log] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "%s[log]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -88,7 +115,7 @@ namespace nx
 	void warn(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[wrn] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "%s[wrn]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -97,7 +124,7 @@ namespace nx
 	void error(const char* sys, const char* fmt, ...)
 	{
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "[err] %s: ", sys);
+		cbprintf(nullptr, cb_serialprint, "%s[err]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
@@ -127,7 +154,6 @@ namespace nx
 
 	void vabort_nohalt(const char* fmt, va_list args)
 	{
-		// interrupts::disable();
 		asm volatile ("cli");
 		serial::debugprintf("\n\nkernel abort! error: ");
 		vprint(fmt, args);
@@ -136,6 +162,7 @@ namespace nx
 
 	void abort_nohalt(const char* fmt, ...)
 	{
+		asm volatile ("cli");
 		va_list args; va_start(args, fmt);
 		vabort_nohalt(fmt, args);
 	}
@@ -144,6 +171,7 @@ namespace nx
 
 	[[noreturn]] void vabort(const char* fmt, va_list args)
 	{
+		asm volatile ("cli");
 		vabort_nohalt(fmt, args);
 		util::printStackTrace();
 
@@ -152,6 +180,7 @@ namespace nx
 
 	[[noreturn]] void abort(const char* fmt, ...)
 	{
+		asm volatile ("cli");
 		va_list args; va_start(args, fmt);
 		vabort(fmt, args);
 	}

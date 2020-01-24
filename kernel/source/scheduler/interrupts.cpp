@@ -76,7 +76,7 @@ namespace interrupts
 
 	void signalIRQIgnored(int num)
 	{
-		interrupts::disable();
+		autolock lk(&inflightLock);
 
 		// grab the first pending irq that matches, and decrease the count.
 		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
@@ -101,14 +101,12 @@ namespace interrupts
 		{
 			error("irq", "failed to find matching inflight irq");
 		}
-
-		interrupts::enable();
 	}
 
 
 	void signalIRQHandled(int num)
 	{
-		interrupts::disable();
+		autolock lk(&inflightLock);
 
 		sendEOI(num);
 
@@ -129,8 +127,6 @@ namespace interrupts
 		{
 			error("irq", "failed to find matching inflight irq");
 		}
-
-		interrupts::enable();
 	}
 
 

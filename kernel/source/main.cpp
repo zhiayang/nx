@@ -69,17 +69,35 @@ namespace nx
 		}
 
 
-		// scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), []() {
-		// 	while(true)
-		// 	{
-		// 		print(".");
-		// 		scheduler::sleep(time::milliseconds(1000).ns());
-		// 	}
-		// }));
+		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), []() {
+
+			constexpr uint32_t colours[] = {
+				0xff'ff0000,
+				0xff'00ff00,
+				0xff'0000ff,
+			};
+
+			size_t ctr = 0;
+			while(true)
+			{
+				ctr++;
+				uint32_t* fb = (uint32_t*) addrs::KERNEL_FRAMEBUFFER;
+				for(int y = 0; y < 80; y++)
+				{
+					for(int x = 1440 - 160; x < 1440 - 80; x++)
+					{
+						*(fb + y * 1440 + x) = colours[ctr % 3];
+					}
+				}
+
+				serial::debugprint("*");
+				scheduler::sleep(time::milliseconds(100).ns());
+			}
+		}));
 
 
 		log("kernel", "going to sleep...");
-		scheduler::sleep(1000'000'000);
+		scheduler::sleep(500'000'000);
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
@@ -104,6 +122,7 @@ namespace nx
 	void init(BootInfo* bootinfo)
 	{
 		// open all hatches, extend all flaps and drag fins
+		interrupts::disable();
 
 		// init the fallback console
 		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);

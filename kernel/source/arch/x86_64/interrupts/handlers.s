@@ -25,6 +25,8 @@ GlobalHandler:
 	swapgs_if_necessary 0x10    // note: extra offset for the int number
 	push_all_regs
 
+	call nx_x64_enter_intr_context
+
 	// TODO: in reality we should save/restore FPU before entering the kernel, since
 	// we cannot guarantee that the kernel doesn't use any floating-point registers!!!
 
@@ -34,6 +36,9 @@ GlobalHandler:
 	sub $0x20, %rdi
 
 	call nx_x64_handle_irq
+
+
+	call nx_x64_exit_intr_context
 
 	pop_all_regs
 

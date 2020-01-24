@@ -10,6 +10,8 @@ namespace nx
 	// These builtins perform an atomic compare and swap. That is, if the current value of *ptr is oldval, then write newval into *ptr.
 	// The "bool" version returns true if the comparison is successful and newval was written.
 
+	using SchedState = scheduler::SchedulerInitPhase;
+
 	void spinlock::lock()
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
@@ -18,16 +20,37 @@ namespace nx
 				this->holder->threadId, this->holder->parent->processId);
 		}
 
+		interrupts::disable();
 		while(!__sync_bool_compare_and_swap(&this->value, 0, 1))
 			asm volatile ("pause");
 
-		this->holder = scheduler::getCurrentThread();
+		// if the scheduler hasn't started properly, don't try to touch cpu-local state
+		// cos it doesn't exist.
+		if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
+		{
+			this->holder = scheduler::getCurrentThread();
+			// log("spin", "tid %lu held lock %p", this->holder->threadId, this);
+
+			// this only needs to be relaxed, since there will be no other threads running.
+			// (it's a per-cpu value)
+			// __atomic_add_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
+		}
 	}
 
 	void spinlock::unlock()
 	{
-		this->value = 0;
+		// if the scheduler hasn't started properly, don't try to touch cpu-local state
+		// cos it doesn't exist.
+		if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
+		{
+			// log("spin", "tid %lu released lock %p", this->holder->threadId, this);
+			// __atomic_sub_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
+		}
+
+		__atomic_store_n(&this->value, 0, __ATOMIC_RELAXED);
 		this->holder = 0;
+
+		interrupts::enable();
 	}
 
 	bool spinlock::held()

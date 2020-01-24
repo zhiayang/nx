@@ -16,7 +16,7 @@ namespace pmm
 	constexpr size_t NumReservedPages = 8;
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
-	static extmm::State<> extmmState;
+	static extmm::State<void, nx::spinlock> extmmState;
 
 	static addr_t zeroPageAddr = 0;
 	addr_t getZeroPage()

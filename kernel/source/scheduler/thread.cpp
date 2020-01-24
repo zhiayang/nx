@@ -70,7 +70,10 @@ namespace scheduler
 		// we don't really care what the address is, as long as we got the space.
 		// we do the phys and virt allocation separately because we want the physical address as well.
 
-		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_NX;
+
+		// note: don't mark stacks as NX, because GDB will die when we try to evaluate expressions
+		// turns out, it just pushes opcodes to the stack and excecutes them. can't do that if NX.
+		addr_t target_flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITE; // | vmm::PAGE_NX;
 		addr_t user_flags   = (isUserProc ? (vmm::PAGE_USER) : 0);
 
 
@@ -277,14 +280,14 @@ namespace scheduler
 
 		if(isUserProc)
 		{
-			log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p)",
+			log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p) (fpu: %p)",
 				thr->threadId, thr->parent->processId, u_stackTop, u_stackTop - USER_STACK_SIZE,
-				k_stackTop, k_stackTop - KERNEL_STACK_SIZE);
+				k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer);
 		}
 		else
 		{
-			log("sched", "created kernel tid %lu (stk: %p - %p)",
-				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE);
+			log("sched", "created kernel tid %lu (stk: %p - %p) (fpu: %p)",
+				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer);
 		}
 
 		return thr;

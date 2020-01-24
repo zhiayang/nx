@@ -11,16 +11,17 @@
 #include <svr/tty.h>
 #include <syscall.h>
 
+static constexpr int WIDTH = 1440;
 uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
 {
 	syscall::kernel_log(0, "lmao", 4, "OMG", 3); // (%lu, %lu, %lu, %lu, %lu)\n", sender, type, a, b, c);
 
 	uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
-	for(int y = 20; y < 40; y++)
+	for(int y = 80; y < 160; y++)
 	{
-		for(int x = 1420; x < 1440; x++)
+		for(int x = WIDTH - 80; x < WIDTH; x++)
 		{
-			*(fb + y * 1440 + x) = 0xff'ffffff;
+			*(fb + y * WIDTH + x) = 0xff'ffffff;
 		}
 	}
 
@@ -62,11 +63,11 @@ int main()
 
 			ctr2++;
 			uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
-			for(int y = 0; y < 20; y++)
+			for(int y = 0; y < 80; y++)
 			{
-				for(int x = 1420; x < 1440; x++)
+				for(int x = WIDTH - 80; x < WIDTH; x++)
 				{
-					*(fb + y * 1440 + x) = colours[ctr2 % numColours];
+					*(fb + y * WIDTH + x) = colours[ctr2 % numColours];
 				}
 			}
 		}

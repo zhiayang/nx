@@ -274,14 +274,23 @@ namespace ps2
 	}
 
 
-	static void square(uint32_t c)
+	static void square(size_t n)
 	{
+		constexpr uint32_t colours[] = {
+			0xff'fdb813,
+			0xff'f37020,
+			0xff'c9234b,
+			0xff'635fab,
+			0xff'0089cf,
+			0xff'0ab04a,
+		};
+
 		uint32_t* fb = (uint32_t*) 0xFF'0000'0000;
-		for(int y = 40; y < 60; y++)
+		for(int y = 160; y < 240; y++)
 		{
-			for(int x = 1420; x < 1440; x++)
+			for(int x = 1360; x < 1440; x++)
 			{
-				*(fb + y * 1440 + x) = 0xff'000000 | c;
+				*(fb + y * 1440 + x) = colours[n % 6];
 			}
 		}
 	}
@@ -302,7 +311,7 @@ namespace ps2
 			if(KeyboardPort == 1)
 				kb->addByte(x);
 
-			square(((uint8_t) cnt) << 16 | ((uint8_t) cnt) << 8 | (uint8_t) cnt);
+			square(cnt++);
 		}
 		else
 		{

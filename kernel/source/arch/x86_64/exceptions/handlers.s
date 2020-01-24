@@ -241,6 +241,7 @@ nx_x64_exception_handler_31:
 	push_all_regs
 	pushq %rsp
 
+	call nx_x64_enter_intr_context
 
 	// Push CR2 in case of page faults
 	movq %cr2, %rbp
@@ -254,6 +255,8 @@ nx_x64_exception_handler_31:
 .macro exception_handler_end
 	addq $8, %rsp	// remove cr2
 	addq $8, %rsp	// Don't pop %rsp
+
+	call nx_x64_exit_intr_context
 
 	pop_all_regs
 

@@ -104,7 +104,7 @@ namespace vmm
 
 		// fuckin nasty man. bad hack!! we need to move this elsewhere
 		{
-			auto numPgs = (fbScan * fbResY + PAGE_SIZE - 1) / PAGE_SIZE;
+			auto numPgs = (fbScan * fbResY * 4 + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			mapAddress(addrs::USER_FRAMEBUFFER, getPhysAddr(addrs::KERNEL_FRAMEBUFFER),
 				numPgs, PAGE_USER | PAGE_WRITE | PAGE_PRESENT, proc);

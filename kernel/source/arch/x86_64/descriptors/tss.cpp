@@ -93,7 +93,10 @@ namespace tss
 			auto tss = (tss_t*) tssaddr;
 
 			for(int i = 0; i < 7; i++)
+			{
 				tss->ists[i] = PAGE_SIZE + vmm::allocateEager(1, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE | vmm::PAGE_NX);
+				// log("tss", "ist %d: %p", 1 + i, tss->ists[i]);
+			}
 		}
 
 		// make all the bits in the IOPB 1 -- which means disallowed.

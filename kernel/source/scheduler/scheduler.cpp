@@ -51,17 +51,24 @@ namespace scheduler
 		return next;
 	}
 
+	static int __nested_sched = 0;
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
+		assert(!__nested_sched && "TICK PREEMPTED?!");
+		__nested_sched = 1;
+
 		auto ss = getSchedState();
 
 		Thread* oldthr = ss->CurrentThread;
+		assert(oldthr);
 
 		// save the current stack.
 		oldthr->kernelStack = stackPointer;
 
 		if(oldthr->state == ThreadState::Running)
 			oldthr->state = ThreadState::Stopped;
+
+		// serial::debugprintf("old: [%lu] -> %p  //  ", oldthr->threadId, oldthr->parent->addrspace.cr3);
 
 		// save the fpu state
 		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
@@ -94,7 +101,10 @@ namespace scheduler
 		ss->CurrentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		serial::debugprintf("[%d]", newthr->threadId);
+		// serial::debugprintf("[%d]: %p\n", newthr->threadId, newthr->kernelStack);
+		// serial::debugprintf("new: [%lu] -> %p\n", newthr->threadId, newthr->parent->addrspace.cr3);
+
+		__nested_sched = 0;
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
@@ -111,7 +121,7 @@ namespace scheduler
 			memcpy(intstate, &savedstate, sizeof(savedstate));
 
 			newthr->pendingSignalRestore = false;
-			// log("sched", "restoring thread %lu (%zu) -> %p", newthr->threadId, newthr->parent->savedSignalStateStack.size(),
+			// log("sched", "restoring thread %lu (%zu) -> %p", newthr->threadId, newthr->savedSignalStateStack.size(),
 			// 	intstate->rip);
 
 			// intstate->dump();
@@ -140,7 +150,6 @@ namespace scheduler
 		newthr->savedSignalStateStack.append(*regs);
 
 		auto msg = newthr->pendingSignalQueue.popFront();
-
 		// the signature: nx_x64_user_signal_enter
 		// (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c, uint64_t handler);
 		//    ^ rdi            ^ rsi             ^ rdx       ^ rcx       ^ r8        ^ r9
@@ -185,18 +194,19 @@ namespace scheduler
 		{
 			while(ss->DestructionQueue.size() > 0)
 			{
-				auto thr = ss->DestructionQueue.popFront();
-				assert(thr);
+				Thread* thr = 0;
 
-				log("sched", "destroying thread %lu", thr->threadId);
+				LockedSection(&ss->lock, [&]() {
+					thr = ss->DestructionQueue.popFront();
+					assert(thr);
 
-				{
-					CriticalSection([ss, thr]() {
-						ss->ThreadList.remove_all(thr);
-					});
-				}
+					log("sched", "destroying thread %lu", thr->threadId);
 
-				log("sched", "removed thread %lu", thr->threadId);
+					ss->ThreadList.remove_all(thr);
+
+					log("sched", "removed thread %lu", thr->threadId);
+				});
+
 				destroyThread(thr);
 			}
 
@@ -232,7 +242,7 @@ namespace scheduler
 		ss->IdleThread = createThread(getKernelProcess(), idle_worker);
 
 		ss->ThreadList = nx::list<Thread*>();
-		ss->BlockedThreads = nx::list<Thread*>();
+		ss->BlockedThreads = nx::array<Thread*>();
 		ss->DestructionQueue = nx::list<Thread*>();
 
 		ss->ProcessList = nx::list<Process*>();
@@ -263,7 +273,7 @@ namespace scheduler
 		ss->CurrentThread = ss->IdleThread;
 
 		// primed & ready.
-		// interrupts::enable();
+		interrupts::resetNesting();
 
 		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer, ss->CurrentThread);
 	}
@@ -277,17 +287,24 @@ namespace scheduler
 		asm volatile ("int $0xF0");
 	}
 
+
+
+
+
 	void exit(int status)
 	{
+		auto ss = getSchedState();
+
 		auto t = getCurrentThread();
 		assert(t);
 
-		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
+		LockedSection(&ss->lock, [&]() {
+			t->state = ThreadState::AboutToExit;
+			ss->DestructionQueue.append(t);
 
-		t->state = ThreadState::AboutToExit;
-		getSchedState()->DestructionQueue.append(t);
+			log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
+		});
 
-		log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
 		yield();
 
 		while(true);
@@ -297,10 +314,14 @@ namespace scheduler
 	{
 		assert(t);
 
-		t->state = ThreadState::AboutToExit;
-		getSchedState()->DestructionQueue.append(t);
+		auto ss = getSchedState();
+		LockedSection(&ss->lock, [&]() {
 
-		log("sched", "terminating tid %lu", t->threadId);
+			t->state = ThreadState::AboutToExit;
+			ss->DestructionQueue.append(t);
+
+			log("sched", "terminating tid %lu", t->threadId);
+		});
 
 		// if you are terminating yourself, then we need to yield.
 		if(getCurrentThread() == t)
@@ -315,14 +336,18 @@ namespace scheduler
 	{
 		assert(p);
 
-		// schedule all threads to die.
-		for(auto& t : p->threads)
-		{
-			t.state = ThreadState::AboutToExit;
-			getSchedState()->DestructionQueue.append(&t);
-		}
+		auto ss = getSchedState();
 
-		log("sched", "terminating process %lu", p->processId);
+		LockedSection(&ss->lock, [&]() {
+			// schedule all threads to die.
+			for(auto& t : p->threads)
+			{
+				ss->DestructionQueue.append(&t);
+				t.state = ThreadState::AboutToExit;
+			}
+
+			log("sched", "terminating process %lu", p->processId);
+		});
 
 		// if you are terminating yourself, then we need to yield.
 		if(getCurrentProcess() == p)
@@ -338,10 +363,15 @@ namespace scheduler
 		auto t = getCurrentThread();
 		assert(t);
 
-		t->blockedMtx = mtx;
-		t->state = ThreadState::BlockedOnMutex;
+		auto ss = getSchedState();
 
-		getSchedState()->BlockedThreads.append(t);
+		LockedSection(&ss->lock, [&]() {
+			ss->BlockedThreads.append(t);
+
+			t->blockedMtx = mtx;
+			t->state = ThreadState::BlockedOnMutex;
+
+		});
 
 		yield();
 	}
@@ -364,8 +394,6 @@ namespace scheduler
 				(*thr)->blockedMtx = 0;
 				(*thr)->state = ThreadState::Stopped;
 
-				getSchedState()->ThreadList.prepend(*thr);
-
 				thr = bthrs.erase(thr);
 			}
 			else
@@ -381,10 +409,12 @@ namespace scheduler
 		auto t = getCurrentThread();
 		assert(t);
 
-		t->wakeUpTimestamp = getElapsedNanoseconds() + ns;
-		t->state = ThreadState::BlockedOnSleep;
+		LockedSection(&getSchedState()->lock, [&]() {
+			t->state = ThreadState::BlockedOnSleep;
+			t->wakeUpTimestamp = getElapsedNanoseconds() + ns;
 
-		getSchedState()->BlockedThreads.append(t);
+			getSchedState()->BlockedThreads.append(t);
+		});
 
 		yield();
 	}
@@ -405,9 +435,14 @@ namespace scheduler
 				(*thr)->wakeUpTimestamp = 0;
 				(*thr)->state = ThreadState::Stopped;
 
-				getSchedState()->ThreadList.prepend(*thr);
 				woke = true;
 
+				// now, you ask: why is this an array? because we *DO NOT* want to touch any heap locks
+				// inside the scheduler. removing stuff from an array never touches the heap (only memmove),
+				// while removing things from a linked list requires deleting the node.
+
+				// since we never *add* to the blocked thread array while inside a critical section, we can
+				// guarantee that we'll never need the heap here.
 				thr = bthrs.erase(thr);
 			}
 			else
@@ -434,26 +469,6 @@ namespace scheduler
 		getSchedState()->ThreadList.append(t);
 		return t;
 	}
-
-	Thread* pauseThread(Thread* t)
-	{
-		assert(t);
-		// just remove it from the runqueue.
-		getSchedState()->ThreadList.remove_first(t);
-
-		return t;
-	}
-
-	Thread* resumeThread(Thread* t)
-	{
-		assert(t);
-		auto ss = getSchedState();
-		if(ss->ThreadList.find(t) == ss->ThreadList.end())
-			ss->ThreadList.append(t);
-
-		return t;
-	}
-
 
 	State* getSchedState()
 	{
@@ -499,25 +514,38 @@ namespace scheduler
 	// returns true if it's time to preempt somebody
 	// note: this is called from asm-land
 
+	static int __nested_tick = 0;
 	extern "C" uint64_t nx_x64_scheduler_tick()
 	{
+		assert(!__nested_tick && "TICK PREEMPTED?!");
+		__nested_tick = 1;
+
+		// serial::debugprint('>');
+
 		auto ss = getSchedState();
 
 		ss->tickCounter += 1;
 		ElapsedNanoseconds += NS_PER_TICK;
 
 		bool woke = wakeUpThreads();
+		// serial::debugprint('}');
 
 		// other people can "expedite" a schedule event if necessary by setting this flag.
 		bool ret = woke || ss->expediteSchedule || (ss->tickCounter * NS_PER_TICK) >= TIMESLICE_DURATION_NS;
 		ss->expediteSchedule = false;
 
-		// if(ret) serial::debugprint("*");
-		// else    serial::debugprint(".");
-
 		if(ret) ss->tickCounter = 0;
 
 		interrupts::sendEOI(TickIRQ);
+
+		// if the CPU is holding any locks, then we cannot preempt.
+		if(getCPULocalState()->numHeldLocks > 0)
+			ret = false;
+
+		// if(ret) serial::debugprint("*");
+		// else    serial::debugprint(".");
+
+		__nested_tick = 0;
 		return ret;
 	}
 

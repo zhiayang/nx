@@ -13,6 +13,23 @@ nx_x64_clear_segments:
 	ret
 
 
+
+
+.global nx_x64_enter_intr_context
+.type nx_x64_enter_intr_context, @function
+nx_x64_enter_intr_context:
+	lock incl %gs:0x50
+	ret
+
+.global nx_x64_exit_intr_context
+.type nx_x64_exit_intr_context, @function
+nx_x64_exit_intr_context:
+	lock decl %gs:0x50
+	ret
+
+
+
+
 .global nx_x64_read_msr
 .type nx_x64_read_msr, @function
 nx_x64_read_msr:

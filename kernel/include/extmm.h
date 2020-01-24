@@ -42,7 +42,7 @@ namespace extmm
 
 
 
-	template <typename T = void>
+	template <typename T = void, typename Lock = nx::mutex>
 	struct State : _State<T>
 	{
 		using extent_t = typename _State<T>::extent_t;
@@ -57,7 +57,7 @@ namespace extmm
 		addr_t bootstrapWatermark = 0;
 		addr_t bootstrapEnd = 0;
 
-		mutex lock;
+		Lock lock;
 
 
 		void dump()

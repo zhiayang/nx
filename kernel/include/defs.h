@@ -43,10 +43,17 @@ namespace nx
 	using string = krt::string<_allocator, _aborter>;
 	using string_view = krt::string_view<_allocator, _aborter>;
 
-	template<typename T> using list = krt::list<T, _allocator, _aborter>;
-	template<typename T> using array = krt::array<T, _allocator, _aborter>;
-	template<typename T> using stack = krt::stack<T, _allocator, _aborter>;
-	template<typename K, typename V> using treemap = krt::treemap<K, V, _allocator, _aborter>;
+	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	using list = krt::list<T, Al, Ab>;
+
+	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	using array = krt::array<T, Al, Ab>;
+
+	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	using stack = krt::stack<T, Al, Ab>;
+
+	template<typename K, typename V, typename Al = _allocator, typename Ab = _aborter>
+	using treemap = krt::treemap<K, V, Al, Ab>;
 
 	[[noreturn]] void halt();
 

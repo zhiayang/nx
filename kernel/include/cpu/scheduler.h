@@ -49,13 +49,18 @@ namespace nx
 			Thread* CurrentThread = 0;
 
 			nx::list<Thread*> ThreadList;
-			nx::list<Thread*> BlockedThreads;
+
+			// this is an array for a good reason: see wakeUpThreads().
+			nx::array<Thread*> BlockedThreads;
+
 			nx::list<Thread*> DestructionQueue;
 
 			nx::list<Process*> ProcessList;
 
 			uint64_t tickCounter = 0;
 			bool expediteSchedule = false;
+
+			nx::spinlock lock;
 		};
 
 		// this might need to change on non-x64
@@ -78,6 +83,10 @@ namespace nx
 			CPU* cpu = 0;                   // ofs: 0x30
 			addr_t tmpUserRsp = 0;          // ofs: 0x38
 			Thread* currentThread = 0;      // ofs: 0x40
+
+			uint64_t numHeldLocks = 0;      // ofs: 0x48
+			uint32_t interruptNesting = 0;  // ofs: 0x50
+			int32_t stiLevel = 0;           // ofs: 0x54
 		};
 
 		// these need to be used from ASM, so we must make sure they never change!
@@ -313,8 +322,6 @@ namespace nx
 
 		// returns t.
 		Thread* addThread(Thread* t);
-		Thread* pauseThread(Thread* t);
-		Thread* resumeThread(Thread* t);
 
 		void destroyThread(Thread* t);
 		void destroyProcess(Process* p);

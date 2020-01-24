@@ -4,6 +4,9 @@
 
 #include "nx.h"
 
+extern "C" void nx_x64_enter_intr_context();
+extern "C" void nx_x64_exit_intr_context();
+
 namespace nx {
 namespace vmm
 {
@@ -52,7 +55,11 @@ namespace vmm
 			//    entire CPU while that work is happening.
 			// 2. we need to hold some locks (pmm, vmm), so to prevent deadlocking we need
 			//    to be preemptible.
-			asm volatile ("sti");
+			// asm volatile ("sti");
+
+			// to make sure we can acquire spinlocks, tell the kernel that we're no longer in
+			// an interrupt context:
+			nx_x64_exit_intr_context();
 
 			// get the old physical address:
 			auto old_phys = vmm::getPhysAddr(aligned_cr2);
@@ -81,6 +88,12 @@ namespace vmm
 
 
 			log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
+
+
+			// here's the thing: the exception handler wrapper in asm will also exit the intr_context;
+			// so, we need to "enter" it again so the value never becomes negative.
+			nx_x64_enter_intr_context();
+
 			return true;
 		}
 		else

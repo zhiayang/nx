@@ -135,23 +135,59 @@ namespace interrupts
 
 
 
+	static bool in_intr_context()
+	{
+		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
+			return scheduler::getCPULocalState()->interruptNesting > 0;
+
+		return false;
+	}
+
+	static int32_t early_sti_level = 0;
+	static int32_t& get_sti_level()
+	{
+		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
+			return scheduler::getCPULocalState()->stiLevel;
+
+		return early_sti_level;
+	}
 
 
-	// todo: this needs to be a per-cpu value!!
-	static int stiLevel = 0;
 	void enable()
 	{
-		stiLevel += 1;
-		if(stiLevel >= 0)
+		// if(in_intr_context())
+		// 	abort("cannot enable interrupts manually in interrupted context!");
+
+		auto& stilvl = get_sti_level();
+		stilvl += 1;
+
+		if(stilvl >= 0 && !in_intr_context())
+		{
+			// serial::debugprint('@');
 			asm volatile("sti");
+		}
+		// else
+		// {
+		// 	serial::debugprint('?');
+		// }
 	}
 
 	void disable()
 	{
+		// if(in_intr_context())
+		// 	abort("cannot disable interrupts manually in interrupted context!");
+
+		auto& stilvl = get_sti_level();
+
+		// serial::debugprint('^');
 		asm volatile("cli");
-		stiLevel -= 1;
+		stilvl -= 1;
 	}
 
+	void resetNesting()
+	{
+		get_sti_level() = 0;
+	}
 
 
 	//! ACHTUNG !

@@ -146,7 +146,7 @@ namespace exceptions
 		}
 		else
 		{
-			debugprintf("pre-scheduler");
+			debugprintf("pre-scheduler\n");
 		}
 
 		if(regs->InterruptID == 13 && regs->ErrorCode != 0)
@@ -193,6 +193,7 @@ namespace exceptions
 		debugprintf("\nfault location:\n");
 		debugprintf("%p   |   %s\n\n", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
 
+		abort("no stop");
 
 		// if this was a user program, then fuck that guy.
 		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())

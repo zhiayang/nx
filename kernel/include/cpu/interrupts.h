@@ -20,6 +20,7 @@ namespace nx
 		void init();
 		void enable();
 		void disable();
+		void resetNesting();
 
 		void init_arch();
 

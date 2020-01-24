@@ -7,7 +7,7 @@ The sixth rewrite of what never was, OrionOS. x86_64 kernel.
 - EFI loader (efxloader) and BIOS loader (bfxloader, running on top of [BOOTBOOT](https://gitlab.com/bztsrc/bootboot))
 - Higher-half 64-bit kernel
 - tarfs initrd, basic VFS
-- Some level of userspace, with rudimentary (non-signalling) IPC
+- Some level of userspace, with basic asynchronous (polling + signalling) IPC
 
 
 ## Trying out [nx] ##
