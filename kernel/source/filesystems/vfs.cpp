@@ -20,6 +20,8 @@ namespace vfs
 		MountedFilesystems = array<Filesystem*>();
 
 		FileDescCounter = 3;
+
+		scheduler::getKernelProcess()->ioctx = new vfs::IOCtx();
 	}
 
 	static Filesystem* getFilesystemAtPath(const array<string>& pathcomps)
@@ -72,8 +74,10 @@ namespace vfs
 		return ret;
 	}
 
-	Node* openNode(const string& path)
+	Node* openNode(IOCtx* ctx, const string& path)
 	{
+		assert(ctx);
+
 		auto n = NodeCache->fetch(path);
 		if(n)
 		{
@@ -109,19 +113,25 @@ namespace vfs
 
 
 
-	File* open(const string& path, Mode mode)
+	File* open(IOCtx* ctx, const string& path, Mode mode)
 	{
+		assert(ctx);
+
 		// get the filesystem.
 		auto fs = getFilesystemAtPath(splitPathComponents(path));
 		if(!fs) { error("vfs", "no filesystem mounted at path '%s'!", path.cstr()); return nullptr; }
 
 		// ok...
-		auto nd = openNode(path);
+		auto nd = openNode(ctx, path);
 		if(!nd) return nullptr;
 
-		return fs->driver->openFile(fs, nd, FileDescCounter++, mode);
+		auto file = fs->driver->openFile(fs, nd, FileDescCounter++, mode);
+		if(file) ctx->openFiles.append(file);
+
+		return file;
 	}
 
+	// note: the number of indirections in these methods makes me cry a bit ):
 	void close(File* file)
 	{
 		//* since fsdriver->openFile creates the File* for us,

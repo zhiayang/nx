@@ -23,6 +23,8 @@ namespace scheduler
 		proc->flags = flags;
 
 
+		// allocate an ioctx
+		proc->ioctx = new vfs::IOCtx();
 
 		vmm::init(proc);
 
@@ -35,6 +37,9 @@ namespace scheduler
 	void destroyProcess(Process* proc)
 	{
 		assert(proc);
+
+		assert(proc->ioctx);
+		delete proc->ioctx;
 
 		vmm::destroy(proc);
 		proc->addrspace.destroy();

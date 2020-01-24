@@ -23,7 +23,7 @@ namespace loader
 
 	scheduler::Thread* loadProgram(const nx::string& path)
 	{
-		auto f = vfs::open(path, vfs::Mode::Read);
+		auto f = vfs::open(scheduler::getCurrentProcess()->ioctx, path, vfs::Mode::Read);
 		assert(f);
 
 		auto sz = vfs::stat(f).fileSize;
@@ -33,6 +33,9 @@ namespace loader
 		if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
 
 		auto proc = scheduler::createProcess(getProcName(path), scheduler::Process::PROC_USER);
+
+		// add stdout (1)/stderr (2)/stdin (0) descriptors here
+		// vfs::open(proc->ioctx, "/dev/kernel_fbconsole", vfs::Mode::Read);
 
 		addr_t entryPt = 0;
 		bool success = loadIndeterminateBinary(proc, buf, sz, &entryPt);

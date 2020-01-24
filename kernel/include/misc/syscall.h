@@ -12,6 +12,14 @@ namespace nx
 	{
 		void init();
 
+		bool copy_from_user(const void* user, void* kernel, size_t len);
+		bool copy_to_user(const void* kernel, void* user, size_t len);
+
+
+
+		// these are the internal declarations for the syscall functions.
+		// we don't expose these to the user anyway, they're just there for
+		// the syscall function table to work.
 		void sc_null();
 
 		void sc_exit(int status);

@@ -121,7 +121,7 @@ namespace console
 		// load the font
 		{
 			using namespace vfs;
-			File* f = open("/initrd/fonts/mono-bold.ttf", Mode::Read);
+			File* f = open(scheduler::getCurrentProcess()->ioctx, "/initrd/fonts/mono-bold.ttf", Mode::Read);
 			assert(f);
 
 			auto sz = stat(f).fileSize;

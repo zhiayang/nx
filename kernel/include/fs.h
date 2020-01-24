@@ -83,6 +83,11 @@ namespace nx
 			nx::array<Node*> children;
 		};
 
+		struct IOCtx
+		{
+			nx::array<File*> openFiles;
+		};
+
 
 		enum class Status
 		{
@@ -103,10 +108,10 @@ namespace nx
 
 		bool mount(DriverInterface* driver, const nx::string& mountpoint, bool readonly);
 
-		Node* openNode(const nx::string& path);
+		Node* openNode(IOCtx* ctx, const nx::string& path);
 		void closeNode(Node* node);
 
-		File* open(const nx::string& path, Mode mode);
+		File* open(IOCtx* ctx, const nx::string& path, Mode mode);
 		void close(File* file);
 
 		size_t read(File* file, void* buf, size_t count);
@@ -195,6 +200,15 @@ namespace nx
 		namespace tarfs
 		{
 			DriverInterface* create(uint8_t* buf, size_t sz);
+		}
+
+		namespace consolefs
+		{
+			constexpr int CON_STDIN  = 0;
+			constexpr int CON_STDOUT = 1;
+			constexpr int CON_STDERR = 2;
+
+			DriverInterface* create(int con);
 		}
 	}
 }

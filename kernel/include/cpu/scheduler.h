@@ -18,6 +18,12 @@
 
 namespace nx
 {
+	namespace vfs
+	{
+		struct IOCtx;
+		struct Node;
+	}
+
 	namespace mm
 	{
 		struct SharedMemoryBuffer

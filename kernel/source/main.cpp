@@ -16,22 +16,6 @@
 
 namespace nx
 {
-	void work_thread1()
-	{
-		size_t ctr = 0;
-		while(true)
-		{
-			if(++ctr % 7500000 == 0) print("1");
-		}
-	}
-
-	void work_thread2()
-	{
-		// uint64_t ctr = 0;
-		// while(true) if(++ctr % 5000000 == 0) print("x");
-	}
-
-
 	// TODO: jesus christ get rid of this
 	static scheduler::Process* ps2driverproc = 0;
 	void kernel_main()
