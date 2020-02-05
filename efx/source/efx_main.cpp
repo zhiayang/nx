@@ -124,11 +124,12 @@ void efx::init()
 
 
 		char* buffer = 0;
+		if(reqSize > 0)
 		{
 			uint64_t out = 0;
 			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo,
 				(reqSize + 0xFFF) / 0x1000, &out);
-			efi::abort_if_error(stat, "failed to allocate memory for kernel parameters!");
+			efi::abort_if_error(stat, "failed to allocate memory for kernel parameters! (%zu bytes)", reqSize);
 
 			buffer = (char*) out;
 		}

@@ -119,7 +119,13 @@ namespace fs
 		{
 			// then we use the de-facto root as the root.
 			for(auto& fs : filesystems)
-				if(fs.deFactoRoot) rootFilesystem = &fs;
+			{
+				if(fs.deFactoRoot)
+				{
+					rootFilesystem = &fs;
+					return;
+				}
+			}
 		}
 		else
 		{
@@ -152,7 +158,7 @@ namespace fs
 			}
 		}
 
-		did_not_find:
+	did_not_find:
 		efi::abort("did not find root filesystem matching '%s'", opt.cstr());
 	}
 
