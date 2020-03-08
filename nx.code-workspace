@@ -1,27 +1,39 @@
 {
 	"folders": [
 		{
+			"name": "kernel",
 			"path": "kernel"
 		},
 		{
+			"name": "libnxsc",
 			"path": "libs\\libnxsc"
 		},
 		{
+			"name": "libc",
 			"path": "libs\\libc"
 		},
 		{
+			"name": "placebo",
 			"path": "drivers\\placebo"
 		},
 		{
+			"name": "tty-svr",
 			"path": "services\\tty-svr"
 		},
 		{
+			"name": "efx",
 			"path": "efx"
 		},
 		{
+			"name": "bfx",
+			"path": "bfx"
+		},
+		{
+			"name": "libkrt",
 			"path": "libs\\libkrt"
 		},
 		{
+			"name": "nx",
 			"path": "."
 		}
 	],
