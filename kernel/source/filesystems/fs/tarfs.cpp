@@ -88,7 +88,10 @@ namespace tarfs
 			}
 
 			auto ent = (tarent_t*) (dd->buffer + i);
-			if(memcmp(ent->ustar, "ustar\0""00", 8) != 0)
+
+			// in theory we should compare "ustar\0""00"
+			// BSD tar behaves correctly, but gnu tar gives us "ustar  \0" instead...
+			if(memcmp(ent->ustar, "ustar", 5) != 0)
 			{
 				error("tarfs", "non-ustar format unsupported: '%.5s'", ent->ustar);
 				return false;

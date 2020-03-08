@@ -1,6 +1,10 @@
 {
 	"folders": [
 		{
+			"name": "nx",
+			"path": "."
+		},
+		{
 			"name": "kernel",
 			"path": "kernel"
 		},
@@ -11,14 +15,6 @@
 		{
 			"name": "libc",
 			"path": "libs\\libc"
-		},
-		{
-			"name": "placebo",
-			"path": "drivers\\placebo"
-		},
-		{
-			"name": "tty-svr",
-			"path": "services\\tty-svr"
 		},
 		{
 			"name": "efx",
@@ -33,8 +29,16 @@
 			"path": "libs\\libkrt"
 		},
 		{
-			"name": "nx",
-			"path": "."
+			"name": "placebo",
+			"path": "drivers\\placebo"
+		},
+		{
+			"name": "ps2",
+			"path": "drivers\\ps2"
+		},
+		{
+			"name": "tty-svr",
+			"path": "services\\tty-svr"
 		}
 	],
 	"settings": {

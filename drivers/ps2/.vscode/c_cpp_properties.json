@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "ps2-windows",
+            "includePath": [
+                "${workspaceFolder:ps2}/include",
+                "${workspaceFolder:nx}/libs/libkrt/include",
+                "${workspaceFolder:nx}/build/sysroot/usr/include"
+            ],
+            "defines": [
+                "__orionx__",
+                "_DEBUG"
+            ],
+            "compilerPath": "${workspaceFolder}/../../build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder:ps2}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
