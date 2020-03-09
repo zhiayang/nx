@@ -1,6 +1,7 @@
 {
 	"files.exclude": {
 		"toolchain-setup": true,
-		"kernel": true
+		"kernel": true,
+		"build/toolchain": true
 	}
 }

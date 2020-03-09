@@ -4,29 +4,46 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Launch QEMU",
+			"label": "qemu",
 			"type": "shell",
-			"options": {
-				"shell": {
-					"executable": "powershell.exe"
-				}
-			},
-			"dependsOn":[ "Build Kernel" ],
+			"isBackground": true,
+			"dependsOn":[ "build" ],
 			"windows": {
-				"command": "Start",
+				"options": {
+					"shell": {
+						"executable": "powershell.exe"
+					}
+				},
+				"command": "echo starting QEMU; Start",
 				"args": [
 					"'D:\\Programs\\qemu\\qemu-system-x86_64.exe'",
 					"-ArgumentList",
 					"@('-S','-s','-no-shutdown','-no-reboot','-vga','std','-bios','utils\\ovmf-x64\\OVMF-pure-efi.fd','-drive','format=raw,file=build\\disk.img','-chardev','stdio,id=qemu-debug-out','-device','isa-debugcon,chardev=qemu-debug-out')"
 				]
-			}
+			},
+			"osx": {
+				"command": "echo starting QEMU & qemu-system-x86_64 -S -s -no-shutdown -no-reboot -vga std -bios utils/ovmf-x64/OVMF-pure-efi.fd -drive format=raw,file=build/disk.img -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out"
+			},
+			"problemMatcher": {
+                "pattern": {
+                    "regexp": "^(starting QEMU)",
+                    "line": 1,
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^(starting QEMU)",
+                    "endsPattern": "^(starting QEMU)"
+                }
+            }
 		},
 		{
-			"label": "Build Kernel",
+			"label": "build",
 			"type": "shell",
-			"options": {
-				"shell": {
-					"executable": "wsl.exe"
+			"windows": {
+				"options": {
+					"shell": {
+						"executable": "wsl.exe"
+					}
 				}
 			},
 			"command": "make",

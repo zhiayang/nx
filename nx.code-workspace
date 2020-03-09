@@ -10,11 +10,11 @@
 		},
 		{
 			"name": "libnxsc",
-			"path": "libs\\libnxsc"
+			"path": "libs/libnxsc"
 		},
 		{
 			"name": "libc",
-			"path": "libs\\libc"
+			"path": "libs/libc"
 		},
 		{
 			"name": "efx",
@@ -26,19 +26,19 @@
 		},
 		{
 			"name": "libkrt",
-			"path": "libs\\libkrt"
+			"path": "libs/libkrt"
 		},
 		{
 			"name": "placebo",
-			"path": "drivers\\placebo"
+			"path": "drivers/placebo"
 		},
 		{
 			"name": "ps2",
-			"path": "drivers\\ps2"
+			"path": "drivers/ps2"
 		},
 		{
 			"name": "tty-svr",
-			"path": "services\\tty-svr"
+			"path": "services/tty-svr"
 		}
 	],
 	"settings": {

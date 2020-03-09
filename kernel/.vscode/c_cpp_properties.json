@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder:kernel}/include",
                 "${workspaceFolder:libkrt}/include",
-                "${workspaceFolder:libm}/include",
+                "${workspaceFolder:nx}/libs/libm/include",
                 "${workspaceFolder:nx}/libs/tinflate",
                 "${workspaceFolder:nx}/libs",
                 "${workspaceFolder:efx}/zircon-efi"
@@ -23,7 +23,7 @@
                 "path": [
                     "${workspaceFolder:kernel}",
                     "${workspaceFolder:libkrt}",
-                    "${workspaceFolder:libm}"
+                    "${workspaceFolder:nx}/libs/libm"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""

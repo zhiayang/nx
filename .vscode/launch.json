@@ -5,32 +5,36 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Debug Kernel",
+			"preLaunchTask": "qemu",
+			"name": "debug kernel",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "/mnt/d/Projects/nx/build/sysroot/boot/nxkernel64",
-			"cwd": "/mnt/d/Projects/nx",
+			"program": "${workspaceFolder}/build/sysroot/boot/nxkernel64",
+			"cwd": "${workspaceFolder}",
+			"windows": {
+				"sourceFileMap": {
+					"/mnt/d/": "D:\\"
+				},
+				"pipeTransport": {
+					"pipeCwd": "",
+					"pipeProgram": "c:\\windows\\sysnative\\bash.exe",
+					"pipeArgs": ["-c"],
+					"debuggerPath": "/usr/bin/gdb"
+				},
+			},
+			"osx": {
+				"miDebuggerPath": "/usr/local/bin/gdb"
+			},
 			"args": [],
-			"sourceFileMap": {
-				"/mnt/d/": "D:\\"
-			},
-			"targetArchitecture":"x64",
 			"MIMode": "gdb",
-			"pipeTransport": {
-				"pipeCwd": "",
-				"pipeProgram": "c:\\windows\\sysnative\\bash.exe",
-				"pipeArgs": ["-c"],
-				"debuggerPath": "/usr/bin/gdb"
-			},
-			"stopAtEntry": true,
+			"targetArchitecture":"x64",
 			"customLaunchSetupCommands": [
 				{
-					"text": "target remote localhost:1234",
-					"description": "Connect to QEMU remote debugger"
+					"text": "file ${workspaceFolder:nx}/build/sysroot/boot/nxkernel64"
 				},
 				{
-					"text": "file /mnt/d/Projects/nx/build/sysroot/boot/nxkernel64",
-					"ignoreFailures": false
+					"text": "target remote :1234",
+					"ignoreFailures": true
 				}
 			],
 			"setupCommands": [
@@ -39,7 +43,6 @@
 					"ignoreFailures": false
 				},
 				{
-					"description": "Enable pretty-printing for gdb",
 					"text": "-enable-pretty-printing",
 					"ignoreFailures": true
 				}
