@@ -104,30 +104,42 @@ namespace nx
 
 	void log(const char* sys, const char* fmt, ...)
 	{
+		interrupts::disable();
+
 		va_list args; va_start(args, fmt);
 		cbprintf(nullptr, cb_serialprint, "%s[log]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
+
+		interrupts::enable();
 	}
 
 
 	void warn(const char* sys, const char* fmt, ...)
 	{
+		interrupts::disable();
+
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "%s[wrn]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
+		cbprintf(nullptr, cb_serialprint, "%s[wrn]%s %s%s%s: ", WRN_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
+
+		interrupts::enable();
 	}
 
 	void error(const char* sys, const char* fmt, ...)
 	{
+		interrupts::disable();
+
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "%s[err]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
+		cbprintf(nullptr, cb_serialprint, "%s[err]%s %s%s%s: ", ERR_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
 		vcbprintf(nullptr, cb_serialprint, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 		va_end(args);
+
+		interrupts::enable();
 	}
 
 

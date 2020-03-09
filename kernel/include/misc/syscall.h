@@ -4,6 +4,7 @@
 
 #pragma once
 #include "defs.h"
+#include "export/ipc_message.h"
 #include "export/syscall_funcs.h"
 
 namespace nx
@@ -15,6 +16,8 @@ namespace nx
 		bool copy_from_user(const void* user, void* kernel, size_t len);
 		bool copy_to_user(const void* kernel, void* user, size_t len);
 
+		void sc_get_memory_ticket(ipc::mem_ticket_t* ticket, size_t len);
+		void sc_collect_memory(ipc::mem_ticket_t* ticket, uint64_t ticketId);
 
 
 		// these are the internal declarations for the syscall functions.
@@ -23,13 +26,13 @@ namespace nx
 		void sc_null();
 
 		void sc_exit(int status);
-		int64_t sc_ipc_send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d);
+		int64_t sc_ipc_send(uint64_t target, ipc::message_body_t* msg);
 		size_t sc_ipc_poll();
 		void sc_ipc_discard();
 
 		// returns the sender ID if there was a message, else 0.
-		uint64_t sc_ipc_peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
-		uint64_t sc_ipc_receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d);
+		uint64_t sc_ipc_peek(ipc::message_body_t* msg);
+		uint64_t sc_ipc_receive(ipc::message_body_t* msg);
 
 		// returns the old handler.
 		void* sc_ipc_set_signal_handler(uint64_t sigType, void* new_handler);

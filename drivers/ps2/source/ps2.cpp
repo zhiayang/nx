@@ -80,10 +80,6 @@ namespace ps2
 		// a dual-channel controller, but we only support keyboards for now.
 
 		{
-			// disable both devices
-			send_cmd(0xAD);  // disables device 1
-			send_cmd(0xA7);  // disables device 2
-
 			// flush the buffer.
 			port::read1b(DATA_PORT);
 
@@ -92,6 +88,10 @@ namespace ps2
 			// disable translation, irq1 and irq12
 			config &= ~((1 << 6) | (1 << 0) | (1 << 1));
 			write_config(config);
+
+			// disable both devices
+			send_cmd(0xAD);  // disables device 1
+			send_cmd(0xA7);  // disables device 2
 		}
 
 
@@ -217,7 +217,8 @@ namespace ps2
 		if(KeyboardPort == 1)       send_cmd(0xAE), write_config(read_config() | 0x1);
 		else if(KeyboardPort == 2)  send_cmd(0xA8), write_config(read_config() | 0x2);
 
-
+		while(port::read1b(ps2::COMMAND_PORT) & 1)
+			port::read1b(ps2::DATA_PORT);
 
 		log("controller initialised");
 	}
@@ -318,6 +319,18 @@ namespace ps2
 			error("unknown irq #%lu", irq);
 			return nx::ipc::SIGNAL_IRQ_IGNORED(irq);
 		}
+
+		// // omo
+		// struct {
+		// 	int a;
+		// 	int b;
+
+		// } __attribute__((packed)) omo {
+		// 	.a = 3,
+		// 	.b = 9
+		// };
+
+		// nx::ipc::send(2, omo);
 
 		return nx::ipc::SIGNAL_IRQ_HANDLED(irq);
 	}

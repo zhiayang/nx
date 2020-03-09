@@ -154,15 +154,15 @@ namespace interrupts
 		while(hand)
 		{
 			// of course, this just queues the thread to get signalled, nothing happens immediately.
-			ipc::signalThread(hand->thr, ipc::SIGNAL_DEVICE_IRQ,
+			// if the thread has no signal handler, then the driver isn't ready yet -- we need to EOI it
+			// so future interrupts don't get lost.
+			ok |= ipc::signalThread(hand->thr, ipc::SIGNAL_DEVICE_IRQ,
 				ipc::signal_message_body_t(irq, 0, 0));
 
 			// not sure how many times we should boost; using '5' should
 			// pretty much put it at the front of the queue.
 			hand->thr->priority.boost(5);
-
 			hand = hand->next;
-			ok = true;
 
 			pending.remaining++;
 		}

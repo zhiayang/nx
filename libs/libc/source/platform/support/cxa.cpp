@@ -2,14 +2,12 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include <assert.h>
-
 extern "C"
 {
-	void __cxa_pure_virtual()
-	{
-		assert(!"tried to call pure virtual function!");
-	}
+	// void __cxa_pure_virtual()
+	// {
+	// 	assert(!"tried to call pure virtual function!");
+	// }
 
 	struct atexit_func_entry_t
 	{
@@ -63,4 +61,3 @@ extern "C"
 		}
 	}
 }
-

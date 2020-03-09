@@ -69,32 +69,38 @@ namespace nx
 			// ok, we have the message.
 			thr->pendingSignalQueue.append(msg);
 
+			// boost it a bit.
+			thr->priority.boost();
+
 			// that's it for this function.
 		}
 
 		// the default action here if there is no handler installed is to discard the message.
-		void signalThread(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
+		bool signalThread(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
 		{
 			if(sigType >= MAX_SIGNAL_TYPES)
-				return;
+				return false;
 
 			// check if there's a handler for it:
 			auto handler = thr->signalHandlers[sigType];
 			if(!handler)
+			{
 				log("ipc", "thread %lu has no handle for signal %lu", thr->threadId, sigType);
+				return false;
+			}
 
-			else
-				enqueue_signal(thr, sigType, msg);
+			enqueue_signal(thr, sigType, msg);
+			return true;
 		}
 
 		// the default action here is to terminate the thread if there's no handler installed.
-		void signalThreadCritical(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
+		bool signalThreadCritical(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
 		{
 			assert(thr);
 
 			// yo wtf
 			if(sigType >= MAX_SIGNAL_TYPES)
-				return;
+				return false;
 
 			// check if there's a handler for it:
 			auto handler = thr->signalHandlers[sigType];
@@ -106,10 +112,12 @@ namespace nx
 
 				// the scheduler will handle the case where we end up needing to terminate ourselves.
 				scheduler::terminate(thr);
+				return false;
 			}
 
 			// ok, time to call the handler i guess?
 			enqueue_signal(thr, sigType, msg);
+			return true;
 		}
 
 

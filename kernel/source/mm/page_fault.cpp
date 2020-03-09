@@ -55,16 +55,18 @@ namespace vmm
 			//    entire CPU while that work is happening.
 			// 2. we need to hold some locks (pmm, vmm), so to prevent deadlocking we need
 			//    to be preemptible.
-			// asm volatile ("sti");
 
 			// to make sure we can acquire spinlocks, tell the kernel that we're no longer in
 			// an interrupt context:
 			nx_x64_exit_intr_context();
+			asm volatile ("sti");
 
 			// get the old physical address:
 			auto old_phys = vmm::getPhysAddr(aligned_cr2);
 
-			// then, get a new one:
+			// then, get a new one. note: we don't need to track this in the address space, because the
+			// virtual address will have already been tracked, and we'll automatically free the physical
+			// page when the process dies.
 			auto phys = pmm::allocate(1);
 			vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 
@@ -92,6 +94,7 @@ namespace vmm
 
 			// here's the thing: the exception handler wrapper in asm will also exit the intr_context;
 			// so, we need to "enter" it again so the value never becomes negative.
+			asm volatile ("cli");
 			nx_x64_enter_intr_context();
 
 			return true;

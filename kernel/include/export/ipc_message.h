@@ -10,19 +10,16 @@
 namespace nx {
 namespace ipc
 {
+	struct selector_t
+	{
+		const char* name;
+	};
+
 	struct message_body_t
 	{
-		union {
-			struct {
-				uint64_t a;
-				uint64_t b;
-				uint64_t c;
-				uint64_t d;
-			};
+		static constexpr size_t BufferSize = 256;
 
-			uint64_t quads[4];
-			uint8_t bytes[32];
-		};
+		uint8_t bytes[BufferSize];
 	};
 
 	struct signal_message_body_t
@@ -61,8 +58,21 @@ namespace ipc
 
 	constexpr uint64_t SIGNAL_IRQ_HANDLED(uint64_t irq) { return (uint32_t) irq | SIGNAL_IRQ_HANDLED_FLAG; }
 	constexpr uint64_t SIGNAL_IRQ_IGNORED(uint64_t irq) { return (uint32_t) irq | SIGNAL_IRQ_IGNORED_FLAG; }
+
+
+
+
+	struct mem_ticket_t
+	{
+		void* ptr;
+		size_t len;
+
+		uint64_t ticketId;
+	};
 }
 }
+
+
 
 
 

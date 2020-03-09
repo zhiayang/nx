@@ -29,6 +29,10 @@ namespace nx
 		interrupts::init();
 
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
+		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
+
+
+
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 

@@ -111,11 +111,12 @@ make-folders:
 
 export-headers: $(shell find libs/libc/include -type f) $(shell find libs/libm/include -type f) $(shell find libs/libnxsc/include -type f) $(shell find kernel/include/export -type f) $(shell find services/*/include -type f) | make-folders
 	-@find $(SYSROOT)/usr/include/ -type f | xargs rm
-	@cp -R libs/libc/include/*          $(SYSROOT)/usr/include/
-	@cp -R libs/libm/include/*          $(SYSROOT)/usr/include/
-	@cp -R libs/libnxsc/include/*       $(SYSROOT)/usr/include/
-	@cp -R kernel/include/export/*      $(SYSROOT)/usr/include/nx/
-	@cp -R services/tty-svr/include/*   $(SYSROOT)/usr/include/svr/
+	@cp -R libs/libc/include/*                  $(SYSROOT)/usr/include/
+	@cp -R libs/libm/include/*                  $(SYSROOT)/usr/include/
+	@cp -R libs/libnxsc/include/*               $(SYSROOT)/usr/include/
+	@cp -R kernel/include/export/*              $(SYSROOT)/usr/include/nx/
+	@cp -R services/tty-svr/include/export/*    $(SYSROOT)/usr/include/svr/
+	@cp -R services/vfs-svr/include/export/*    $(SYSROOT)/usr/include/svr/
 
 $(SYSROOT)/boot/nxkernel64: $(shell find kernel)
 	@$(MAKE) -s -C kernel

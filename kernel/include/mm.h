@@ -138,6 +138,8 @@ namespace nx
 		constexpr addr_t PAGE_ALIGN(addr_t addr)
 		{
 			// check if we have the 62-nd bit set, to determine if we actually had the uppermost bit set.
+			// obviously when the virtual address space increases to 62-bits or more from 48-bits, then
+			// this ain't gonna work.
 			if(addr & 0x4000'0000'0000'0000)    return addr & 0xFFFF'FFFF'FFFF'F000;
 			else                                return addr & 0x7FFF'FFFF'FFFF'F000;
 		}
@@ -150,9 +152,13 @@ namespace nx
 
 		struct VMRegion
 		{
-			addr_t addr;
-			size_t length;
+			VMRegion(addr_t addr, size_t num);
 
+			addr_t addr;
+			size_t numPages;
+
+			// it's a dynamically allocated fixed size array, if that makes sense.
+			// the phys page of addr is in backing[0], addr + 0x1000 is in backing[1], etc.
 			nx::array<addr_t> backingPhysPages;
 		};
 
@@ -165,8 +171,10 @@ namespace nx
 			void init(addr_t cr3 = 0);
 			void destroy();
 
-			// void addRegion(addr_t addr, size_t size);
-			// void freeRegion(addr_t addr, size_t size);
+			void addRegion(addr_t addr, size_t size);
+			void freeRegion(addr_t addr, size_t size);
+
+			void addPhysicalMapping(addr_t virt, addr_t phys);
 		};
 	}
 

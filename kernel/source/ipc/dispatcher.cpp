@@ -49,12 +49,11 @@ namespace nx
 			msg.flags       = umsg.flags;
 			msg.senderId    = umsg.senderId;
 			msg.targetId    = umsg.targetId;
-			memcpy(msg.body.bytes, umsg.body.bytes, sizeof(umsg.body.bytes));
+			memcpy(msg.body.bytes, umsg.body.bytes, umsg.body.BufferSize);
 
-			{
-				autolock lk(&queueLock);
+			LockedSection(&queueLock, [&msg]() {
 				messageQueue.append(msg);
-			}
+			});
 		}
 
 		void disposeMessage(message_t& message)

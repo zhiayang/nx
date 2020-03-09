@@ -18,8 +18,8 @@
 	],
 	"settings":
 	{
-		"ecc_use_default_includes": false,
-		"ecc_common_flags": [ ],
+		"ecc_use_default_includes": true,
+		"ecc_common_flags": [  ],
 		"ecc_target_c_compiler": "$project_base_path/build/toolchain/bin/x86_64-orionx-gcc",
 		"ecc_target_cpp_compiler": "$project_base_path/build/toolchain/bin/x86_64-orionx-g++"
 	}

@@ -24,7 +24,10 @@ namespace serial
 
 	void debugprint(char* s, size_t l)
 	{
-		for(size_t i = 0; i < l; i++)
+		if(!s)
+			return;
+
+		for(size_t i = 0; i < l && s[i]; i++)
 			debugprint(s[i]);
 	}
 

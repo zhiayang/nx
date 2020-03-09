@@ -40,6 +40,23 @@ namespace krt
 			return true;
 		}
 
+		// this does NOT shrink!!! IT DOES NOT!!
+		// ohai mark
+		static bool resize(Container* self, size_t size)
+		{
+			if(size <= self->cnt)
+				return false;
+
+			// this does most of the work. we just need to insert new elements.
+			bool did = reserve(self, size);
+
+			// insert default constructed elements
+			for(size_t i = self->cnt; i < size; i++)
+				new (self->ptr + i) ElmTy();
+
+			return did;
+		}
+
 		static ElmTy& front(Container* self)
 		{
 			if(self->cnt == 0) aborter::abort("front(): empty array");

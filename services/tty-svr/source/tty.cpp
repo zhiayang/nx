@@ -2,7 +2,7 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#include "tty.h"
+#include "export/tty.h"
 
 //* note: we do not link with libkrt! we only want the template types, which are
 //* all in headers.

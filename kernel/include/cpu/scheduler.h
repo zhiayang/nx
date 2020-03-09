@@ -252,8 +252,8 @@ namespace nx
 			// these things get touched in critical sections, so we use the special
 			// allocator to make sure they don't try to acquire locks in the main
 			// kernel heap, which would be a bad thing.
-			krt::list<ipc::signal_message_t, _fixed_allocator, _aborter> pendingSignalQueue;
-			krt::list<cpu::InterruptedState, _fixed_allocator, _aborter> savedSignalStateStack;
+			nx::list<ipc::signal_message_t, _fixed_allocator> pendingSignalQueue;
+			nx::list<cpu::InterruptedState, _fixed_allocator> savedSignalStateStack;
 		};
 
 

@@ -50,6 +50,9 @@ namespace syscall
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) sc_mmap_anon;
 		SyscallTable[SYSCALL_MMAP_FILE]             = (void*) sc_mmap_file;
 
+		SyscallTable[SYSCALL_MEMTICKET_GET]         = (void*) sc_get_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) sc_collect_memory;
+
 		// syscall/sc_vfs.cpp
 		SyscallTable[SYSCALL_VFS_READ]              = (void*) sc_vfs_read;
 		SyscallTable[SYSCALL_VFS_WRITE]             = (void*) sc_vfs_write;

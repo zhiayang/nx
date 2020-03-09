@@ -9,7 +9,7 @@
 #include <ipc.h>
 #include <syscall.h>
 
-#include "tty.h"
+#include "export/tty.h"
 
 int main()
 {

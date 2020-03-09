@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "vfs-svr-windows",
+            "includePath": [
+                "${workspaceFolder:vfs-svr}/include",
+                "${workspaceFolder:nx}/libs/libkrt/include",
+                "${workspaceFolder:nx}/build/sysroot/usr/include"
+            ],
+            "defines": [
+                "__orionx__",
+                "_DEBUG"
+            ],
+            "compilerPath": "${workspaceFolder}/../../build/toolchain/bin/x86_64-orionx-g++",
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder:vfs-svr}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

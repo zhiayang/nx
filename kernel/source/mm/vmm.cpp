@@ -86,7 +86,7 @@ namespace vmm
 
 	// these are the address spaces that we can hand out:
 	// USER_ADDRSPACE_BASE          ->      USER_ADDRSPACE_END
-    // KERNEL_HEAP_BASE             ->      KERNEL_HEAP_END
+	// KERNEL_HEAP_BASE             ->      KERNEL_HEAP_END
 	// KERNEL_VMM_ADDRSPACE_BASE    ->      KERNEL_VMM_ADDRSPACE_END
 
 	addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc)
@@ -138,6 +138,8 @@ namespace vmm
 
 	addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
+		// return allocateEager(num, type, flags, proc);
+
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 

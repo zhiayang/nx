@@ -9,10 +9,10 @@ CXXDEPS     = $(CXXOBJ:.o=.d)
 
 .PHONY: all
 
-all: $(INITRD_DIR)/services/tty-svr
+all: $(INITRD_DIR)/services/vfs-svr
 
-$(INITRD_DIR)/services/tty-svr: $(CXXOBJ) $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libnxsc.a
-	@echo "# tty-svr"
+$(INITRD_DIR)/services/vfs-svr: $(CXXOBJ) $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libnxsc.a
+	@echo "# vfs-svr"
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXOBJ)
 
 %.cpp.o: %.cpp

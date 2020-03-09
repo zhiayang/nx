@@ -9,15 +9,17 @@
 #include <syscall.h>
 #include <nx/thread_local.h>
 
+#include <stdio.h>
+
 #include "ipc.h"
 
 namespace nx {
 namespace ipc
 {
-	int send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+	int send(uint64_t target, const message_body_t* body)
 	{
 		int64_t ret = 0;
-		__nx_syscall_5(SYSCALL_IPC_SEND, ret, target, a, b, c, d);
+		__nx_syscall_2(SYSCALL_IPC_SEND, ret, target, body);
 
 		return ret;
 	}
@@ -27,18 +29,18 @@ namespace ipc
 		__nx_syscall_0v(SYSCALL_IPC_DISCARD);
 	}
 
-	uint64_t peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
+	uint64_t peek(message_body_t* msg)
 	{
 		uint64_t ret = 0;
-		__nx_syscall_4(SYSCALL_IPC_PEEK, ret, a, b, c, d);
+		__nx_syscall_1(SYSCALL_IPC_PEEK, ret, msg);
 
 		return ret;
 	}
 
-	uint64_t receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
+	uint64_t receive(message_body_t* msg)
 	{
 		uint64_t ret = 0;
-		__nx_syscall_4(SYSCALL_IPC_PEEK, ret, a, b, c, d);
+		__nx_syscall_1(SYSCALL_IPC_RECEIVE, ret, msg);
 
 		return ret;
 	}
@@ -57,6 +59,23 @@ namespace ipc
 		__nx_syscall_2(SYSCALL_IPC_SET_SIG_HANDLER, ret, sigType, handler);
 
 		return ret;
+	}
+
+
+	mem_ticket_t get_memory_ticket(size_t len)
+	{
+		mem_ticket_t ticket { 0 };
+		__nx_syscall_2v(SYSCALL_MEMTICKET_GET, &ticket, len);
+
+		return ticket;
+	}
+
+	mem_ticket_t collect_memory(uint64_t ticketId)
+	{
+		mem_ticket_t ticket { 0 };
+		__nx_syscall_2v(SYSCALL_MEMTICKET_COLLECT, &ticket, ticketId);
+
+		return ticket;
 	}
 }
 }

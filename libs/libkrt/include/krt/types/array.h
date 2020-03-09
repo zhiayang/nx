@@ -111,6 +111,15 @@ namespace krt
 				allocator::deallocate(oldptr);
 		}
 
+		void resize(size_t newsize)
+		{
+			auto oldptr = this->ptr;
+
+			bool dealloc = impl::resize(this, newsize);
+			if(dealloc && oldptr)
+				allocator::deallocate(oldptr);
+		}
+
 		// apparently we can't "using" members, so just make a new one that calls the old one.
 		array subarray(size_t idx, size_t len) const        { return impl::subarray(this, idx, len); }
 		void clear()                                        { impl::clear(this); }

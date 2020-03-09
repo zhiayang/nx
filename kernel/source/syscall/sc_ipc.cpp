@@ -32,16 +32,16 @@ namespace nx
 		return proc->pendingMessages.size();
 	}
 
-	uint64_t syscall::sc_ipc_receive(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
+	uint64_t syscall::sc_ipc_receive(message_body_t* msg)
 	{
 		// note: there is no race condition here cos new messages go to the back, and discard pops from the front.
-		auto ret = sc_ipc_peek(a, b, c, d);
+		auto ret = sc_ipc_peek(msg);
 		if(ret) sc_ipc_discard();
 
 		return ret;
 	}
 
-	uint64_t syscall::sc_ipc_peek(uint64_t* a, uint64_t* b, uint64_t* c, uint64_t* d)
+	uint64_t syscall::sc_ipc_peek(message_body_t* output)
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -50,15 +50,12 @@ namespace nx
 			return 0;
 
 		auto msg = proc->pendingMessages.front();
-		if(a)   *a = msg.body.a;
-		if(b)   *b = msg.body.b;
-		if(c)   *c = msg.body.c;
-		if(d)   *d = msg.body.d;
+		if(output) *output = msg.body;
 
 		return msg.senderId;
 	}
 
-	int64_t syscall::sc_ipc_send(uint64_t target, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+	int64_t syscall::sc_ipc_send(uint64_t target, message_body_t* body)
 	{
 		if(target == 0) return -1;
 		auto senderId = (uint64_t) scheduler::getCurrentProcess()->processId;
@@ -68,13 +65,13 @@ namespace nx
 			.senderId   = senderId,
 			.targetId   = target,
 			.flags      = 0,
-			.body = message_body_t {
-				a, b, c, d
-			}
+			.body       = *body
 		});
 
 		return 0;
 	}
+
+
 
 	// returns the old handler.
 	void* syscall::sc_ipc_set_signal_handler(uint64_t sigType, void* new_handler)
@@ -93,10 +90,8 @@ namespace nx
 
 	void syscall::sc_user_signal_leave(uint64_t returnCode)
 	{
-		// do nothing?
 		auto thr = scheduler::getCurrentThread();
 		assert(thr);
-
 
 		// handled:
 		if(returnCode & SIGNAL_IRQ_HANDLED_FLAG)
