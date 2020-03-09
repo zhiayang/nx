@@ -11,26 +11,21 @@
 			"request": "launch",
 			"program": "${workspaceFolder}/build/sysroot/boot/nxkernel64",
 			"cwd": "${workspaceFolder}",
-			"windows": {
-				"sourceFileMap": {
-					"/mnt/d/": "D:\\"
-				},
-				"pipeTransport": {
-					"pipeCwd": "",
-					"pipeProgram": "c:\\windows\\sysnative\\bash.exe",
-					"pipeArgs": ["-c"],
-					"debuggerPath": "/usr/bin/gdb"
-				},
-			},
+			"miDebuggerPath": "/usr/bin/gdb",
 			"osx": {
 				"miDebuggerPath": "/usr/local/bin/gdb"
 			},
 			"args": [],
 			"MIMode": "gdb",
 			"targetArchitecture":"x64",
+			"stopAtEntry": true,
 			"customLaunchSetupCommands": [
 				{
 					"text": "file ${workspaceFolder:nx}/build/sysroot/boot/nxkernel64"
+				},
+				{
+					"text": "set breakpoint pending on",
+					"ignoreFailures": false
 				},
 				{
 					"text": "target remote :1234",
@@ -38,10 +33,6 @@
 				}
 			],
 			"setupCommands": [
-				{
-					"text": "set breakpoint pending on",
-					"ignoreFailures": false
-				},
 				{
 					"text": "-enable-pretty-printing",
 					"ignoreFailures": true

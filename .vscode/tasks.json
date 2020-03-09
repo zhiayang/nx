@@ -7,23 +7,7 @@
 			"label": "qemu",
 			"type": "shell",
 			"isBackground": true,
-			"dependsOn":[ "build" ],
-			"windows": {
-				"options": {
-					"shell": {
-						"executable": "powershell.exe"
-					}
-				},
-				"command": "echo starting QEMU; Start",
-				"args": [
-					"'D:\\Programs\\qemu\\qemu-system-x86_64.exe'",
-					"-ArgumentList",
-					"@('-S','-s','-no-shutdown','-no-reboot','-vga','std','-bios','utils\\ovmf-x64\\OVMF-pure-efi.fd','-drive','format=raw,file=build\\disk.img','-chardev','stdio,id=qemu-debug-out','-device','isa-debugcon,chardev=qemu-debug-out')"
-				]
-			},
-			"osx": {
-				"command": "echo starting QEMU & qemu-system-x86_64 -S -s -no-shutdown -no-reboot -vga std -bios utils/ovmf-x64/OVMF-pure-efi.fd -drive format=raw,file=build/disk.img -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out"
-			},
+			"command": "echo starting QEMU & ${workspaceFolder:nx}/build.sh debug",
 			"problemMatcher": {
                 "pattern": {
                     "regexp": "^(starting QEMU)",
@@ -35,19 +19,6 @@
                     "endsPattern": "^(starting QEMU)"
                 }
             }
-		},
-		{
-			"label": "build",
-			"type": "shell",
-			"windows": {
-				"options": {
-					"shell": {
-						"executable": "wsl.exe"
-					}
-				}
-			},
-			"command": "make",
-			"args": [ "-j8", "diskimage" ]
 		}
 	]
 }
