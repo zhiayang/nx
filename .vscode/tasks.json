@@ -7,16 +7,16 @@
 			"label": "qemu",
 			"type": "shell",
 			"isBackground": true,
-			"command": "echo starting QEMU & ${workspaceFolder:nx}/build.sh debug",
+			"command": "${workspaceFolder:nx}/build.sh debug",
 			"problemMatcher": {
                 "pattern": {
-                    "regexp": "^(starting QEMU)",
+                    "regexp": "^(# starting qemu)",
                     "line": 1,
                 },
                 "background": {
                     "activeOnStart": true,
-                    "beginsPattern": "^(starting QEMU)",
-                    "endsPattern": "^(starting QEMU)"
+                    "beginsPattern": "^(# starting qemu)",
+                    "endsPattern": "^(# starting qemu)"
                 }
             }
 		}
