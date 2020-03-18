@@ -102,7 +102,7 @@ namespace vmm
 		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_WRITE | PAGE_PRESENT;
 
 
-		// fuckin nasty man. bad hack!! we need to move this elsewhere
+		// TODO: fuckin nasty man. bad hack!! we need to move this elsewhere
 		{
 			auto numPgs = (fbScan * fbResY * 4 + PAGE_SIZE - 1) / PAGE_SIZE;
 
@@ -110,7 +110,7 @@ namespace vmm
 				numPgs, PAGE_USER | PAGE_WRITE | PAGE_PRESENT, proc);
 		}
 
-		// fuckin nasty hack part 2!!! we also need to move this elsewhere!!
+		// TODO: fuckin nasty hack part 2!!! we also need to move this elsewhere!!
 		{
 			auto stubs_begin = (uintptr_t) &nx_user_kernel_stubs_begin;
 			auto stubs_end   = (uintptr_t) &nx_user_kernel_stubs_end;

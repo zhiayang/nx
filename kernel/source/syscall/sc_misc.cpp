@@ -4,20 +4,20 @@
 
 #include "nx.h"
 
-namespace nx {
-namespace syscall
+namespace nx
 {
-	void sc_null()
+
+	void syscall::do_nothing()
 	{
 	}
 
-	void sc_exit(int status)
+	void syscall::exit(int status)
 	{
 		// ok good. this will yield.
 		scheduler::exit(status);
 	}
 
-	void sc_log(int level, char* sys, size_t syslen, char* buf, size_t buflen)
+	void syscall::kernel_log(int level, char* sys, size_t syslen, char* buf, size_t buflen)
 	{
 		// we should probably handle this somewhere less... dumb?
 		switch(level)
@@ -35,11 +35,11 @@ namespace syscall
 		serial::debugprint("\n");
 	}
 
-	uint64_t sc_nanosecond_timestamp()
+	uint64_t syscall::nanosecond_timestamp()
 	{
 		return scheduler::getElapsedNanoseconds();
 	}
-}
+
 }
 
 

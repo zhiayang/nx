@@ -78,7 +78,7 @@ namespace nx
 					}
 				}
 
-				serial::debugprint("*");
+				// serial::debugprint("*");
 				scheduler::sleep(time::milliseconds(100).ns());
 			}
 		}));

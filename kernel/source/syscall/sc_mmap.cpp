@@ -6,39 +6,8 @@
 
 #include <libc/include/sys/mman.h>
 
-namespace nx {
-namespace syscall
+namespace nx
 {
-	// creates a shared memory buffer for use by other programs. outputs the pointer to the beginning of
-	// the region in *ptr. returns a handle to the shared memory that you can give to other processes
-	// that can be passed to open_shared_buffer or closed_shared_buffer.
-	int64_t sc_create_shared_buffer(void** ptr, size_t size, int prot, int flags)
-	{
-
-		return -1;
-	}
-
-	void* sc_open_shared_buffer(int64_t handle, size_t ofs, size_t len, int prot, int flags)
-	{
-
-		return (void*) -1;
-	}
-
-	void sc_close_shared_buffer(int64_t handle)
-	{
-	}
-
-
-
-
-
-
-
-
-
-
-
-
 	/*
 		there's some stuff we need to handle for unix-like mmap. i believe the linux behaviour
 		is that MAP_SHARED is only designed to work with files; if you do MAP_ANON | MAP_SHARED,
@@ -47,7 +16,7 @@ namespace syscall
 		i think.
 	*/
 
-	void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags)
+	void* syscall::mmap_anon(void* req_addr, size_t length, int prot, int flags)
 	{
 		if(length == 0)
 			return MAP_FAILED;
@@ -99,14 +68,14 @@ namespace syscall
 	}
 
 
-	void* sc_mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset)
+	void* syscall::mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset)
 	{
 		return MAP_FAILED;
 	}
 
 
 
-	int sc_munmap(void* req_addr, size_t length)
+	int syscall::munmap(void* req_addr, size_t length)
 	{
 		// well, let's just unmap it page-by-page.
 
@@ -124,7 +93,6 @@ namespace syscall
 
 		return 0;
 	}
-}
 }
 
 

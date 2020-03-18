@@ -16,41 +16,42 @@ namespace nx
 		bool copy_from_user(const void* user, void* kernel, size_t len);
 		bool copy_to_user(const void* kernel, void* user, size_t len);
 
-		void sc_get_memory_ticket(ipc::mem_ticket_t* ticket, size_t len);
-		void sc_collect_memory(ipc::mem_ticket_t* ticket, uint64_t ticketId);
+		void get_memory_ticket(ipc::mem_ticket_t* ticket, size_t len);
+		void collect_memory_ticket(ipc::mem_ticket_t* ticket, uint64_t ticketId);
+		void release_memory_ticket(ipc::mem_ticket_t* ticket);
 
 
 		// these are the internal declarations for the syscall functions.
 		// we don't expose these to the user anyway, they're just there for
 		// the syscall function table to work.
-		void sc_null();
+		void do_nothing();
 
-		void sc_exit(int status);
-		int64_t sc_ipc_send(uint64_t target, ipc::message_body_t* msg);
-		size_t sc_ipc_poll();
-		void sc_ipc_discard();
+		void exit(int status);
+		int64_t ipc_send(uint64_t target, ipc::message_body_t* msg);
+		size_t ipc_poll();
+		void ipc_discard();
 
 		// returns the sender ID if there was a message, else 0.
-		uint64_t sc_ipc_peek(ipc::message_body_t* msg);
-		uint64_t sc_ipc_receive(ipc::message_body_t* msg);
+		uint64_t ipc_peek(ipc::message_body_t* msg);
+		uint64_t ipc_receive(ipc::message_body_t* msg);
 
 		// returns the old handler.
-		void* sc_ipc_set_signal_handler(uint64_t sigType, void* new_handler);
+		void* ipc_set_signal_handler(uint64_t sigType, void* new_handler);
 
 
-		void* sc_mmap_anon(void* req_addr, size_t length, int prot, int flags);
-		void* sc_mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);
+		void* mmap_anon(void* req_addr, size_t length, int prot, int flags);
+		void* mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);
 
-		int sc_munmap(void* req_addr, size_t length);
+		int munmap(void* req_addr, size_t length);
 
-		ssize_t sc_vfs_read(int fd, void* buf, size_t len);
-		ssize_t sc_vfs_write(int fd, const void* buf, size_t len);
+		ssize_t vfs_read(int fd, void* buf, size_t len);
+		ssize_t vfs_write(int fd, const void* buf, size_t len);
 
-		void sc_user_signal_leave(uint64_t returnCode);
+		void user_signal_leave(uint64_t returnCode);
 
-		void sc_log(int level, char* sys, size_t syslen, char* buf, size_t buflen);
+		void kernel_log(int level, char* sys, size_t syslen, char* buf, size_t buflen);
 
-		uint64_t sc_nanosecond_timestamp();
+		uint64_t nanosecond_timestamp();
 	}
 }
 

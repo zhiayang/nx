@@ -6,16 +6,15 @@
 
 #include <libc/include/unistd.h>
 
-namespace nx {
-namespace syscall
+namespace nx
 {
-	ssize_t sc_vfs_read(int fd, void* buf, size_t len)
+	ssize_t syscall::vfs_read(int fd, void* buf, size_t len)
 	{
 		// no, stop!
 		return 0;
 	}
 
-	ssize_t sc_vfs_write(int fd, const void* buf, size_t len)
+	ssize_t syscall::vfs_write(int fd, const void* buf, size_t len)
 	{
 		// what this needs to do is to go into the current process, look at its vfs table,
 		// and call ->write on the appropriate thing!
@@ -31,5 +30,4 @@ namespace syscall
 			return 0;
 		}
 	}
-}
 }
