@@ -67,6 +67,8 @@ namespace vmm
 			// then, get a new one. note: we don't need to track this in the address space, because the
 			// virtual address will have already been tracked, and we'll automatically free the physical
 			// page when the process dies.
+
+			warn("pf", "allocating page");
 			auto phys = pmm::allocate(1);
 			vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 

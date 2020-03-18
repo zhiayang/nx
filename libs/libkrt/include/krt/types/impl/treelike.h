@@ -23,7 +23,7 @@ namespace krt
 			Node* right;
 			Node* parent;
 
-			private:
+		private:
 			long height;
 			long balance;
 

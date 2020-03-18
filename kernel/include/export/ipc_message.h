@@ -61,6 +61,9 @@ namespace ipc
 
 
 
+	constexpr uint64_t MEMTICKET_FLAG_READ      = 0x01;
+	constexpr uint64_t MEMTICKET_FLAG_WRITE     = 0x02;
+	constexpr uint64_t MEMTICKET_FLAG_EXCLUSIVE = 0x04;
 
 	struct mem_ticket_t
 	{

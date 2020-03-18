@@ -50,7 +50,7 @@ namespace syscall
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;
 		SyscallTable[SYSCALL_MMAP_FILE]             = (void*) mmap_file;
 
-		SyscallTable[SYSCALL_MEMTICKET_GET]         = (void*) get_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_CREATE]      = (void*) create_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) collect_memory_ticket;
 
 		// syscall/sc_vfs.cpp
@@ -129,13 +129,13 @@ namespace syscall
 
 	// we have no protections in place; for now, just a memcpy.
 	// TODO: data protections!!!!!!!!!!!!!!!!
-	bool copy_from_user(const void* user, void* kernel, size_t len)
+	bool copy_to_kernel(void* kernel, const void* user, size_t len)
 	{
 		memcpy(kernel, user, len);
 		return true;
 	}
 
-	bool copy_to_user(const void* kernel, void* user, size_t len)
+	bool copy_to_user(void* user, const void* kernel, size_t len)
 	{
 		memcpy(user, kernel, len);
 		return true;

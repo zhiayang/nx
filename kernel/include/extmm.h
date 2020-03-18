@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "nx.h"
+#include "synchro.h"
+#include "devices/serial.h"
 
 #include <type_traits>
 

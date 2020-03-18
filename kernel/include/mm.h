@@ -5,6 +5,7 @@
 #pragma once
 
 #include "defs.h"
+#include "extmm.h"
 #include "synchro.h"
 #include "misc/addrs.h"
 
@@ -167,6 +168,8 @@ namespace nx
 			addr_t cr3;
 			nx::list<VMRegion> regions;
 			nx::array<addr_t> allocatedPhysPages;
+
+			extmm::State<> vmmStates[vmm::NumAddressSpaces];
 
 			void init(addr_t cr3 = 0);
 			void destroy();

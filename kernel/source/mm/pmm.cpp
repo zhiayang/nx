@@ -133,6 +133,8 @@ namespace pmm
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](addr_t, size_t) -> bool { return true; });
 
+
+		// log("pmm", "allocated %p - %p", ret, ret + num * PAGE_SIZE);
 		assert(ret);
 		return ret;
 	}
@@ -146,6 +148,7 @@ namespace pmm
 		if(addr == zeroPageAddr && num == 1)
 			return;
 
+		// log("pmm", "deallocated %p - %p", addr, addr + num * PAGE_SIZE);
 		extmmState.deallocate(addr, num);
 	}
 

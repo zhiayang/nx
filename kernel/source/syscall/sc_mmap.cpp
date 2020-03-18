@@ -47,6 +47,9 @@ namespace nx
 					auto phys = pmm::allocate(numPages);
 					vmm::mapAddress(virt, phys, numPages, flg);
 
+					// TODO: nobody frees this when the process exits!!!
+					// PHYSICAL LEAK
+
 					return (void*) virt;
 				}
 

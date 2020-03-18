@@ -62,10 +62,10 @@ namespace ipc
 	}
 
 
-	mem_ticket_t get_memory_ticket(size_t len)
+	mem_ticket_t create_memory_ticket(size_t len, uint64_t flags)
 	{
 		mem_ticket_t ticket { 0 };
-		__nx_syscall_2v(SYSCALL_MEMTICKET_GET, &ticket, len);
+		__nx_syscall_3v(SYSCALL_MEMTICKET_CREATE, &ticket, len, flags);
 
 		return ticket;
 	}

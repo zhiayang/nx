@@ -144,7 +144,6 @@ namespace nx
 			// a mutex -- the same concept applies, cos we might need to call mapAddress() to
 			// expand the heap.
 			nx::spinlock addrSpaceLock; // this locks both of these below.
-			extmm::State<> vmmStates[vmm::NumAddressSpaces];
 			vmm::AddressSpace addrspace;
 
 

@@ -48,7 +48,7 @@ namespace ipc
 	}
 
 
-	mem_ticket_t get_memory_ticket(size_t len);
+	mem_ticket_t create_memory_ticket(size_t len, uint64_t flags);
 	mem_ticket_t collect_memory(uint64_t ticketId);
 }
 }
