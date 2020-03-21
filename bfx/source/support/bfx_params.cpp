@@ -1,4 +1,4 @@
-// params.cpp
+// bfx_params.cpp
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
@@ -11,6 +11,8 @@ namespace bfx
 {
 	namespace params
 	{
+		size_t NUM_ALLOC_PAGES = 1;
+
 		void readParams(nx::BootInfo* bi, void* initrdPtr, size_t initrdSize)
 		{
 			// find the config file.
@@ -22,7 +24,7 @@ namespace bfx
 
 			#define SKIP_TO_NEXT_LINE() do { while(buf[idx] != '\n') idx++; idx++; line++; } while(0)
 
-			char* paramBuf = (char*) pmm::allocate(2);
+			char* paramBuf = (char*) pmm::allocate(NUM_ALLOC_PAGES);
 			size_t paramSz = 0;
 			size_t paramCount = 0;
 

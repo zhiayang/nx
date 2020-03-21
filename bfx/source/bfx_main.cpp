@@ -11,11 +11,13 @@
 #include "bootboot.h"
 #include "../../kernel/include/bootinfo.h"
 
-#define BFX_VERSION_STRING "0.2.3"
+#define BFX_VERSION_STRING "0.2.4"
 #define KERNEL_FILENAME    "boot/nxkernel64"
 
 extern "C" void kernel_trampoline(uint64_t cr3, uint64_t entry, uint64_t bootinfo);
 extern "C" void kernel_trampoline_end();
+
+namespace bfx::params { extern size_t NUM_ALLOC_PAGES; }
 
 // note: similar to efx, all memory (at least <4gb) is identity mapped, so we don't need to worry
 // about any translation or whatever when passing stuff around. we can just deal in physical addresses.
@@ -105,6 +107,11 @@ void bfx::init(BOOTBOOT* bbinfo)
 		println("");
 
 		params::readParams(kbootinfo, initrdPtr, initrdSz);
+		{
+			auto p = (uintptr_t) kbootinfo->kernelParams;
+			mmap::addEntry(p, bfx::params::NUM_ALLOC_PAGES, (uint64_t) nx::MemoryType::BootInfo);
+			vmm::mapKernel(p, p, bfx::params::NUM_ALLOC_PAGES, 0);
+		}
 	}
 
 	// finally, setup the memory map.
