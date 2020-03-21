@@ -78,6 +78,9 @@ namespace nx
 			// actually that was a lie. nothing like that happens, pages leak like crazy.
 
 			/*
+				21/03: this is all done!
+
+
 				the problem is that right now, there's a bunch of mechanisms for keeping track of physical pages
 				that "happen to be linked to" virtual pages, and it's a gamble depending on which mechanism
 				you used to allocate the page whether not it'll be freed when the process exits.

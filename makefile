@@ -77,7 +77,7 @@ qemu-monitor: diskimage
 
 bios: diskimage
 	# starting qemu (bios)
-	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) -serial stdio
+	@$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS_DISKIMG) $(QEMU_E9_PORT_STDIO)
 
 bios-debug: diskimage
 	# starting qemu (bios)

@@ -120,7 +120,7 @@ namespace pmm
 		log("pmm", "freed all bootloader memory");
 
 		// ask the vmm to unmap all identity memory.
-		vmm::unmapAddress(0, maxIdentMem / PAGE_SIZE, /* freePhys: */ false, /* ignoreUnmapped: */ true);
+		vmm::unmapAddress(0, maxIdentMem / PAGE_SIZE, /* ignoreUnmapped: */ true);
 
 		log("vmm", "unmapped all identity-mapped memory");
 	}

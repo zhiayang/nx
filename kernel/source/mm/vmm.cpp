@@ -58,7 +58,7 @@ namespace vmm
 		// unmap the null page.
 		if(isFirst)
 		{
-			unmapAddress(0, 1, /* freePhys: */ false);
+			unmapAddress(0, 1);
 		}
 		else
 		{
@@ -134,13 +134,14 @@ namespace vmm
 		ExtMMState* st = getAddrSpace(addr, num, proc->addrspace.vmmStates);
 		if(!st) abort("allocateSpecific(): no address space to allocate address '%p'", addr);
 
-		return st->allocateSpecific(addr, num);
+		auto virt = st->allocateSpecific(addr, num);
+		if(virt) proc->addrspace.addRegion(virt, num);
+
+		return virt;
 	}
 
 	addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
-		// return allocateEager(num, type, flags, proc);
-
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
@@ -151,6 +152,8 @@ namespace vmm
 		flags &= ~PAGE_WRITE;
 
 		mapLazy(virt, num, flags, proc);
+		proc->addrspace.addRegion(virt, num);
+
 		return virt;
 	}
 
@@ -166,6 +169,8 @@ namespace vmm
 		if(phys == 0) { abort("vmm::allocate(): no physical pages!"); return 0; }
 
 		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
+		proc->addrspace.addRegion(virt, phys, num);
+
 		return virt;
 	}
 
@@ -176,8 +181,10 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		unmapAddress(addr, num, /* freePhys: */ true, /* ignoreIfNotMapped: */ false, proc);
+		unmapAddress(addr, num, /* ignoreIfNotMapped: */ false, proc);
 		deallocateAddrSpace(addr, num, proc);
+
+		proc->addrspace.freeRegion(addr, num, /* freePhys: */ true);
 	}
 }
 }

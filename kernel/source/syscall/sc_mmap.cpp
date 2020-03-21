@@ -37,19 +37,14 @@ namespace nx
 			if(prot & PROT_WRITE)   flg |= vmm::PAGE_WRITE;
 			if(!(prot & PROT_EXEC)) flg |= vmm::PAGE_NX;
 
+			// TODO: check the bounds of the request!
 			if(req_addr != 0)
 			{
 				// ok, try to allocate some memory first.
 				auto virt = vmm::allocateSpecific(addr, numPages);
 				if(virt)
 				{
-					// TODO: lazy commit?? also try not to manually call the pmm!!!
-					auto phys = pmm::allocate(numPages);
-					vmm::mapAddress(virt, phys, numPages, flg);
-
-					// TODO: nobody frees this when the process exits!!!
-					// PHYSICAL LEAK
-
+					vmm::mapLazy(virt, numPages, flg & ~vmm::PAGE_WRITE);
 					return (void*) virt;
 				}
 
@@ -91,7 +86,11 @@ namespace nx
 			auto v = (addr + (i * PAGE_SIZE));
 
 			if(vmm::isMapped(v, 1))
-				vmm::unmapAddress(v, 1, /* freePhys: */ true);
+			{
+				auto phys = vmm::getPhysAddr(v);
+				vmm::unmapAddress(v, 1);
+				pmm::deallocate(phys, 1);
+			}
 		}
 
 		return 0;

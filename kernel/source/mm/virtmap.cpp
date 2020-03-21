@@ -144,7 +144,7 @@ namespace vmm
 		}
 
 		// ok i think that's it.
-		unmapAddress(virt, 1, /* freePhys: */ false);
+		unmapAddress(virt, 1);
 		deallocateAddrSpace(virt, 1);
 	}
 
@@ -189,7 +189,7 @@ namespace vmm
 
 			((pml_t*) tmp)->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
 
-			unmapAddress(tmp, 1, /* freePhys: */ false);
+			unmapAddress(tmp, 1);
 		}
 
 		void unmap()
@@ -201,7 +201,7 @@ namespace vmm
 
 			((pml_t*) tmp)->entries[509] = 0;
 
-			unmapAddress(tmp, 1, /* freePhys: */ false);
+			unmapAddress(tmp, 1);
 			invalidateAll();
 		}
 	};
@@ -408,7 +408,7 @@ namespace vmm
 
 
 
-	void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignore, scheduler::Process* proc)
+	void unmapAddress(addr_t virt, size_t num, bool ignore, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -466,14 +466,6 @@ namespace vmm
 				}
 
 				abort("unmap: %p was not mapped! (page not present)", virt);
-			}
-
-			if(freePhys)
-			{
-				addr_t phys = vmm::PAGE_ALIGN(ptab->entries[p1idx]);
-				assert(phys);
-
-				pmm::deallocate(phys, 1);
 			}
 
 			ptab->entries[p1idx] = 0;

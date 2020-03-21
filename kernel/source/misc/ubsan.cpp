@@ -49,6 +49,19 @@ static const struct ubsan_source_location unknown_location =
 	0,
 };
 
+
+static const char* type_check_kinds[] = {
+	"load",
+	"store",
+	"reference binding",
+	"member access within",
+	"member call",
+	"constructor call",
+	"downcast",
+	"downcast"
+};
+
+
 __attribute__((noreturn))
 static void ubsan_abort(const struct ubsan_source_location* location,
                         const char* violation)
@@ -76,26 +89,30 @@ ABORT_VARIANT(name, (void* a, intptr_t b), (a, b))
 #define ABORT_VARIANT_VP_VP_VP(name) \
 ABORT_VARIANT(name, (void* a, void* b, void* c), (a, b, c))
 
-struct ubsan_type_mismatch_data
+struct ubsan_type_mismatch_data_v1
 {
 	ubsan_source_location location;
 	ubsan_type_descriptor* type;
-	uintptr_t alignment;
+	unsigned char alignment_log;
 	unsigned char type_check_kind;
 };
 
 void __ubsan_handle_type_mismatch_v1(void* data_raw, void* pointer_raw)
 {
-	auto data = (ubsan_type_mismatch_data*) data_raw;
+	auto data = (ubsan_type_mismatch_data_v1*) data_raw;
 	auto pointer = (ubsan_value_handle_t) pointer_raw;
 
 	const char* violation = "type mismatch";
 
-	if ( !pointer )
+	if(!pointer)
 		violation = "null pointer access";
 
-	else if ( data->alignment && (pointer & (data->alignment - 1)) )
+	else if(data->alignment_log && (pointer & ((1 << data->alignment_log) - 1)))
 		violation = "unaligned access";
+
+
+	nx::error("ubsan", "type mismatch (%s): type %s, align: %zu, ptr: %p",
+		type_check_kinds[data->type_check_kind], data->type->type_name, (1 << data->alignment_log), pointer);
 
 	ubsan_abort(&data->location, violation);
 }

@@ -176,7 +176,7 @@ namespace scheduler
 			thr->kernelStackTop = (virt + KERNEL_STACK_SIZE);
 
 			// clear the temp mapping
-			vmm::unmapAddress(scratch, n, /* freePhys: */ false);
+			vmm::unmapAddress(scratch, n);
 			vmm::deallocateAddrSpace(scratch, n);
 
 			thr->cleanupPages.append(PageExtent(virt, n));
@@ -197,7 +197,7 @@ namespace scheduler
 
 			cpu::fpu::initState(scratch);
 
-			vmm::unmapAddress(scratch, 1, /* freePhys: */ false);
+			vmm::unmapAddress(scratch, 1);
 
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt;
@@ -267,12 +267,12 @@ namespace scheduler
 				// ok now do the tls
 				memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
 
-				vmm::unmapAddress(vmm::PAGE_ALIGN(scratchMaster), numPages, /* freePhys: */ false);
+				vmm::unmapAddress(vmm::PAGE_ALIGN(scratchMaster), numPages);
 			}
 
 
 			// ok we should be done.
-			vmm::unmapAddress(scratch, numPages, /* freePhys: */ false);
+			vmm::unmapAddress(scratch, numPages);
 
 			thr->cleanupPages.append(PageExtent(virt, numPages));
 		}
@@ -301,11 +301,11 @@ namespace scheduler
 		auto proc = thr->parent;
 		assert(proc);
 
-		for(const auto [ addr, size ] : thr->cleanupPages)
-		{
-			log("sched", "cleaning up %p - %p", addr, addr + size*PAGE_SIZE);
-			vmm::deallocate(addr, size, proc);
-		}
+		// for(const auto [ addr, size ] : thr->cleanupPages)
+		// {
+		// 	log("sched", "cleaning up %p - %p", addr, addr + size*PAGE_SIZE);
+		// 	vmm::deallocate(addr, size, proc);
+		// }
 
 		// save this for later.
 		auto id = thr->threadId;

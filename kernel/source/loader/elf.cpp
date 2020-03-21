@@ -144,7 +144,7 @@ namespace loader
 			// ok, we need to unmap the scratch space and do the real mapping.
 			{
 				vmm::deallocateAddrSpace(virtBase, numPages);
-				vmm::unmapAddress(virtBase, numPages, /* freePhys: */ false);
+				vmm::unmapAddress(virtBase, numPages);
 
 				if(progHdr->p_type == PT_TLS)
 				{

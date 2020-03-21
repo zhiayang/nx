@@ -55,6 +55,10 @@ namespace nx
 	template<typename K, typename V, typename Al = _allocator, typename Ab = _aborter>
 	using treemap = krt::treemap<K, V, Al, Ab>;
 
+	template<typename K, typename V, typename Al = _allocator, typename Ab = _aborter, typename H = krt::hash<K>>
+	using bucket_hashmap = krt::bucket_hashmap<K, V, Al, Ab, H>;
+
+
 	[[noreturn]] void halt();
 
 	[[noreturn]] void vabort(const char* fmt, va_list args);

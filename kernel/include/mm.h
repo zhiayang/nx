@@ -82,7 +82,7 @@ namespace nx
 
 
 		uint64_t getPageFlags(addr_t virt, scheduler::Process* proc = 0);
-		void unmapAddress(addr_t virt, size_t num, bool freePhys, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
+		void unmapAddress(addr_t virt, size_t num, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
 		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
 		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
 
@@ -154,19 +154,28 @@ namespace nx
 		struct VMRegion
 		{
 			VMRegion(addr_t addr, size_t num);
+			VMRegion(const VMRegion&);
+			VMRegion(VMRegion&&);
+
+			VMRegion& operator = (VMRegion&&);
+			VMRegion& operator = (const VMRegion&);
+
+			void grow_up(size_t count);     // addr remains the same
+			void grow_down(size_t count);   // addr decreases
+
+			void shrink_up(size_t count);   // addr increases
+			void shrink_down(size_t count); // addr remains the same
 
 			addr_t addr;
 			size_t numPages;
 
-			// it's a dynamically allocated fixed size array, if that makes sense.
-			// the phys page of addr is in backing[0], addr + 0x1000 is in backing[1], etc.
-			nx::array<addr_t> backingPhysPages;
+			nx::bucket_hashmap<addr_t, addr_t> backingPhysPages;
 		};
 
 		struct AddressSpace
 		{
 			addr_t cr3;
-			nx::list<VMRegion> regions;
+			nx::array<VMRegion> regions;
 			nx::array<addr_t> allocatedPhysPages;
 
 			extmm::State<> vmmStates[vmm::NumAddressSpaces];
@@ -175,9 +184,12 @@ namespace nx
 			void destroy();
 
 			void addRegion(addr_t addr, size_t size);
-			void freeRegion(addr_t addr, size_t size);
+			void addRegion(addr_t virtStart, addr_t physStart, size_t size);
 
-			void addPhysicalMapping(addr_t virt, addr_t phys);
+			void freeRegion(addr_t addr, size_t size, bool freePhys);
+
+			addr_t addPhysicalMapping(addr_t virt, addr_t phys);
+			// void addPhysicalMapping(addr_t virt, addr_t phys, size_t num);
 		};
 	}
 

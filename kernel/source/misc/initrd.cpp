@@ -89,7 +89,7 @@ namespace initrd
 			}
 
 			// make a thing.
-			void* buf = (void*) vmm::allocateEager((uncompressedSize + PAGE_SIZE) / PAGE_SIZE,
+			void* buf = (void*) vmm::allocateEager((uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE,
 				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
 
 			{
@@ -120,7 +120,7 @@ namespace initrd
 		{
 			log("initrd", "format: tar");
 
-			void* buf = (void*) vmm::allocateEager((inpSz + PAGE_SIZE) / PAGE_SIZE,
+			void* buf = (void*) vmm::allocateEager((inpSz + PAGE_SIZE - 1) / PAGE_SIZE,
 				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
 
 			memcpy(buf, initrd, inpSz);
