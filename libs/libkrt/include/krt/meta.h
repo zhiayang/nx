@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <stddef.h>
+#include "types/impl/hashing.h"
+
 namespace krt
 {
 	// omg why the fuck are we doing this?!
@@ -72,6 +75,8 @@ namespace krt
 	};
 
 
+
+
 	template <typename T>
 	bool match(const T& first)
 	{
@@ -134,6 +139,19 @@ namespace krt
 		T old_value = krt::move(obj);
 		obj = krt::forward<U>(new_value);
 		return old_value;
+	}
+
+
+	template <typename T>
+	T max(const T& a, const T& b)
+	{
+		return a > b ? a : b;
+	}
+
+	template <typename T>
+	T min(const T& a, const T& b)
+	{
+		return a < b ? a : b;
 	}
 }
 

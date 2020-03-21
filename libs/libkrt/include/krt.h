@@ -18,6 +18,7 @@
 #include "krt/types/stack.h"
 #include "krt/types/treemap.h"
 #include "krt/types/circbuf.h"
+#include "krt/types/hashmap.h"
 #include "krt/types/string_view.h"
 
 namespace krt

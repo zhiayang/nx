@@ -56,8 +56,15 @@ namespace krt
 			bool operator == (const iterator& other) const { return other.node == this->node; }
 			bool operator != (const iterator& other) const { return other.node != this->node; }
 
-			Node& operator * ()             { return krt::pair(node->key, node->value); }
-			const Node& operator * () const { return krt::pair(node->key, node->value); }
+			auto operator * ()
+			{
+				return krt::pair<KeyTy&, ValueTy&>(node->key, node->value);
+			}
+
+			const auto operator * () const
+			{
+				return krt::pair<const KeyTy&, const ValueTy&>(node->key, node->value);
+			}
 
 			Node* operator -> () { return node; }
 
@@ -84,7 +91,10 @@ namespace krt
 			bool operator == (const const_iterator& other) const { return other.node == this->node; }
 			bool operator != (const const_iterator& other) const { return other.node != this->node; }
 
-			const Node& operator * () const { return krt::pair(node->key, node->value); }
+			const auto operator * () const
+			{
+				return krt::pair<const KeyTy&, const ValueTy&>(node->key, node->value);
+			}
 
 			const Node* operator -> () const { return (const Node*) node; }
 
@@ -103,13 +113,13 @@ namespace krt
 			const Container* self;
 		};
 
-		static Node* copyNode(Node* n)
+		static Node* copyNode(Container* self, Node* n)
 		{
 			if(!n) return nullptr;
 
 			auto ret = createNode(n->key, n->value, n->parent);
-			ret->left = copyNode(n->left);
-			ret->right = copyNode(n->right);;
+			ret->left = copyNode(self, n->left);
+			ret->right = copyNode(self, n->right);;
 
 			return ret;
 		}
@@ -135,11 +145,14 @@ namespace krt
 
 		static Node* createNode(const KeyTy& k, const ValueTy& v, Node* p)
 		{
-			return new ((void*) allocator::allocate(sizeof(Node), alignof(Node))) Node(k, v, p);
+			return new (allocator::template allocate<Node>(1)) Node(k, v, p);
 		}
 
 		static void rebalance(Container* self, Node* n)
 		{
+			if(!n)
+				return;
+
 			setBalance(n);
 
 			if(n->balance == -2)
@@ -297,6 +310,50 @@ namespace krt
 			return nullptr;
 		}
 
+		static Node* findOrInsertDefault(Container* self, const KeyTy& key)
+		{
+			if(self->root == nullptr)
+			{
+				self->root = createNode(key, ValueTy(), nullptr);
+				self->cnt++;
+				return self->root;
+			}
+			else
+			{
+				Node* n = self->root;
+				Node* p = 0;
+
+				do {
+					p = n;
+
+					if(n->key == key)
+						return n;
+
+					if(key < n->key)    n = n->left;
+					else                n = n->right;
+
+				} while(n);
+
+				// ok we got here, it's nothing.
+				if(key < p->key)
+				{
+					p->left = createNode(key, ValueTy(), p);
+					self->cnt++;
+
+					rebalance(self, p);
+					return p->left;
+				}
+				else
+				{
+					p->right = createNode(key, ValueTy(), p);
+					self->cnt++;
+
+					rebalance(self, p);
+					return p->right;
+				}
+			}
+		}
+
 		static bool insert(Container* self, const KeyTy& key, const ValueTy& val)
 		{
 			if(self->root == nullptr)
@@ -336,6 +393,9 @@ namespace krt
 
 		static void deleteNode(Container* self, Node* node)
 		{
+			if(!node)
+				return;
+
 			if(node->left == nullptr && node->right == nullptr)
 			{
 				self->cnt -= 1;
@@ -346,13 +406,13 @@ namespace krt
 				else
 				{
 					auto parent = node->parent;
-					if(parent->left == node)
+					if(parent->left && parent->left == node)
 						destroyNode(parent->left), parent->left = nullptr;
 
-					else
+					else if(parent->right)
 						destroyNode(parent->right), parent->right = nullptr;
 
-					rebalance(self, parent);
+					rebalance(self, parent->parent);
 				}
 			}
 			else if(node->left != nullptr)
@@ -402,6 +462,7 @@ namespace krt
 		}
 	};
 }
+
 
 
 

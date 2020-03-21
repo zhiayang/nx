@@ -40,21 +40,33 @@ namespace krt
 			return true;
 		}
 
-		// this does NOT shrink!!! IT DOES NOT!!
-		// ohai mark
+		// this does NOT shrink the memory block! it only changes the size.
 		static bool resize(Container* self, size_t size)
 		{
-			if(size <= self->cnt)
+			if(size < self->cnt)
+			{
+				for(size_t i = size; i < self->cnt; i++)
+					(self->ptr + i)->~ElmTy();
+
+				self->cnt = size;
 				return false;
+			}
+			else if(size > self->cnt)
+			{
+				// this does most of the work. we just need to insert new elements.
+				bool did = reserve(self, size);
 
-			// this does most of the work. we just need to insert new elements.
-			bool did = reserve(self, size);
+				// insert default constructed elements
+				for(size_t i = self->cnt; i < size; i++)
+					new (self->ptr + i) ElmTy();
 
-			// insert default constructed elements
-			for(size_t i = self->cnt; i < size; i++)
-				new (self->ptr + i) ElmTy();
+				// change the size
+				self->cnt = size;
 
-			return did;
+				return did;
+			}
+
+			return false;
 		}
 
 		static ElmTy& front(Container* self)
@@ -93,11 +105,23 @@ namespace krt
 		{
 			if(len == (size_t) -1) len = self->cnt - idx;
 
-			if(idx >= self->cnt || idx + len > self->cnt)
-				aborter::abort("subarray(): out of range wanted (%zu, %zu), length is only %d", idx, len, self->cnt);
+			if(idx > self->cnt || idx + len > self->cnt)
+				aborter::abort("subarray(): out of range; wanted (%zu, %zu), length is only %d", idx, len, self->cnt);
 
 			// ok, we should be good.
 			return Container(self->ptr + idx, len);
+		}
+
+		template <typename... Ts>
+		static Container& emplace_element(Container* self, Ts&&... args)
+		{
+			self->reserve(self->cnt + 1);
+
+			new (&self->ptr[self->cnt]) ElmTy(args...);
+			self->cnt++;
+
+			set_last_if_char(self);
+			return *self;
 		}
 
 		static Container& append_element(Container* self, const ElmTy& c)
@@ -105,6 +129,17 @@ namespace krt
 			self->reserve(self->cnt + 1);
 
 			new (&self->ptr[self->cnt]) ElmTy(c);
+			self->cnt++;
+
+			set_last_if_char(self);
+			return *self;
+		}
+
+		static Container& append_element(Container* self, ElmTy&& c)
+		{
+			self->reserve(self->cnt + 1);
+
+			new (&self->ptr[self->cnt]) ElmTy(move(c));
 			self->cnt++;
 
 			set_last_if_char(self);

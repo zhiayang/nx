@@ -121,11 +121,15 @@ namespace krt
 		}
 
 		// apparently we can't "using" members, so just make a new one that calls the old one.
-		array subarray(size_t idx, size_t len) const        { return impl::subarray(this, idx, len); }
+		array subarray(size_t idx, size_t len = -1) const   { return impl::subarray(this, idx, len); }
 		void clear()                                        { impl::clear(this); }
 
 		array& append(const T& c)                           { return impl::append_element(this, c); }
+		array& append(T&& c)                                { return impl::append_element(this, move(c)); }
 		array& append(const array& s)                       { return impl::append(this, s); }
+
+		template <typename... Args>
+		array& emplace(Args&&... args)                      { return impl::emplace_element(this, args...); }
 
 		T& front()                                          { return impl::front(this); }
 		T& back()                                           { return impl::back(this); }

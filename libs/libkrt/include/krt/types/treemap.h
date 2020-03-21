@@ -27,7 +27,7 @@ namespace krt
 
 		treemap(node* r, size_t sz)
 		{
-			this->root = impl::copyNode(r);
+			this->root = impl::copyNode(this, r);
 			this->cnt = sz;
 		}
 
@@ -68,12 +68,7 @@ namespace krt
 
 		V& operator [] (const K& k)
 		{
-			auto it = this->find(k);
-
-			if(it == this->end())
-				this->insert(k, V());
-
-			return this->find(k)->value;
+			return impl::findOrInsertDefault(this, k)->value;
 		}
 
 		bool insert(const K& k, const V& v)     { return impl::insert(this, k, v); }
@@ -97,15 +92,12 @@ namespace krt
 		const_iterator end() const      { return const_iterator(nullptr, this); }
 		const_iterator cend() const     { return this->end(); }
 
-		private:
+	private:
 
 		node* root = 0;
 		size_t cnt = 0;
 	};
 }
-
-
-
 
 
 
