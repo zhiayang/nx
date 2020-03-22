@@ -130,8 +130,14 @@ namespace krt
 				allocator::deallocate(this->ptr);
 		}
 
+		bucket_hashmap(const Hasher& hasher)
+		{
+			this->hasher = hasher;
+		}
+
 		bucket_hashmap()
 		{
+			this->hasher = Hasher();
 		}
 
 		bucket_hashmap(const bucket_hashmap& other)
@@ -428,7 +434,7 @@ namespace krt
 
 		size_t indexForKey(const KeyTy& key, size_t len) const
 		{
-			return Hasher()(key) % len;
+			return this->hasher(key) % len;
 		}
 
 		size_t nextSize() const
@@ -448,6 +454,7 @@ namespace krt
 		Bucket** ptr = 0;
 		size_t cnt = 0;
 		size_t numBuckets = 0;
+		Hasher hasher;
 	};
 }
 

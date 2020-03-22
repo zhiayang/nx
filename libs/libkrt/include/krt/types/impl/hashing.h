@@ -48,19 +48,4 @@ namespace krt
 			return val.hash();
 		}
 	};
-/*
-
-		// arithmetic types
-		std::enable_if_t<std::is_integral_v<T>, size_t>
-		operator () (const T& val)
-		{
-			return (size_t) val;
-		}
-
-		// classes with a hash() method
-		std::enable_if_t<std::is_same_v<std::invoke_result_t<T::hash, const T&>, size_t>, size_t>
-		operator () (const T& val)
-		{
-			return 3;
-		}*/
 }

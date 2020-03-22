@@ -135,6 +135,7 @@ namespace nx
 		constexpr uint64_t PAGE_USER            = 0x4;
 		constexpr uint64_t PAGE_COPY_ON_WRITE   = 0x200;
 		constexpr uint64_t PAGE_NX              = 0x8000'0000'0000'0000;
+		constexpr uint64_t ALIGN_BITS           = 12;
 
 		constexpr addr_t PAGE_ALIGN(addr_t addr)
 		{
@@ -150,6 +151,15 @@ namespace nx
 			return addr == (addr & ~((addr_t) 0xFFF));
 		}
 
+
+
+		struct PageHasher
+		{
+			size_t operator () (VirtAddr v) const
+			{
+				return v.get() >> ALIGN_BITS;
+			}
+		};
 
 		struct VMRegion
 		{
@@ -172,7 +182,7 @@ namespace nx
 			VirtAddr addr;
 			size_t numPages;
 
-			nx::bucket_hashmap<VirtAddr, PhysAddr> backingPhysPages;
+			nx::bucket_hashmap<VirtAddr, PhysAddr, PageHasher> backingPhysPages;
 		};
 
 		struct AddressSpace
