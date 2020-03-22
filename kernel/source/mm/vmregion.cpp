@@ -12,14 +12,9 @@ namespace vmm
 {
 	static constexpr int SHIFT_AMT = 0;
 
-	static addr_t end(addr_t addr, size_t num)
+	static VirtAddr end(VirtAddr addr, size_t num)
 	{
-		return addr + (PAGE_SIZE * num);
-	}
-
-	static addr_t end(const VMRegion& vmr)
-	{
-		return vmr.addr + (PAGE_SIZE * vmr.numPages);
+		return addr.offsetPages(num);
 	}
 
 
@@ -39,17 +34,25 @@ namespace vmm
 
 		// destroy each region.
 		for(const auto& r : this->regions)
+		{
 			for(auto [ v, p ] : r.backingPhysPages)
-				if(p) num++, pmm::deallocate(p, 1);
+			{
+				if(p.nonzero())
+				{
+					num++;
+					pmm::deallocate(p.get(), 1);
+				}
+			}
+		}
 
 		log("adrspc", "freed %zu physical pages", num);
 	}
 
 
-	void AddressSpace::addRegion(addr_t addr, size_t num)
+	void AddressSpace::addRegion(VirtAddr addr, size_t num)
 	{
 		assert(heap::initialised());
-		assert(isAligned(addr));
+		assert(addr.isAligned());
 
 		// warn("vmregion", "add (%p, %zu)", addr, num);
 
@@ -61,7 +64,7 @@ namespace vmm
 				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
-			else if(end(vmr) == addr)
+			else if(vmr.end() == addr)
 			{
 				vmr.grow_up(num);
 				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
@@ -78,20 +81,20 @@ namespace vmm
 		// error("vmm", "append %p/%zu", addr, num);
 	}
 
-	void AddressSpace::addRegion(addr_t addr, addr_t physStart, size_t num)
+	void AddressSpace::addRegion(VirtAddr addr, PhysAddr physStart, size_t num)
 	{
 		assert(heap::initialised());
-		assert(isAligned(addr) && isAligned(physStart));
+		assert(addr.isAligned() && physStart.isAligned());
 
 		// warn("vmregion", "add(phys) (%p, %zu)", addr, num);
 
-		auto update_phys = [](VMRegion& vmr, addr_t virt, addr_t phys, size_t num) {
+		auto update_phys = [](VMRegion& vmr, VirtAddr virt, PhysAddr phys, size_t num) {
 			for(size_t i = 0; i < num; i++)
 			{
 				// warn("vmregion", "insert %p (%zu / %zu)", virt + (i * PAGE_SIZE),
 				// 	vmr.backingPhysPages.size(), vmr.backingPhysPages.buckets());
 
-				vmr.backingPhysPages[(virt + (i * PAGE_SIZE)) >> SHIFT_AMT] = phys + (i * PAGE_SIZE);
+				vmr.backingPhysPages[virt.offsetPages(i)] = phys.offsetPages(i);
 			}
 		};
 
@@ -106,13 +109,13 @@ namespace vmm
 				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
-			else if(end(vmr) == addr)
+			else if(vmr.end() == addr)
 			{
 				auto oldSz = vmr.numPages;
 				// warn("vmregion", "updating #2");
 
 				vmr.grow_up(num);
-				update_phys(vmr, vmr.addr + (oldSz * PAGE_SIZE), physStart, num);
+				update_phys(vmr, vmr.addr.offsetPages(oldSz), physStart, num);
 
 				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
@@ -133,10 +136,10 @@ namespace vmm
 		// error("vmm", "append %p/%zu", addr, num);
 	}
 
-	void AddressSpace::freeRegion(addr_t addr, size_t num, bool freePhys)
+	void AddressSpace::freeRegion(VirtAddr addr, size_t num, bool freePhys)
 	{
 		assert(heap::initialised());
-		assert(isAligned(addr));
+		assert(addr.isAligned());
 
 		// warn("vmregion", "free (%p, %zu)", addr, num);
 		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
@@ -145,7 +148,7 @@ namespace vmm
 
 			// check if the region is eligible at all. in theory, the freed region should not
 			// be split across two existing regions.
-			if(vmr.addr <= addr && end(vmr) >= end(addr, num))
+			if(vmr.addr <= addr && vmr.end() >= end(addr, num))
 			{
 				if(vmr.addr == addr)
 				{
@@ -154,8 +157,8 @@ namespace vmm
 						// chop from the front.
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[(vmr.addr + (i * PAGE_SIZE)) >> SHIFT_AMT])
-								pmm::deallocate(p, 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(i)]; p.nonzero())
+								pmm::deallocate(p.get(), 1);
 						}
 					}
 
@@ -165,15 +168,15 @@ namespace vmm
 
 					return;
 				}
-				else if(end(addr, num) == end(vmr))
+				else if(end(addr, num) == vmr.end())
 				{
 					if(freePhys)
 					{
 						// chop from the back.
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[(vmr.addr + ((vmr.numPages - 1 - i) * PAGE_SIZE)) >> SHIFT_AMT])
-								pmm::deallocate(p, 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(vmr.numPages - 1 - i)]; p.nonzero())
+								pmm::deallocate(p.get(), 1);
 						}
 					}
 
@@ -186,8 +189,8 @@ namespace vmm
 				else
 				{
 					// bollocks, it's somewhere in the middle.
-					size_t numFrontPages = (addr - vmr.addr) / PAGE_SIZE;
-					size_t numBackPages = (end(vmr) - end(addr, num)) / PAGE_SIZE;
+					size_t numFrontPages = (addr - vmr.addr).get() / PAGE_SIZE;
+					size_t numBackPages = (vmr.end() - end(addr, num)).get() / PAGE_SIZE;
 
 					assert(numFrontPages > 0 && numBackPages > 0);
 
@@ -198,8 +201,8 @@ namespace vmm
 					{
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[(vmr.addr + ((numFrontPages + i) * PAGE_SIZE)) >> SHIFT_AMT])
-								pmm::deallocate(p, 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(numFrontPages + i)]; p.nonzero())
+								pmm::deallocate(p.get(), 1);
 						}
 					}
 
@@ -221,20 +224,20 @@ namespace vmm
 		abort("vmregion: did not find matching extent for (%p, %zu)", addr, num);
 	}
 
-	addr_t AddressSpace::addPhysicalMapping(addr_t virt, addr_t phys)
+	addr_t AddressSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
 	{
 		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
 		{
 			auto& vmr = *it;
 
-			if(vmr.addr <= virt && virt < end(vmr))
+			if(vmr.addr <= virt && virt < vmr.end())
 			{
-				addr_t old = 0;
-				if(auto it = vmr.backingPhysPages.find(virt >> SHIFT_AMT); it != vmr.backingPhysPages.end())
+				PhysAddr old;
+				if(auto it = vmr.backingPhysPages.find(virt); it != vmr.backingPhysPages.end())
 					old = it->value;
 
-				vmr.backingPhysPages[virt >> SHIFT_AMT] = phys;
-				return old;
+				vmr.backingPhysPages[virt] = phys;
+				return old.get();
 			}
 		}
 
@@ -245,7 +248,7 @@ namespace vmm
 
 
 
-	VMRegion::VMRegion(addr_t addr, size_t num) : addr(addr), numPages(num)
+	VMRegion::VMRegion(VirtAddr addr, size_t num) : addr(addr), numPages(num)
 	{
 	}
 
@@ -256,7 +259,7 @@ namespace vmm
 
 	VMRegion::VMRegion(VMRegion&& other)
 	{
-		this->addr = other.addr;            other.addr = 0;
+		this->addr = other.addr;            other.addr.clear();
 		this->numPages = other.numPages;    other.numPages = 0;
 
 		this->backingPhysPages = krt::move(other.backingPhysPages);
@@ -273,7 +276,7 @@ namespace vmm
 	{
 		if(this != &other)
 		{
-			this->addr = other.addr;            other.addr = 0;
+			this->addr = other.addr;            other.addr.clear();
 			this->numPages = other.numPages;    other.numPages = 0;
 			this->backingPhysPages = krt::move(other.backingPhysPages);
 		}
@@ -281,9 +284,14 @@ namespace vmm
 		return *this;
 	}
 
+	VirtAddr VMRegion::end() const
+	{
+		return this->addr.offsetPages(this->numPages);
+	}
+
 	void VMRegion::grow_down(size_t count)
 	{
-		this->addr -= (count * PAGE_SIZE);
+		this->addr.setOffsetPages(-count);
 		this->numPages += count;
 	}
 
@@ -297,7 +305,7 @@ namespace vmm
 		assert(count <= this->numPages);
 
 		for(size_t i = 0; i < count; i++)
-			this->backingPhysPages.remove((end(*this) + (i * PAGE_SIZE)) >> SHIFT_AMT);
+			this->backingPhysPages.remove(this->end().offsetPages(i));
 
 		this->numPages -= count;
 	}
@@ -307,9 +315,9 @@ namespace vmm
 		assert(count <= this->numPages);
 
 		for(size_t i = 0; i < count; i++)
-			this->backingPhysPages.remove((this->addr + (i * PAGE_SIZE)) >> SHIFT_AMT);
+			this->backingPhysPages.remove(this->addr.offsetPages(i));
 
-		this->addr += (count * PAGE_SIZE);
+		this->addr.setOffsetPages(count);
 		this->numPages -= count;
 	}
 

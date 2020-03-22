@@ -308,14 +308,12 @@ namespace vmm
 
 
 
-	void mapAddressOverwrite(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapAddressOverwrite(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		for(size_t i = 0; i < num; i++)
 		{
-			auto v = virt + (i * PAGE_SIZE);
-			auto p = phys + (i * PAGE_SIZE);
-
-			map_internal(v, p, flags | PAGE_PRESENT, proc, /* overwrite: */ true);
+			map_internal(virt.offsetPages(i).get(), phys.offsetPages(i).get(),
+				flags | PAGE_PRESENT, proc, /* overwrite: */ true);
 		}
 	}
 

@@ -70,12 +70,12 @@ namespace vmm
 			// page when the process dies.
 
 			auto phys = pmm::allocate(1);
-			vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
+			vmm::mapAddressOverwrite(VirtAddr(aligned_cr2), PhysAddr(phys), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 			{
 				auto proc = scheduler::getCurrentProcess();
 
 				autolock lk(&proc->addrSpaceLock);
-				proc->addrspace.addPhysicalMapping(aligned_cr2, phys);
+				proc->addrspace.addPhysicalMapping(VirtAddr(aligned_cr2), PhysAddr(phys));
 			}
 
 			// if it was not the zero page, then memcopy,

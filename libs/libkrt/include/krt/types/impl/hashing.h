@@ -9,31 +9,58 @@
 
 namespace krt
 {
-	template <typename T>
+	// provide some default hashing implementations.
+
+	template <typename T, typename = void>
 	struct hash
 	{
-		static_assert("hash function not implemented!");
-		size_t operator () (const T& val) const = delete;
+		size_t operator () (const T&) const = delete;
 	};
 
 
+	// integral types
+	template <typename T>
+	struct hash<T, std::enable_if_t<std::is_integral_v<T>>>
+	{
+		size_t operator () (const T& val)
+		{
+			return (size_t) val;
+		}
+	};
 
-	template <> struct hash<char>               { size_t operator () (char x)       { return x; } };
-	template <> struct hash<short>              { size_t operator () (short x)      { return x; } };
-	template <> struct hash<int>                { size_t operator () (int x)        { return x; } };
-	template <> struct hash<long>               { size_t operator () (long x)       { return x; } };
-	template <> struct hash<long long>          { size_t operator () (long long x)  { return x; } };
-
-	template <> struct hash<unsigned char>      { size_t operator () (unsigned char x)      { return x; } };
-	template <> struct hash<unsigned short>     { size_t operator () (unsigned short x)     { return x; } };
-	template <> struct hash<unsigned int>       { size_t operator () (unsigned int x)       { return x; } };
-	template <> struct hash<unsigned long>      { size_t operator () (unsigned long x)      { return x; } };
-	template <> struct hash<unsigned long long> { size_t operator () (unsigned long long x) { return x; } };
-
-
+	// pointer types.
 	template <typename T>
 	struct hash<T*>
 	{
-		size_t operator () (T* val) { return (size_t) val; }
+		size_t operator () (T* val) const
+		{
+			return (size_t) val;
+		}
 	};
+
+
+	// classes with a hash() method
+	template <typename T>
+	struct hash<T, std::enable_if_t<std::is_member_function_pointer_v<decltype(&T::hash)>>>
+	{
+		size_t operator () (const T& val) const
+		{
+			return val.hash();
+		}
+	};
+/*
+
+		// arithmetic types
+		std::enable_if_t<std::is_integral_v<T>, size_t>
+		operator () (const T& val)
+		{
+			return (size_t) val;
+		}
+
+		// classes with a hash() method
+		std::enable_if_t<std::is_same_v<std::invoke_result_t<T::hash, const T&>, size_t>, size_t>
+		operator () (const T& val)
+		{
+			return 3;
+		}*/
 }

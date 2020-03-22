@@ -135,7 +135,7 @@ namespace vmm
 		if(!st) abort("allocateSpecific(): no address space to allocate address '%p'", addr);
 
 		auto virt = st->allocateSpecific(addr, num);
-		if(virt) proc->addrspace.addRegion(virt, num);
+		if(virt) proc->addrspace.addRegion(VirtAddr(virt), num);
 
 		return virt;
 	}
@@ -152,7 +152,7 @@ namespace vmm
 		flags &= ~PAGE_WRITE;
 
 		mapLazy(virt, num, flags, proc);
-		proc->addrspace.addRegion(virt, num);
+		proc->addrspace.addRegion(VirtAddr(virt), num);
 
 		return virt;
 	}
@@ -169,7 +169,7 @@ namespace vmm
 		if(phys == 0) { abort("vmm::allocate(): no physical pages!"); return 0; }
 
 		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
-		proc->addrspace.addRegion(virt, phys, num);
+		proc->addrspace.addRegion(VirtAddr(virt), PhysAddr(phys), num);
 
 		return virt;
 	}
@@ -184,7 +184,7 @@ namespace vmm
 		unmapAddress(addr, num, /* ignoreIfNotMapped: */ false, proc);
 		deallocateAddrSpace(addr, num, proc);
 
-		proc->addrspace.freeRegion(addr, num, /* freePhys: */ true);
+		proc->addrspace.freeRegion(VirtAddr(addr), num, /* freePhys: */ true);
 	}
 }
 }

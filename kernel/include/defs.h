@@ -131,3 +131,60 @@ void operator delete[]  (void* ptr, size_t al);
 
 
 
+
+
+// strong typedefs for addresses.
+namespace nx
+{
+	struct __TagVirt { };
+	struct __TagPhys { };
+
+	template <typename Tag>
+	struct __AddressImpl
+	{
+	private:
+		using Self = __AddressImpl;
+		addr_t addr;
+
+	public:
+		__AddressImpl() : addr(0) { }
+		explicit __AddressImpl(addr_t x) : addr(x) { }
+
+		~__AddressImpl() = default;
+		__AddressImpl(Self&&) = default;
+		__AddressImpl(const Self&) = default;
+		Self& operator = (Self&&) = default;
+		Self& operator = (const Self&) = default;
+
+		[[nodiscard]] Self offsetPages(ssize_t num) const { return Self(this->addr + (num * PAGE_SIZE)); }
+
+		bool operator == (Self oth) const { return this->addr == oth.addr; }
+		bool operator != (Self oth) const { return this->addr != oth.addr; }
+		bool operator >= (Self oth) const { return this->addr >= oth.addr; }
+		bool operator <= (Self oth) const { return this->addr <= oth.addr; }
+		bool operator >  (Self oth) const { return this->addr > oth.addr; }
+		bool operator <  (Self oth) const { return this->addr < oth.addr; }
+
+		Self operator + (const Self& oth) const { return Self(this->addr + oth.addr); }
+		Self operator - (const Self& oth) const { return Self(this->addr - oth.addr); }
+
+		inline addr_t get() const { return this->addr; }
+		inline bool nonzero() const { return this->addr != 0; }
+		inline bool isAligned() const { return this->addr == (this->addr & ~((addr_t) 0xFFF)); }
+
+		inline void clear() { this->addr = 0; }
+		inline void setOffsetPages(ssize_t num) { this->addr += (num * PAGE_SIZE); }
+
+
+		inline size_t hash() const
+		{
+			return (size_t) this->addr;
+		}
+	};
+
+	using PhysAddr = __AddressImpl<__TagPhys>;
+	using VirtAddr = __AddressImpl<__TagVirt>;
+}
+
+
+

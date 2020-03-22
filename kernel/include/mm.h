@@ -72,7 +72,7 @@ namespace nx
 		void invalidateAll();
 
 		// this one overwrites whatever physical page was there.
-		void mapAddressOverwrite(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void mapAddressOverwrite(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
 		// this one will abort if you try to do anything funny.
 		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
@@ -153,7 +153,7 @@ namespace nx
 
 		struct VMRegion
 		{
-			VMRegion(addr_t addr, size_t num);
+			VMRegion(VirtAddr addr, size_t num);
 			VMRegion(const VMRegion&);
 			VMRegion(VMRegion&&);
 
@@ -166,10 +166,13 @@ namespace nx
 			void shrink_up(size_t count);   // addr increases
 			void shrink_down(size_t count); // addr remains the same
 
-			addr_t addr;
+			VirtAddr end() const;
+
+
+			VirtAddr addr;
 			size_t numPages;
 
-			nx::bucket_hashmap<addr_t, addr_t> backingPhysPages;
+			nx::bucket_hashmap<VirtAddr, PhysAddr> backingPhysPages;
 		};
 
 		struct AddressSpace
@@ -183,12 +186,12 @@ namespace nx
 			void init(addr_t cr3 = 0);
 			void destroy();
 
-			void addRegion(addr_t addr, size_t size);
-			void addRegion(addr_t virtStart, addr_t physStart, size_t size);
+			void addRegion(VirtAddr addr, size_t size);
+			void addRegion(VirtAddr virtStart, PhysAddr physStart, size_t size);
 
-			void freeRegion(addr_t addr, size_t size, bool freePhys);
+			void freeRegion(VirtAddr addr, size_t size, bool freePhys);
 
-			addr_t addPhysicalMapping(addr_t virt, addr_t phys);
+			addr_t addPhysicalMapping(VirtAddr virt, PhysAddr phys);
 			// void addPhysicalMapping(addr_t virt, addr_t phys, size_t num);
 		};
 	}
