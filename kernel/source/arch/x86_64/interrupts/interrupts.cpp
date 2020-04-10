@@ -162,14 +162,7 @@ namespace interrupts
 		stilvl += 1;
 
 		if(stilvl >= 0 && !in_intr_context())
-		{
-			// serial::debugprint('@');
 			asm volatile("sti");
-		}
-		// else
-		// {
-		// 	serial::debugprint('?');
-		// }
 	}
 
 	void disable()
@@ -179,7 +172,6 @@ namespace interrupts
 
 		auto& stilvl = get_sti_level();
 
-		// serial::debugprint('^');
 		asm volatile("cli");
 		stilvl -= 1;
 	}

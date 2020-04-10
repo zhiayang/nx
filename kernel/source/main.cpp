@@ -28,6 +28,9 @@ namespace nx
 		// start the irq dispatcher
 		interrupts::init();
 
+		// start the debug console
+		// debugcon::init();
+
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
 
@@ -69,7 +72,7 @@ namespace nx
 			while(true)
 			{
 				ctr++;
-				uint32_t* fb = (uint32_t*) addrs::KERNEL_FRAMEBUFFER;
+				uint32_t* fb = (uint32_t*) addrs::KERNEL_FRAMEBUFFER.ptr();
 				for(int y = 0; y < 80; y++)
 				{
 					for(int x = 1440 - 160; x < 1440 - 80; x++)
@@ -87,8 +90,9 @@ namespace nx
 		log("kernel", "going to sleep...");
 		scheduler::sleep(500'000'000);
 		log("kernel", "woken from slumber, committing murder!");
-		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
+		// ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
+		log("kernel", "AYAYA");
 		while(true)
 			asm volatile("pause");
 	}
@@ -111,6 +115,7 @@ namespace nx
 	{
 		// open all hatches, extend all flaps and drag fins
 		interrupts::disable();
+		serial::init();
 
 		// init the fallback console
 		console::fallback::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
@@ -144,7 +149,7 @@ namespace nx
 		if(!cpu::didEnableNoExecute())
 			warn("kernel", "cpu does not support no-execute bit");
 
-		scheduler::setupKernelProcess(bootinfo->pml4Address);
+		scheduler::setupKernelProcess(PhysAddr(bootinfo->pml4Address));
 
 		// setup all of our memory facilities.
 		pmm::init(bootinfo);

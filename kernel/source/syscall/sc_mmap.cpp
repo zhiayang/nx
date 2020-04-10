@@ -28,7 +28,7 @@ namespace nx
 				return MAP_FAILED;
 
 			// align the memory
-			auto addr = vmm::PAGE_ALIGN((addr_t) req_addr);
+			auto addr = PAGE_ALIGN((addr_t) req_addr);
 			auto numPages = (length + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			// TODO: mark non-present when we get swapping and stuff
@@ -41,11 +41,11 @@ namespace nx
 			if(req_addr != 0)
 			{
 				// ok, try to allocate some memory first.
-				auto virt = vmm::allocateSpecific(addr, numPages);
-				if(virt)
+				auto virt = vmm::allocateSpecific(VirtAddr(addr), numPages);
+				if(virt.nonZero())
 				{
 					vmm::mapLazy(virt, numPages, flg & ~vmm::PAGE_WRITE);
-					return (void*) virt;
+					return virt.ptr();
 				}
 
 				// else: fallthrough, but only if we didn't ask for MAP_FIXED.
@@ -54,9 +54,9 @@ namespace nx
 			}
 
 			auto ret = vmm::allocate(numPages, vmm::AddressSpaceType::User, flg);
-			if(!ret) return MAP_FAILED;
+			if(ret.isZero()) return MAP_FAILED;
 
-			return (void*) ret;
+			return ret.ptr();
 		}
 		else
 		{
@@ -77,13 +77,12 @@ namespace nx
 	{
 		// well, let's just unmap it page-by-page.
 
-		auto addr = vmm::PAGE_ALIGN((addr_t) req_addr);
+		auto addr = VirtAddr((addr_t) req_addr).pageAligned();
 		auto numPages = (length + PAGE_SIZE - 1) / PAGE_SIZE;
-
 
 		for(size_t i = 0; i < numPages; i++)
 		{
-			auto v = (addr + (i * PAGE_SIZE));
+			auto v = addr + ofsPages(i);
 
 			if(vmm::isMapped(v, 1))
 			{

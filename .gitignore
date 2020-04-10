@@ -5,7 +5,7 @@
 *.dll
 *.cpp.d
 *.c.d
-
+*.log
 build
 toolchain-setup
 

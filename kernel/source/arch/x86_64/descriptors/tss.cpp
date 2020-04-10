@@ -84,31 +84,33 @@ namespace tss
 
 		// ok, since this is the kernel process, we are free to map all tsses in the address space.
 		auto tssaddr = vmm::allocateEager(TSS_SIZE_IN_PAGES, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
-		assert(tssaddr);
+		assert(tssaddr.nonZero());
 
 
-		memset((void*) tssaddr, 0, sizeof(tss_t));
+		memset(tssaddr.ptr(), 0, sizeof(tss_t));
 		// i'm sure it's perfectly reasonable to just allocate 28kb of memory to fill all the 7 ISTs...
 		{
-			auto tss = (tss_t*) tssaddr;
+			auto tss = (tss_t*) tssaddr.ptr();
 
 			for(int i = 0; i < 7; i++)
 			{
-				tss->ists[i] = PAGE_SIZE + vmm::allocateEager(1, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE | vmm::PAGE_NX);
+				tss->ists[i] = (vmm::allocateEager(1, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE | vmm::PAGE_NX)
+									+ PAGE_SIZE).addr();
+
 				// log("tss", "ist %d: %p", 1 + i, tss->ists[i]);
 			}
 		}
 
 		// make all the bits in the IOPB 1 -- which means disallowed.
-		memset((void*) (tssaddr + sizeof(tss_t)), 0xFF, 0x2000);
+		memset((tssaddr + sizeof(tss_t)).ptr(), 0xFF, 0x2000);
 
 		// set the tss descriptor in the gdt. this doesn't load it.
-		*tssdesc = makeTSSEntry(tssaddr, (uint16_t) tssSize);
+		*tssdesc = makeTSSEntry(tssaddr.addr(), (uint16_t) tssSize);
 
 		auto selector = (uint16_t) size;
 		gdt::incrementSelectorIndex(sizeof(system_segment_t));
 
-		return krt::pair(tssaddr, selector);
+		return krt::pair(tssaddr.addr(), selector);
 	}
 
 	void setRSP0(addr_t tssBase, uint64_t rsp0)

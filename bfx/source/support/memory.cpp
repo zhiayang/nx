@@ -83,7 +83,7 @@ namespace bfx
 				auto fbsz = (bbinfo->fb_scanline * bbinfo->fb_height);
 				auto pgs = (fbsz + 0xFFF) / 0x1000;
 
-				mapKernel(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, pgs, 0);
+				mapKernel(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER.addr(), pgs, 0);
 				mmap::addEntry(fbaddr, pgs, (uint64_t) nx::MemoryType::Framebuffer);
 			}
 

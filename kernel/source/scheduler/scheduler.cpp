@@ -105,7 +105,8 @@ namespace scheduler
 		// serial::debugprintf("new: [%lu] -> %p\n", newthr->threadId, newthr->parent->addrspace.cr3);
 
 		__nested_sched = 0;
-		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3, (void*) newthr->fpuSavedStateBuffer, newthr);
+		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3.addr(),
+			(void*) newthr->fpuSavedStateBuffer, newthr);
 	}
 
 	extern "C" void nx_x64_setup_signalled_stack(Thread* newthr)
@@ -176,7 +177,7 @@ namespace scheduler
 		regs->r9  = (uintptr_t) newthr->signalHandlers[msg.body.sigType];
 
 		// fixup the rip:
-		regs->rip = addrs::USER_KERNEL_STUBS + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
+		regs->rip = addrs::USER_KERNEL_STUBS.addr() + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
 
 		// surgery ok.
 		// log("ipc", "sending signalled message (sigType %lu) to tid %lu / pid %lu",
@@ -257,11 +258,11 @@ namespace scheduler
 	{
 		// install the tick handler
 		cpu::idt::setEntry(IRQ_BASE_VECTOR + getTickIRQ(), (addr_t) nx_x64_tick_handler,
-			/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
+			/* cs: */ 0x08, /* ring3: */ false, /* nestable: */ false);
 
 		// install the yield handler
 		cpu::idt::setEntry(0xF0, (addr_t) nx_x64_yield_thread,
-			/* cs: */ 0x08, /* ring3: */ false, /* nestable:  */ false);
+			/* cs: */ 0x08, /* ring3: */ false, /* nestable: */ false);
 	}
 
 	void start()

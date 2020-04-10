@@ -106,7 +106,7 @@ namespace loader
 			size_t numPages = (progHdr->p_memsz + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			auto phys = pmm::allocate(numPages);
-			if(!phys) { error(err, "failed to allocate memory"); return false; }
+			if(phys.isZero()) { error(err, "failed to allocate memory"); return false; }
 
 			LockedSection(&proc->addrSpaceLock, [&]() {
 				for(size_t i = 0; i < numPages; i++)
@@ -121,8 +121,8 @@ namespace loader
 			if(!(progHdr->p_flags & PF_X))                  virtFlags |= vmm::PAGE_NX;
 
 			// gimme some scratch space in the current addrspace
-			addr_t virtBase = 0;
-			addr_t offsetVirt = 0;
+			auto virtBase = VirtAddr::zero();
+			size_t offsetVirt = 0;
 
 			// give us some scratch space:
 			{
@@ -131,7 +131,7 @@ namespace loader
 				// since this is not the final mapping, we don't need user perms.
 				vmm::mapAddress(virtBase, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
-				offsetVirt = virtBase + (progHdr->p_vaddr - vmm::PAGE_ALIGN(progHdr->p_vaddr));
+				offsetVirt = (virtBase + (progHdr->p_vaddr - PAGE_ALIGN(progHdr->p_vaddr))).addr();
 			}
 
 			assert(offsetVirt);
@@ -150,17 +150,17 @@ namespace loader
 				{
 					// for TLS, we don't care what the address is.
 					auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
-					if(!virt) { error(err, "failed to allocate address space"); return false; }
+					if(virt.isZero()) { error(err, "failed to allocate address space"); return false; }
 
 					vmm::mapAddress(virt, phys, numPages, virtFlags, proc);
 
-					proc->tlsMasterCopy = virt + (progHdr->p_vaddr - vmm::PAGE_ALIGN(progHdr->p_vaddr));
+					proc->tlsMasterCopy = (virt + (progHdr->p_vaddr - PAGE_ALIGN(progHdr->p_vaddr))).addr();
 					proc->tlsAlign = __max(progHdr->p_align, (uint64_t) 1);
 					proc->tlsSize = progHdr->p_memsz;
 				}
 				else
 				{
-					if(vmm::allocateSpecific(vmm::PAGE_ALIGN(progHdr->p_vaddr), numPages, proc) == 0)
+					if(vmm::allocateSpecific(VirtAddr(progHdr->p_vaddr).pageAligned(), numPages, proc).isZero())
 					{
 						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 
@@ -173,7 +173,7 @@ namespace loader
 						return false;
 					}
 
-					vmm::mapAddress(vmm::PAGE_ALIGN(progHdr->p_vaddr), phys, numPages, virtFlags, proc);
+					vmm::mapAddress(VirtAddr(progHdr->p_vaddr).pageAligned(), phys, numPages, virtFlags, proc);
 				}
 			}
 		}

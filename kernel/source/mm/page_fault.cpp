@@ -21,7 +21,7 @@ namespace vmm
 			return false;
 
 
-		auto aligned_cr2 = vmm::PAGE_ALIGN(cr2);
+		auto aligned_cr2 = VirtAddr(PAGE_ALIGN(cr2));
 
 		// this will get the flags for the current process's address space, so we
 		// don't need to pass it explicitly.
@@ -87,7 +87,7 @@ namespace vmm
 				vmm::mapAddress(scratch, old_phys, 1, PAGE_NX | PAGE_USER | PAGE_PRESENT);
 
 				// right, now we can copy:
-				memmove((void*) aligned_cr2, (void*) scratch, PAGE_SIZE);
+				memmove(aligned_cr2.ptr(), scratch.ptr(), PAGE_SIZE);
 
 				// ok, unmap (of course, don't free the old physical page!)
 				vmm::unmapAddress(scratch, 1);

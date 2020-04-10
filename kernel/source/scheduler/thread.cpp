@@ -103,8 +103,8 @@ namespace scheduler
 			just run with that.
 		*/
 
-		addr_t u_stackTop = 0;
-		addr_t k_stackTop = 0;
+		auto u_stackTop = VirtAddr::zero();
+		auto k_stackTop = VirtAddr::zero();
 		if(isUserProc)
 		{
 			auto size = USER_STACK_SIZE / PAGE_SIZE;
@@ -133,22 +133,22 @@ namespace scheduler
 
 			constexpr size_t EXPECTED_STACK_OFFSET = 160;
 
-			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE);
+			auto kstk = (uint64_t*) (scratch + KERNEL_STACK_SIZE).ptr();
 
 			k_stackTop = virt + KERNEL_STACK_SIZE;
 
 			auto userRSP = isUserProc
 				? (u_stackTop)
-				: (virt + KERNEL_STACK_SIZE) - EXPECTED_STACK_OFFSET;
+				: (virt + KERNEL_STACK_SIZE - EXPECTED_STACK_OFFSET);
 
 			auto codeSeg = isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT;
 			auto dataSeg = isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT;
 
-			*--kstk     = dataSeg;      // stack segment
-			*--kstk     = userRSP;      // stack pointer
-			*--kstk     = 0x202;        // flags
-			*--kstk     = codeSeg;      // code segment
-			*--kstk     = (addr_t) fn;  // return addr
+			*--kstk     = dataSeg;          // stack segment
+			*--kstk     = userRSP.addr();   // stack pointer
+			*--kstk     = 0x202;            // flags
+			*--kstk     = codeSeg;          // code segment
+			*--kstk     = (addr_t) fn;      // return addr
 
 
 			// now for the registers.
@@ -169,11 +169,11 @@ namespace scheduler
 			*--kstk     = (uint64_t) a; // rdi
 
 
-			assert((addr_t) kstk + EXPECTED_STACK_OFFSET == (scratch + KERNEL_STACK_SIZE));
+			assert((addr_t) kstk + EXPECTED_STACK_OFFSET == (scratch + KERNEL_STACK_SIZE).addr());
 
 			// ok. set the stack.
-			thr->kernelStack = (virt + KERNEL_STACK_SIZE) - EXPECTED_STACK_OFFSET;
-			thr->kernelStackTop = (virt + KERNEL_STACK_SIZE);
+			thr->kernelStack = (virt + KERNEL_STACK_SIZE - EXPECTED_STACK_OFFSET).addr();
+			thr->kernelStackTop = (virt + KERNEL_STACK_SIZE).addr();
 
 			// clear the temp mapping
 			vmm::unmapAddress(scratch, n);
@@ -195,12 +195,12 @@ namespace scheduler
 			auto scratch = vmm::allocateAddrSpace(1, vmm::AddressSpaceType::User);
 			vmm::mapAddress(scratch, phys, 1, vmm::PAGE_WRITE);
 
-			cpu::fpu::initState(scratch);
+			cpu::fpu::initState(scratch.addr());
 
 			vmm::unmapAddress(scratch, 1);
 
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
-			thr->fpuSavedStateBuffer = virt;
+			thr->fpuSavedStateBuffer = virt.addr();
 
 			thr->cleanupPages.append(PageExtent(virt, 1));
 		}
@@ -228,7 +228,7 @@ namespace scheduler
 			auto numPages = SIZE_IN_PAGES(tcb_offset + sizeof(usertcb_t) + sizeof(userpcb_t));
 
 			auto phys = pmm::allocate(numPages);
-			assert(phys);
+			assert(phys.nonZero());
 
 			// note: we must map this user-accessible!
 			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
@@ -238,18 +238,18 @@ namespace scheduler
 			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
 			// setup the tcb first
-			auto tcb = (usertcb_t*) (scratch + tcb_offset);
+			auto tcb = (usertcb_t*) (scratch + tcb_offset).ptr();
 			memset(tcb, 0, sizeof(usertcb_t));
 
-			tcb->self = (usertcb_t*) (virt + tcb_offset);
+			tcb->self = (usertcb_t*) (virt + tcb_offset).ptr();
 			tcb->threadId = thr->threadId;
 
-			auto pcb = (userpcb_t*) (scratch + tcb_offset + sizeof(usertcb_t));
+			auto pcb = (userpcb_t*) (scratch + tcb_offset + sizeof(usertcb_t)).ptr();
 			memset(pcb, 0, sizeof(userpcb_t));
 
 			pcb->processId = proc->processId;
 
-			tcb->parentProcess = (userpcb_t*) (virt + tcb_offset + sizeof(usertcb_t));
+			tcb->parentProcess = (userpcb_t*) (virt + tcb_offset + sizeof(usertcb_t)).ptr();
 
 			thr->userspaceTCB = tcb->self;
 			thr->fsBase = (addr_t) tcb->self;
@@ -259,15 +259,15 @@ namespace scheduler
 			if(proc->tlsSize > 0)
 			{
 				auto scratchMaster = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);
-				vmm::mapAddress(scratchMaster, vmm::getPhysAddr(vmm::PAGE_ALIGN(proc->tlsMasterCopy), proc), numPages,
-					vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+				vmm::mapAddress(scratchMaster, vmm::getPhysAddr(VirtAddr(PAGE_ALIGN(proc->tlsMasterCopy)), proc),
+					numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 
-				scratchMaster += (proc->tlsMasterCopy - vmm::PAGE_ALIGN(proc->tlsMasterCopy));
+				scratchMaster += (proc->tlsMasterCopy - PAGE_ALIGN(proc->tlsMasterCopy));
 
 				// ok now do the tls
-				memmove((void*) (scratch + tcb_offset - tls_data_sz), (void*) scratchMaster, tls_data_sz);
+				memmove((scratch + tcb_offset - tls_data_sz).ptr(), scratchMaster.ptr(), tls_data_sz);
 
-				vmm::unmapAddress(vmm::PAGE_ALIGN(scratchMaster), numPages);
+				vmm::unmapAddress(scratchMaster.pageAligned(), numPages);
 			}
 
 

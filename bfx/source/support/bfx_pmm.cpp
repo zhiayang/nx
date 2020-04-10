@@ -174,7 +174,7 @@ namespace pmm
 			auto entry = &ents[i];
 			if(MMapEnt_Type(entry) == MMAP_FREE)
 			{
-				extmm::deallocate(&extmmState, MMapEnt_Ptr(entry), MMapEnt_Size(entry) / PAGE_SIZE);
+				extmm::deallocate(&extmmState, MMapEnt_Ptr(entry) & 0xFFFF'FFFF'FFFF'F000, MMapEnt_Size(entry) / PAGE_SIZE);
 				totalMem += MMapEnt_Size(entry);
 			}
 

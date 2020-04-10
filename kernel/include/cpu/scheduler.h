@@ -226,7 +226,7 @@ namespace nx
 			uint64_t wakeUpTimestamp = 0;
 
 
-			nx::list<PageExtent> cleanupPages;
+			nx::list<PageExtent<VirtAddr>> cleanupPages;
 
 
 			// saved information from context switches:
@@ -256,7 +256,7 @@ namespace nx
 		};
 
 
-		void setupKernelProcess(addr_t cr3);
+		void setupKernelProcess(PhysAddr cr3);
 
 		Process* getKernelProcess();
 		Process* getCurrentProcess();

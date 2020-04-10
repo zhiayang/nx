@@ -91,7 +91,7 @@ namespace bfx
 		bi->fbHorz      = bbinfo->fb_width;
 		bi->fbVert      = bbinfo->fb_height;
 		bi->fbScanWidth = bbinfo->fb_scanline / 4;
-		bi->frameBuffer = nx::addrs::KERNEL_FRAMEBUFFER;
+		bi->frameBuffer = nx::addrs::KERNEL_FRAMEBUFFER.addr();
 
 		bi->pml4Address = vmm::getPML4Address();
 

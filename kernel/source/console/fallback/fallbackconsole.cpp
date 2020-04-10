@@ -10,7 +10,7 @@ namespace fallback
 {
 	extern const uint8_t TheFont[256][16];
 
-	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
+	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER.addr();
 
 	constexpr int FontWidth = 8;
 	constexpr int FontHeight = 16;

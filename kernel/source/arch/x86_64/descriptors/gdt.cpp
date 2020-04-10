@@ -101,10 +101,13 @@ namespace gdt
 	{
 		// allocate me a page.
 		{
-			GDTPhysAddress = pmm::allocate(1);
-			GDTBaseAddress = vmm::allocateAddrSpace(1, vmm::AddressSpaceType::Kernel);
+			auto phys = pmm::allocate(1);
+			auto virt = vmm::allocateAddrSpace(1, vmm::AddressSpaceType::Kernel);
 
-			vmm::mapAddress(GDTBaseAddress, GDTPhysAddress, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+			GDTPhysAddress = phys.addr();
+			GDTBaseAddress = virt.addr();
+
+			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 			memset((void*) GDTBaseAddress, 0, PAGE_SIZE);
 		}
 

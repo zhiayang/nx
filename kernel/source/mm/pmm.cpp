@@ -18,8 +18,8 @@ namespace pmm
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 	static extmm::State<void, nx::spinlock> extmmState;
 
-	static addr_t zeroPageAddr = 0;
-	addr_t getZeroPage()
+	static PhysAddr zeroPageAddr { 0 };
+	PhysAddr getZeroPage()
 	{
 		return zeroPageAddr;
 	}
@@ -40,7 +40,7 @@ namespace pmm
 					bootinfo->mmEntries[i].numPages -= NumReservedPages;
 
 					// bootstrap!
-					vmm::bootstrap(base, addrs::PMM_STACK_BASE, NumReservedPages);
+					vmm::bootstrap(base, addrs::PMM_STACK_BASE.addr(), NumReservedPages);
 					bootstrapped = true;
 					break;
 				}
@@ -50,7 +50,7 @@ namespace pmm
 		if(!bootstrapped) abort("failed to bootstrap pmm!!");
 
 		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
-		extmmState.init("pmm", addrs::PMM_STACK_BASE, addrs::PMM_STACK_END);
+		extmmState.init("pmm", addrs::PMM_STACK_BASE.addr(), addrs::PMM_STACK_END.addr());
 
 		// ok, now loop through each memory entry for real.
 		size_t totalMem = 0;
@@ -60,7 +60,7 @@ namespace pmm
 			if(entry->memoryType == MemoryType::Available && entry->address > 0)
 			{
 				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
-				deallocate(entry->address, entry->numPages);
+				deallocate(PhysAddr(entry->address), entry->numPages);
 				totalMem += entry->numPages * 0x1000;
 			}
 		}
@@ -86,7 +86,7 @@ namespace pmm
 		assert(zp < bootinfo->maximumIdentityMap);
 
 		memset((void*) zp, 0, PAGE_SIZE);
-		zeroPageAddr = zp;
+		zeroPageAddr = PhysAddr(zp);
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
@@ -96,7 +96,7 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == type)
 			{
-				deallocate(entry->address, entry->numPages);
+				deallocate(PhysAddr(entry->address), entry->numPages);
 
 				// for safety, make sure we don't touch this again (accidentally or otherwise)
 				entry->memoryType = MemoryType::Reserved;
@@ -107,49 +107,63 @@ namespace pmm
 	// this one frees the memory map, and the bootinfo itself.
 	void freeAllEarlyMemory(BootInfo* bootinfo)
 	{
-		freeEarlyMemory(bootinfo, MemoryType::MemoryMap);
-
 		uint64_t maxIdentMem = bootinfo->maximumIdentityMap;
 
-		auto addr = (addr_t) bootinfo;
-		assert(vmm::isAligned(addr));
+		// TOOD: investigate why tf we have some issues when we add memory around 0x7a00000 ~ 0x7f00000 to the pool
+		// resulting in massive slowdowns. currently we only get that area if the system memory is set to 128MB,
+		// but it's too much effort to allow allocating specific chunks in the extmm. (if we set sysmem to 256MB, then
+		// we don't get entries starting around 0x7a00000 in the memory map)
 
-		// we assume the kernel boot info is one page long!!
-		deallocate(addr, 1);
+		// unmap any extraneous bits and pieces
+		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
+		{
+			auto entry = &bootinfo->mmEntries[i];
+			if(entry->memoryType == MemoryType::AvailableAfterUnmap && entry->address >= maxIdentMem)
+			{
+				// error("vmm", "unmap %p - %zu (%d)", entry->address, entry->numPages, entry->memoryType);
+				// vmm::unmapAddress(VirtAddr(entry->address), entry->numPages, /* ignoreUnmapped: */ true);
+				// deallocate(PhysAddr(entry->address), entry->numPages);
+			}
+		}
 
-		log("pmm", "freed all bootloader memory");
+		freeEarlyMemory(bootinfo, MemoryType::MemoryMap);
 
 		// ask the vmm to unmap all identity memory.
-		vmm::unmapAddress(0, maxIdentMem / PAGE_SIZE, /* ignoreUnmapped: */ true);
+		vmm::unmapAddress(VirtAddr::zero(), maxIdentMem / PAGE_SIZE, /* ignoreUnmapped: */ true);
 
-		log("vmm", "unmapped all identity-mapped memory");
+		auto addr = (addr_t) bootinfo;
+		assert(isAligned(addr));
+
+		// we assume the kernel boot info is one page long!!
+		deallocate(PhysAddr(addr), 1);
+		log("pmm", "freed all bootloader memory");
 	}
 
 
-	addr_t allocate(size_t num, bool below4G)
+	PhysAddr allocate(size_t num, bool below4G)
 	{
 		// extmmState.dump();
 		auto ret = extmmState.allocate(num, below4G ? [](addr_t a, size_t l) -> bool {
 			return end(a, l) < 0xFFFF'FFFF;
 		} : [](addr_t, size_t) -> bool { return true; });
 
-
-		// log("pmm", "allocated %p - %p", ret, ret + num * PAGE_SIZE);
 		assert(ret);
-		return ret;
+
+		// log("pmm", "allocated %p - %p (%zu) (%zu)", ret, ret + num * PAGE_SIZE, num, extmmState.numExtents);
+		return PhysAddr(ret);
 	}
 
-	void deallocate(addr_t addr, size_t num)
+	void deallocate(PhysAddr addr, size_t num)
 	{
-		assert(addr);
+		assert(addr.nonZero());
 		assert(num);
 
-		assert(vmm::isAligned(addr));
+		assert(addr.isAligned());
 		if(addr == zeroPageAddr && num == 1)
 			return;
 
-		// log("pmm", "deallocated %p - %p", addr, addr + num * PAGE_SIZE);
-		extmmState.deallocate(addr, num);
+		// log("pmm", "deallocated %p - %p (%zu)", addr.ptr(), addr + ofsPages(num), num);
+		extmmState.deallocate(addr.addr(), num);
 	}
 
 }

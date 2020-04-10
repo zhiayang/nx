@@ -42,14 +42,14 @@ namespace nx
 	{
 		void init(BootInfo* bootinfo);
 
-		addr_t allocate(size_t num, bool below4G = false);
-		void deallocate(addr_t addr, size_t num);
+		PhysAddr allocate(size_t num, bool below4G = false);
+		void deallocate(PhysAddr addr, size_t num);
 
 		void freeEarlyMemory(BootInfo* bootinfo, MemoryType type);
 		void freeAllEarlyMemory(BootInfo* bootinfo);
 
 		// this returns the single, 0-filled page we use for CoW and lazy allocation purposes.
-		addr_t getZeroPage();
+		PhysAddr getZeroPage();
 	}
 
 	namespace vmm
@@ -75,60 +75,35 @@ namespace nx
 		void mapAddressOverwrite(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
 		// this one will abort if you try to do anything funny.
-		void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void mapAddress(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
-		void mapCOW(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
-		void mapLazy(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void mapCOW(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+		void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
 
-		uint64_t getPageFlags(addr_t virt, scheduler::Process* proc = 0);
-		void unmapAddress(addr_t virt, size_t num, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
-		addr_t getPhysAddr(addr_t virt, scheduler::Process* proc = 0);
-		bool isMapped(addr_t virt, size_t num, scheduler::Process* proc = 0);
+		uint64_t getPageFlags(VirtAddr virt, scheduler::Process* proc = 0);
+		void unmapAddress(VirtAddr virt, size_t num, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
+		PhysAddr getPhysAddr(VirtAddr virt, scheduler::Process* proc = 0);
+		bool isMapped(VirtAddr virt, size_t num, scheduler::Process* proc = 0);
 
 
 
 		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
 		enum class AddressSpaceType { Kernel, KernelHeap, User };
 
-		addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
-		void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc = 0);
+		VirtAddr allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
+		void deallocateAddrSpace(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
 
-		addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc = 0);
+		VirtAddr allocateSpecific(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
 
 		// this will allocate a region of memory, and map the physical pages LAZILY
-		addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
-		addr_t allocateEager(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		VirtAddr allocate(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		VirtAddr allocateEager(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
 
-		void deallocate(addr_t addr, size_t num, scheduler::Process* proc = 0);
+		void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
 
 
 		bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip);
-
-
-		constexpr size_t indexPML4(addr_t addr)       { return ((((addr_t) addr) >> 39) & 0x1FF); }
-		constexpr size_t indexPDPT(addr_t addr)       { return ((((addr_t) addr) >> 30) & 0x1FF); }
-		constexpr size_t indexPageDir(addr_t addr)    { return ((((addr_t) addr) >> 21) & 0x1FF); }
-		constexpr size_t indexPageTable(addr_t addr)  { return ((((addr_t) addr) >> 12) & 0x1FF); }
-
-		constexpr addr_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
-		{
-			return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
-		}
-
-		constexpr size_t NumAddressSpaces = 3;
-		constexpr addr_t AddressSpaces[NumAddressSpaces][2] = {
-			{ addrs::USER_ADDRSPACE_BASE,       addrs::USER_ADDRSPACE_END       },
-			{ addrs::KERNEL_HEAP_BASE,          addrs::KERNEL_HEAP_END          },
-			{ addrs::KERNEL_VMM_ADDRSPACE_BASE, addrs::KERNEL_VMM_ADDRSPACE_END }
-		};
-
-		constexpr addr_t VMMStackAddresses[NumAddressSpaces][2] = {
-			{ addrs::VMM_STACK0_BASE,   addrs::VMM_STACK0_END },
-			{ addrs::VMM_STACK1_BASE,   addrs::VMM_STACK1_END },
-			{ addrs::VMM_STACK2_BASE,   addrs::VMM_STACK2_END }
-		};
-
 
 		constexpr uint64_t PAGE_PRESENT         = 0x1;
 		constexpr uint64_t PAGE_WRITE           = 0x2;
@@ -137,27 +112,12 @@ namespace nx
 		constexpr uint64_t PAGE_NX              = 0x8000'0000'0000'0000;
 		constexpr uint64_t ALIGN_BITS           = 12;
 
-		constexpr addr_t PAGE_ALIGN(addr_t addr)
-		{
-			// check if we have the 62-nd bit set, to determine if we actually had the uppermost bit set.
-			// obviously when the virtual address space increases to 62-bits or more from 48-bits, then
-			// this ain't gonna work.
-			if(addr & 0x4000'0000'0000'0000)    return addr & 0xFFFF'FFFF'FFFF'F000;
-			else                                return addr & 0x7FFF'FFFF'FFFF'F000;
-		}
-
-		constexpr bool isAligned(addr_t addr)
-		{
-			return addr == (addr & ~((addr_t) 0xFFF));
-		}
-
-
 
 		struct PageHasher
 		{
 			size_t operator () (VirtAddr v) const
 			{
-				return v.get() >> ALIGN_BITS;
+				return v.addr() >> ALIGN_BITS;
 			}
 		};
 
@@ -185,15 +145,16 @@ namespace nx
 			nx::bucket_hashmap<VirtAddr, PhysAddr, PageHasher> backingPhysPages;
 		};
 
+		constexpr size_t NumAddressSpaces = 3;
 		struct AddressSpace
 		{
-			addr_t cr3;
+			PhysAddr cr3;
 			nx::array<VMRegion> regions;
-			nx::array<addr_t> allocatedPhysPages;
+			nx::array<PhysAddr> allocatedPhysPages;
 
 			extmm::State<> vmmStates[vmm::NumAddressSpaces];
 
-			void init(addr_t cr3 = 0);
+			void init(PhysAddr cr3 = PhysAddr::zero());
 			void destroy();
 
 			void addRegion(VirtAddr addr, size_t size);

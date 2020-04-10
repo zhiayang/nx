@@ -14,14 +14,14 @@ namespace vmm
 
 	static VirtAddr end(VirtAddr addr, size_t num)
 	{
-		return addr.offsetPages(num);
+		return addr + ofsPages(num);
 	}
 
 
-	void AddressSpace::init(addr_t cr3)
+	void AddressSpace::init(PhysAddr cr3)
 	{
-		if(cr3) this->cr3 = cr3;
-		else    this->cr3 = pmm::allocate(1);
+		if(cr3.nonZero())   this->cr3 = cr3;
+		else                this->cr3 = pmm::allocate(1);
 	}
 
 	void AddressSpace::destroy()
@@ -37,10 +37,10 @@ namespace vmm
 		{
 			for(auto [ v, p ] : r.backingPhysPages)
 			{
-				if(p.nonzero())
+				if(p.nonZero())
 				{
 					num++;
-					pmm::deallocate(p.get(), 1);
+					pmm::deallocate(p, 1);
 				}
 			}
 		}
@@ -94,7 +94,7 @@ namespace vmm
 				// warn("vmregion", "insert %p (%zu / %zu)", virt + (i * PAGE_SIZE),
 				// 	vmr.backingPhysPages.size(), vmr.backingPhysPages.buckets());
 
-				vmr.backingPhysPages[virt.offsetPages(i)] = phys.offsetPages(i);
+				vmr.backingPhysPages[virt + ofsPages(i)] = phys + ofsPages(i);
 			}
 		};
 
@@ -115,7 +115,7 @@ namespace vmm
 				// warn("vmregion", "updating #2");
 
 				vmr.grow_up(num);
-				update_phys(vmr, vmr.addr.offsetPages(oldSz), physStart, num);
+				update_phys(vmr, vmr.addr + ofsPages(oldSz), physStart, num);
 
 				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
@@ -157,8 +157,8 @@ namespace vmm
 						// chop from the front.
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(i)]; p.nonzero())
-								pmm::deallocate(p.get(), 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr + ofsPages(i)]; p.nonZero())
+								pmm::deallocate(p, 1);
 						}
 					}
 
@@ -175,8 +175,8 @@ namespace vmm
 						// chop from the back.
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(vmr.numPages - 1 - i)]; p.nonzero())
-								pmm::deallocate(p.get(), 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr + ofsPages(vmr.numPages - 1 - i)]; p.nonZero())
+								pmm::deallocate(p, 1);
 						}
 					}
 
@@ -189,8 +189,8 @@ namespace vmm
 				else
 				{
 					// bollocks, it's somewhere in the middle.
-					size_t numFrontPages = (addr - vmr.addr).get() / PAGE_SIZE;
-					size_t numBackPages = (vmr.end() - end(addr, num)).get() / PAGE_SIZE;
+					size_t numFrontPages = (addr - vmr.addr) / PAGE_SIZE;
+					size_t numBackPages = (vmr.end() - end(addr, num)) / PAGE_SIZE;
 
 					assert(numFrontPages > 0 && numBackPages > 0);
 
@@ -201,8 +201,8 @@ namespace vmm
 					{
 						for(size_t i = 0; i < num; i++)
 						{
-							if(auto p = vmr.backingPhysPages[vmr.addr.offsetPages(numFrontPages + i)]; p.nonzero())
-								pmm::deallocate(p.get(), 1);
+							if(auto p = vmr.backingPhysPages[vmr.addr + ofsPages(numFrontPages + i)]; p.nonZero())
+								pmm::deallocate(p, 1);
 						}
 					}
 
@@ -237,7 +237,7 @@ namespace vmm
 					old = it->value;
 
 				vmr.backingPhysPages[virt] = phys;
-				return old.get();
+				return old.addr();
 			}
 		}
 
@@ -286,12 +286,12 @@ namespace vmm
 
 	VirtAddr VMRegion::end() const
 	{
-		return this->addr.offsetPages(this->numPages);
+		return this->addr + ofsPages(this->numPages);
 	}
 
 	void VMRegion::grow_down(size_t count)
 	{
-		this->addr.setOffsetPages(-count);
+		this->addr -= ofsPages(count);
 		this->numPages += count;
 	}
 
@@ -305,7 +305,7 @@ namespace vmm
 		assert(count <= this->numPages);
 
 		for(size_t i = 0; i < count; i++)
-			this->backingPhysPages.remove(this->end().offsetPages(i));
+			this->backingPhysPages.remove(this->end() + ofsPages(i));
 
 		this->numPages -= count;
 	}
@@ -315,9 +315,9 @@ namespace vmm
 		assert(count <= this->numPages);
 
 		for(size_t i = 0; i < count; i++)
-			this->backingPhysPages.remove(this->addr.offsetPages(i));
+			this->backingPhysPages.remove(this->addr + ofsPages(i));
 
-		this->addr.setOffsetPages(count);
+		this->addr += ofsPages(count);
 		this->numPages -= count;
 	}
 

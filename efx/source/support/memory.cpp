@@ -82,7 +82,7 @@ namespace memory
 
 		// ok, map the framebuffer as well.
 		if(auto fbaddr = graphics::getFramebufferAddress(); fbaddr != 0)
-			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER, (graphics::getFramebufferSize() + 0xFFF) / 0x1000, 0);
+			mapVirtual(fbaddr, nx::addrs::KERNEL_FRAMEBUFFER.addr(), (graphics::getFramebufferSize() + 0xFFF) / 0x1000, 0);
 	}
 
 	void finaliseMappingExistingMemory()
@@ -125,12 +125,12 @@ namespace memory
 
 			if(entry->Type == EfiRuntimeServicesCode || entry->Type == EfiRuntimeServicesData)
 			{
-				uint64_t v = nx::addrs::EFI_RUNTIME_SERVICES_BASE + entry->PhysicalStart;
+				uint64_t v = nx::addrs::EFI_RUNTIME_SERVICES_BASE.addr() + entry->PhysicalStart;
 				mapVirtual(entry->PhysicalStart, v, entry->NumberOfPages);
 			}
 
-			// efi::println("%2d: %p - %p   |   %d", i, entry->PhysicalStart, entry->PhysicalStart
-			//	+ (0x1000 * entry->NumberOfPages), entry->Type);
+			// efi::println("%2d: %p - %p   |   %x", i, entry->PhysicalStart, entry->PhysicalStart
+			// 	+ (0x1000 * entry->NumberOfPages), entry->Type);
 		}
 	}
 
@@ -150,7 +150,7 @@ namespace memory
 			if(entry->memoryType == nx::MemoryType::EFIRuntimeCode)
 			{
 				entries->PhysicalStart  = entry->address;
-				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE;
+				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE.addr();
 				entries->NumberOfPages  = entry->numPages;
 				entries->Attribute      = entry->efiAttributes;
 				entries->Type           = EfiRuntimeServicesCode;
@@ -158,7 +158,7 @@ namespace memory
 			else if(entry->memoryType == nx::MemoryType::EFIRuntimeData)
 			{
 				entries->PhysicalStart  = entry->address;
-				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE;
+				entries->VirtualStart   = entry->address + nx::addrs::EFI_RUNTIME_SERVICES_BASE.addr();
 				entries->NumberOfPages  = entry->numPages;
 				entries->Attribute      = entry->efiAttributes;
 				entries->Type           = EfiRuntimeServicesData;

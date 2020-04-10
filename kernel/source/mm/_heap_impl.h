@@ -86,7 +86,7 @@ struct heap_impl
 			// (this assumes that our region allocator never needs to allocate more than one page
 			// at a time, which sounds like a legitimate assumption).
 
-			return vmm::allocateEager(num, vmm::AddressSpaceType::KernelHeap, vmm::PAGE_WRITE, kproc);
+			return vmm::allocateEager(num, vmm::AddressSpaceType::KernelHeap, vmm::PAGE_WRITE, kproc).addr();
 		}
 		else
 		{
@@ -96,15 +96,16 @@ struct heap_impl
 			auto phys = pmm::allocate(num);
 
 			vmm::mapAddress(virt, phys, num, vmm::PAGE_WRITE, kproc);
-			return virt;
+			return virt.addr();
 		}
 	}
 
-	void internal_freePages(addr_t addr, size_t num, bool userPage = false)
+	void internal_freePages(addr_t _addr, size_t num, bool userPage = false)
 	{
 		auto kproc = scheduler::getKernelProcess();
 		assert(kproc);
 
+		auto addr = VirtAddr(_addr);
 		if(userPage && false)
 		{
 			vmm::deallocate(addr, num, kproc);
@@ -502,8 +503,8 @@ struct heap_impl
 		if(_addr == 0) return;
 
 		auto addr = _addr;
-		assert(addr >= addrs::KERNEL_HEAP_BASE);
-		assert(addr < addrs::KERNEL_HEAP_END);
+		assert(addr >= addrs::KERNEL_HEAP_BASE.addr());
+		assert(addr < addrs::KERNEL_HEAP_END.addr());
 
 		// grab the uint8_t offset right behind the addr
 		auto ofs = *(((alignment_offset_t*) addr) - 1);
@@ -525,7 +526,7 @@ struct heap_impl
 
 			// the size is still the size -- but we do some rounding to get the number of pages.
 
-			assert(vmm::isAligned(addr));
+			assert(isAligned(addr));
 			internal_freePages(addr, (sz + PAGE_SIZE) / PAGE_SIZE, /* userPage: */ true);
 		}
 		else

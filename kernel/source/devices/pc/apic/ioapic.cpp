@@ -65,18 +65,18 @@ namespace ioapic
 		// note: "we can't" above refers to the fact that we need to allocate the virtual address space in the lower 4GB,
 		// so if we've already allocated it then we can't allocate it again! (duh)
 
-		array<addr_t> mappedBases;
+		array<VirtAddr> mappedBases;
 		for(auto& _ioa : IoApics)
 		{
 			auto ioa = &_ioa;
 
-			if(mappedBases.find(vmm::PAGE_ALIGN(ioa->baseAddr)) == mappedBases.end())
+			auto alignedBase = VirtAddr(ioa->baseAddr).pageAligned();
+			if(mappedBases.find(alignedBase) == mappedBases.end())
 			{
-				auto alignedBase = vmm::PAGE_ALIGN(ioa->baseAddr);
-				if(vmm::allocateSpecific(alignedBase, 1) == 0)
+				if(vmm::allocateSpecific(alignedBase, 1).isZero())
 					abort("ioapic: failed to map base address %p", ioa->baseAddr);
 
-				vmm::mapAddress(alignedBase, alignedBase, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
+				vmm::mapAddress(alignedBase, alignedBase.physIdentity(), 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 				mappedBases.append(alignedBase);
 			}
 

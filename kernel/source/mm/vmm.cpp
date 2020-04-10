@@ -10,6 +10,18 @@ namespace vmm
 {
 	using namespace addrs;
 
+	constexpr VirtAddr AddressSpaces[NumAddressSpaces][2] = {
+		{ addrs::USER_ADDRSPACE_BASE,       addrs::USER_ADDRSPACE_END       },
+		{ addrs::KERNEL_HEAP_BASE,          addrs::KERNEL_HEAP_END          },
+		{ addrs::KERNEL_VMM_ADDRSPACE_BASE, addrs::KERNEL_VMM_ADDRSPACE_END }
+	};
+
+	constexpr VirtAddr VMMStackAddresses[NumAddressSpaces][2] = {
+		{ addrs::VMM_STACK0_BASE,   addrs::VMM_STACK0_END },
+		{ addrs::VMM_STACK1_BASE,   addrs::VMM_STACK1_END },
+		{ addrs::VMM_STACK2_BASE,   addrs::VMM_STACK2_END }
+	};
+
 	// we have one extmm for each address space we can allocate.
 	static const char* extmmNames[NumAddressSpaces] = {
 		"vmm/user",
@@ -17,15 +29,14 @@ namespace vmm
 		"vmm/kernel"
 	};
 
-	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 
 	using ExtMMState = extmm::State<>;
 
-	static ExtMMState* getAddrSpace(addr_t addr, size_t num, ExtMMState* states)
+	static ExtMMState* getAddrSpace(VirtAddr addr, size_t num, ExtMMState* states)
 	{
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
-			if(addr >= AddressSpaces[i][0] && end(addr, num) <= AddressSpaces[i][1])
+			if(addr >= AddressSpaces[i][0] && addr + ofsPages(num) <= AddressSpaces[i][1])
 				return &states[i];
 		}
 
@@ -45,20 +56,20 @@ namespace vmm
 			if(isFirst)
 			{
 				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_WRITE | PAGE_PRESENT, proc);
-				s->init(extmmNames[i], VMMStackAddresses[i][0], VMMStackAddresses[i][1]);
+				s->init(extmmNames[i], VMMStackAddresses[i][0].addr(), VMMStackAddresses[i][1].addr());
 			}
 			else
 			{
 				s->init(extmmNames[i], 0, 0);
 			}
 
-			s->deallocate(AddressSpaces[i][0], (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
+			s->deallocate(AddressSpaces[i][0].addr(), (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
 		}
 
 		// unmap the null page.
 		if(isFirst)
 		{
-			unmapAddress(0, 1);
+			unmapAddress(VirtAddr::zero(), 1);
 		}
 		else
 		{
@@ -90,7 +101,7 @@ namespace vmm
 	// KERNEL_HEAP_BASE             ->      KERNEL_HEAP_END
 	// KERNEL_VMM_ADDRSPACE_BASE    ->      KERNEL_VMM_ADDRSPACE_END
 
-	addr_t allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc)
+	VirtAddr allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -101,15 +112,15 @@ namespace vmm
 		else if(type == AddressSpaceType::Kernel)       st = &proc->addrspace.vmmStates[2];
 		else                                        abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
-		auto ret = st->allocate(num, [](addr_t, size_t) -> bool { return true; });
-		assert(isAligned(ret));
+		auto ret = VirtAddr(st->allocate(num, [](addr_t, size_t) -> bool { return true; }));
+		assert(ret.isAligned());
 
 		return ret;
 	}
 
-	void deallocateAddrSpace(addr_t addr, size_t num, scheduler::Process* proc)
+	void deallocateAddrSpace(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(isAligned(addr));
+		assert(addr.isAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -117,16 +128,16 @@ namespace vmm
 		ExtMMState* st = getAddrSpace(addr, num, proc->addrspace.vmmStates);
 		if(!st) abort("deallocateAddrSpace(): address not in any of the address spaces!");
 
-		return st->deallocate(addr, num);
+		return st->deallocate(addr.addr(), num);
 	}
 
 
 
 
 
-	addr_t allocateSpecific(addr_t addr, size_t num, scheduler::Process* proc)
+	VirtAddr allocateSpecific(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(isAligned(addr));
+		assert(addr.isAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -134,49 +145,49 @@ namespace vmm
 		ExtMMState* st = getAddrSpace(addr, num, proc->addrspace.vmmStates);
 		if(!st) abort("allocateSpecific(): no address space to allocate address '%p'", addr);
 
-		auto virt = st->allocateSpecific(addr, num);
-		if(virt) proc->addrspace.addRegion(VirtAddr(virt), num);
+		auto virt = VirtAddr(st->allocateSpecific(addr.addr(), num));
+		if(virt.nonZero()) proc->addrspace.addRegion(virt, num);
 
 		return virt;
 	}
 
-	addr_t allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
+	VirtAddr allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
 		auto virt = allocateAddrSpace(num, type, proc);
-		if(virt == 0) { abort("vmm::allocate(): out of addrspace!"); return 0; }
+		if(virt.isZero()) { abort("vmm::allocate(): out of addrspace!"); }
 
 		// don't have the write flag.
 		flags &= ~PAGE_WRITE;
 
 		mapLazy(virt, num, flags, proc);
-		proc->addrspace.addRegion(VirtAddr(virt), num);
+		proc->addrspace.addRegion(virt, num);
 
 		return virt;
 	}
 
-	addr_t allocateEager(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
+	VirtAddr allocateEager(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
 		auto virt = allocateAddrSpace(num, type, proc);
-		if(virt == 0) { abort("vmm::allocate(): out of addrspace!"); return 0; }
+		if(virt.isZero()) { abort("vmm::allocate(): out of addrspace!"); return VirtAddr::zero(); }
 
 		auto phys = pmm::allocate(num);
-		if(phys == 0) { abort("vmm::allocate(): no physical pages!"); return 0; }
+		if(phys.isZero()) { abort("vmm::allocate(): no physical pages!"); return VirtAddr::zero(); }
 
 		mapAddress(virt, phys, num, flags | PAGE_PRESENT, proc);
-		proc->addrspace.addRegion(VirtAddr(virt), PhysAddr(phys), num);
+		proc->addrspace.addRegion(virt, phys, num);
 
 		return virt;
 	}
 
-	void deallocate(addr_t addr, size_t num, scheduler::Process* proc)
+	void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(isAligned(addr));
+		assert(addr.isAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -184,7 +195,7 @@ namespace vmm
 		unmapAddress(addr, num, /* ignoreIfNotMapped: */ false, proc);
 		deallocateAddrSpace(addr, num, proc);
 
-		proc->addrspace.freeRegion(VirtAddr(addr), num, /* freePhys: */ true);
+		proc->addrspace.freeRegion(addr, num, /* freePhys: */ true);
 	}
 }
 }

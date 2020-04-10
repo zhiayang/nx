@@ -11,6 +11,9 @@ namespace nx
 {
 	namespace serial
 	{
+		void init();
+		void initReceive(void (*callback)(uint8_t));
+
 		void debugprint(char c);
 		void debugprint(char* c, size_t l);
 		void debugprint(const char* s);

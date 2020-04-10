@@ -8,7 +8,7 @@
 namespace nx {
 namespace console
 {
-	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER;
+	constexpr addr_t Framebuffer = addrs::KERNEL_FRAMEBUFFER.addr();
 
 	constexpr int PaddingX = 8;
 	constexpr int PaddingY = 4;

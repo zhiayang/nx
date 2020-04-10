@@ -60,21 +60,6 @@ namespace extmm
 
 		Lock lock;
 
-
-		void dump()
-		{
-			interrupts::disable();
-			serial::debugprintf("dumping extmm state %s (%p):\n", this->owner, this);
-			auto ext = this->head;
-			while(ext)
-			{
-				serial::debugprintf("    %p - %p\n", ext->addr, end(ext));
-				ext = ext->next;
-			}
-			serial::debugprintf("\n");
-			interrupts::enable();
-		}
-
 		void init(const char* owner, addr_t base, addr_t top)
 		{
 			this->head = 0;
@@ -150,7 +135,7 @@ namespace extmm
 				ext = ext->next;
 			}
 
-			serial::debugprintf("extmm/%s::allocate(): out of pages!\n", this->owner);
+			error("extmm", "(%s): allocate() out of pages!", this->owner);
 			return 0;
 		}
 
@@ -234,6 +219,19 @@ namespace extmm
 		}
 
 
+		void dump()
+		{
+			serial::debugprintf("dumping extmm state %s (%p):\n", this->owner, this);
+			auto ext = this->head;
+			while(ext)
+			{
+				serial::debugprintf("    %p - %p (%zu)\n", ext->addr, end(ext), ext->size);
+				ext = ext->next;
+			}
+			serial::debugprintf("\n");
+		}
+
+
 	private:
 		static addr_t end(addr_t base, size_t num)          { return base + (num * PAGE_SIZE); }
 		static addr_t end(typename _State<T>::extent_t* ext){ return ext->addr + (ext->size * PAGE_SIZE); }
@@ -266,6 +264,7 @@ namespace extmm
 		}
 	};
 
+	void dump(const State<>& st);
 }
 }
 

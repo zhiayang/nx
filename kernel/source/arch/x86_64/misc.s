@@ -4,6 +4,8 @@
 
 // miscellaneous assembly support functions.
 
+.include "macros.s"
+
 .global nx_x64_clear_segments
 .type nx_x64_clear_segments, @function
 nx_x64_clear_segments:
@@ -11,6 +13,26 @@ nx_x64_clear_segments:
 	mov %ax, %ds
 	mov %ax, %es
 	ret
+
+
+.global nx_x64_serial_interrupt
+.type nx_x64_serial_interrupt, @function
+nx_x64_serial_interrupt:
+	swapgs_if_necessary
+	push_scratch_regs
+
+	call nx_x64_enter_intr_context
+
+	call _ZN2nx6serial11irq_handlerEv
+
+	call nx_x64_exit_intr_context
+
+	pop_scratch_regs
+	swapgs_if_necessary
+	iretq
+
+
+
 
 
 

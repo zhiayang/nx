@@ -24,6 +24,7 @@
 #include "misc/util.h"
 #include "misc/addrs.h"
 #include "misc/syscall.h"
+#include "misc/debugcon.h"
 #include "misc/timekeeping.h"
 
 #include "platform-specific.h"
@@ -40,11 +41,6 @@ namespace nx
 	}
 
 	// some misc stuff.
-	void log(const char* sys, const char* fmt, ...);
-	void warn(const char* sys, const char* fmt, ...);
-	void error(const char* sys, const char* fmt, ...);
-
-
 	void print(const char* fmt, ...);
 	void println(const char* fmt, ...);
 	int vprint(const char* fmt, va_list args);

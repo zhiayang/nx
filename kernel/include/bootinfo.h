@@ -27,6 +27,8 @@ namespace nx
 
 		EFIRuntimeCode,
 		EFIRuntimeData,
+
+		AvailableAfterUnmap
 	};
 
 	struct MemMapEntry

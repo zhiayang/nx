@@ -102,7 +102,7 @@ namespace efx
 		bi->fbHorz          = graphics::getX();
 		bi->fbVert          = graphics::getY();
 		bi->fbScanWidth     = graphics::getPixelsPerScanline();
-		bi->frameBuffer     = nx::addrs::KERNEL_FRAMEBUFFER;
+		bi->frameBuffer     = nx::addrs::KERNEL_FRAMEBUFFER.addr();
 
 		bi->pml4Address     = memory::getPML4Address();
 
@@ -205,10 +205,16 @@ namespace efx
 
 			switch(efiEnt->Type)
 			{
-				case EfiLoaderData:                 // fallthrough
-				case EfiConventionalMemory:         // fallthrough
+				case EfiLoaderCode:                 // fallthrough
+				case EfiLoaderData:                 entries[k].memoryType = nx::MemoryType::AvailableAfterUnmap; break;
+
 				case EfiBootServicesCode:           // fallthrough
-				case EfiBootServicesData:           entries[k].memoryType = nx::MemoryType::Available; break;
+				case EfiBootServicesData:           entries[k].memoryType = nx::MemoryType::Reserved; break;
+
+				case EfiRuntimeServicesCode:        entries[k].memoryType = nx::MemoryType::EFIRuntimeCode; break;
+				case EfiRuntimeServicesData:        entries[k].memoryType = nx::MemoryType::EFIRuntimeData; break;
+
+				case EfiConventionalMemory:         entries[k].memoryType = nx::MemoryType::Available; break;
 
 				case EfiACPIMemoryNVS:              // fallthrough
 				case EfiACPIReclaimMemory:          entries[k].memoryType = nx::MemoryType::ACPI; break;
@@ -218,8 +224,6 @@ namespace efx
 
 				case EfiPersistentMemory:           entries[k].memoryType = nx::MemoryType::NonVolatile; break;
 
-				case EfiRuntimeServicesCode:        entries[k].memoryType = nx::MemoryType::EFIRuntimeCode; break;
-				case EfiRuntimeServicesData:        entries[k].memoryType = nx::MemoryType::EFIRuntimeData; break;
 
 				case efi::MemoryType_LoadedKernel:  entries[k].memoryType = nx::MemoryType::LoadedKernel; break;
 				case efi::MemoryType_MemoryMap:     entries[k].memoryType = nx::MemoryType::MemoryMap; break;

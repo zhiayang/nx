@@ -25,8 +25,15 @@ namespace vmm
 	extern "C" uint8_t nx_user_kernel_stubs_begin;
 	extern "C" uint8_t nx_user_kernel_stubs_end;
 
+	constexpr size_t indexPML4(addr_t addr)       { return ((addr >> 39) & 0x1FF); }
+	constexpr size_t indexPDPT(addr_t addr)       { return ((addr >> 30) & 0x1FF); }
+	constexpr size_t indexPageDir(addr_t addr)    { return ((addr >> 21) & 0x1FF); }
+	constexpr size_t indexPageTable(addr_t addr)  { return ((addr >> 12) & 0x1FF); }
 
-	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
+	constexpr addr_t indexToAddr(size_t p4idx, size_t p3idx, size_t p2idx, size_t p1idx)
+	{
+		return (0x80'0000'0000ULL * p4idx) + (0x4000'0000ULL * p3idx) + (0x20'0000ULL * p2idx) + (0x1000ULL * p1idx);
+	}
 
 
 	// well, since i can't get this to work as a constexpr function...
@@ -84,22 +91,22 @@ namespace vmm
 	void setupAddrSpace(scheduler::Process* proc)
 	{
 		// make sure we allocated it.
-		assert(proc->addrspace.cr3);
+		assert(proc->addrspace.cr3.nonZero());
 
 		// ok, give me some temp space.
 		auto virt = allocateAddrSpace(1, AddressSpaceType::User);
 		mapAddress(virt, proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
-		auto pml4 = (pml_t*) virt;
+		auto pml4 = (pml_t*) virt.addr();
 		memset(pml4, 0, PAGE_SIZE);
 
 		// setup recursive paging
-		pml4->entries[510] = proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
+		pml4->entries[510] = proc->addrspace.cr3.addr() | PAGE_PRESENT | PAGE_WRITE;
 
 		// setup kernel maps.
 		// note: we should always be calling this while in an address space that has already been setup
 		// so getting pdpt 511 should not fault us.
-		pml4->entries[511] = getPhysAddr((addr_t) getPDPT(511)) | PAGE_WRITE | PAGE_PRESENT;
+		pml4->entries[511] = getPhysAddr(VirtAddr((addr_t) getPDPT(511))).addr() | PAGE_WRITE | PAGE_PRESENT;
 
 
 		// TODO: fuckin nasty man. bad hack!! we need to move this elsewhere
@@ -121,10 +128,10 @@ namespace vmm
 			// we do not allocate memory -- just map the physical pages here.
 			for(size_t i = 0; i < numPgs; i++)
 			{
-				auto kv = stubs_begin + (i * PAGE_SIZE);
+				auto kv = VirtAddr(stubs_begin) + ofsPages(i);
 				auto kp = getPhysAddr(kv);
 
-				auto uv = addrs::USER_KERNEL_STUBS + (i * PAGE_SIZE);
+				auto uv = addrs::USER_KERNEL_STUBS + ofsPages(i);
 				mapAddress(uv, kp, 1, PAGE_USER | PAGE_PRESENT, proc);
 			}
 		}
@@ -136,11 +143,11 @@ namespace vmm
 		{
 			// note: we're not going to change the lapic base address,
 			// and it should be the same for every CPU.
-			auto lapicBase = scheduler::getCurrentCPU()->localApicAddr;
+			auto lapicBase = VirtAddr(scheduler::getCurrentCPU()->localApicAddr);
 			if(allocateSpecific(lapicBase, 1, proc) != lapicBase)
 				abort("failed to map lapic (at %p) to user process!", lapicBase);
 
-			mapAddress(lapicBase, lapicBase, 1, PAGE_PRESENT | PAGE_WRITE, proc);
+			mapAddress(lapicBase, lapicBase.physIdentity(), 1, PAGE_PRESENT | PAGE_WRITE, proc);
 		}
 
 		// ok i think that's it.
@@ -179,7 +186,7 @@ namespace vmm
 
 		void map()
 		{
-			getPML4()->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
+			getPML4()->entries[509] = this->proc->addrspace.cr3.addr() | PAGE_PRESENT | PAGE_WRITE;
 
 			// we need to temp-map the 509th entry of the target pml4 to itself as well
 			// to achieve that, get a temp thing to modify it.
@@ -187,7 +194,7 @@ namespace vmm
 			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
 			mapAddress(tmp, this->proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
-			((pml_t*) tmp)->entries[509] = this->proc->addrspace.cr3 | PAGE_PRESENT | PAGE_WRITE;
+			((pml_t*) tmp.addr())->entries[509] = this->proc->addrspace.cr3.addr() | PAGE_PRESENT | PAGE_WRITE;
 
 			unmapAddress(tmp, 1);
 		}
@@ -199,7 +206,7 @@ namespace vmm
 			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
 			mapAddress(tmp, this->proc->addrspace.cr3, 1, PAGE_PRESENT | PAGE_WRITE);
 
-			((pml_t*) tmp)->entries[509] = 0;
+			((pml_t*) tmp.addr())->entries[509] = 0;
 
 			unmapAddress(tmp, 1);
 			invalidateAll();
@@ -210,10 +217,10 @@ namespace vmm
 
 
 
-	static addr_t alloc_phys_tracked(scheduler::Process* proc)
+	static PhysAddr alloc_phys_tracked(scheduler::Process* proc)
 	{
 		auto x = pmm::allocate(1);
-		assert(x);
+		assert(x.nonZero());
 
 		// don't track the kernel!
 		if(proc->processId > 0 || scheduler::getInitPhase() > scheduler::SchedulerInitPhase::SchedulerStarted)
@@ -226,13 +233,13 @@ namespace vmm
 		return x;
 	};
 
-	static void map_internal(addr_t virt, addr_t phys, uint64_t flags, scheduler::Process* proc, bool overwrite)
+	static void map_internal(VirtAddr virt, PhysAddr phys, uint64_t flags, scheduler::Process* proc, bool overwrite)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(isAligned(virt));
-		assert(isAligned(phys));
+		assert(virt.isAligned());
+		assert(phys.isAligned());
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
@@ -246,10 +253,10 @@ namespace vmm
 		constexpr addr_t DEFAULT_FLAGS_HIGH = PAGE_WRITE | PAGE_PRESENT;
 
 		// right.
-		auto p4idx = indexPML4(virt);
-		auto p3idx = indexPDPT(virt);
-		auto p2idx = indexPageDir(virt);
-		auto p1idx = indexPageTable(virt);
+		auto p4idx = indexPML4(virt.addr());
+		auto p3idx = indexPDPT(virt.addr());
+		auto p2idx = indexPageDir(virt.addr());
+		auto p1idx = indexPageTable(virt.addr());
 
 		if(p4idx == 510 || p4idx == 509) abort("cannot map to PML4T at index 510 or 509!");
 
@@ -265,9 +272,9 @@ namespace vmm
 		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 		{
 			auto pp = alloc_phys_tracked(proc);
-			assert(pp);
+			assert(pp.nonZero());
 
-			pml4->entries[p4idx] = pp | DEFAULT_FLAGS;
+			pml4->entries[p4idx] = pp.addr() | DEFAULT_FLAGS;
 			memset(pdpt, 0, PAGE_SIZE);
 
 			if(pml4->entries[p4idx] & PAGE_NX)
@@ -277,9 +284,9 @@ namespace vmm
 		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 		{
 			auto pp = alloc_phys_tracked(proc);
-			assert(pp);
+			assert(pp.nonZero());
 
-			pdpt->entries[p3idx] = pp | DEFAULT_FLAGS;
+			pdpt->entries[p3idx] = pp.addr() | DEFAULT_FLAGS;
 			memset(pdir, 0, PAGE_SIZE);
 
 			if(pdpt->entries[p3idx] & PAGE_NX)
@@ -289,9 +296,9 @@ namespace vmm
 		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 		{
 			auto pp = alloc_phys_tracked(proc);
-			assert(pp);
+			assert(pp.nonZero());
 
-			pdir->entries[p2idx] = pp | DEFAULT_FLAGS;
+			pdir->entries[p2idx] = pp.addr() | DEFAULT_FLAGS;
 			memset(ptab, 0, PAGE_SIZE);
 
 			if(pdir->entries[p2idx] & PAGE_NX)
@@ -302,8 +309,8 @@ namespace vmm
 			abort("virtual addr %p was already mapped (to phys %p)!", virt, PAGE_ALIGN(ptab->entries[p1idx]));
 
 		// since this is the internal one, we don't add extra flags.
-		ptab->entries[p1idx] = phys | flags;
-		invalidate(virt);
+		ptab->entries[p1idx] = phys.addr() | flags;
+		invalidate(virt.addr());
 	}
 
 
@@ -312,57 +319,57 @@ namespace vmm
 	{
 		for(size_t i = 0; i < num; i++)
 		{
-			map_internal(virt.offsetPages(i).get(), phys.offsetPages(i).get(),
+			map_internal(virt + ofsPages(i), phys + ofsPages(i),
 				flags | PAGE_PRESENT, proc, /* overwrite: */ true);
 		}
 	}
 
-	void mapAddress(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapAddress(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		for(size_t i = 0; i < num; i++)
 		{
-			auto v = virt + (i * PAGE_SIZE);
-			auto p = phys + (i * PAGE_SIZE);
+			auto v = virt + ofsPages(i);
+			auto p = phys + ofsPages(i);
 
 			map_internal(v, p, flags | PAGE_PRESENT, proc, /* overwrite: */ false);
 		}
 	}
 
-	void mapCOW(addr_t virt, addr_t phys, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapCOW(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		flags &= ~PAGE_PRESENT;
-		log("vmm", "region %p - %p marked copy-on-write", virt, virt + (num * PAGE_SIZE));
+		log("vmm", "region %p - %p marked copy-on-write", virt, virt + ofsPages(num));
 
 		for(size_t i = 0; i < num; i++)
 		{
-			auto v = virt + (i * PAGE_SIZE);
-			auto p = phys + (i * PAGE_SIZE);
+			auto v = virt + ofsPages(i);
+			auto p = phys + ofsPages(i);
 
 			map_internal(v, p, flags | PAGE_PRESENT | PAGE_COPY_ON_WRITE, proc, /* overwrite: */ false);
 		}
 	}
 
-	void mapLazy(addr_t virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		// make sure we don't have write in the provided flags.
 		assert((flags & PAGE_WRITE) == 0);
 		flags &= ~PAGE_WRITE;
 
-		log("vmm", "region %p - %p marked lazy", virt, virt + (num * PAGE_SIZE));
+		log("vmm", "region %p - %p marked lazy", virt, virt + ofsPages(num));
 
 		for(size_t i = 0; i < num; i++)
 		{
-			auto v = virt + (i * PAGE_SIZE);
+			auto v = virt + ofsPages(i);
 
 			// everybody gets the zero page. note: we mark the page present here, because reading
 			// from a lazy page shouldn't actually do anything -- just return zeroes!
@@ -371,21 +378,21 @@ namespace vmm
 	}
 
 
-	uint64_t getPageFlags(addr_t virt, scheduler::Process* proc)
+	uint64_t getPageFlags(VirtAddr virt, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
 
 		// right.
-		auto p4idx = indexPML4(virt);
-		auto p3idx = indexPDPT(virt);
-		auto p2idx = indexPageDir(virt);
-		auto p1idx = indexPageTable(virt);
+		auto p4idx = indexPML4(virt.addr());
+		auto p3idx = indexPDPT(virt.addr());
+		auto p2idx = indexPageDir(virt.addr());
+		auto p1idx = indexPageTable(virt.addr());
 
 		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
@@ -406,7 +413,7 @@ namespace vmm
 
 
 
-	void unmapAddress(addr_t virt, size_t num, bool ignore, scheduler::Process* proc)
+	void unmapAddress(VirtAddr virt, size_t num, bool ignore, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -414,17 +421,17 @@ namespace vmm
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		for(size_t i = 0; i < num; i++)
 		{
-			addr_t v = virt + (i * PAGE_SIZE);
+			auto v = virt + ofsPages(i);
 
 			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
+			auto p4idx = indexPML4(v.addr());
+			auto p3idx = indexPDPT(v.addr());
+			auto p2idx = indexPageDir(v.addr());
+			auto p1idx = indexPageTable(v.addr());
 
 			if(p4idx == 510) abort("cannot unmap PML4T at index 510!");
 
@@ -467,12 +474,12 @@ namespace vmm
 			}
 
 			ptab->entries[p1idx] = 0;
-			invalidate(v);
+			invalidate(v.addr());
 		}
 	}
 
 
-	addr_t getPhysAddr(addr_t virt, scheduler::Process* proc)
+	PhysAddr getPhysAddr(VirtAddr virt, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -481,13 +488,13 @@ namespace vmm
 		TempMapper tm(isOtherProc ? proc : 0);
 
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		// right.
-		auto p4idx = indexPML4(virt);
-		auto p3idx = indexPDPT(virt);
-		auto p2idx = indexPageDir(virt);
-		auto p1idx = indexPageTable(virt);
+		auto p4idx = indexPML4(virt.addr());
+		auto p3idx = indexPDPT(virt.addr());
+		auto p2idx = indexPageDir(virt.addr());
+		auto p1idx = indexPageTable(virt.addr());
 
 		auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 		auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
@@ -506,11 +513,11 @@ namespace vmm
 		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
 			abort("getPhys: %p was not mapped! (page not present)", virt);
 
-		return vmm::PAGE_ALIGN(ptab->entries[p1idx]);
+		return PhysAddr(ptab->entries[p1idx]).pageAligned();
 	}
 
 
-	bool isMapped(addr_t virt, size_t num, scheduler::Process* proc)
+	bool isMapped(VirtAddr virt, size_t num, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -518,17 +525,17 @@ namespace vmm
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
 
-		assert(isAligned(virt));
+		assert(virt.isAligned());
 
 		for(size_t i = 0; i < num; i++)
 		{
-			addr_t v = virt + (i * PAGE_SIZE);
+			auto v = virt + ofsPages(i);
 
 			// right.
-			auto p4idx = indexPML4(v);
-			auto p3idx = indexPDPT(v);
-			auto p2idx = indexPageDir(v);
-			auto p1idx = indexPageTable(v);
+			auto p4idx = indexPML4(v.addr());
+			auto p3idx = indexPDPT(v.addr());
+			auto p2idx = indexPageDir(v.addr());
+			auto p1idx = indexPageTable(v.addr());
 
 			auto pml4 = (isOtherProc ? getPML4<509>() : getPML4());
 			auto pdpt = (isOtherProc ? getPDPT<509>(p4idx) : getPDPT(p4idx));
@@ -549,6 +556,10 @@ namespace vmm
 	{
 		// we will do a very manual allocation of the first page.
 		// in the worst case scenario we will need 4 pages to map one virtual page.
+
+		auto end = [](addr_t base, size_t num) -> addr_t {
+			return base + (num * PAGE_SIZE);
+		};
 
 		// map exactly ONE page for the bootstrap.
 		{

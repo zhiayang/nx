@@ -90,7 +90,7 @@ namespace initrd
 
 			// make a thing.
 			void* buf = (void*) vmm::allocateEager((uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE,
-				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
+				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
 
 			{
 				auto hdr = (gzip_header_t*) initrd;
@@ -121,7 +121,7 @@ namespace initrd
 			log("initrd", "format: tar");
 
 			void* buf = (void*) vmm::allocateEager((inpSz + PAGE_SIZE - 1) / PAGE_SIZE,
-				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE);
+				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
 
 			memcpy(buf, initrd, inpSz);
 

@@ -70,20 +70,17 @@ namespace nx
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
 	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
 
-	struct PageExtent
-	{
-		PageExtent() : base(0), size(0) { }
-		PageExtent(addr_t base, size_t size) : base(base), size(size) { }
-
-		addr_t base;
-		size_t size;
-	};
 
 	namespace scheduler
 	{
 		struct Thread;
 		struct Process;
 	}
+
+
+	void log(const char* sys, const char* fmt, ...);
+	void warn(const char* sys, const char* fmt, ...);
+	void error(const char* sys, const char* fmt, ...);
 }
 
 // wow fucking c++ is so poorly designed
@@ -136,54 +133,117 @@ void operator delete[]  (void* ptr, size_t al);
 // strong typedefs for addresses.
 namespace nx
 {
+	constexpr addr_t PAGE_ALIGN(addr_t addr)
+	{
+		// check if we have the 62-nd bit set, to determine if we actually had the uppermost bit set.
+		// obviously when the virtual address space increases to 62-bits or more from 48-bits, then
+		// this ain't gonna work.
+		if(addr & 0x4000'0000'0000'0000)    return addr & 0xFFFF'FFFF'FFFF'F000;
+		else                                return addr & 0x7FFF'FFFF'FFFF'F000;
+	}
+
+	constexpr bool isAligned(addr_t addr)
+	{
+		return addr == (addr & ~((addr_t) 0xFFF));
+	}
+
+
 	struct __TagVirt { };
 	struct __TagPhys { };
+
+	struct ofsPages
+	{
+		explicit ofsPages(size_t pages) : bytes(pages * PAGE_SIZE) { }
+
+		ofsPages(const ofsPages&) = delete;
+		ofsPages& operator = (ofsPages&&) = delete;
+		ofsPages& operator = (const ofsPages&) = delete;
+
+		template <typename T> friend struct __AddressImpl;
+
+	private:
+		size_t bytes;
+	};
+
 
 	template <typename Tag>
 	struct __AddressImpl
 	{
 	private:
 		using Self = __AddressImpl;
-		addr_t addr;
+		addr_t m_addr;
 
 	public:
-		__AddressImpl() : addr(0) { }
-		explicit __AddressImpl(addr_t x) : addr(x) { }
+		constexpr __AddressImpl() : m_addr(0) { }
+		constexpr explicit __AddressImpl(addr_t x) : m_addr(x) { }
 
 		~__AddressImpl() = default;
-		__AddressImpl(Self&&) = default;
-		__AddressImpl(const Self&) = default;
-		Self& operator = (Self&&) = default;
-		Self& operator = (const Self&) = default;
+		constexpr __AddressImpl(Self&&) = default;
+		constexpr __AddressImpl(const Self&) = default;
+		constexpr Self& operator = (Self&&) = default;
+		constexpr Self& operator = (const Self&) = default;
 
-		[[nodiscard]] Self offsetPages(ssize_t num) const { return Self(this->addr + (num * PAGE_SIZE)); }
+		constexpr bool operator == (Self oth) const { return this->m_addr == oth.m_addr; }
+		constexpr bool operator != (Self oth) const { return this->m_addr != oth.m_addr; }
+		constexpr bool operator >= (Self oth) const { return this->m_addr >= oth.m_addr; }
+		constexpr bool operator <= (Self oth) const { return this->m_addr <= oth.m_addr; }
+		constexpr bool operator >  (Self oth) const { return this->m_addr > oth.m_addr; }
+		constexpr bool operator <  (Self oth) const { return this->m_addr < oth.m_addr; }
 
-		bool operator == (Self oth) const { return this->addr == oth.addr; }
-		bool operator != (Self oth) const { return this->addr != oth.addr; }
-		bool operator >= (Self oth) const { return this->addr >= oth.addr; }
-		bool operator <= (Self oth) const { return this->addr <= oth.addr; }
-		bool operator >  (Self oth) const { return this->addr > oth.addr; }
-		bool operator <  (Self oth) const { return this->addr < oth.addr; }
+		constexpr inline bool nonZero() const { return !this->isZero(); }
+		constexpr inline bool isZero() const { return this->m_addr == 0; }
 
-		Self operator + (const Self& oth) const { return Self(this->addr + oth.addr); }
-		Self operator - (const Self& oth) const { return Self(this->addr - oth.addr); }
+		constexpr inline bool isAligned() const { return nx::isAligned(this->m_addr); }
+		constexpr Self pageAligned() const { return Self(PAGE_ALIGN(this->m_addr)); }
 
-		inline addr_t get() const { return this->addr; }
-		inline bool nonzero() const { return this->addr != 0; }
-		inline bool isAligned() const { return this->addr == (this->addr & ~((addr_t) 0xFFF)); }
-
-		inline void clear() { this->addr = 0; }
-		inline void setOffsetPages(ssize_t num) { this->addr += (num * PAGE_SIZE); }
+		constexpr inline addr_t addr() const { return this->m_addr; }
+		constexpr inline void* ptr() const { return (void*) this->m_addr; }
 
 
-		inline size_t hash() const
+		constexpr size_t operator - (const Self& oth) const { return this->m_addr - oth.m_addr; }
+
+		constexpr Self operator + (size_t ofs) const { return Self(this->m_addr + ofs); }
+		constexpr Self operator - (size_t ofs) const { return Self(this->m_addr - ofs); }
+		constexpr Self& operator += (size_t ofs) { this->m_addr += ofs; return *this; }
+		constexpr Self& operator -= (size_t ofs) { this->m_addr -= ofs; return *this; }
+
+		constexpr Self operator + (ofsPages&& ofs) const { return Self(this->m_addr + ofs.bytes); }
+		constexpr Self operator - (ofsPages&& ofs) const { return Self(this->m_addr - ofs.bytes); }
+		constexpr Self& operator += (ofsPages&& ofs) { this->m_addr += ofs.bytes; return *this; }
+		constexpr Self& operator -= (ofsPages&& ofs) { this->m_addr -= ofs.bytes; return *this; }
+
+
+
+		inline void clear() { this->m_addr = 0; }
+
+		constexpr inline size_t hash() const
 		{
-			return (size_t) this->addr;
+			return (size_t) this->m_addr;
 		}
+
+		template <typename E = Tag>
+		constexpr std::enable_if_t<std::is_same_v<E, __TagVirt>, __AddressImpl<__TagPhys>>
+		physIdentity() const
+		{
+			return __AddressImpl<__TagPhys>(this->m_addr);
+		}
+
+		static Self zero() { return Self(0); }
 	};
 
 	using PhysAddr = __AddressImpl<__TagPhys>;
 	using VirtAddr = __AddressImpl<__TagVirt>;
+
+
+	template <typename Kind>
+	struct PageExtent
+	{
+		PageExtent() : base(0), size(0) { }
+		PageExtent(Kind base, size_t size) : base(base), size(size) { }
+
+		Kind base;
+		size_t size;
+	};
 }
 
 

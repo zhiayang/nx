@@ -125,11 +125,12 @@ namespace acpi
 			auto ent = &bi->mmEntries[i];
 			if(krt::match(ent->memoryType, MemoryType::ACPI, MemoryType::EFIRuntimeCode, MemoryType::EFIRuntimeData))
 			{
-				if(vmm::allocateSpecific(ent->address, ent->numPages) == 0)
+				auto ea = VirtAddr(ent->address);
+				if(vmm::allocateSpecific(ea, ent->numPages).isZero())
 					abort("apic::init(): failed to map ACPI memory at %p", ent->address);
 
 				// ok, now just map it in an identity fashion.
-				vmm::mapAddress(ent->address, ent->address, ent->numPages, vmm::PAGE_PRESENT);
+				vmm::mapAddress(ea, ea.physIdentity(), ent->numPages, vmm::PAGE_PRESENT);
 			}
 		}
 

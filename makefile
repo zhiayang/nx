@@ -35,6 +35,8 @@ QEMU_BIOS_DISKIMG       := -drive format=raw,file=build/disk-bios.img
 QEMU_CPU_CONFIG         := -smp 4 -cpu qemu64,fsgsbase=true
 QEMU_FLAGS              := $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std # -d exception,cpu_reset,int
 
+QEMU_SERIAL             := -serial stdio
+
 QEMU_E9_PORT_STDIO      := -chardev stdio,id=qemu-debug-out -device isa-debugcon,chardev=qemu-debug-out
 QEMU_E9_PORT_FILE       := -chardev file,id=qemu-debug-out,path=build/serialout.log -device isa-debugcon,chardev=qemu-debug-out
 
@@ -61,15 +63,15 @@ all: qemu
 
 run-only:
 	# starting qemu
-	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_SERIAL) $(QEMU_E9_PORT_STDIO)
 
 debug: diskimage
 	# starting qemu
-	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -s -S -monitor stdio
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -monitor stdio -s -S
 
 qemu: diskimage
 	# starting qemu
-	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_STDIO)
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_SERIAL)
 
 qemu-monitor: diskimage
 	# starting qemu
