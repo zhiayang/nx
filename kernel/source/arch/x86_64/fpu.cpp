@@ -49,7 +49,7 @@ namespace fpu
 	{
 		uint32_t hi = 0, lo = 0;
 		asm volatile ("xgetbv" : "=d"(hi), "=a"(lo) : "c"(reg) : "memory");
-		return ((uint64_t) hi << 32) + lo;
+		return ((uint64_t) hi << 32) | ((uint64_t) lo);
 	}
 
 	static inline void xsetbv(uint32_t reg, uint64_t val)
@@ -108,6 +108,8 @@ namespace fpu
 		}
 
 		XCR0ComponentBitmap = (((uint64_t) edx) << 32) | (eax);
+		log("fpu", "reported xsave size: %zu bytes", ecx);
+
 		XSaveStateMaxSize = XSAVE_EXTENDED_AREA_OFFSET;
 
 		do_cpuid(XSAVE_CPUID_LEAF, 1, &eax, &ebx, &ecx, &edx);
@@ -119,9 +121,12 @@ namespace fpu
 
 		// xcr0 component bitmap lists the component indices that the cpu supports
 		// all cpus with xsave must support saving the legacy sse state, which are
-		// components 0 and 1
-		assert((XCR0ComponentBitmap & 0x3) == 0x3);
-
+		// components 0 and 1. again, this would normally be an error, but it looks like
+		// the virtualbox people don't know what they're doing yet again.
+		if((XCR0ComponentBitmap & 0x3) != 0x3)
+		{
+			warn("fpu", "XFeatureSupportedMask mismatch; expected 0x3, got %x", XCR0ComponentBitmap);
+		}
 
 		// get information about each component.
 		for(size_t i = XSAVE_FIRST_EXTENDED_COMPONENT; i < XSAVE_MAX_COMPONENTS; i++)
@@ -173,7 +178,7 @@ namespace fpu
 		if(IsXSAVE_Supported)
 		{
 			writeCR4(readCR4() | CR4_OSXSAVE);
-			xsetbv(0, XSAVE_STATE_BIT_X87 | XSAVE_STATE_BIT_SSE);
+			xsetbv(0, xgetbv(0) | XSAVE_STATE_BIT_X87 | XSAVE_STATE_BIT_SSE);
 		}
 	}
 
