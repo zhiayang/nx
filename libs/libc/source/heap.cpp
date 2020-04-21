@@ -320,7 +320,7 @@ namespace heap
 	{
 		if(req_size == 0) return 0;
 
-		align = (align, alignof(__max_align_t));
+		align = (align > alignof(__max_align_t) ? align : alignof(__max_align_t));
 
 		assert((align & (align - 1)) == 0);
 		assert(align <= 256);
