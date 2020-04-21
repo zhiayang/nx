@@ -68,8 +68,6 @@ namespace scheduler
 		if(oldthr->state == ThreadState::Running)
 			oldthr->state = ThreadState::Stopped;
 
-		// serial::debugprintf("old: [%lu] -> %p  //  ", oldthr->threadId, oldthr->parent->addrspace.cr3);
-
 		// save the fpu state
 		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
 
@@ -78,8 +76,6 @@ namespace scheduler
 
 		// reset the priority, since it just got scheduled
 		newthr->priority.reset();
-
-		getCPULocalState()->currentThread = newthr;
 
 		cpu::tss::setRSP0(getCPULocalState()->TSSBase, newthr->kernelStackTop);
 		cpu::tss::updateIOPB(getCPULocalState()->TSSBase, newthr->parent->ioPorts);
@@ -99,10 +95,14 @@ namespace scheduler
 		auto newcr3 = newthr->parent->addrspace.cr3;
 
 		ss->CurrentThread = newthr;
+
+		getCPULocalState()->currentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		// serial::debugprintf("[%d]: %p\n", newthr->threadId, newthr->kernelStack);
-		// serial::debugprintf("new: [%lu] -> %p\n", newthr->threadId, newthr->parent->addrspace.cr3);
+		// serial::debugprintf("old: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", oldthr->threadId, oldthr->parent->processId,
+		// 	oldthr->parent->addrspace.cr3.addr(), stackPointer);
+		// serial::debugprintf("new: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", newthr->threadId, newthr->parent->processId,
+		// 	newcr3.addr(), newthr->kernelStack);
 
 		__nested_sched = 0;
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3.addr(),

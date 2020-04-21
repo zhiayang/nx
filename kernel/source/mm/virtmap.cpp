@@ -365,7 +365,7 @@ namespace vmm
 		assert((flags & PAGE_WRITE) == 0);
 		flags &= ~PAGE_WRITE;
 
-		log("vmm", "region %p - %p marked lazy", virt, virt + ofsPages(num));
+		log("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{

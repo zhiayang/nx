@@ -96,9 +96,7 @@ namespace vmm
 				vmm::deallocateAddrSpace(scratch, 1);
 			}
 
-
 			log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
-
 
 			// here's the thing: the exception handler wrapper in asm will also exit the intr_context;
 			// so, we need to "enter" it again so the value never becomes negative.

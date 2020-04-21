@@ -131,9 +131,6 @@ namespace exceptions
 		asm volatile("mov %%cr2, %0" : "=r" (cr2));
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
 
-		// TODO: kill the process if this happens
-		// TODO: also stuff like page faults aren't always bad news
-
 		debugprintf("\n\n");
 		debugprintf("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
 		debugprintf("error code:   %d\n", regs->ErrorCode);
@@ -250,7 +247,7 @@ namespace exceptions
 	{
 		// set entry 14.
 		cpu::idt::setEntry(14, (uint64_t) &nx_x64_pagefault_handler,
-			/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false, /* ist: */ 1);
+			/* cs: */ 0x08, /* isRing3: */ false, /* nestable: */ false);
 	}
 }
 
@@ -275,9 +272,10 @@ namespace cpu
 		debugprintf("rflags:   %16.8lx   cr2:      %16.8lx\n", r->rflags, r->cr2);
 		debugprintf("\n");
 
+		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
 		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
 		auto kgsbase = cpu::readMSR(cpu::MSR_KERNEL_GS_BASE);
-		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
+
 		debugprintf("gs_base:  %16.8lx   kgs_base: %16.8lx\n", gsbase, kgsbase);
 		debugprintf("fs_base:  %16.8lx\n", fsbase);
 	}

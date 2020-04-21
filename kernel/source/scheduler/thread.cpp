@@ -280,14 +280,17 @@ namespace scheduler
 
 		if(isUserProc)
 		{
-			log("sched", "created tid %lu in pid %lu (stks u: %p - %p, k: %p - %p) (fpu: %p)",
+			log("sched", "created tid %lu in pid %lu [stks u: hi(%p) -> lo(%p), k: hi(%p) -> lo(%p)] [fpu: %p + %#x] [tls: %p]",
 				thr->threadId, thr->parent->processId, u_stackTop, u_stackTop - USER_STACK_SIZE,
-				k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer);
+				k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer, cpu::fpu::getFPUStateSize(),
+				thr->userspaceTCB);
 		}
 		else
 		{
-			log("sched", "created kernel tid %lu (stk: %p - %p) (fpu: %p)",
-				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer);
+			log("sched", "created kernel tid %lu [stk: hi(%p) -> lo(%p)] [fpu: %p + %#x] [tls: %p]",
+				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE,
+				thr->fpuSavedStateBuffer, cpu::fpu::getFPUStateSize(),
+				thr->userspaceTCB);
 		}
 
 		return thr;
