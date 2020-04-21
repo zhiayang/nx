@@ -101,45 +101,61 @@ namespace nx
 	constexpr const char* WRN_COLOUR = (USE_COLOURS ? COLOUR_YELLOW_BOLD : "");
 	constexpr const char* ERR_COLOUR = (USE_COLOURS ? COLOUR_RED_BOLD : "");
 
+	constexpr const char* LVL_COLOURS[] = { LOG_COLOUR, WRN_COLOUR, ERR_COLOUR };
+	constexpr const char* LVL_STRINGS[] = { "[log]", "[wrn]", "[err]" };
+
+
+	static inline void vgeneric_log(int lvl, const char* sys, const char* fmt, va_list args)
+	{
+		interrupts::disable();
+		size_t margin = 0;
+
+		auto cb = [](void* ctx, const char* s, size_t len) -> size_t {
+			for(size_t i = 0; i < len; i++)
+			{
+				serial::debugprint(s[i]);
+				if(s[i] == '\n')
+				{
+					// print some padding.
+					for(size_t k = 0; k < *((size_t*) ctx); k++)
+						serial::debugprint(' ');
+				}
+			}
+
+			return len;
+		};
+
+		cbprintf(nullptr, cb_serialprint, "%s%s%s %s%s%s: ", LVL_COLOURS[lvl], LVL_STRINGS[lvl], RESET_COLOUR,
+			SUBSYS_COLOUR, sys, RESET_COLOUR);
+
+		margin = strlen(LVL_STRINGS[0]) + 1 + strlen(sys) + 2;
+
+		vcbprintf(&margin, cb, fmt, args);
+		cbprintf(nullptr, cb_serialprint, "\n");
+
+		interrupts::enable();
+	}
 
 	void log(const char* sys, const char* fmt, ...)
 	{
-		interrupts::disable();
-
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "%s[log]%s %s%s%s: ", LOG_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
-		vcbprintf(nullptr, cb_serialprint, fmt, args);
-		cbprintf(nullptr, cb_serialprint, "\n");
+		vgeneric_log(0, sys, fmt, args);
 		va_end(args);
-
-		interrupts::enable();
 	}
 
 
 	void warn(const char* sys, const char* fmt, ...)
 	{
-		interrupts::disable();
-
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "%s[wrn]%s %s%s%s: ", WRN_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
-		vcbprintf(nullptr, cb_serialprint, fmt, args);
-		cbprintf(nullptr, cb_serialprint, "\n");
+		vgeneric_log(1, sys, fmt, args);
 		va_end(args);
-
-		interrupts::enable();
 	}
 
 	void error(const char* sys, const char* fmt, ...)
 	{
-		interrupts::disable();
-
 		va_list args; va_start(args, fmt);
-		cbprintf(nullptr, cb_serialprint, "%s[err]%s %s%s%s: ", ERR_COLOUR, RESET_COLOUR, SUBSYS_COLOUR, sys, RESET_COLOUR);
-		vcbprintf(nullptr, cb_serialprint, fmt, args);
-		cbprintf(nullptr, cb_serialprint, "\n");
+		vgeneric_log(2, sys, fmt, args);
 		va_end(args);
-
-		interrupts::enable();
 	}
 
 

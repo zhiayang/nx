@@ -90,7 +90,7 @@ namespace nx
 		log("kernel", "going to sleep...");
 		scheduler::sleep(500'000'000);
 		log("kernel", "woken from slumber, committing murder!");
-		// ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
+		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 		log("kernel", "AYAYA");
 		while(true)
