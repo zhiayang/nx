@@ -12,7 +12,7 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#define EFX_VERSION_STRING "0.5.0"
+#define EFX_VERSION_STRING "0.5.1"
 
 
 void efx::init()
@@ -29,7 +29,7 @@ void efx::init()
 
 		efi::println("image base: %p\n", lip->ImageBase);
 
-		// try and print the options bah
+		// print the options
 		auto loadopts = efx::string(efi::convertstr((char16_t*) lip->LoadOptions, lip->LoadOptionsSize));
 		options::parse(loadopts);
 
@@ -64,15 +64,10 @@ void efx::init()
 
 		// copy the kernel away.
 		{
-			uint64_t out = 0;
-			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_KernelElf,
-				(len + 0xFFF) / 0x1000, &out);
-			efi::abort_if_error(stat, "failed to allocate memory for kernel!");
+			auto out = efi::allocPages((len + 0xFFF) / 0x1000, efi::MemoryType_KernelElf, "kernel");
+			memmove(out, buf, len);
 
-			memmove((void*) out, buf, len);
-
-
-			kernelBootInfo->kernelElf = (void*) out;
+			kernelBootInfo->kernelElf = out;
 			kernelBootInfo->kernelElfSize = len;
 		}
 	}
@@ -88,14 +83,10 @@ void efx::init()
 
 		// we need to copy it out as pages, since readFile() uses the EFI pool!
 		{
-			uint64_t out = 0;
-			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_Initrd,
-				(len + 0xFFF) / 0x1000, &out);
-			efi::abort_if_error(stat, "failed to allocate memory for initrd!");
+			auto out = efi::allocPages((len + 0xFFF) / 0x1000, efi::MemoryType_Initrd, "initrd");
+			memmove(out, buf, len);
 
-			memmove((void*) out, buf, len);
 			st->BootServices->FreePool((void*) buf);
-
 			buf = (uint8_t*) out;
 		}
 
@@ -126,11 +117,7 @@ void efx::init()
 		char* buffer = 0;
 		if(reqSize > 0)
 		{
-			uint64_t out = 0;
-			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo,
-				(reqSize + 0xFFF) / 0x1000, &out);
-			efi::abort_if_error(stat, "failed to allocate memory for kernel parameters! (%zu bytes)", reqSize);
-
+			auto out = efi::allocPages((reqSize + 0xFFF) / 0x1000, efi::MemoryType_BootInfo, "kernel parameters");
 			buffer = (char*) out;
 		}
 
@@ -155,11 +142,7 @@ void efx::init()
 
 	{
 		// before we go, allocate one last page for the efi memory map for runtime services.
-		uint64_t scratch = 0;
-		{
-			auto stat = st->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderCode, 1, &scratch);
-			efi::abort_if_error(stat, "failed to allocate page");
-		}
+		auto scratch = (uint64_t) efi::allocPages(1, EfiLoaderCode, "runtime services");
 
 		setKernelMemoryMap(kernelBootInfo);
 

@@ -56,21 +56,17 @@ namespace efx
 			// note: EFI allocates pages in chunks of 0x1000 aka 4KB. we might use large pages later in the kernel, who knows?
 			size_t numPages = (progHdr->p_memsz + 0xFFF) / 0x1000;
 
-			uint64_t buffer = 0;
-			auto stat = efi::systable()->BootServices->AllocatePages(AllocateAnyPages,
-				(efi_memory_type) efi::MemoryType_LoadedKernel, numPages, &buffer);
+			auto buffer = efi::allocPages(numPages, efi::MemoryType_LoadedKernel, "kernel");
 
-			efi::abort_if_error(stat, "loadKernel(): failed to allocate memory for kernel (wanted %zu pages)", numPages);
+			memory::mapVirtual((uint64_t) buffer, progHdr->p_vaddr, numPages);
 
-			memory::mapVirtual(buffer, progHdr->p_vaddr, numPages);
-
-			memmove((void*) buffer, (input + progHdr->p_offset), progHdr->p_filesz);
+			memmove(buffer, (input + progHdr->p_offset), progHdr->p_filesz);
 
 			// if we have extra space, set them to zero.
 			// but! since we have not changed the virtual mapping yet, we use the physical address
 			// (which UEFI identity maps for us) to do the memset.
 			if(progHdr->p_memsz > progHdr->p_filesz)
-				memset((void*) (buffer + progHdr->p_filesz), 0, (progHdr->p_memsz - progHdr->p_filesz));
+				memset((void*) ((uint64_t) buffer + progHdr->p_filesz), 0, (progHdr->p_memsz - progHdr->p_filesz));
 		}
 
 		efi::println("kernel loaded! entry point: %p\n", header->e_entry);
@@ -84,12 +80,7 @@ namespace efx
 		auto bs = efi::systable()->BootServices;
 
 		// first, allocate 1 page for the boot info. we don't use pool cos we want to tell the OS that this memory is used.
-		nx::BootInfo* bi = 0;
-		{
-			auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_BootInfo, 1, (uint64_t*) &bi);
-			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate page for boot info");
-		}
-
+		auto bi = (nx::BootInfo*) efi::allocPages(1, efi::MemoryType_BootInfo, "bootinfo");
 
 		// then, fill in some stuff.
 		bi->ident[0]        = 'e';
@@ -154,17 +145,12 @@ namespace efx
 		for(size_t i = 0; i < numEntries; i++)
 		{
 			// count the number of entries we need to forward to the kernel.
-			// here's the thing: we don't want to give the kernel duplicate ranges. things that we want the kernel
-			// to keep (right now just the kernel itself, the initial page tables, and the bootinfo struct) we allocated as EfiLoaderCode,
-			// while other stuff we allocated as EfiLoaderData. So, the idea is that we tell the kernel that all the LoaderData stuff
-			// is free to use, while the LoaderCode entries we will get from our usedPages list.
-
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
 			if(krt::match(entry->Type, EfiLoaderData, EfiConventionalMemory, EfiBootServicesCode, EfiBootServicesData,
 				EfiACPIMemoryNVS, EfiACPIReclaimMemory, EfiMemoryMappedIO, EfiMemoryMappedIOPortSpace, EfiPersistentMemory,
 				EfiRuntimeServicesCode, EfiRuntimeServicesData, efi::MemoryType_LoadedKernel, efi::MemoryType_BootInfo,
-				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame, efi::MemoryType_Initrd))
+				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
 			{
 				neededEntries++;
 			}
@@ -174,8 +160,7 @@ namespace efx
 		nx::MemMapEntry* entries = 0;
 		{
 			size_t numPages = 1 + ((neededEntries * sizeof(nx::MemMapEntry)) + 0xFFF) / 0x1000;
-			auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_MemoryMap, numPages, (uint64_t*) &entries);
-			efi::abort_if_error(stat, "prepareKernelBootInfo(): failed to allocate pages");
+			entries = (nx::MemMapEntry*) efi::allocPages(numPages, efi::MemoryType_MemoryMap, "memory map");
 
 			memset(entries, 0, 0x1000 * numPages);
 		}
@@ -224,7 +209,7 @@ namespace efx
 
 				case EfiPersistentMemory:           entries[k].memoryType = nx::MemoryType::NonVolatile; break;
 
-
+				case efi::MemoryType_VMFrame:       // fallthrough
 				case efi::MemoryType_LoadedKernel:  entries[k].memoryType = nx::MemoryType::LoadedKernel; break;
 				case efi::MemoryType_MemoryMap:     entries[k].memoryType = nx::MemoryType::MemoryMap; break;
 				case efi::MemoryType_BootInfo:      entries[k].memoryType = nx::MemoryType::BootInfo; break;

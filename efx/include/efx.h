@@ -128,6 +128,8 @@ namespace efi
 	void* alloc(size_t sz);
 	void free(void* ptr);
 
+	void* allocPages(size_t numPages, uint32_t memtype, const char* user);
+
 
 	void abort(const char* fmt, ...);
 	void abort_if_error(size_t st, const char* fmt, ...);

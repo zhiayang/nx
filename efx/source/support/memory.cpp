@@ -39,14 +39,10 @@ namespace memory
 {
 	static uint64_t allocate_pagetab(uint64_t flags)
 	{
-		uint64_t ret = 0;
+		auto ret = efi::allocPages(1, efi::MemoryType_VMFrame, "page table");
 
-		auto bs = efi::systable()->BootServices;
-		auto stat = bs->AllocatePages(AllocateAnyPages, (efi_memory_type) efi::MemoryType_VMFrame, 1, &ret);
-		efi::abort_if_error(stat, "failed to allocate page!");
-
-		memset((void*) ret, 0, 0x1000);
-		return ret | flags;
+		memset(ret, 0, 0x1000);
+		return (uint64_t) ret | flags;
 	}
 
 	static pml_t* pml4t_addr = 0;
@@ -242,6 +238,17 @@ namespace efi
 	void free(void* ptr)
 	{
 		if(ptr) efi::systable()->BootServices->FreePool(ptr);
+	}
+
+	void* allocPages(size_t numPages, uint32_t memType, const char* user)
+	{
+		auto st = efi::systable();
+
+		uint64_t out = 0;
+		auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) memType, numPages, &out);
+		efi::abort_if_error(stat, "failed to allocate memory for %s!", user);
+
+		return (void*) out;
 	}
 }
 
