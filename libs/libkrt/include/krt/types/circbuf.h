@@ -67,6 +67,7 @@ namespace krt
 
 		using elem_type = T;
 
+		circularbuf() : circularbuf(0, nullptr, 0) { }
 		circularbuf(size_t max) : circularbuf(max, nullptr, 0) { }
 		circularbuf(size_t max, T* p, size_t l)
 		{
@@ -74,13 +75,12 @@ namespace krt
 			this->cnt = 0;
 
 			this->cap = max;
+			this->resize(max);
 
+			// TODO: pretty sure this is buggy as heck
 			if(p && l)
 			{
-				this->cnt = l;
-				this->resize(max);
-
-				for(size_t i = 0; i < this->cnt; i++)
+				for(size_t i = 0; i < l; i++)
 					this->write(p[i]);
 			}
 		}
@@ -95,8 +95,8 @@ namespace krt
 			this->cap = other.cap; other.cap = 0;
 
 			this->ptr = other.ptr; other.ptr = 0;
-			this->readPtr = other.readPtr; other.readPtr = 0;
-			this->writePtr = other.writePtr; other.writePtr = 0;
+			this->readIdx = other.readIdx; other.readIdx = 0;
+			this->writeIdx = other.writeIdx; other.writeIdx = 0;
 		}
 
 		// copy assign
@@ -117,8 +117,8 @@ namespace krt
 				this->cap = other.cap; other.cap = 0;
 
 				this->ptr = other.ptr; other.ptr = 0;
-				this->readPtr = other.readPtr; other.readPtr = 0;
-				this->writePtr = other.writePtr; other.writePtr = 0;
+				this->readIdx = other.readIdx; other.readIdx = 0;
+				this->writeIdx = other.writeIdx; other.writeIdx = 0;
 			}
 
 			return *this;
@@ -162,6 +162,22 @@ namespace krt
 
 			this->cnt -= 1;
 			return ret;
+		}
+
+		T peek()
+		{
+			if(this->empty()) aborter::abort("peek(): empty buffer!");
+			return this->ptr[this->readIdx];
+		}
+
+		T front()
+		{
+			return peek();
+		}
+
+		void pop()
+		{
+			read();
 		}
 
 		void write(T* xs, size_t n)
