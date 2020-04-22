@@ -10,5 +10,6 @@ namespace nx {
 namespace debugcon
 {
 	void init();
+	void startDebugger();
 }
 }
