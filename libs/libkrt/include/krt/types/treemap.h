@@ -19,18 +19,22 @@ namespace krt
 		using iterator = typename impl::iterator;
 		using const_iterator = typename impl::const_iterator;
 
-		friend impl;
-
-		~treemap() { impl::destroyNode(this->root); }
-
-		treemap() : root(nullptr), cnt(0) { }
-
+	private:
 		treemap(node* r, size_t sz)
 		{
 			this->root = impl::copyNode(this, r);
 			this->cnt = sz;
 		}
 
+	public:
+		friend impl;
+
+		~treemap() { impl::destroyNode(this->root); }
+
+		treemap() : root(nullptr), cnt(0) { }
+
+		// copy construct
+		template <typename E = std::enable_if_t<std::is_copy_constructible_v<V>>>
 		treemap(const treemap& other) : treemap(other.root, other.cnt) { }
 
 		// move
@@ -41,6 +45,7 @@ namespace krt
 		}
 
 		// copy assign
+		template <typename E = std::enable_if_t<std::is_copy_constructible_v<V>>>
 		treemap& operator = (const treemap& other)
 		{
 			if(this != &other)  return *this = treemap(other);
@@ -72,6 +77,8 @@ namespace krt
 		}
 
 		bool insert(const K& k, const V& v)     { return impl::insert(this, k, v); }
+		bool insert(const K& k, V&& v)          { return impl::insert(this, k, move(v)); }
+
 		bool remove(const K& k)                 { return impl::remove(this, k); }
 
 		void erase(const iterator& it)

@@ -32,6 +32,21 @@ namespace krt
 			{
 			}
 
+			Node(const KeyTy& k, ValueTy&& v, Node* par) : key(k), value(move(v)),
+				left(nullptr), right(nullptr), parent(par), height(0), balance(0)
+			{
+			}
+
+			Node(KeyTy&& k, const ValueTy& v, Node* par) : key(move(k)), value(v),
+				left(nullptr), right(nullptr), parent(par), height(0), balance(0)
+			{
+			}
+
+			Node(KeyTy&& k, ValueTy&& v, Node* par) : key(move(k)), value(move(v)),
+				left(nullptr), right(nullptr), parent(par), height(0), balance(0)
+			{
+			}
+
 			~Node()
 			{
 				if(this->left)
@@ -113,13 +128,17 @@ namespace krt
 			const Container* self;
 		};
 
+		template <typename E = bool>
 		static Node* copyNode(Container* self, Node* n)
 		{
 			if(!n) return nullptr;
 
+			static_assert(::std::is_copy_constructible<KeyTy>::value, "keys are not copyable");
+			static_assert(::std::is_copy_constructible<ValueTy>::value, "values are not copyable");
+
 			auto ret = createNode(n->key, n->value, n->parent);
-			ret->left = copyNode(self, n->left);
-			ret->right = copyNode(self, n->right);;
+			ret->left = copyNode<E>(self, n->left);
+			ret->right = copyNode<E>(self, n->right);
 
 			return ret;
 		}
@@ -146,6 +165,11 @@ namespace krt
 		static Node* createNode(const KeyTy& k, const ValueTy& v, Node* p)
 		{
 			return new (allocator::template allocate<Node>(1)) Node(k, v, p);
+		}
+
+		static Node* createNode(const KeyTy& k, ValueTy&& v, Node* p)
+		{
+			return new (allocator::template allocate<Node>(1)) Node(k, move(v), p);
 		}
 
 		static void rebalance(Container* self, Node* n)
@@ -352,6 +376,43 @@ namespace krt
 					return p->right;
 				}
 			}
+		}
+
+		static bool insert(Container* self, const KeyTy& key, ValueTy&& val)
+		{
+			if(self->root == nullptr)
+			{
+				self->root = createNode(key, move(val), nullptr);
+			}
+			else
+			{
+				Node* n = self->root;
+
+				while(true)
+				{
+					if(n->key == key)
+						return false;
+
+					auto parent = n;
+
+					bool goLeft = key < n->key;
+					n = goLeft ? n->left : n->right;
+
+					if(n == nullptr)
+					{
+						auto newnode = createNode(key, move(val), parent);
+
+						if(goLeft)  parent->left = newnode;
+						else        parent->right = newnode;
+
+						rebalance(self, parent);
+						break;
+					}
+				}
+			}
+
+			self->cnt += 1;
+			return true;
 		}
 
 		static bool insert(Container* self, const KeyTy& key, const ValueTy& val)

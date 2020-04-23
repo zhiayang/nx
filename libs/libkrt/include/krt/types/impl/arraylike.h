@@ -241,6 +241,24 @@ namespace krt
 		}
 
 
+		static void copy_elements(Container* self, ElmTy* dest, ElmTy* src, size_t num)
+		{
+			if constexpr (::std::is_trivially_copyable<ElmTy>::value)
+			{
+				memmove(dest, src, num * sizeof(ElmTy));
+			}
+			else if constexpr (::std::is_copy_constructible<ElmTy>::value)
+			{
+				for(size_t i = 0; i < num; i++)
+					new (&dest[i]) ElmTy(src[i]);
+			}
+			else
+			{
+				for(size_t i = 0; i < num; i++)
+					new (&dest[i]) ElmTy(move(src[i]));
+			}
+		}
+
 		private:
 		static void set_last_if_char(Container* self)
 		{
@@ -248,18 +266,6 @@ namespace krt
 				self->ptr[self->cnt] = 0;
 		}
 
-		static void copy_elements(Container* self, ElmTy* dest, ElmTy* src, size_t num)
-		{
-			if(krt::is_trivially_copyable<ElmTy>::value)
-			{
-				memmove(dest, src, num * sizeof(ElmTy));
-			}
-			else
-			{
-				for(size_t i = 0; i < num; i++)
-					new (&dest[i]) ElmTy(src[i]);
-			}
-		}
 	};
 }
 

@@ -88,6 +88,30 @@ namespace krt
 			return *self;
 		}
 
+		T& remove_first(E&& x)
+		{
+			auto self = static_cast<T*>(this);
+			for(auto it = self->begin(); it != self->end(); ++it)
+				if(*it == x) { self->erase(it); break; }
+
+			return *self;
+		}
+
+		T& remove_all(E&& x)
+		{
+			auto self = static_cast<T*>(this);
+
+			auto it = self->begin();
+			while(it != self->end())
+			{
+				if(*it == x)    it = self->erase(it);
+				else            ++it;
+			}
+
+			return *self;
+		}
+
+
 		template <typename Predicate>
 		T& remove_first_if(Predicate p)
 		{

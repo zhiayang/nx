@@ -8,6 +8,8 @@
 #include "stdint.h"
 #include "string.h"
 
+#include <type_traits>
+
 #include "krt/types/impl/iterutils.h"
 #include "krt/types/impl/arraylike.h"
 
@@ -37,8 +39,7 @@ namespace krt
 				this->reserve(l);
 				this->cnt = l;
 
-				for(size_t i = 0; i < this->cnt; i++)
-					new (&this->ptr[i]) T(p[i]);
+				impl::copy_elements(this, this->ptr, p, this->cnt);
 			}
 		}
 

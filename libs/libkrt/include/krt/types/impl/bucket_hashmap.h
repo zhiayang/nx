@@ -31,11 +31,11 @@ namespace krt
 			template <bool c = IsConst, typename E = std::enable_if_t<!c>>
 			auto operator * ()
 			{
-				return krt::pair<KeyTy&, ValueTy&>(node->key, node->value);
+				return krt::pair<const KeyTy&, ValueTy&>(node->key, node->value);
 			}
 
 			template <bool c = IsConst, typename E = std::enable_if_t<c>>
-			const auto operator * () const
+			auto operator * () const
 			{
 				return krt::pair<const KeyTy&, const ValueTy&>(node->key, node->value);
 			}
@@ -78,7 +78,7 @@ namespace krt
 
 		private:
 			Bucket* node;
-			const bucket_hashmap* self;
+			std::conditional_t<IsConst, const bucket_hashmap*, bucket_hashmap*> self;
 			size_t bucketIdx;
 		};
 
