@@ -8,7 +8,6 @@ namespace nx {
 namespace debugcon
 {
 	constexpr size_t MAX_BUFFER_SIZE        = 1024;
-	constexpr char BREAK_CHAR               = 'B';
 	constexpr uint64_t ESCAPE_TIMEOUT       = 50'000'000;
 
 	static struct {
@@ -19,14 +18,11 @@ namespace debugcon
 
 	} line;
 
-	static enum { MODE_RUNNING, MODE_DEBUGGER } currentMode = MODE_RUNNING;
-
 	static uint64_t lastInputTimestamp = 0;
 	static krt::circularbuf<uint8_t, _allocator, _aborter> inputBuffer;
 
 	void startDebugger()
 	{
-		currentMode = MODE_DEBUGGER;
 	}
 
 	static void do_command(char* cmd, size_t len)
@@ -84,10 +80,7 @@ namespace debugcon
 		if(c == '\r')
 			c = '\n';
 
-		if(currentMode == MODE_RUNNING && c == BREAK_CHAR)
-			startDebugger();
-
-		inputBuffer.write(c);
+		inputBuffer.write_atomic(&c);
 		lastInputTimestamp = scheduler::getElapsedNanoseconds();
 	}
 
@@ -193,7 +186,10 @@ namespace debugcon
 			while(inputBuffer.size() == 0)
 				;
 
-			return inputBuffer.read();
+			uint8_t ret = 0;
+			inputBuffer.read_atomic(&ret);
+
+			return ret;
 		};
 
 		while(true)
@@ -212,10 +208,11 @@ namespace debugcon
 					if(inputBuffer.size() > 2)
 					{
 						// pop the esc
-						inputBuffer.read();
+						inputBuffer.pop();
 
-						char a = inputBuffer.read();
-						char b = inputBuffer.read();
+						uint8_t a = 0; uint8_t b = 0;
+						inputBuffer.read_atomic(&a);
+						inputBuffer.read_atomic(&b);
 
 						if(a == '[')
 						{
@@ -290,7 +287,7 @@ namespace debugcon
 						// see if we are past the timeout (because pressing the escape key only sends ESC, duh)
 						if(scheduler::getElapsedNanoseconds() > lastInputTimestamp + ESCAPE_TIMEOUT)
 						{
-							inputBuffer.read();
+							inputBuffer.pop();
 
 							// this was an escape
 							// for now... ignore it i guess?
