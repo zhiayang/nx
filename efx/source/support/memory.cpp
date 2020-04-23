@@ -282,7 +282,7 @@ namespace efi
 		auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) memType, numPages, &out);
 		efi::abort_if_error(stat, "failed to allocate memory for %s!", user);
 
-		// efx::memory::accountMemory(out, numPages, memType);
+		efx::memory::accountMemory(out, numPages, memType);
 
 		return (void*) out;
 	}
