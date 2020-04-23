@@ -98,6 +98,16 @@ namespace efx
 
 		void installNewCR3();
 		void setEFIMemoryMap(nx::BootInfo* bi, uint64_t scratch);
+
+		struct Extent
+		{
+			uint64_t base;
+			size_t num;
+			uint32_t type;
+			uint32_t flag;
+		};
+
+		krt::pair<Extent*, size_t> getCustomExtents();
 	}
 
 	void loadKernel(uint8_t* buf, size_t len, uint64_t* entry);
@@ -168,6 +178,7 @@ namespace efi
 namespace serial
 {
 	void print(char* s, size_t len);
+	void print(char* s);
 }
 
 

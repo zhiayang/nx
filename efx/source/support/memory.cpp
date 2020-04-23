@@ -216,9 +216,30 @@ namespace memory
 			ptable->entries[p1idx] = p | PAGE_PRESENT | PAGE_WRITE | flags;
 		}
 	}
-}
-}
 
+
+	constexpr size_t MAX_EXTENTS = 1024;
+	static size_t numExtents = 0;
+	static Extent customExtents[MAX_EXTENTS] = { };
+
+	krt::pair<Extent*, size_t> getCustomExtents()
+	{
+		return { customExtents, numExtents };
+	}
+
+	static void accountMemory(uint64_t base, size_t num, uint32_t type)
+	{
+		auto& ext = customExtents[numExtents++];
+		if(numExtents >= MAX_EXTENTS)
+			efi::abort("out of space for custom extents! (exceeded %zu)", MAX_EXTENTS);
+
+		ext.base = base;
+		ext.type = type;
+		ext.num  = num;
+		ext.flag = 0;
+	}
+}
+}
 
 namespace efi
 {
@@ -240,13 +261,28 @@ namespace efi
 		if(ptr) efi::systable()->BootServices->FreePool(ptr);
 	}
 
+
 	void* allocPages(size_t numPages, uint32_t memType, const char* user)
 	{
 		auto st = efi::systable();
 
+		//! note: apparently many firmwares (including virtualbox 6.1.x, and some recorded instances of real hardware)
+		//!       have a bug where they don't handle custom memory types properly, causing page faults.
+		//* (usually because they use the type as an index into an array of size MaxMemoryType uwu)
+
+		// so, to give the kernel the same level of information (specifically, being able to discriminate between the initrd,
+		// loadedelf, etc.), we must implement our own book-keeping.
+
+		// this is LoaderCode instead of LoaderData because there's a bunch of implicit assumptions throughout efx that
+		// LoaderData is unimportant and unmappable, so we will fix it as loadercode.
+		if(memType > EfiMaxMemoryType)
+			memType = EfiLoaderCode;
+
 		uint64_t out = 0;
 		auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) memType, numPages, &out);
 		efi::abort_if_error(stat, "failed to allocate memory for %s!", user);
+
+		// efx::memory::accountMemory(out, numPages, memType);
 
 		return (void*) out;
 	}

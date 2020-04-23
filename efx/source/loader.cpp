@@ -141,13 +141,15 @@ namespace efx
 			numEntries = bufSz / descSz;
 		}
 
+		auto [ customExtents, numCustomExtents ] = memory::getCustomExtents();
+
 		size_t neededEntries = 0;
 		for(size_t i = 0; i < numEntries; i++)
 		{
 			// count the number of entries we need to forward to the kernel.
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderData, EfiConventionalMemory, EfiBootServicesCode, EfiBootServicesData,
+			if(krt::match(entry->Type, EfiLoaderCode, EfiLoaderData, EfiConventionalMemory, EfiBootServicesCode, EfiBootServicesData,
 				EfiACPIMemoryNVS, EfiACPIReclaimMemory, EfiMemoryMappedIO, EfiMemoryMappedIOPortSpace, EfiPersistentMemory,
 				EfiRuntimeServicesCode, EfiRuntimeServicesData, efi::MemoryType_LoadedKernel, efi::MemoryType_BootInfo,
 				efi::MemoryType_MemoryMap, efi::MemoryType_VMFrame, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
@@ -155,6 +157,8 @@ namespace efx
 				neededEntries++;
 			}
 		}
+
+		neededEntries += numCustomExtents;
 
 		// ok now, allocate and start to fill in.
 		nx::MemMapEntry* entries = 0;
@@ -183,15 +187,11 @@ namespace efx
 		{
 			bool skip = false;
 			auto efiEnt = (efi_memory_descriptor*) (buffer + (i * descSz));
-			// efi::println("entry: %p - %p (%d)", efiEnt->PhysicalStart, efiEnt->PhysicalStart + (0x1000 * efiEnt->NumberOfPages),
-			// 	efiEnt->Type);
 
 			auto k = bi->mmEntryCount;
 
 			switch(efiEnt->Type)
 			{
-				case EfiLoaderCode:                 // fallthrough
-				case EfiLoaderData:                 entries[k].memoryType = nx::MemoryType::AvailableAfterUnmap; break;
 
 				case EfiBootServicesCode:           // fallthrough
 				case EfiBootServicesData:           entries[k].memoryType = nx::MemoryType::Reserved; break;
@@ -216,6 +216,41 @@ namespace efx
 				case efi::MemoryType_Initrd:        entries[k].memoryType = nx::MemoryType::Initrd; break;
 				case efi::MemoryType_KernelElf:     entries[k].memoryType = nx::MemoryType::KernelElf; break;
 
+				case EfiLoaderData:
+				case EfiLoaderCode: {
+
+					// ok, we need to handle this specially, because our custom extents are lumped under loader data.
+					// so we need to loop through each of our custom extents and check for an overlap.
+					// look at this O(n^2) algorithm fly!
+
+					// we could do this more elegantly, eg. by splitting the segments, but frankly i can't be bothered.
+					// if we encounter a region in the efi map that overlaps our custom extent, i'm just gonna throw out the whole block.
+					for(size_t i = 0; i < numCustomExtents; i++)
+					{
+						if(customExtents[i].base >= efiEnt->PhysicalStart
+							&& (customExtents[i].base + 0x1000 * customExtents[i].num) <= (efiEnt->PhysicalStart + 0x1000 * efiEnt->NumberOfPages))
+						{
+							skip = true;
+							// flag = 1 means we processed it already
+							if(!customExtents[i].flag)
+							{
+								customExtents[i].flag = 1;
+
+								entries[k].address = customExtents[i].base;
+								entries[k].numPages = customExtents[i].num;
+								entries[k].efiAttributes = efiEnt->Attribute;
+								entries[k].memoryType = (nx::MemoryType) customExtents[i].type;
+
+								bi->mmEntryCount += 1;
+							}
+						}
+					}
+
+					if(!skip)
+						entries[k].memoryType = nx::MemoryType::AvailableAfterUnmap;
+
+				} break;
+
 				default:                            skip = true; break; // do not include
 			}
 
@@ -228,6 +263,21 @@ namespace efx
 			bi->mmEntryCount += 1;
 		}
 
+		// flush the rest of the custom extents that we haven't touched.
+		for(size_t i = 0; i < numCustomExtents; i++)
+		{
+			auto k = bi->mmEntryCount;
+			if(!customExtents[i].flag)
+			{
+				customExtents[i].flag = 1;
+
+				entries[k].address = customExtents[i].base;
+				entries[k].numPages = customExtents[i].num;
+				entries[k].efiAttributes = 0;
+
+				bi->mmEntryCount += 1;
+			}
+		}
 
 		// finally, the framebuffer.
 		entries[bi->mmEntryCount].address = graphics::getFramebufferAddress();

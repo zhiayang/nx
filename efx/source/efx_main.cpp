@@ -12,7 +12,7 @@
 #include "efi/protocol/loaded-image.h"
 #include "efi/protocol/graphics-output.h"
 
-#define EFX_VERSION_STRING "0.5.1"
+#define EFX_VERSION_STRING "0.5.2"
 
 
 void efx::init()
@@ -150,12 +150,14 @@ void efx::init()
 		efi::println("jumping to kernel; good luck!\n\n");
 
 		memory::finaliseMappingExistingMemory();
+
 		exitBootServices();
 
 		memory::setEFIMemoryMap(kernelBootInfo, scratch);
 		memory::installNewCR3();
 
 		auto kernel_entry = (void (*)(nx::BootInfo*)) kernelEntry;
+		serial::print("jumping\n");
 		kernel_entry(kernelBootInfo);
 	}
 }

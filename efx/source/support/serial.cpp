@@ -17,4 +17,10 @@ namespace serial
 		for(size_t i = 0; i < len; i++)
 			write1b(s[i], 0xE9);
 	}
+
+	void print(char* s)
+	{
+		while(s && *s)
+			write1b(*s++, 0xE9);
+	}
 }
