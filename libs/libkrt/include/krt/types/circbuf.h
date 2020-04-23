@@ -66,35 +66,45 @@ namespace krt
 		};
 
 		using elem_type = T;
+		static constexpr size_t DEFAULT_SIZE = 32;
 
-		circularbuf() : circularbuf(0, nullptr, 0) { }
-		circularbuf(size_t max) : circularbuf(max, nullptr, 0) { }
-		circularbuf(size_t max, T* p, size_t l)
+		circularbuf() : circularbuf(DEFAULT_SIZE, nullptr) { }
+		circularbuf(size_t max) : circularbuf(max, nullptr) { }
+
+		// this allows the class to be an interface wrapper over a fixed external buffer.
+		circularbuf(size_t max, T* backing_store)
 		{
-			this->ptr = 0;
-			this->cnt = 0;
-
 			this->cap = max;
-			this->resize(max);
+			this->ptr = backing_store;
 
-			// TODO: pretty sure this is buggy as heck
-			if(p && l)
-			{
-				for(size_t i = 0; i < l; i++)
-					this->write(p[i]);
-			}
+			this->readIdx = 0;
+			this->writeIdx = 0;
+
+			if(!this->ptr)  this->resize(max);
+			else            this->externalMem = true;
 		}
 
-		~circularbuf() { if(this->ptr) allocator::deallocate(this->ptr); }
-		circularbuf(const circularbuf& other) : circularbuf(other.cap, other.ptr, other.cnt) { }
+		~circularbuf()
+		{
+			if(this->ptr && !this->externalMem)
+				allocator::deallocate(this->ptr);
+		}
+
+		circularbuf(const circularbuf& other)
+		{
+			this->resize(other.cap);
+
+			this->readIdx = other.readIdx;
+			this->writeIdx = other.writeIdx;
+		}
 
 		// move
 		circularbuf(circularbuf&& other)
 		{
-			this->cnt = other.cnt; other.cnt = 0;
 			this->cap = other.cap; other.cap = 0;
-
 			this->ptr = other.ptr; other.ptr = 0;
+			this->externalMem = other.externalMem; other.externalMem = false;
+
 			this->readIdx = other.readIdx; other.readIdx = 0;
 			this->writeIdx = other.writeIdx; other.writeIdx = 0;
 		}
@@ -111,12 +121,13 @@ namespace krt
 		{
 			if(this != &other)
 			{
-				if(this->ptr) allocator::deallocate(this->ptr);
+				if(this->ptr && !this->externalMem)
+					allocator::deallocate(this->ptr);
 
-				this->cnt = other.cnt; other.cnt = 0;
 				this->cap = other.cap; other.cap = 0;
-
 				this->ptr = other.ptr; other.ptr = 0;
+				this->externalMem = other.externalMem; other.externalMem = false;
+
 				this->readIdx = other.readIdx; other.readIdx = 0;
 				this->writeIdx = other.writeIdx; other.writeIdx = 0;
 			}
@@ -126,16 +137,20 @@ namespace krt
 
 		void resize(size_t newmax)
 		{
+			if((newmax & (newmax - 1)) != 0)
+				aborter::abort("size must be a power of two!");
+
 			auto newptr = (T*) allocator::allocate(sizeof(T) * newmax, alignof(T));
 
-			size_t wp = 0;
-			for(size_t i = 0; i < this->cnt; i++)
-			{
-				newptr[wp] = this->read();
-				wp = (wp + 1) % newmax;
-			}
+			// cache it, because size() changes on read()
+			auto sz = this->size();
 
-			if(this->ptr) allocator::deallocate(this->ptr);
+			size_t wp = 0;
+			for(size_t i = 0; i < sz; i++)
+				newptr[wp++ & (newmax - 1)] = this->read();
+
+			if(this->ptr && !this->externalMem)
+				allocator::deallocate(this->ptr);
 
 			this->ptr = newptr;
 			this->cap = newmax;
@@ -147,21 +162,15 @@ namespace krt
 
 		void write(const T& x)
 		{
-			this->ptr[this->writeIdx] = x;
-			this->writeIdx = (this->writeIdx + 1) % this->cap;
-
-			this->cnt += 1;
+			this->ptr[this->writeIdx++ & (this->cap - 1)] = x;
 		}
+
 
 		T read()
 		{
 			if(this->empty()) aborter::abort("read(): empty buffer!");
 
-			auto ret = this->ptr[this->readIdx];
-			this->readIdx = (this->readIdx + 1) % this->cap;
-
-			this->cnt -= 1;
-			return ret;
+			return this->ptr[this->readIdx++ & (this->cap - 1)];
 		}
 
 		T peek()
@@ -177,7 +186,7 @@ namespace krt
 
 		void pop()
 		{
-			read();
+			read_atomic(nullptr);
 		}
 
 		void write(T* xs, size_t n)
@@ -186,45 +195,95 @@ namespace krt
 				this->write(xs[i]);
 		}
 
+
 		void read(T* buf, size_t n)
 		{
-			if(this->cnt < n) aborter::abort("read(...): not enough elements!");
+			if(this->cnt < n)
+				aborter::abort("read(...): not enough elements!");
 
 			for(size_t i = 0; i < n; i++)
 				buf[i] = this->read();
 		}
 
 
+
+
+
+		void write_atomic(T&& x)
+		{
+			auto idx = __atomic_fetch_add(&this->writeIdx, 1, __ATOMIC_SEQ_CST);
+			__atomic_store_n(&this->ptr[idx & (this->cap - 1)], x, __ATOMIC_SEQ_CST);
+		}
+
+		void write_atomic(const T* x)
+		{
+			auto idx = __atomic_fetch_add(&this->writeIdx, 1, __ATOMIC_SEQ_CST);
+			__atomic_store(&this->ptr[idx & (this->cap - 1)], x, __ATOMIC_SEQ_CST);
+		}
+
+		void read_atomic(T* x)
+		{
+			if(this->empty())
+				aborter::abort("read(): empty buffer!");
+
+			auto idx = __atomic_fetch_add(&this->readIdx, 1, __ATOMIC_SEQ_CST);
+
+			if(x) __atomic_store(&this->ptr[idx & (this->cap - 1)], x, __ATOMIC_SEQ_CST);
+		}
+
+		void write_atomic(T* xs, size_t n)
+		{
+			for(size_t i = 0; i < n; i++)
+				this->write_atomic(xs[i]);
+		}
+
+		void read_atomic(T* buf, size_t n)
+		{
+			if(this->cnt < n)
+				aborter::abort("read(...): not enough elements!");
+
+			if(!buf)
+			{
+				__atomic_add_fetch(&this->readIdx, n, __ATOMIC_SEQ_CST);
+			}
+			else
+			{
+				for(size_t i = 0; i < n; i++)
+					this->read_atomic(&buf[i]);
+			}
+		}
+
+
+
 		void clear()
 		{
-			this->cnt = 0;
 			this->readIdx = 0;
 			this->writeIdx = 0;
 		}
 
 
 		iterator begin() { return iterator(this->ptr); }
-		iterator end()   { return iterator(this->ptr + this->cnt); }
+		iterator end()   { return iterator(this->ptr + this->size()); }
 
 		const_iterator begin() const    { return const_iterator(this->ptr); }
-		const_iterator end() const      { return const_iterator(this->ptr + this->cnt); }
+		const_iterator end() const      { return const_iterator(this->ptr + this->size()); }
 
 		const_iterator cbegin() const   { return this->begin(); }
 		const_iterator cend() const     { return this->end(); }
 
 		T* data()                                           { return this->ptr; }
 		const T* data() const                               { return (const T*) this->data; }
-		bool empty() const                                  { return this->cnt == 0; }
-		size_t size() const                                 { return this->cnt; }
+		bool empty() const                                  { return this->size() == 0; }
+		size_t size() const                                 { return this->writeIdx - this->readIdx; }
 		size_t capacity() const                             { return this->cap; }
 
 
 		private:
 		T* ptr = 0;
+		bool externalMem = false;
+
 		size_t readIdx = 0;
 		size_t writeIdx = 0;
-
-		size_t cnt = 0;
 		size_t cap = 0;
 	};
 }
