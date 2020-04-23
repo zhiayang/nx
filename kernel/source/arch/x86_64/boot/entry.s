@@ -116,6 +116,7 @@ nx_bit_set:
 kernel_premain:
 	// setup a null return address
 	xor %rbp, %rbp
+	pushq %rbp
 
 	// stack should be 16-byte aligned on entry into a function
 	// but, the function will push %rbp as part of its prologue

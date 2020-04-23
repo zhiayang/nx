@@ -38,8 +38,8 @@ namespace serial
 		// mode: 8 bits, no parity, 1 stop. also, disable DLAB
 		port::write1b(COM1.port + 3, 0x03);
 
-		// enable and clear FIFOs, set 4-byte interrupt threshold
-		port::write1b(COM1.port + 2, 0x47);
+		// disable and clear FIFOs
+		port::write1b(COM1.port + 2, 0x6);
 
 		// enable IRQ (aux output 2), set RTS and DTR
 		port::write1b(COM1.port + 4, 0x0B);

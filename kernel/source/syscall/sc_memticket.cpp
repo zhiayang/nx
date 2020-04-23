@@ -46,6 +46,8 @@ namespace nx
 		size_t numPages;
 
 		nx::treemap<scheduler::Process*, krt::pair<addr_t, size_t>> collectors;
+
+		size_t hash() const { return krt::hash_combine(id, flags, numPages); }
 	};
 
 	//? store this somewhere else?
@@ -64,7 +66,7 @@ namespace nx
 				flags = ipc::MEMTICKET_FLAG_READ | ipc::MEMTICKET_FLAG_WRITE;
 
 			auto ticket = MemoryTicket(flags, ++ticketId, pages);
-			// tickets.insert(ticket.id, ticket);
+			tickets.insert(ticket.id, ticket);
 
 			// TODO: we need some method of accounting for physical pages that don't "belong" to a particular
 			// process. because nobody really "owns" a memory ticket, it's just that the creator of it

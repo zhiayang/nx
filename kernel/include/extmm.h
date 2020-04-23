@@ -231,11 +231,50 @@ namespace extmm
 			serial::debugprintf("\n");
 		}
 
+		bool checkConsistency()
+		{
+			// LOOK, N^2!
+			auto ext1 = this->head;
+			while(ext1)
+			{
+				auto ext2 = ext1->next;
+				while(ext2)
+				{
+					// check if they intersect.
+					if(intersects(ext1, ext2))
+					{
+						error("extmm", "inconsistent extent state! (%p, %p, %zu) intersects (%p, %p, %zu)",
+							ext1->addr, end(ext1), ext1->size, ext2->addr, end(ext2), ext2->size);
+
+						return false;
+					}
+
+					ext2 = ext2->next;
+				}
+
+				if(ext1->size == 0)
+				{
+					error("extmm", "inconsistent extent state! extent at %p has 0 size", ext1->addr);
+					return false;
+				}
+
+				ext1 = ext1->next;
+			}
+
+			return true;
+		}
 
 	private:
 		static addr_t end(addr_t base, size_t num)          { return base + (num * PAGE_SIZE); }
 		static addr_t end(typename _State<T>::extent_t* ext){ return ext->addr + (ext->size * PAGE_SIZE); }
 
+		bool intersects(extent_t* a, extent_t* b)
+		{
+			if(!a || !b) return false;
+
+			// check if A lies within B, or if B lies within A.
+			return (a->addr >= b->addr && end(b) >= a->addr) || (b->addr >= a->addr && end(a) >= b->addr);
+		}
 
 		void addExtent(addr_t addr, size_t size)
 		{

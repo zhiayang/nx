@@ -74,25 +74,19 @@ namespace nx
 				ctr++;
 				uint32_t* fb = (uint32_t*) addrs::KERNEL_FRAMEBUFFER.ptr();
 				for(int y = 0; y < 80; y++)
-				{
 					for(int x = 1440 - 160; x < 1440 - 80; x++)
-					{
 						*(fb + y * 1440 + x) = colours[ctr % 3];
-					}
-				}
 
-				// serial::debugprint("*");
 				scheduler::sleep(time::milliseconds(100).ns());
 			}
 		}));
 
-
 		log("kernel", "going to sleep...");
 		scheduler::sleep(500'000'000);
+
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
-		log("kernel", "AYAYA");
 		while(true)
 			asm volatile("pause");
 	}
@@ -167,7 +161,7 @@ namespace nx
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);
 
-		// setup the vfs and the initrd (for fonts)
+		// setup the vfs and the initrd
 		vfs::init();
 		initrd::init(bootinfo);
 
@@ -189,8 +183,7 @@ namespace nx
 		pmm::freeAllEarlyMemory(bootinfo);
 
 		// initialise the interrupt controller (APIC or PIC).
-		// init_arch allows us to do basic scheduling. after the scheduler
-		// is up, we must call interrupts::init.
+		// init_arch allows us to do basic scheduling.
 		interrupts::init_arch();
 
 		// hopefully we are flying more than half a ship at this point

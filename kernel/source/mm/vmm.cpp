@@ -67,15 +67,8 @@ namespace vmm
 		}
 
 		// unmap the null page.
-		if(isFirst)
-		{
-			unmapAddress(VirtAddr::zero(), 1);
-		}
-		else
-		{
-			// setup the page tables for this guy.
-			setupAddrSpace(proc);
-		}
+		if(isFirst) unmapAddress(VirtAddr::zero(), 1);
+		else        setupAddrSpace(proc);
 
 		// log("vmm", "initialised vmm for pid %lu (cr3: %p)", proc->processId, proc->cr3);
 	}

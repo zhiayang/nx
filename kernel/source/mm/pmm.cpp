@@ -87,6 +87,10 @@ namespace pmm
 
 		memset((void*) zp, 0, PAGE_SIZE);
 		zeroPageAddr = PhysAddr(zp);
+
+		// at this point, check for consistency
+		if(!extmmState.checkConsistency())
+			abort("inconsistent memory map from bootloader!");
 	}
 
 	void freeEarlyMemory(BootInfo* bootinfo, MemoryType type)
@@ -137,6 +141,10 @@ namespace pmm
 		// we assume the kernel boot info is one page long!!
 		deallocate(PhysAddr(addr), 1);
 		log("pmm", "freed all bootloader memory");
+
+		// at this point, check for consistency
+		if(!extmmState.checkConsistency())
+			abort("pmm inconsistent!");
 	}
 
 
@@ -165,7 +173,6 @@ namespace pmm
 		// log("pmm", "deallocated %p - %p (%zu)", addr.ptr(), addr + ofsPages(num), num);
 		extmmState.deallocate(addr.addr(), num);
 	}
-
 }
 }
 
