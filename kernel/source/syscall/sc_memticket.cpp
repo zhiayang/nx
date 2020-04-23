@@ -37,27 +37,35 @@ namespace nx
 
 	struct MemoryTicket
 	{
-		MemoryTicket(uint64_t id, uint64_t flags, size_t numPages)
-			: id(id), flags(flags), numPages(numPages) { }
+		MemoryTicket(uint64_t id, uint64_t flags, size_t numPages) : id(id), flags(flags), numPages(numPages), refcount(0) { }
+
+		MemoryTicket(const MemoryTicket&) = delete;
+		MemoryTicket& operator = (const MemoryTicket&) = delete;
+
+		MemoryTicket(MemoryTicket&&) = default;
+		MemoryTicket& operator = (MemoryTicket&&) = default;
 
 		uint64_t id;
 		uint64_t flags;
 
 		size_t numPages;
+		size_t refcount;
 
-		nx::treemap<scheduler::Process*, krt::pair<addr_t, size_t>> collectors;
+		// note that we don't keep our own mutex, rather we use the mutex of the physical page region.
+		vmm::SharedVMRegion::SharedPhysRegion physicalPages;
+		nx::bucket_hashmap<scheduler::Process*, nx::bucket_hashmap<VirtAddr, vmm::SharedVMRegion, vmm::PageHasher>> collectors;
 
-		size_t hash() const { return krt::hash_combine(id, flags, numPages); }
+		// the id is guaranteed to be monotonically increasing, so we can just use that as the hash.
+		size_t hash() const { return id; }
 	};
 
 	//? store this somewhere else?
+	static nx::mutex ticketLock;
 	static uint64_t ticketId = 0;
 	static nx::bucket_hashmap<uint64_t, MemoryTicket> tickets;
 
-	void syscall::create_memory_ticket(ipc::mem_ticket_t* user_ticket, size_t len, uint64_t flags)
+	uint64_t syscall::create_memory_ticket(size_t len, uint64_t flags)
 	{
-		auto ret = ipc::mem_ticket_t();
-
 		if(len > 0)
 		{
 			auto pages = (len + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -65,30 +73,101 @@ namespace nx
 			if(flags == 0)
 				flags = ipc::MEMTICKET_FLAG_READ | ipc::MEMTICKET_FLAG_WRITE;
 
-			auto ticket = MemoryTicket(flags, ++ticketId, pages);
-			tickets.insert(ticket.id, ticket);
+			return LockedSection(&ticketLock, [&]() -> auto {
+				auto id = ++ticketId;
 
-			// TODO: we need some method of accounting for physical pages that don't "belong" to a particular
-			// process. because nobody really "owns" a memory ticket, it's just that the creator of it
-			// happens to be the one "borrowing" it.
-
-			// the current mechanism for lazy allocation tags a physical page to a given virtual page, and that
-			// virtual page must belong to a process (or more accurately, to an AddressSpace). so when the
-			// process dies, it kills the AddressSpace which frees the physical pages for all the allocated
-			// virtual pages.
-
-			// actually that was a lie. nothing like that happens, pages leak like crazy.
+				tickets.insert(id, MemoryTicket(flags, ++ticketId, pages));
+				return id;
+			});
 		}
 
-		copy_to_user(user_ticket, &ret, sizeof(ipc::mem_ticket_t));
+		return -1;
 	}
 
-	void syscall::collect_memory_ticket(ipc::mem_ticket_t* ticket, uint64_t ticketId)
+	void syscall::collect_memory_ticket(ipc::mem_ticket_t* user_ticket, uint64_t ticketId)
 	{
+		auto ret_ticket = ipc::mem_ticket_t();
+		memset(&ret_ticket, 0, sizeof(ipc::mem_ticket_t));
 
+		if(auto it = tickets.find(ticketId); it != tickets.end())
+		{
+			auto tik = &it->value;
+
+			LockedSection(&tik->physicalPages.mtx, [&]() {
+				auto proc = scheduler::getCurrentProcess();
+
+				// TODO: we might want to abstract this out a bit more?
+				auto virt = vmm::allocateAddrSpace(tik->numPages, vmm::AddressSpaceType::User);
+				auto svmr = vmm::SharedVMRegion(virt, tik->numPages, &tik->physicalPages);
+
+				LockedSection(&proc->addrSpaceLock, [&]() {
+					proc->addrspace.addSharedRegion(svmr.clone());
+				});
+
+				tik->refcount++;
+				tik->collectors[proc].insert(virt, krt::move(svmr));
+
+				ret_ticket.ptr = virt.ptr();
+				ret_ticket.len = PAGE_SIZE * tik->numPages;
+				ret_ticket.ticketId = tik->id;
+			});
+		}
+
+		if(!copy_to_user(user_ticket, &ret_ticket, sizeof(ipc::mem_ticket_t)))
+			return;
 	}
 
-	void syscall::release_memory_ticket(ipc::mem_ticket_t* ticket)
+	void syscall::release_memory_ticket(const ipc::mem_ticket_t* user_ticket)
 	{
+		auto ticket = ipc::mem_ticket_t();
+		if(!copy_to_kernel(&ticket, user_ticket, sizeof(ipc::mem_ticket_t)))
+			return;
+
+		if(auto it = tickets.find(ticketId); it != tickets.end())
+		{
+			auto tik = &it->value;
+
+			bool cleanup = LockedSection(&tik->physicalPages.mtx, [&]() -> bool {
+
+				auto proc = scheduler::getCurrentProcess();
+
+				// check if this process collected it at all
+				auto it = tik->collectors.find(proc);
+				if(it == tik->collectors.end())
+					return false;
+
+				auto it2 = it->value.find(VirtAddr(ticket.ptr));
+				if(it2 == it->value.end())
+					return false;
+
+				auto svmr = krt::move(it2->value);
+				it->value.erase(it2);
+
+				if(it->value.empty())
+					tik->collectors.erase(it);
+
+				tik->refcount--;
+
+				LockedSection(&proc->addrSpaceLock, [&]() {
+					proc->addrspace.removeSharedRegion(krt::move(svmr));
+				});
+
+				if(tik->refcount == 0)
+				{
+					// destroy while we have the lock.
+					tik->physicalPages.destroy();
+					return true;
+				}
+
+				return false;
+			});
+
+			if(cleanup)
+			{
+				LockedSection(&ticketLock, [&]() {
+					tickets.remove(tik->id);
+				});
+			}
+		}
 	}
 }

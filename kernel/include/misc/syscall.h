@@ -16,9 +16,9 @@ namespace nx
 		bool copy_to_kernel(void* kernel, const void* user, size_t len);
 		bool copy_to_user(void* user, const void* kernel, size_t len);
 
-		void create_memory_ticket(ipc::mem_ticket_t* ticket, size_t len, uint64_t flags);
+		uint64_t create_memory_ticket(size_t len, uint64_t flags);
 		void collect_memory_ticket(ipc::mem_ticket_t* ticket, uint64_t ticketId);
-		void release_memory_ticket(ipc::mem_ticket_t* ticket);
+		void release_memory_ticket(const ipc::mem_ticket_t* ticket);
 
 
 		// these are the internal declarations for the syscall functions.

@@ -90,20 +90,8 @@ namespace nx
 
 		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
 		enum class AddressSpaceType { Kernel, KernelHeap, User };
+		constexpr size_t NumAddressSpaces = 3;
 
-		VirtAddr allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
-		void deallocateAddrSpace(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
-
-		VirtAddr allocateSpecific(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
-
-		// this will allocate a region of memory, and map the physical pages LAZILY
-		VirtAddr allocate(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
-		VirtAddr allocateEager(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
-
-		void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
-
-
-		bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip);
 
 		constexpr uint64_t PAGE_PRESENT         = 0x1;
 		constexpr uint64_t PAGE_WRITE           = 0x2;
@@ -124,11 +112,11 @@ namespace nx
 		struct VMRegion
 		{
 			VMRegion(VirtAddr addr, size_t num);
-			VMRegion(const VMRegion&);
 			VMRegion(VMRegion&&);
-
 			VMRegion& operator = (VMRegion&&);
-			VMRegion& operator = (const VMRegion&);
+
+			VMRegion(const VMRegion&) = delete;
+			VMRegion& operator = (const VMRegion&) = delete;
 
 			void grow_up(size_t count);     // addr remains the same
 			void grow_down(size_t count);   // addr decreases
@@ -137,7 +125,7 @@ namespace nx
 			void shrink_down(size_t count); // addr remains the same
 
 			VirtAddr end() const;
-
+			VMRegion clone() const;
 
 			VirtAddr addr;
 			size_t numPages;
@@ -145,11 +133,48 @@ namespace nx
 			nx::bucket_hashmap<VirtAddr, PhysAddr, PageHasher> backingPhysPages;
 		};
 
-		constexpr size_t NumAddressSpaces = 3;
+		// vmregion for shared memory, where the record of physical pages is stored in a shared manner.
+		// the important point is that the virtual region is free to change between processes, but the
+		// backing physical pages must still be fixed. this means that we can't use a hashmap from virt->phys
+		// but instead use the "index" from the base virtual address. we must still use a hashmap because it
+		// needs to be a sparse record. we also don't need to implement any of the grow/shrink operations,
+		// since this region must be "dealt with" in totality.
+		struct SharedVMRegion
+		{
+			struct SharedPhysRegion
+			{
+				mutex mtx;
+				nx::bucket_hashmap<size_t, PhysAddr> physPages;
+
+				void destroy();
+			};
+
+
+			SharedVMRegion(VirtAddr addr, size_t num, SharedPhysRegion* store);
+			SharedVMRegion(SharedVMRegion&&);
+			SharedVMRegion& operator = (SharedVMRegion&&);
+
+			SharedVMRegion(const SharedVMRegion&) = delete;
+			SharedVMRegion& operator = (const SharedVMRegion&) = delete;
+
+			VirtAddr end() const;
+			SharedVMRegion clone() const;
+
+			bool operator == (const SharedVMRegion& oth) const { return this->addr == oth.addr && this->numPages == oth.numPages && this->backingPhysPages == oth.backingPhysPages; }
+
+			VirtAddr addr;
+			size_t numPages;
+
+			SharedPhysRegion* backingPhysPages;
+		};
+
 		struct AddressSpace
 		{
 			PhysAddr cr3;
 			nx::array<VMRegion> regions;
+			nx::array<SharedVMRegion> sharedRegions;
+
+			// bookkeeping for miscellaneous physical pages that we allocate (eg. for page tables)
 			nx::array<PhysAddr> allocatedPhysPages;
 
 			extmm::State<> vmmStates[vmm::NumAddressSpaces];
@@ -160,11 +185,32 @@ namespace nx
 			void addRegion(VirtAddr addr, size_t size);
 			void addRegion(VirtAddr virtStart, PhysAddr physStart, size_t size);
 
+			void addSharedRegion(SharedVMRegion&& region);
+			void removeSharedRegion(SharedVMRegion&& region);
+
 			void freeRegion(VirtAddr addr, size_t size, bool freePhys);
 
-			addr_t addPhysicalMapping(VirtAddr virt, PhysAddr phys);
-			// void addPhysicalMapping(addr_t virt, addr_t phys, size_t num);
+			PhysAddr addPhysicalMapping(VirtAddr virt, PhysAddr phys);
 		};
+
+
+
+		VirtAddr allocateAddrSpace(size_t num, AddressSpaceType type, scheduler::Process* proc = 0);
+		void deallocateAddrSpace(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
+
+		VirtAddr allocateSpecific(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
+		VirtAddr allocate(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
+		VirtAddr allocateEager(size_t num, AddressSpaceType type, uint64_t flags = 0, scheduler::Process* proc = 0);
+
+		void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc = 0);
+
+
+
+
+
+
+
+		bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip);
 	}
 
 	constexpr size_t SIZE_IN_PAGES(size_t bytes)

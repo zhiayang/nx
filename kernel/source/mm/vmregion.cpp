@@ -54,20 +54,16 @@ namespace vmm
 		assert(heap::initialised());
 		assert(addr.isAligned());
 
-		// warn("vmregion", "add (%p, %zu)", addr, num);
-
 		for(auto& vmr : this->regions)
 		{
 			if(end(addr, num) == vmr.addr)
 			{
 				vmr.grow_down(num);
-				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
 			else if(vmr.end() == addr)
 			{
 				vmr.grow_up(num);
-				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
 			else if(vmr.addr == addr)
@@ -78,7 +74,6 @@ namespace vmm
 		}
 
 		this->regions.emplace(addr, num);
-		// error("vmm", "append %p/%zu", addr, num);
 	}
 
 	void AddressSpace::addRegion(VirtAddr addr, PhysAddr physStart, size_t num)
@@ -86,38 +81,27 @@ namespace vmm
 		assert(heap::initialised());
 		assert(addr.isAligned() && physStart.isAligned());
 
-		// warn("vmregion", "add(phys) (%p, %zu)", addr, num);
-
 		auto update_phys = [](VMRegion& vmr, VirtAddr virt, PhysAddr phys, size_t num) {
 			for(size_t i = 0; i < num; i++)
-			{
-				// warn("vmregion", "insert %p (%zu / %zu)", virt + (i * PAGE_SIZE),
-				// 	vmr.backingPhysPages.size(), vmr.backingPhysPages.buckets());
-
 				vmr.backingPhysPages[virt + ofsPages(i)] = phys + ofsPages(i);
-			}
 		};
 
 		for(auto& vmr : this->regions)
 		{
 			if(end(addr, num) == vmr.addr)
 			{
-				// warn("vmregion", "updating #1");
 				vmr.grow_down(num);
 				update_phys(vmr, vmr.addr, physStart, num);
 
-				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
 			else if(vmr.end() == addr)
 			{
 				auto oldSz = vmr.numPages;
-				// warn("vmregion", "updating #2");
 
 				vmr.grow_up(num);
 				update_phys(vmr, vmr.addr + ofsPages(oldSz), physStart, num);
 
-				// warn("vmregion", "update: (%p, %zu)", vmr.addr, vmr.numPages);
 				return;
 			}
 			else if(vmr.addr == addr)
@@ -127,13 +111,24 @@ namespace vmm
 			}
 		}
 
-		// warn("vmregion", "updating #3");
 
 		auto vmr = VMRegion(addr, num);
 		update_phys(vmr, vmr.addr, physStart, num);
 
 		this->regions.append(krt::move(vmr));
-		// error("vmm", "append %p/%zu", addr, num);
+	}
+
+	void AddressSpace::addSharedRegion(SharedVMRegion&& region)
+	{
+		if(this->sharedRegions.find(region) != this->sharedRegions.end())
+			abort("vmregion: adding duplicate region!");
+
+		this->sharedRegions.append(krt::move(region));
+	}
+
+	void AddressSpace::removeSharedRegion(SharedVMRegion&& region)
+	{
+		this->sharedRegions.remove_all(region);
 	}
 
 	void AddressSpace::freeRegion(VirtAddr addr, size_t num, bool freePhys)
@@ -141,7 +136,6 @@ namespace vmm
 		assert(heap::initialised());
 		assert(addr.isAligned());
 
-		// warn("vmregion", "free (%p, %zu)", addr, num);
 		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
 		{
 			auto& vmr = *it;
@@ -194,7 +188,7 @@ namespace vmm
 
 					assert(numFrontPages > 0 && numBackPages > 0);
 
-					auto back_vmr = vmr;
+					auto back_vmr = vmr.clone();
 
 					// clear the physical pages:
 					if(freePhys)
@@ -214,7 +208,7 @@ namespace vmm
 					// shrink_up the back vmr:
 					back_vmr.shrink_up(numFrontPages + num);
 					if(back_vmr.numPages > 0)
-						this->regions.append(back_vmr);
+						this->regions.append(krt::move(back_vmr));
 
 					return;
 				}
@@ -224,7 +218,7 @@ namespace vmm
 		abort("vmregion: did not find matching extent for (%p, %zu)", addr, num);
 	}
 
-	addr_t AddressSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
+	PhysAddr AddressSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
 	{
 		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
 		{
@@ -237,12 +231,32 @@ namespace vmm
 					old = it->value;
 
 				vmr.backingPhysPages[virt] = phys;
-				return old.addr();
+				return old;
+			}
+		}
+
+		for(auto vmr = this->sharedRegions.begin(); vmr != this->sharedRegions.end(); ++vmr)
+		{
+			if(vmr->addr <= virt && virt < vmr->end())
+			{
+				// the shared regions deal in indices, because the virtual address can shift around.
+				// so the key for the hashmap is the "index" of the virt page, from the beginning of the region.
+				auto pageIdx = (virt - vmr->addr) / PAGE_SIZE;
+
+				// since the backing physical region is shared, it has its own lock.
+				return LockedSection(&vmr->backingPhysPages->mtx, [&]() -> auto {
+					PhysAddr old;
+					if(auto it = vmr->backingPhysPages->physPages.find(pageIdx); it != vmr->backingPhysPages->physPages.end())
+						old = it->value;
+
+					vmr->backingPhysPages->physPages[pageIdx] = phys;
+					return old;
+				});
 			}
 		}
 
 		abort("vmregion: did not find matching extent for (%p)", virt);
-		return 0;
+		return PhysAddr::zero();
 	}
 
 
@@ -252,24 +266,12 @@ namespace vmm
 	{
 	}
 
-	VMRegion::VMRegion(const VMRegion& other)
-		: addr(other.addr), numPages(other.numPages), backingPhysPages(other.backingPhysPages)
-	{
-	}
-
 	VMRegion::VMRegion(VMRegion&& other)
 	{
 		this->addr = other.addr;            other.addr.clear();
 		this->numPages = other.numPages;    other.numPages = 0;
 
 		this->backingPhysPages = krt::move(other.backingPhysPages);
-	}
-
-
-	VMRegion& VMRegion::operator = (const VMRegion& other)
-	{
-		if(this != &other)  return *this = VMRegion(other);
-		else                return *this;
 	}
 
 	VMRegion& VMRegion::operator = (VMRegion&& other)
@@ -282,6 +284,14 @@ namespace vmm
 		}
 
 		return *this;
+	}
+
+	VMRegion VMRegion::clone() const
+	{
+		auto ret = VMRegion(this->addr, this->numPages);
+		ret.backingPhysPages = this->backingPhysPages;
+
+		return ret;
 	}
 
 	VirtAddr VMRegion::end() const
@@ -323,8 +333,55 @@ namespace vmm
 
 
 
+	SharedVMRegion::SharedVMRegion(VirtAddr addr, size_t num, SharedPhysRegion* store) : addr(addr), numPages(num), backingPhysPages(store)
+	{
+	}
 
+	SharedVMRegion::SharedVMRegion(SharedVMRegion&& other)
+	{
+		this->addr = other.addr;
+		other.addr.clear();
 
+		this->numPages = other.numPages;
+		other.numPages = 0;
+
+		this->backingPhysPages = other.backingPhysPages;
+		other.backingPhysPages = nullptr;
+	}
+
+	SharedVMRegion& SharedVMRegion::operator = (SharedVMRegion&& other)
+	{
+		if(this != &other)
+		{
+			this->addr = other.addr;
+			other.addr.clear();
+
+			this->numPages = other.numPages;
+			other.numPages = 0;
+
+			this->backingPhysPages = other.backingPhysPages;
+			other.backingPhysPages = nullptr;
+		}
+
+		return *this;
+	}
+
+	VirtAddr SharedVMRegion::end() const
+	{
+		return this->addr + ofsPages(this->numPages);
+	}
+
+	SharedVMRegion SharedVMRegion::clone() const
+	{
+		return SharedVMRegion(this->addr, this->numPages, this->backingPhysPages);
+	}
+
+	void SharedVMRegion::SharedPhysRegion::destroy()
+	{
+		// we just free all the physical pages.
+		for(auto p : this->physPages)
+			pmm::deallocate(p.second, 1);
+	}
 }
 }
 
