@@ -9,6 +9,16 @@
 
 namespace krt
 {
+	template <typename T> struct remove_reference      { typedef T type; };
+	template <typename T> struct remove_reference<T&>  { typedef T type; };
+	template <typename T> struct remove_reference<T&&> { typedef T type; };
+
+	template <typename T>
+	typename remove_reference<T>::type&& move(T&& arg)
+	{
+		return static_cast<typename remove_reference<T>::type&&>(arg);
+	}
+
 	// omg why the fuck are we doing this?!
 	template <typename T, T v>
 	struct integral_constant
@@ -108,16 +118,6 @@ namespace krt
 	{
 		static constexpr bool value = __has_trivial_copy(T);
 	};
-
-	template <typename T> struct remove_reference      { typedef T type; };
-	template <typename T> struct remove_reference<T&>  { typedef T type; };
-	template <typename T> struct remove_reference<T&&> { typedef T type; };
-
-	template <typename T>
-	typename remove_reference<T>::type&& move(T&& arg)
-	{
-		return static_cast<typename remove_reference<T>::type&&>(arg);
-	}
 
 	template <typename T>
 	void swap(T& t1, T& t2)
