@@ -155,7 +155,7 @@ namespace vmm
 		// don't have the write flag.
 		flags &= ~PAGE_WRITE;
 
-		mapLazy(virt, num, flags, proc);
+		mapZeroedCOW(virt, num, flags, proc);
 		proc->addrspace.addRegion(virt, num);
 
 		return virt;

@@ -43,20 +43,35 @@ namespace nx
 	using string = krt::string<_allocator, _aborter>;
 	using string_view = krt::string_view<_allocator, _aborter>;
 
-	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	template <typename T, typename Al = _allocator, typename Ab = _aborter>
 	using list = krt::list<T, Al, Ab>;
 
-	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	template <typename T, typename Al = _allocator, typename Ab = _aborter>
 	using array = krt::array<T, Al, Ab>;
 
-	template<typename T, typename Al = _allocator, typename Ab = _aborter>
+	template <typename T, typename Al = _allocator, typename Ab = _aborter>
 	using stack = krt::stack<T, Al, Ab>;
 
-	template<typename K, typename V, typename Al = _allocator, typename Ab = _aborter>
+	template <typename K, typename V, typename Al = _allocator, typename Ab = _aborter>
 	using treemap = krt::treemap<K, V, Al, Ab>;
 
-	template<typename K, typename V, typename H = krt::hash<K>, typename Al = _allocator, typename Ab = _aborter>
+	template <typename K, typename V, typename H = krt::hash<K>, typename Al = _allocator, typename Ab = _aborter>
 	using bucket_hashmap = krt::bucket_hashmap<K, V, Al, Ab, H>;
+
+	template <typename T, typename Al = _allocator, typename Ab = _aborter>
+	using optional = krt::optional<T, Al, Ab>;
+
+	// instead of doing alias templates (which can't be deduced in c++17), just make a wrapper function.
+	namespace opt
+	{
+		template <typename T, typename T1 = std::remove_reference_t<T>>
+		optional<T1> some(T&& x) { return krt::opt::some<T1, _allocator, _aborter>(krt::move(x)); }
+
+		template <typename T, typename T1 = std::remove_reference_t<T>>
+		optional<T1> some(const T& x) { return krt::opt::some<T1, _allocator, _aborter>(x); }
+
+		constexpr auto none = krt::nullopt;
+	}
 
 
 	[[noreturn]] void halt();

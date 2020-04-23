@@ -102,6 +102,8 @@ namespace nx
 
 				LockedSection(&proc->addrSpaceLock, [&]() {
 					proc->addrspace.addSharedRegion(svmr.clone());
+
+					// vmm::mapLazy(virt, tik->numPages, vmm::PAGE_USER, proc);
 				});
 
 				tik->refcount++;
@@ -117,6 +119,8 @@ namespace nx
 			return;
 	}
 
+	// the reason that we need the user to pass in the entire ticket instead of just the ticket id is because you can collect a ticket more than once
+	// (eg to get two separate regions to the same memory, for whatever reason).
 	void syscall::release_memory_ticket(const ipc::mem_ticket_t* user_ticket)
 	{
 		auto ticket = ipc::mem_ticket_t();

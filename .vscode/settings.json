@@ -1,7 +1,8 @@
 {
-	"files.exclude": {
-		"toolchain-setup": true,
-		"kernel": true,
-		"build/toolchain": true
-	}
+  "files.exclude": {
+    "toolchain-setup": true,
+    "kernel": true,
+    "build/toolchain": true,
+    "build\\sysroot": true
+  }
 }

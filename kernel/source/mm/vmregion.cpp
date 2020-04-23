@@ -259,6 +259,30 @@ namespace vmm
 		return PhysAddr::zero();
 	}
 
+	krt::pair<optional<VirtAddr>, optional<PhysAddr>> AddressSpace::lookupVirtualMapping(VirtAddr addr)
+	{
+		auto contains = [](const auto& r, VirtAddr v) -> bool {
+			return r.addr <= v && v < r.end();
+		};
+
+		// it is more likely that this will involve the shared mappings, so search those first.
+		for(auto& svmr : this->sharedRegions)
+		{
+			if(contains(svmr, addr))
+				return { opt::some(addr), svmr.lookup(addr) };
+		}
+
+		// oof
+		for(auto& vmr : this->regions)
+		{
+			if(contains(vmr, addr))
+				return { opt::some(addr), vmr.lookup(addr) };
+		}
+
+		return { opt::none, opt::none };
+	}
+
+
 
 
 
@@ -298,6 +322,16 @@ namespace vmm
 	{
 		return this->addr + ofsPages(this->numPages);
 	}
+
+	optional<PhysAddr> VMRegion::lookup(VirtAddr virt) const
+	{
+		auto it = this->backingPhysPages.find(virt);
+		return (it == this->backingPhysPages.end()
+			? opt::none
+			: opt::some(it->value)
+		);
+	}
+
 
 	void VMRegion::grow_down(size_t count)
 	{
@@ -374,6 +408,15 @@ namespace vmm
 	SharedVMRegion SharedVMRegion::clone() const
 	{
 		return SharedVMRegion(this->addr, this->numPages, this->backingPhysPages);
+	}
+
+	optional<PhysAddr> SharedVMRegion::lookup(VirtAddr virt) const
+	{
+		auto it = this->backingPhysPages->physPages.find((virt - this->addr) / PAGE_SIZE);
+		return (it == this->backingPhysPages->physPages.end()
+			? opt::none
+			: opt::some(it->value)
+		);
 	}
 
 	void SharedVMRegion::SharedPhysRegion::destroy()

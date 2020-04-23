@@ -77,9 +77,15 @@ namespace nx
 		// this one will abort if you try to do anything funny.
 		void mapAddress(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
+		// this one maps the pages as copy-on-write
 		void mapCOW(VirtAddr virt, PhysAddr phys, size_t num, uint64_t flags, scheduler::Process* proc = 0);
-		void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
+		// this one maps them as copy-on-write as well, but all the pages are zero -- used mainly for mmaped memory
+		void mapZeroedCOW(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
+
+		// this one maps them as lazy, ie. on both reads and writes, the #PF handler will fetch the physical page
+		// from the process AddressSpace to figure out the correct thing to map.
+		void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc = 0);
 
 		uint64_t getPageFlags(VirtAddr virt, scheduler::Process* proc = 0);
 		void unmapAddress(VirtAddr virt, size_t num, bool ignoreIfNotMapped = false, scheduler::Process* proc = 0);
@@ -127,6 +133,8 @@ namespace nx
 			VirtAddr end() const;
 			VMRegion clone() const;
 
+			optional<PhysAddr> lookup(VirtAddr virt) const;
+
 			VirtAddr addr;
 			size_t numPages;
 
@@ -160,6 +168,8 @@ namespace nx
 			VirtAddr end() const;
 			SharedVMRegion clone() const;
 
+			optional<PhysAddr> lookup(VirtAddr virt) const;
+
 			bool operator == (const SharedVMRegion& oth) const { return this->addr == oth.addr && this->numPages == oth.numPages && this->backingPhysPages == oth.backingPhysPages; }
 
 			VirtAddr addr;
@@ -191,6 +201,11 @@ namespace nx
 			void freeRegion(VirtAddr addr, size_t size, bool freePhys);
 
 			PhysAddr addPhysicalMapping(VirtAddr virt, PhysAddr phys);
+
+			// if the address was inside the addressspace mapping, then the VirtAddr returned in the
+			// optional will be the same as the input addr. If there is an existing physical mapping
+			// for it also, then the second optional will contain that.
+			krt::pair<optional<VirtAddr>, optional<PhysAddr>> lookupVirtualMapping(VirtAddr addr);
 		};
 
 

@@ -44,7 +44,7 @@ namespace nx
 				auto virt = vmm::allocateSpecific(VirtAddr(addr), numPages);
 				if(virt.nonZero())
 				{
-					vmm::mapLazy(virt, numPages, flg & ~vmm::PAGE_WRITE);
+					vmm::mapZeroedCOW(virt, numPages, flg & ~vmm::PAGE_WRITE);
 					return virt.ptr();
 				}
 

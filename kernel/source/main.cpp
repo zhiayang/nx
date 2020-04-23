@@ -59,7 +59,6 @@ namespace nx
 			scheduler::addThread(thr);
 		}
 
-
 		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), []() {
 
 			constexpr uint32_t colours[] = {

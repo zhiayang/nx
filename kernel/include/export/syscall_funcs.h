@@ -27,6 +27,7 @@ namespace nx
 
 	constexpr uint64_t SYSCALL_MEMTICKET_CREATE     = 30;
 	constexpr uint64_t SYSCALL_MEMTICKET_COLLECT    = 31;
+	constexpr uint64_t SYSCALL_MEMTICKET_RELEASE    = 32;
 
 	constexpr uint64_t SYSCALL_GET_NANOSECOND_TS    = 97;
 	constexpr uint64_t SYSCALL_USER_SIGNAL_LEAVE    = 98;

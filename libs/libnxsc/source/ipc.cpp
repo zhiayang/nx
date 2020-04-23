@@ -62,12 +62,12 @@ namespace ipc
 	}
 
 
-	mem_ticket_t create_memory_ticket(size_t len, uint64_t flags)
+	uint64_t create_memory_ticket(size_t len, uint64_t flags)
 	{
-		mem_ticket_t ticket { 0 };
-		__nx_syscall_3v(SYSCALL_MEMTICKET_CREATE, &ticket, len, flags);
+		uint64_t ret = 0;
+		__nx_syscall_2(SYSCALL_MEMTICKET_CREATE, ret, len, flags);
 
-		return ticket;
+		return ret;
 	}
 
 	mem_ticket_t collect_memory(uint64_t ticketId)
@@ -76,6 +76,11 @@ namespace ipc
 		__nx_syscall_2v(SYSCALL_MEMTICKET_COLLECT, &ticket, ticketId);
 
 		return ticket;
+	}
+
+	void release_memory_ticket(const mem_ticket_t& ticket)
+	{
+		__nx_syscall_1v(SYSCALL_MEMTICKET_RELEASE, &ticket);
 	}
 }
 }

@@ -354,7 +354,7 @@ namespace vmm
 		}
 	}
 
-	void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	void mapZeroedCOW(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc)
 	{
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -365,15 +365,39 @@ namespace vmm
 		assert((flags & PAGE_WRITE) == 0);
 		flags &= ~PAGE_WRITE;
 
-		log("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
+		log("vmm", "region %p - %p (pid %ld) marked zeroed-copy-on-write", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{
 			auto v = virt + ofsPages(i);
 
 			// everybody gets the zero page. note: we mark the page present here, because reading
-			// from a lazy page shouldn't actually do anything -- just return zeroes!
+			// from a zeroed-COW page shouldn't actually do anything -- just return zeroes!
 			map_internal(v, pmm::getZeroPage(), flags | PAGE_PRESENT | PAGE_COPY_ON_WRITE, proc, /* overwrite: */ false);
+		}
+	}
+
+	void mapLazy(VirtAddr virt, size_t num, uint64_t flags, scheduler::Process* proc)
+	{
+		if(proc == 0) proc = scheduler::getCurrentProcess();
+		assert(proc);
+
+		assert(virt.isAligned());
+
+		// make sure we don't have write in the provided flags.
+		assert((flags & PAGE_PRESENT) == 0);
+		flags &= ~PAGE_PRESENT;
+
+		log("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
+
+		for(size_t i = 0; i < num; i++)
+		{
+			auto v = virt + ofsPages(i);
+
+			// it's quite similar to the zeroed-cow version (after all, we need to map *something*), but we do not map the
+			// pages as present; we do keep the other flags (like read/write/user), so that when the page does get mapped in,
+			// it behaves correctly.
+			map_internal(v, pmm::getZeroPage(), flags | PAGE_COPY_ON_WRITE, proc, /* overwrite: */ false);
 		}
 	}
 
