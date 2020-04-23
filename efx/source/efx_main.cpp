@@ -157,7 +157,6 @@ void efx::init()
 		memory::installNewCR3();
 
 		auto kernel_entry = (void (*)(nx::BootInfo*)) kernelEntry;
-		serial::print("jumping\n");
 		kernel_entry(kernelBootInfo);
 	}
 }
