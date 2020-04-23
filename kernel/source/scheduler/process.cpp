@@ -22,7 +22,6 @@ namespace scheduler
 		proc->processName = name;
 		proc->flags = flags;
 
-
 		// allocate an ioctx
 		proc->ioctx = new vfs::IOCtx();
 

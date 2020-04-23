@@ -313,6 +313,7 @@ namespace ps2
 				kb->addByte(x);
 
 			square(cnt++);
+			nx::ipc::send<uint64_t>(1, 99);
 		}
 		else
 		{
@@ -320,29 +321,27 @@ namespace ps2
 			return nx::ipc::SIGNAL_IRQ_IGNORED(irq);
 		}
 
-		// // omo
-		// struct {
-		// 	int a;
-		// 	int b;
-
-		// } __attribute__((packed)) omo {
-		// 	.a = 3,
-		// 	.b = 9
-		// };
-
-		// nx::ipc::send(2, omo);
-
 		return nx::ipc::SIGNAL_IRQ_HANDLED(irq);
 	}
 }
 
-
+static volatile uint64_t ticketId = 0;
 int main()
 {
 	ps2::init_controller();
 	ps2::kb = new ps2::Keyboard();
 
+	auto ticketId = nx::ipc::create_memory_ticket(0x1000 * 40, nx::ipc::MEMTICKET_FLAG_WRITE);
+	printf("ticket id: %llu\n", ticketId);
+
+	auto ticket = nx::ipc::collect_memory_ticket(ticketId);
+	printf("ticket: %p / %zu\n", ticket.ptr, ticket.len);
+
+	for(int i = 0; i < ticket.len / 4; i++)
+		((uint32_t*) ticket.ptr)[i] = 0xFF00FF;
+
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_DEVICE_IRQ, &ps2::interrupt_handler);
+
 	printf("ps/2 driver ok\n\n");
 
 	while(true)

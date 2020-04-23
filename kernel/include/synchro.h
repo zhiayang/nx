@@ -21,6 +21,8 @@ namespace nx
 
 	struct spinlock
 	{
+		spinlock();
+
 		bool held();
 		void lock();
 		void unlock();
@@ -33,6 +35,8 @@ namespace nx
 
 	struct mutex
 	{
+		mutex();
+
 		bool held();
 		void lock();
 		void unlock();

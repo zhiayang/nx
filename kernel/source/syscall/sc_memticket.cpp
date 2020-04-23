@@ -62,7 +62,7 @@ namespace nx
 
 	//? store this somewhere else?
 	static nx::mutex ticketLock;
-	static uint64_t ticketId = 0;
+	static uint64_t ticketIdCounter = 0;
 	static nx::bucket_hashmap<uint64_t, MemoryTicket> tickets;
 
 	uint64_t syscall::create_memory_ticket(size_t len, uint64_t flags)
@@ -75,9 +75,11 @@ namespace nx
 				flags = ipc::MEMTICKET_FLAG_READ | ipc::MEMTICKET_FLAG_WRITE;
 
 			return LockedSection(&ticketLock, [&]() -> auto {
-				auto id = ++ticketId;
+				auto id = ++ticketIdCounter;
 
-				tickets.insert(id, MemoryTicket(flags, ++ticketId, len, pages));
+				tickets.insert(id, MemoryTicket(id, flags, len, pages));
+
+				log("memticket", "pid %lu created memticket (%lu, %zu)", scheduler::getCurrentProcess()->processId, id, len);
 				return id;
 			});
 		}
@@ -103,9 +105,10 @@ namespace nx
 
 				LockedSection(&proc->addrSpaceLock, [&]() {
 					proc->addrspace.addSharedRegion(svmr.clone());
-
-					vmm::mapLazy(virt, tik->numPages, vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
 				});
+
+				vmm::mapLazy(virt, tik->numPages,
+					vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
 
 				tik->refcount++;
 				tik->collectors[proc].insert(virt, krt::move(svmr));
@@ -113,6 +116,9 @@ namespace nx
 				ret_ticket.ptr = virt.ptr();
 				ret_ticket.len = tik->userLen;
 				ret_ticket.ticketId = tik->id;
+
+				log("memticket", "pid %lu collected memticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+					ret_ticket.ptr, (addr_t) ret_ticket.ptr + ret_ticket.len);
 			});
 		}
 
@@ -128,7 +134,7 @@ namespace nx
 		if(!copy_to_kernel(&ticket, user_ticket, sizeof(ipc::mem_ticket_t)))
 			return;
 
-		if(auto it = tickets.find(ticketId); it != tickets.end())
+		if(auto it = tickets.find(ticket.ticketId); it != tickets.end())
 		{
 			auto tik = &it->value;
 
@@ -154,8 +160,14 @@ namespace nx
 				tik->refcount--;
 
 				LockedSection(&proc->addrSpaceLock, [&]() {
+					vmm::deallocateAddrSpace(svmr.addr, svmr.numPages, proc);
+					vmm::unmapAddress(svmr.addr, svmr.numPages, /* ignore: */ true, proc);
+
 					proc->addrspace.removeSharedRegion(krt::move(svmr));
 				});
+
+				log("memticket", "pid %lu released ticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+					ticket.ptr, (addr_t) ticket.ptr + ticket.len);
 
 				if(tik->refcount == 0)
 				{
@@ -169,6 +181,8 @@ namespace nx
 
 			if(cleanup)
 			{
+				log("memticket", "cleaning up ticket %lu", tik->id);
+
 				LockedSection(&ticketLock, [&]() {
 					tickets.remove(tik->id);
 				});

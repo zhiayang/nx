@@ -46,22 +46,6 @@ int main()
 	};
 
 
-	{
-		using namespace nx;
-
-		auto ticketId = ipc::create_memory_ticket(1024, ipc::MEMTICKET_FLAG_WRITE);
-		printf("ticket id: %lu\n", ticketId);
-
-		auto ticket = ipc::collect_memory_ticket(ticketId);
-		printf("ticket: %p / %zu\n", ticket.ptr, ticket.len);
-
-		memset(ticket.ptr, 0xAA, ticket.len);
-
-		// ipc::release_memory_ticket(ticket);
-	}
-
-
-
 	int ctr2 = 0;
 	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
 
@@ -87,6 +71,21 @@ int main()
 					*(fb + y * WIDTH + x) = colours[ctr2 % numColours];
 				}
 			}
+		}
+
+		if(nx::ipc::poll() > 0)
+		{
+			nx::ipc::message_body_t body;
+			nx::ipc::receive(&body);
+
+			auto x = nx::ipc::extract<uint64_t>(body);
+
+			auto ticket = nx::ipc::collect_memory_ticket(1);
+			memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
+
+			printf("signalled! (%llu) %p, %zu\n", x, ticket.ptr, ticket.len);
+
+			nx::ipc::release_memory_ticket(ticket);
 		}
 	}
 }

@@ -10,6 +10,8 @@ extern "C" void nx_x64_exit_intr_context();
 namespace nx {
 namespace vmm
 {
+	constexpr bool LOG_ALL_FAULTS = false;
+
 	bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip)
 	{
 		// The error code gives us details of what happened.
@@ -48,9 +50,13 @@ namespace vmm
 			//    to be preemptible.
 
 			// to make sure we can acquire spinlocks, tell the kernel that we're no longer in
-			// an interrupt context:
-			nx_x64_exit_intr_context();
-			asm volatile ("sti");
+			// an interrupt context. when we exit, the exception handler wrapper in asm will
+			// also exit the intr_context so, we need to "enter" it again so the value never
+			// becomes negative (on exit from this function)
+			struct _ {
+				_() { nx_x64_exit_intr_context(); asm volatile ("sti"); }
+				~_() { asm volatile ("cli"); nx_x64_enter_intr_context(); }
+			} __;
 
 			// then, get a new one. note: we don't need to track this in the address space, because the
 			// virtual address will have already been tracked, and we'll automatically free the physical
@@ -64,18 +70,11 @@ namespace vmm
 				auto pair = proc->addrspace.lookupVirtualMapping(aligned_cr2);
 				if(pair.first.present())
 				{
-					warn("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p)", pid, tid, cr2, rip);
-
 					auto ph = pair.second;
-					if(ph.present())
-					{
-						warn("pf", "present (%p)", ph.get().addr());
-					}
-					else
+					if(!ph.present())
 					{
 						// make a new one, then map it.
 						auto p = pmm::allocate(1);
-						warn("pf", "new (%p) (flags = %x)", p.addr(), flags);
 
 						LockedSection(&proc->addrSpaceLock, [&]() {
 							proc->addrspace.addPhysicalMapping(aligned_cr2, p);
@@ -83,6 +82,11 @@ namespace vmm
 
 						ph = opt::some(p);
 					}
+
+					// this gets a bit spammy
+
+					if(LOG_ALL_FAULTS)
+						log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
 
 					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
 					return true;
@@ -134,13 +138,9 @@ namespace vmm
 					vmm::deallocateAddrSpace(scratch, 1);
 				}
 
-				log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
+				if(LOG_ALL_FAULTS)
+					log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
 			}
-
-			// here's the thing: the exception handler wrapper in asm will also exit the intr_context;
-			// so, we need to "enter" it again so the value never becomes negative.
-			asm volatile ("cli");
-			nx_x64_enter_intr_context();
 
 			return true;
 		}

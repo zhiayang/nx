@@ -31,12 +31,11 @@ namespace nx
 		// start the debug console
 		// debugcon::init();
 
+		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
+
+
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
-
-
-
-		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 
 		// todo: make this more dynamic

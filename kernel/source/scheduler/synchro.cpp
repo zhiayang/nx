@@ -12,6 +12,8 @@ namespace nx
 
 	using SchedState = scheduler::SchedulerInitPhase;
 
+	spinlock::spinlock() { }
+
 	void spinlock::lock()
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
@@ -43,7 +45,7 @@ namespace nx
 		// cos it doesn't exist.
 		if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
 		{
-			// log("spin", "tid %lu released lock %p", this->holder->threadId, this);
+		// 	log("spin", "tid %lu released lock %p", this->holder->threadId, this);
 			// __atomic_sub_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
 		}
 
@@ -65,6 +67,7 @@ namespace nx
 
 
 
+	mutex::mutex() { }
 
 	void mutex::lock()
 	{
@@ -78,10 +81,13 @@ namespace nx
 			scheduler::block(this);
 
 		this->holder = scheduler::getCurrentThread();
+		// log("mutex", "tid %lu acquired %p", holder ? holder->threadId : 0, this);
 	}
 
 	void mutex::unlock()
 	{
+		// log("mutex", "tid %lu released %p", holder ? holder->threadId : 0, this);
+
 		this->value = 0;
 		this->holder = 0;
 

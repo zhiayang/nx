@@ -52,6 +52,7 @@ namespace syscall
 
 		SyscallTable[SYSCALL_MEMTICKET_CREATE]      = (void*) create_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) collect_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_RELEASE]     = (void*) release_memory_ticket;
 
 		// syscall/sc_vfs.cpp
 		SyscallTable[SYSCALL_VFS_READ]              = (void*) vfs_read;
