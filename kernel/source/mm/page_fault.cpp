@@ -64,21 +64,27 @@ namespace vmm
 				auto pair = proc->addrspace.lookupVirtualMapping(aligned_cr2);
 				if(pair.first.present())
 				{
+					warn("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p)", pid, tid, cr2, rip);
+
 					auto ph = pair.second;
-					LockedSection(&proc->addrSpaceLock, [&]() {
-						if(ph.present())
-						{
-							// map that.
-							vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
-						}
-						else
-						{
-							// make a new one, then map it.
-							auto p = pmm::allocate(1);
+					if(ph.present())
+					{
+						warn("pf", "present (%p)", ph.get().addr());
+					}
+					else
+					{
+						// make a new one, then map it.
+						auto p = pmm::allocate(1);
+						warn("pf", "new (%p) (flags = %x)", p.addr(), flags);
+
+						LockedSection(&proc->addrSpaceLock, [&]() {
 							proc->addrspace.addPhysicalMapping(aligned_cr2, p);
-							vmm::mapAddressOverwrite(aligned_cr2, p, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
-						}
-					});
+						});
+
+						ph = opt::some(p);
+					}
+
+					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
 					return true;
 				}
 				else

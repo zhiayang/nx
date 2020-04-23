@@ -45,6 +45,23 @@ int main()
 		0xff'0ab04a,
 	};
 
+
+	{
+		using namespace nx;
+
+		auto ticketId = ipc::create_memory_ticket(1024, ipc::MEMTICKET_FLAG_WRITE);
+		printf("ticket id: %lu\n", ticketId);
+
+		auto ticket = ipc::collect_memory_ticket(ticketId);
+		printf("ticket: %p / %zu\n", ticket.ptr, ticket.len);
+
+		memset(ticket.ptr, 0xAA, ticket.len);
+
+		// ipc::release_memory_ticket(ticket);
+	}
+
+
+
 	int ctr2 = 0;
 	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
 

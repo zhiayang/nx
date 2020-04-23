@@ -70,7 +70,7 @@ namespace ipc
 		return ret;
 	}
 
-	mem_ticket_t collect_memory(uint64_t ticketId)
+	mem_ticket_t collect_memory_ticket(uint64_t ticketId)
 	{
 		mem_ticket_t ticket { 0 };
 		__nx_syscall_2v(SYSCALL_MEMTICKET_COLLECT, &ticket, ticketId);

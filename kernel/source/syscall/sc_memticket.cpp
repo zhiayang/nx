@@ -37,7 +37,7 @@ namespace nx
 
 	struct MemoryTicket
 	{
-		MemoryTicket(uint64_t id, uint64_t flags, size_t numPages) : id(id), flags(flags), numPages(numPages), refcount(0) { }
+		MemoryTicket(uint64_t id, uint64_t flags, size_t userLen, size_t numPages) : id(id), flags(flags), userLen(userLen), numPages(numPages), refcount(0) { }
 
 		MemoryTicket(const MemoryTicket&) = delete;
 		MemoryTicket& operator = (const MemoryTicket&) = delete;
@@ -48,6 +48,7 @@ namespace nx
 		uint64_t id;
 		uint64_t flags;
 
+		size_t userLen;
 		size_t numPages;
 		size_t refcount;
 
@@ -76,7 +77,7 @@ namespace nx
 			return LockedSection(&ticketLock, [&]() -> auto {
 				auto id = ++ticketId;
 
-				tickets.insert(id, MemoryTicket(flags, ++ticketId, pages));
+				tickets.insert(id, MemoryTicket(flags, ++ticketId, len, pages));
 				return id;
 			});
 		}
@@ -103,14 +104,14 @@ namespace nx
 				LockedSection(&proc->addrSpaceLock, [&]() {
 					proc->addrspace.addSharedRegion(svmr.clone());
 
-					// vmm::mapLazy(virt, tik->numPages, vmm::PAGE_USER, proc);
+					vmm::mapLazy(virt, tik->numPages, vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
 				});
 
 				tik->refcount++;
 				tik->collectors[proc].insert(virt, krt::move(svmr));
 
 				ret_ticket.ptr = virt.ptr();
-				ret_ticket.len = PAGE_SIZE * tik->numPages;
+				ret_ticket.len = tik->userLen;
 				ret_ticket.ticketId = tik->id;
 			});
 		}
