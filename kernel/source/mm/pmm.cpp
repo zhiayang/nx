@@ -18,7 +18,7 @@ namespace pmm
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 	static extmm::State<void, nx::spinlock> extmmState;
 
-	static PhysAddr zeroPageAddr { 0 };
+	static PhysAddr zeroPageAddr { nullptr };
 	PhysAddr getZeroPage()
 	{
 		return zeroPageAddr;

@@ -66,18 +66,25 @@ namespace nx
 		T* lk = 0;
 	};
 
-	template <typename Lk, typename Functor>
+	template <typename T, bool> struct _wrapper { };
+	template <typename T> struct _wrapper<T, true> { _wrapper(T&& v) : value(v) { } T value; };
+
+	// https://stackoverflow.com/a/38540922
+	template <typename Lk, typename Functor, typename Functor_Result = std::invoke_result_t<Functor>>
 	struct LockedSection
 	{
-		LockedSection(Lk* x, Functor&& f)
+		template <typename R = Functor_Result, typename E = std::enable_if_t<std::is_void_v<R>>, typename Q = E>
+		LockedSection(Lk* x, Functor&& fn)
 		{
-			if(x)
-			{
-				this->lk = x;
-				this->lk->lock();
+			this->lk = x;
+			this->lk->lock();
 
-				f();
-			}
+			fn();
+		}
+
+		template <typename R = Functor_Result, typename E = std::enable_if_t<!std::is_void_v<R>>>
+		LockedSection(Lk* x, Functor&& fn) : result((this->lk = x, this->lk->lock(), fn()))
+		{
 		}
 
 		~LockedSection()
@@ -88,11 +95,18 @@ namespace nx
 			}
 		}
 
+		operator std::invoke_result_t<Functor> () const
+		{
+			return result.value;
+		}
+
 		LockedSection(const LockedSection&) = delete;
 		LockedSection(LockedSection&&) = delete;
 
 	private:
 		Lk* lk = 0;
+
+		_wrapper<Functor_Result, !std::is_void_v<Functor_Result>> result;
 	};
 
 	template <typename T>

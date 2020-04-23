@@ -176,6 +176,7 @@ namespace nx
 	public:
 		constexpr __AddressImpl() : m_addr(0) { }
 		constexpr explicit __AddressImpl(addr_t x) : m_addr(x) { }
+		constexpr explicit __AddressImpl(void* x) : m_addr((addr_t) x) { }
 
 		~__AddressImpl() = default;
 		constexpr __AddressImpl(Self&&) = default;
@@ -228,7 +229,7 @@ namespace nx
 			return __AddressImpl<__TagPhys>(this->m_addr);
 		}
 
-		static Self zero() { return Self(0); }
+		static Self zero() { return Self(nullptr); }
 	};
 
 	using PhysAddr = __AddressImpl<__TagPhys>;
