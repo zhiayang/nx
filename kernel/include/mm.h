@@ -95,7 +95,12 @@ namespace nx
 
 
 		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
-		enum class AddressSpaceType { Kernel, KernelHeap, User };
+		enum class AddressSpaceType
+		{
+			Kernel      = 0,
+			KernelHeap  = 1,
+			User        = 2
+		};
 		constexpr size_t NumAddressSpaces = 3;
 
 

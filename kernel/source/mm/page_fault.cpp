@@ -67,7 +67,8 @@ namespace vmm
 			{
 				// now we need to lookup the faulting address in the process' address space.
 				auto proc = scheduler::getCurrentProcess();
-				auto pair = proc->addrspace.lookupVirtualMapping(aligned_cr2);
+				auto pair = proc->addrspace.lock()->lookupVirtualMapping(aligned_cr2);
+
 				if(pair.first.present())
 				{
 					auto ph = pair.second;
@@ -75,10 +76,7 @@ namespace vmm
 					{
 						// make a new one, then map it.
 						auto p = pmm::allocate(1);
-
-						LockedSection(&proc->addrSpaceLock, [&]() {
-							proc->addrspace.addPhysicalMapping(aligned_cr2, p);
-						});
+						proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, p);
 
 						ph = opt::some(p);
 					}
@@ -112,9 +110,7 @@ namespace vmm
 				vmm::mapAddressOverwrite(VirtAddr(aligned_cr2), PhysAddr(phys), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 				{
 					auto proc = scheduler::getCurrentProcess();
-
-					autolock lk(&proc->addrSpaceLock);
-					proc->addrspace.addPhysicalMapping(VirtAddr(aligned_cr2), PhysAddr(phys));
+					proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, phys);
 				}
 
 				// get the old physical address:

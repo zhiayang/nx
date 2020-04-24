@@ -108,9 +108,9 @@ namespace loader
 			auto phys = pmm::allocate(numPages);
 			if(phys.isZero()) { error(err, "failed to allocate memory"); return false; }
 
-			LockedSection(&proc->addrSpaceLock, [&]() {
+			proc->addrspace.perform([&phys, &numPages](auto& addrspace) {
 				for(size_t i = 0; i < numPages; i++)
-					proc->addrspace.allocatedPhysPages.append(phys + (i * PAGE_SIZE));
+					addrspace.allocatedPhysPages.append(phys + (i * PAGE_SIZE));
 			});
 
 			// figure out how we should map this.
@@ -165,9 +165,9 @@ namespace loader
 						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 
 						pmm::deallocate(phys, numPages);
-						LockedSection(&proc->addrSpaceLock, [proc, phys, &numPages]() {
+						proc->addrspace.perform([&phys, &numPages](auto& addrspace) {
 							for(size_t i = 0; i < numPages; i++)
-								proc->addrspace.allocatedPhysPages.remove_all(phys + (i * PAGE_SIZE));
+								addrspace.allocatedPhysPages.remove_all(phys + (i * PAGE_SIZE));
 						});
 
 						return false;

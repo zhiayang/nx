@@ -113,6 +113,111 @@ namespace nx
 		_wrapper<Functor_Result, !std::is_void_v<Functor_Result>> result;
 	};
 
+	template <typename T, typename Lk = nx::mutex>
+	struct Synchronised
+	{
+	private:
+		struct LockedInstance;
+
+	public:
+		~Synchronised() { }
+
+		template <typename = std::enable_if_t<std::is_default_constructible_v<T>>>
+		Synchronised() { }
+
+		template <typename = std::enable_if_t<std::is_copy_constructible_v<T>>>
+		Synchronised(const T& x) : value(x) { }
+
+		template <typename = std::enable_if_t<std::is_move_constructible_v<T>>>
+		Synchronised(T&& x) : value(krt::move(x)) { }
+
+		Synchronised(const Synchronised&) = delete;
+		Synchronised& operator = (const Synchronised&) = delete;
+
+
+		Synchronised(Synchronised&& oth) : lk(krt::move(assert_not_held(oth.lk))), value(krt::move(oth.value)) { }
+		Synchronised& operator = (Synchronised&& oth)
+		{
+			this->lk    = krt::move(assert_not_held(oth.lk));
+			this->value = krt::move(oth.value);
+
+			return *this;
+		}
+
+		bool isLocked() { return this->lk.held(); }
+
+		template <typename Functor, typename R = std::invoke_result_t<Functor>, typename E = std::enable_if_t<!std::is_same_v<void, std::invoke_result_t<Functor>>>>
+		R map(Functor&& fn)
+		{
+			autolock autolk(&this->lk);
+			return fn(this->value);
+		}
+
+		template <typename Functor>
+		void perform(Functor&& fn)
+		{
+			autolock autolk(&this->lk);
+			fn(this->value);
+		}
+
+
+		LockedInstance lock()
+		{
+			return LockedInstance(*this);
+		}
+
+		T* get()
+		{
+			if(!this->lk.held())
+				abort("cannot get while not locked!");
+
+			return &this->value;
+		}
+
+		// unsafe!
+		T* unsafeGet()
+		{
+			return &this->value;
+		}
+
+		Lk& getLock()
+		{
+			return this->lk;
+		}
+
+	private:
+		Lk lk;
+		T value;
+
+		static Lk& assert_not_held(Lk& lk) { if(lk.held()) abort("cannot move held Synchronised"); return lk; }
+
+
+		struct LockedInstance
+		{
+			T* operator -> () { return &this->sync.value; }
+			~LockedInstance() { this->sync.lk.unlock(); }
+
+		private:
+			LockedInstance(Synchronised& sync) : sync(sync) { this->sync.lk.lock(); }
+
+			LockedInstance(LockedInstance&&) = delete;
+			LockedInstance(const LockedInstance&) = delete;
+
+			LockedInstance& operator = (LockedInstance&&) = delete;
+			LockedInstance& operator = (const LockedInstance&) = delete;
+
+			Synchronised& sync;
+
+			friend struct Synchronised;
+		};
+	};
+
+
+
+
+
+
+
 	template <typename T>
 	struct CriticalSection
 	{

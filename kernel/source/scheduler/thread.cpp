@@ -120,9 +120,7 @@ namespace scheduler
 
 			auto phys = pmm::allocate(n);
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
-			LockedSection(&proc->addrSpaceLock, [&]() {
-				proc->addrspace.addRegion(virt, phys, n);
-			});
+			proc->addrspace.lock()->addRegion(virt, phys, n);
 
 			// map it in the target address space. don't map it user-accessible.
 			vmm::mapAddress(virt, phys, n, target_flags, proc);
@@ -201,9 +199,7 @@ namespace scheduler
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt.addr();
 
-			LockedSection(&proc->addrSpaceLock, [&]() {
-				proc->addrspace.addRegion(virt, phys, 1);
-			});
+			proc->addrspace.lock()->addRegion(virt, phys, 1);
 		}
 
 
@@ -234,9 +230,7 @@ namespace scheduler
 			// note: we must map this user-accessible!
 			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
 			vmm::mapAddress(virt, phys, numPages, target_flags | user_flags, proc);
-			LockedSection(&proc->addrSpaceLock, [&]() {
-				proc->addrspace.addRegion(virt, phys, numPages);
-			});
+			proc->addrspace.lock()->addRegion(virt, phys, numPages);
 
 
 			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);

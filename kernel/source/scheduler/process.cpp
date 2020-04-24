@@ -17,7 +17,7 @@ namespace scheduler
 			allProcesses = nx::list<Process*>();
 
 		auto proc = new Process();
-		proc->addrspace.init();
+		proc->addrspace.lock()->init();
 
 		proc->processId = ++processIdCounter;
 		proc->processName = name;
@@ -32,7 +32,7 @@ namespace scheduler
 			allProcesses.append(proc);
 		});
 
-		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->addrspace.cr3);
+		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->addrspace.lock()->cr3);
 		return proc;
 	}
 
@@ -44,7 +44,7 @@ namespace scheduler
 		delete proc->ioctx;
 
 		vmm::destroy(proc);
-		proc->addrspace.destroy();
+		proc->addrspace.lock()->destroy();
 
 		// TODO: remove it from its cpu list as well
 		LockedSection(&processListLock, [&proc]() {
@@ -71,7 +71,7 @@ namespace scheduler
 	{
 		KernelProcess = Process();
 		KernelProcess.processId = 0;
-		KernelProcess.addrspace.init(cr3);
+		KernelProcess.addrspace.lock()->init(cr3);
 
 		setInitPhase(SchedulerInitPhase::KernelProcessInit);
 	}
