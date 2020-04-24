@@ -6,9 +6,9 @@
 
 namespace nx
 {
-
 	void syscall::do_nothing()
 	{
+		warn("syscall", "pid %lu called invalid syscall vector");
 	}
 
 	void syscall::exit(int status)

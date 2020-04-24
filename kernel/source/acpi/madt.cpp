@@ -89,7 +89,7 @@ namespace acpi
 
 			iterateTables(madt, MADT_ENTRY_TYPE_INT_SRC, [](madt_record_header_t* rec) {
 				auto intsrc = (MADT_IntSourceOverride*) rec;
-				log("acpi", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, intsrc->globalSysInterrupt);
+				log("acpi", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, (int) intsrc->globalSysInterrupt);
 
 				device::ioapic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
 			});

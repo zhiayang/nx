@@ -68,42 +68,23 @@ namespace krt
 
 
 
+extern "C" {
+	int atoi(const char* nptr);
 
+	long strtol(const char* nptr, char** endptr, int base);
+	long long strtoll(const char* nptr, char** endptr, int base);
+	unsigned long strtoul(const char* nptr, char** endptr, int base);
+	unsigned long long strtoull(const char* nptr, char** endptr, int base);
 
+	int abs(int j);
+	long int labs(long int j);
+	long long llabs(long long int j);
 
+	int snprintf(char* str, size_t size, const char* fmt, ...);
+	int cbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, ...);
+	int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, va_list parameters);
+}
 
-
-// c stuff!
-__BEGIN_DECLS
-
-int atoi(const char* nptr);
-long atol(const char* nptr);
-double atof(const char* nptr);
-long long atoll(const char* nptr);
-
-float strtof(const char* nptr, char** endptr);
-double strtod(const char* nptr, char** endptr);
-long double strtold(const char* nptr, char** endptr);
-
-long strtol(const char* nptr, char** endptr, int base);
-long long strtoll(const char* nptr, char** endptr, int base);
-unsigned long strtoul(const char* nptr, char** endptr, int base);
-unsigned long long strtoull(const char* nptr, char** endptr, int base);
-
-int abs(int j);
-long int labs(long int j);
-long long llabs(long long int j);
-
-char* itoa(int num, char* dest, int base);
-char* ltoa(long num, char* dest, int base);
-char* lltoa(long long num, char* dest, int base);
-
-
-int cbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, ...);
-int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, va_list parameters);
-
-
-__END_DECLS
 
 
 
