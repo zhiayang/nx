@@ -201,11 +201,7 @@ namespace scheduler
 					thr = ss->DestructionQueue.popFront();
 					assert(thr);
 
-					log("sched", "destroying thread %lu", thr->threadId);
-
 					ss->ThreadList.remove_all(thr);
-
-					log("sched", "removed thread %lu", thr->threadId);
 				});
 
 				destroyThread(thr);

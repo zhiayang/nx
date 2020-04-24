@@ -208,6 +208,9 @@ namespace util
 		// T&& &  ->  T&
 		// T&& && ->  T&&
 
+		if(thing.empty())
+			return thing;
+
 		if(ref == "&")
 		{
 			string ret;
@@ -825,6 +828,7 @@ namespace util
 					::= O <type>        # r-value reference (C++11)
 					::= C <type>        # complex pair (C99)
 					::= G <type>        # imaginary (C99)
+					::= Dp <type>       # pack expansion (C++11)
 					::= <substitution>
 		*/
 
@@ -883,15 +887,19 @@ namespace util
 			// array type.
 			s.remove_prefix(1);
 
-			if(!isdigit(s[0]))
-				abort("non-constant array not supported!");
+			int n = -1;
+			if(s[0] != '_')
+			{
+				if(!isdigit(s[0]))
+					abort("non-constant array not supported!");
 
-			int n = parseLength(s);
+				n = parseLength(s);
+			}
 
 			assert(s[0] == '_');
 			s.remove_prefix(1);
 
-			auto ret = parseType(s, st) + sprint(" [%d]", n);
+			auto ret = parseType(s, st) + (n == -1 ? sprint(" []") : sprint(" [%d]", n));
 			st.subs.append(ret);
 
 			return ret;
@@ -901,6 +909,12 @@ namespace util
 			// exception specifier.
 			s.remove_prefix(2);
 			return parseType(s, st) + " noexcept";
+		}
+		else if(s.find("Dp") == 0)
+		{
+			// parameter pack
+			s.remove_prefix(2);
+			return parseType(s, st) + "...";
 		}
 		else if(s[0] == 'S')
 		{
@@ -1353,6 +1367,8 @@ namespace util
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
 		// _ZN3krt4moveIRcEEONS_16remove_referenceIT_E4typeEOS3_
 		// _ZN3krt15prio_q_internal11skip_vectorIN2nx10interrupts13irq_handler_tELm32ENS2_10_allocatorENS2_8_aborterEE7destroyIS4_EENSt9enable_ifIXntsrSt6is_podIT_E5valueEvE4typeEv
+		// _ZZN2nxL8__loggerIJRjS1_EEEviPKcS3_DpOT_ENUlPvS3_mE_4_FUNES7_S3_m
+		// _ZN2nx9_internal23_consume_neither_sprintIRPKcJRA_cRiRmEvPvEEmPFmS9_S3_mES9_RKNS_11format_argsES3_OT_DpOT0_
 
 		State st;
 		return parseMangledName(input, st);

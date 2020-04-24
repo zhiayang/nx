@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 
-// #include <stdio.h>
 #include "krt.h"
 
 #include <math.h>
@@ -55,6 +54,41 @@ static size_t noop_callback(void* ctx, const char* str, size_t amount)
 	return amount;
 }
 
+
+extern "C" int snprintf(char* str, size_t size, const char* format, ...)
+{
+	struct __wrapper
+	{
+		char* buf;
+		size_t len;
+	} wrapper;
+
+	auto cb = [](void* ctx, const char* s, size_t len) -> size_t {
+		auto wrp = (__wrapper*) ctx;
+		if(wrp->len > 0)
+		{
+			size_t todo = (wrp->len > len ? len : wrp->len);
+			memcpy(wrp->buf, s, todo);
+
+			wrp->len -= todo;
+			return todo;
+		}
+		else
+		{
+			return 0;
+		}
+	};
+
+	wrapper.buf = str;
+	wrapper.len = size;
+
+	va_list list;
+	va_start(list, format);
+	int result = vcbprintf((void*) &wrapper, cb, format, list);
+
+	va_end(list);
+	return result;
+}
 
 extern "C" int cbprintf(void* ctx, size_t (*callback)(void*, const char*, size_t), const char* format, ...)
 {

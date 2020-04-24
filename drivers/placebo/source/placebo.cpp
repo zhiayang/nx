@@ -73,20 +73,20 @@ int main()
 			}
 		}
 
-		if(nx::ipc::poll() > 0)
-		{
-			nx::ipc::message_body_t body;
-			nx::ipc::receive(&body);
+		// if(nx::ipc::poll() > 0)
+		// {
+		// 	nx::ipc::message_body_t body;
+		// 	nx::ipc::receive(&body);
 
-			auto x = nx::ipc::extract<uint64_t>(body);
+		// 	auto x = nx::ipc::extract<uint64_t>(body);
 
-			auto ticket = nx::ipc::collect_memory_ticket(1);
-			memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
+		// 	auto ticket = nx::ipc::collect_memory_ticket(1);
+		// 	memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
 
-			printf("signalled! (%llu) %p, %zu\n", x, ticket.ptr, ticket.len);
+		// 	printf("signalled! (%llu) %p, %zu\n", x, ticket.ptr, ticket.len);
 
-			nx::ipc::release_memory_ticket(ticket);
-		}
+		// 	nx::ipc::release_memory_ticket(ticket);
+		// }
 	}
 }
 
