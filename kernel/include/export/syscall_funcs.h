@@ -18,6 +18,8 @@ namespace nx
 	constexpr uint64_t SYSCALL_IPC_RECEIVE          = 5;
 	constexpr uint64_t SYSCALL_IPC_RECEIVE_BLOCK    = 6;
 	constexpr uint64_t SYSCALL_IPC_SET_SIG_HANDLER  = 7;
+	constexpr uint64_t SYSCALL_IPC_SIGNAL           = 8;
+	constexpr uint64_t SYSCALL_IPC_SIGNAL_BLOCK     = 9;
 
 	constexpr uint64_t SYSCALL_MMAP_ANON            = 10;
 	constexpr uint64_t SYSCALL_MMAP_FILE            = 11;

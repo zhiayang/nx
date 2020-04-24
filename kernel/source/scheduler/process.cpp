@@ -7,18 +7,19 @@
 namespace nx {
 namespace scheduler
 {
-	static pid_t processIdCounter = 1;
-	static nx::list<Process*> AllProcesses;
+	static pid_t processIdCounter = 0;
+	static nx::mutex processListLock;
+	static nx::list<Process*> allProcesses;
 
 	Process* createProcess(const nx::string& name, int flags)
 	{
-		if(processIdCounter == 1)
-			AllProcesses = nx::list<Process*>();
+		if(processIdCounter == 0)
+			allProcesses = nx::list<Process*>();
 
 		auto proc = new Process();
 		proc->addrspace.init();
 
-		proc->processId = processIdCounter++;
+		proc->processId = ++processIdCounter;
 		proc->processName = name;
 		proc->flags = flags;
 
@@ -27,7 +28,9 @@ namespace scheduler
 
 		vmm::init(proc);
 
-		AllProcesses.append(proc);
+		LockedSection(&processListLock, [&proc]() {
+			allProcesses.append(proc);
+		});
 
 		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->addrspace.cr3);
 		return proc;
@@ -44,7 +47,10 @@ namespace scheduler
 		proc->addrspace.destroy();
 
 		// TODO: remove it from its cpu list as well
-		AllProcesses.remove_all(proc);
+		LockedSection(&processListLock, [&proc]() {
+			allProcesses.remove_all(proc);
+		});
+
 		getSchedState()->ProcessList.remove_all(proc);
 
 		log("sched", "destroyed process '%s' (pid: %lu)", proc->processName.cstr(), proc->processId);
@@ -94,13 +100,24 @@ namespace scheduler
 	Process* getProcessWithId(pid_t id)
 	{
 		// oh no
-		for(auto p : AllProcesses)
+		for(auto p : allProcesses)
 			if(p->processId == id)
 				return p;
 
-		return 0;
+		return nullptr;
 	}
 
+
+	Thread* getThreadWithId(pid_t id)
+	{
+		// oh no x2
+		for(auto p : allProcesses)
+			for(auto& t : p->threads)
+				if(t.threadId == id)
+					return &t;
+
+		return nullptr;
+	}
 
 
 	void allowProcessIOPorts(Process* p, const nx::array<krt::pair<uint16_t, size_t>>& allowedPorts)

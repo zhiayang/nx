@@ -43,8 +43,10 @@ namespace syscall
 		SyscallTable[SYSCALL_IPC_POLL]              = (void*) ipc_poll;
 		SyscallTable[SYSCALL_IPC_DISCARD]           = (void*) ipc_discard;
 		SyscallTable[SYSCALL_IPC_RECEIVE]           = (void*) ipc_receive;
-		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) 0;
+		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) do_nothing;
 		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER]   = (void*) ipc_set_signal_handler;
+		SyscallTable[SYSCALL_IPC_SIGNAL]            = (void*) ipc_signal;
+		SyscallTable[SYSCALL_IPC_SIGNAL_BLOCK]      = (void*) ipc_signal_block;
 
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;

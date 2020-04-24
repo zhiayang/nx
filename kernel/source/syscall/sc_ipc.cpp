@@ -72,6 +72,19 @@ namespace nx
 	}
 
 
+	void syscall::ipc_signal(uint64_t target, uint64_t a, uint64_t b, uint64_t c)
+	{
+		// auto thr = scheduler::get
+
+		// ipc::signalThread();
+	}
+
+	void syscall::ipc_signal_block(uint64_t target, uint64_t a, uint64_t b, uint64_t c)
+	{
+
+	}
+
+
 
 	// returns the old handler.
 	void* syscall::ipc_set_signal_handler(uint64_t sigType, void* new_handler)

@@ -38,6 +38,8 @@ namespace nx
 		// returns the old handler.
 		void* ipc_set_signal_handler(uint64_t sigType, void* new_handler);
 
+		void ipc_signal(uint64_t target, uint64_t a, uint64_t b, uint64_t c);
+		void ipc_signal_block(uint64_t target, uint64_t a, uint64_t b, uint64_t c);
 
 		void* mmap_anon(void* req_addr, size_t length, int prot, int flags);
 		void* mmap_file(void* req_addr, size_t length, int prot, int flags, int fd, off_t offset);

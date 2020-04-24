@@ -225,10 +225,6 @@ namespace nx
 			mutex* blockedMtx = 0;
 			uint64_t wakeUpTimestamp = 0;
 
-
-			nx::list<PageExtent<VirtAddr>> cleanupPages;
-
-
 			// saved information from context switches:
 			addr_t kernelStackTop = 0;
 			addr_t kernelStack;
@@ -265,6 +261,7 @@ namespace nx
 		void addProcess(Process* p);
 
 		Process* getProcessWithId(pid_t id);
+		Thread* getThreadWithId(pid_t id);
 
 
 

@@ -110,8 +110,6 @@ namespace scheduler
 			auto size = USER_STACK_SIZE / PAGE_SIZE;
 			auto addr = vmm::allocate(size, vmm::AddressSpaceType::User, target_flags | user_flags, proc);
 
-			thr->cleanupPages.append(PageExtent(addr, size));
-
 			u_stackTop = addr + USER_STACK_SIZE;
 		}
 
@@ -122,6 +120,9 @@ namespace scheduler
 
 			auto phys = pmm::allocate(n);
 			auto virt = vmm::allocateAddrSpace(n, vmm::AddressSpaceType::User, proc);
+			LockedSection(&proc->addrSpaceLock, [&]() {
+				proc->addrspace.addRegion(virt, phys, n);
+			});
 
 			// map it in the target address space. don't map it user-accessible.
 			vmm::mapAddress(virt, phys, n, target_flags, proc);
@@ -178,8 +179,6 @@ namespace scheduler
 			// clear the temp mapping
 			vmm::unmapAddress(scratch, n);
 			vmm::deallocateAddrSpace(scratch, n);
-
-			thr->cleanupPages.append(PageExtent(virt, n));
 		}
 
 
@@ -202,7 +201,9 @@ namespace scheduler
 			vmm::mapAddress(virt, phys, 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE | vmm::PAGE_USER, proc);
 			thr->fpuSavedStateBuffer = virt.addr();
 
-			thr->cleanupPages.append(PageExtent(virt, 1));
+			LockedSection(&proc->addrSpaceLock, [&]() {
+				proc->addrspace.addRegion(virt, phys, 1);
+			});
 		}
 
 
@@ -233,6 +234,10 @@ namespace scheduler
 			// note: we must map this user-accessible!
 			auto virt = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User, proc);
 			vmm::mapAddress(virt, phys, numPages, target_flags | user_flags, proc);
+			LockedSection(&proc->addrSpaceLock, [&]() {
+				proc->addrspace.addRegion(virt, phys, numPages);
+			});
+
 
 			auto scratch = vmm::allocateAddrSpace(numPages, vmm::AddressSpaceType::User);
 			vmm::mapAddress(scratch, phys, numPages, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
@@ -270,13 +275,9 @@ namespace scheduler
 				vmm::unmapAddress(scratchMaster.pageAligned(), numPages);
 			}
 
-
 			// ok we should be done.
 			vmm::unmapAddress(scratch, numPages);
-
-			thr->cleanupPages.append(PageExtent(virt, numPages));
 		}
-
 
 		if(isUserProc)
 		{
@@ -304,12 +305,6 @@ namespace scheduler
 		auto proc = thr->parent;
 		assert(proc);
 
-		// for(const auto [ addr, size ] : thr->cleanupPages)
-		// {
-		// 	log("sched", "cleaning up %p - %p", addr, addr + size*PAGE_SIZE);
-		// 	vmm::deallocate(addr, size, proc);
-		// }
-
 		// save this for later.
 		auto id = thr->threadId;
 
@@ -325,9 +320,6 @@ namespace scheduler
 			destroyProcess(proc);
 		}
 	}
-
-
-
 }
 }
 
