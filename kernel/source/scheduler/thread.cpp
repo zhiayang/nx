@@ -143,12 +143,23 @@ namespace scheduler
 			auto codeSeg = isUserProc ? RING3_CODE_SEGMENT : RING0_CODE_SEGMENT;
 			auto dataSeg = isUserProc ? RING3_STACK_SEGMENT : RING0_STACK_SEGMENT;
 
-			*--kstk     = dataSeg;          // stack segment
-			*--kstk     = userRSP.addr();   // stack pointer
-			*--kstk     = 0x202;            // flags
-			*--kstk     = codeSeg;          // code segment
-			*--kstk     = (addr_t) fn;      // return addr
+			auto stackPointer = userRSP;
 
+			// where we are now, the stack should be 16-byte aligned. (regardless if it was a user or kernel thread)
+			assert(stackPointer.isAlignedTo(0x10));
+
+			// BUT, the system-v ABI mandates that the stack is 16-byte aligned *before* a call instruction.
+			// since the iret will behave as if somebody called the function, then *on entry* to the function,
+			// the stack should be offset by 8 bytes.
+			stackPointer -= 8;
+
+			*--kstk     = dataSeg;              // stack segment
+			*--kstk     = stackPointer.addr();  // stack pointer
+			*--kstk     = 0x202;                // flags
+			*--kstk     = codeSeg;              // code segment
+			*--kstk     = (addr_t) fn;          // return addr
+
+			error("thr", "user rsp = %p", userRSP.ptr());
 
 			// now for the registers.
 			*--kstk     = 0;            // r15
