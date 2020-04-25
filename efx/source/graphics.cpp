@@ -131,8 +131,8 @@ namespace graphics
 
 			// i think we can still print stuff right? efi should be smarter than this
 			efi::systable()->ConOut->ClearScreen(efi::systable()->ConOut);
-			efi::println("video mode set! framebuffer: %p, size: %s (%zu pages)\n", fbAddress,
-				efx::humanSizedBytes(frameBufferSize).cstr(), (frameBufferSize + 0xFFF) / 0x1000);
+			efi::println("video mode set! framebuffer: %p, size: %zu MB (%zu pages)\n", fbAddress,
+				frameBufferSize / (1024 * 1024), (frameBufferSize + 0xFFF) / 0x1000);
 		}
 	}
 }

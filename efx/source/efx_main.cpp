@@ -93,7 +93,7 @@ void efx::init()
 		kernelBootInfo->initrdSize = len;
 		kernelBootInfo->initrdBuffer = buf;
 
-		efi::println("loaded initrd %s, %s", path.cstr(), humanSizedBytes(len).cstr());
+		efi::println("loaded initrd %s, %zu kB", path.cstr(), len / 1024);
 	}
 
 

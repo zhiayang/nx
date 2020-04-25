@@ -102,7 +102,7 @@ namespace fs
 			efi::println("partition %zu (", i);
 			efi::println("    label: %s", fs.label.data());
 			efi::println("    guid:  %s", efi::guid::tostring(fs.guid).data());
-			efi::println("    size:  %s", efx::humanSizedBytes(fs.volumeSize).data());
+			efi::println("    size:  %zu MB", fs.volumeSize / (1024 * 1024));
 			efi::println(")\n");
 
 			filesystems.append(fs);

@@ -51,8 +51,6 @@ namespace efx
 
 	using string = krt::string<efi_allocator, efi_aborter>;
 
-	efx::string humanSizedBytes(size_t bytes, bool thou = false);
-
 	void init();
 
 	namespace options
