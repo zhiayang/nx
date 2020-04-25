@@ -119,6 +119,9 @@ namespace nx
 	private:
 		struct LockedInstance;
 
+		Lk lk;
+		T value;
+
 	public:
 		~Synchronised() { }
 
@@ -146,8 +149,8 @@ namespace nx
 
 		bool isLocked() { return this->lk.held(); }
 
-		template <typename Functor, typename R = std::invoke_result_t<Functor>, typename E = std::enable_if_t<!std::is_same_v<void, std::invoke_result_t<Functor>>>>
-		R map(Functor&& fn)
+		template <typename Functor>
+		auto map(Functor&& fn) -> decltype(fn(this->value))
 		{
 			autolock autolk(&this->lk);
 			return fn(this->value);
@@ -186,8 +189,6 @@ namespace nx
 		}
 
 	private:
-		Lk lk;
-		T value;
 
 		static Lk& assert_not_held(Lk& lk) { if(lk.held()) abort("cannot move held Synchronised"); return lk; }
 

@@ -15,13 +15,13 @@ namespace nx
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		if(proc->pendingMessages.size() > 0)
-		{
-			autolock lk(&proc->msgQueueLock);
-			auto msg = proc->pendingMessages.popFront();
-
-			disposeMessage(msg);
-		}
+		proc->pendingMessages.perform([&proc](auto& queue) {
+			if(!queue.empty())
+			{
+				auto msg = queue.popFront();
+				disposeMessage(msg);
+			}
+		});
 	}
 
 	size_t syscall::ipc_poll()
@@ -29,7 +29,7 @@ namespace nx
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		return proc->pendingMessages.size();
+		return proc->pendingMessages.lock()->size();
 	}
 
 	uint64_t syscall::ipc_receive(message_body_t* msg)
@@ -46,13 +46,16 @@ namespace nx
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		if(proc->pendingMessages.empty())
-			return 0;
+		return proc->pendingMessages.map([&proc, &output](auto& queue) -> uint64_t {
+			if(queue.empty())
+				return 0;
 
-		auto msg = proc->pendingMessages.front();
-		if(output) *output = msg.body;
+			auto msg = queue.front();
+			if(!copy_to_user(output, &msg.body, sizeof(message_body_t)))
+				return 0;
 
-		return msg.senderId;
+			return msg.senderId;
+		});
 	}
 
 	int64_t syscall::ipc_send(uint64_t target, message_body_t* body)
@@ -61,13 +64,17 @@ namespace nx
 		auto senderId = (uint64_t) scheduler::getCurrentProcess()->processId;
 
 		// ok, add it.
-		addMessage(message_t {
+		auto msg = message_t {
 			.senderId   = senderId,
 			.targetId   = target,
 			.flags      = 0,
-			.body       = *body
-		});
+			.body       = { }
+		};
 
+		if(!copy_to_kernel(&msg.body, body, sizeof(ipc::message_body_t)))
+			return 0;
+
+		addMessage(msg);
 		return 0;
 	}
 

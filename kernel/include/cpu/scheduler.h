@@ -141,8 +141,7 @@ namespace nx
 			size_t tlsAlign = 0;
 			size_t tlsSize = 0;
 
-			nx::mutex msgQueueLock;
-			nx::list<ipc::message_t> pendingMessages;
+			Synchronised<nx::list<ipc::message_t>, nx::mutex> pendingMessages;
 
 			vmm::AddressSpace addrspace;
 
