@@ -108,10 +108,7 @@ namespace loader
 			auto phys = pmm::allocate(numPages);
 			if(phys.isZero()) { error(err, "failed to allocate memory"); return false; }
 
-			proc->addrspace.perform([&phys, &numPages](auto& addrspace) {
-				for(size_t i = 0; i < numPages; i++)
-					addrspace.allocatedPhysPages.append(phys + (i * PAGE_SIZE));
-			});
+			proc->addrspace.lock()->addTrackedPhysPages(phys, numPages);
 
 			// figure out how we should map this.
 			uint64_t virtFlags = 0;
@@ -165,10 +162,7 @@ namespace loader
 						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
 
 						pmm::deallocate(phys, numPages);
-						proc->addrspace.perform([&phys, &numPages](auto& addrspace) {
-							for(size_t i = 0; i < numPages; i++)
-								addrspace.allocatedPhysPages.remove_all(phys + (i * PAGE_SIZE));
-						});
+						proc->addrspace.lock()->removeTrackedPhysPages(phys, numPages);
 
 						return false;
 					}

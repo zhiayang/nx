@@ -91,8 +91,8 @@ namespace scheduler
 		// load the new fsbase
 		cpu::writeFSBase(newthr->fsBase);
 
-		auto oldcr3 = oldthr->parent->addrspace.unsafeGet()->cr3;
-		auto newcr3 = newthr->parent->addrspace.unsafeGet()->cr3;
+		auto oldcr3 = oldthr->parent->addrspace.cr3();
+		auto newcr3 = newthr->parent->addrspace.cr3();
 
 		ss->CurrentThread = newthr;
 

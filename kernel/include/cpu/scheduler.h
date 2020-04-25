@@ -140,13 +140,7 @@ namespace nx
 			nx::mutex msgQueueLock;
 			nx::list<ipc::message_t> pendingMessages;
 
-			// see the paragraphs in _heap_impl.h on why this is a spinlock and not
-			// a mutex -- the same concept applies, cos we might need to call mapAddress() to
-			// expand the heap.
-			// nx::spinlock addrSpaceLock; // this locks both of these below.
-			// vmm::AddressSpace addrspace;
-
-			Synchronised<vmm::AddressSpace, nx::spinlock> addrspace;
+			vmm::AddressSpace addrspace;
 
 
 			vfs::IOCtx* ioctx = 0;

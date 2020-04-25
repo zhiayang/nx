@@ -18,22 +18,22 @@ namespace vmm
 	}
 
 
-	void AddressSpace::init(PhysAddr cr3)
+	void AddressSpace::LockedAddrSpace::init(PhysAddr cr3)
 	{
-		if(cr3.nonZero())   this->cr3 = cr3;
-		else                this->cr3 = pmm::allocate(1);
+		if(cr3.nonZero())   this->addrspace.theCR3 = cr3;
+		else                this->addrspace.theCR3 = pmm::allocate(1);
 	}
 
-	void AddressSpace::destroy()
+	void AddressSpace::LockedAddrSpace::destroy()
 	{
 		size_t num = 1;
-		pmm::deallocate(this->cr3, 1);
+		pmm::deallocate(this->addrspace.cr3(), 1);
 
-		for(auto x : this->allocatedPhysPages)
+		for(auto x : this->addrspace.allocatedPhysPages)
 			num++, pmm::deallocate(x, 1);
 
 		// destroy each region.
-		for(const auto& r : this->regions)
+		for(const auto& r : this->addrspace.regions)
 		{
 			for(auto [ v, p ] : r.backingPhysPages)
 			{
@@ -48,13 +48,46 @@ namespace vmm
 		log("adrspc", "freed %zu physical pages", num);
 	}
 
+	PhysAddr AddressSpace::cr3()
+	{
+		return this->theCR3;
+	}
 
-	void AddressSpace::addRegion(VirtAddr addr, size_t num)
+	extmm::State<>& AddressSpace::getVMMState(AddressSpaceType addrspc)
+	{
+		return this->vmmStates[(size_t) addrspc];
+	}
+
+	void AddressSpace::LockedAddrSpace::addTrackedPhysPage(PhysAddr addr)
+	{
+		this->addrspace.allocatedPhysPages.append(addr);
+	}
+
+	void AddressSpace::LockedAddrSpace::addTrackedPhysPages(PhysAddr base, size_t count)
+	{
+		for(size_t i = 0; i < count; i++)
+			this->addrspace.allocatedPhysPages.append(base + ofsPages(i));
+	}
+
+	void AddressSpace::LockedAddrSpace::removeTrackedPhysPage(PhysAddr addr)
+	{
+		this->addrspace.allocatedPhysPages.remove_all(addr);
+	}
+
+	void AddressSpace::LockedAddrSpace::removeTrackedPhysPages(PhysAddr base, size_t count)
+	{
+		for(size_t i = 0; i < count; i++)
+			this->addrspace.allocatedPhysPages.remove_all(base + ofsPages(i));
+	}
+
+
+
+	void AddressSpace::LockedAddrSpace::addRegion(VirtAddr addr, size_t num)
 	{
 		assert(heap::initialised());
 		assert(addr.isAligned());
 
-		for(auto& vmr : this->regions)
+		for(auto& vmr : this->addrspace.regions)
 		{
 			if(end(addr, num) == vmr.addr)
 			{
@@ -73,10 +106,10 @@ namespace vmm
 			}
 		}
 
-		this->regions.emplace(addr, num);
+		this->addrspace.regions.emplace(addr, num);
 	}
 
-	void AddressSpace::addRegion(VirtAddr addr, PhysAddr physStart, size_t num)
+	void AddressSpace::LockedAddrSpace::addRegion(VirtAddr addr, PhysAddr physStart, size_t num)
 	{
 		assert(heap::initialised());
 		assert(addr.isAligned() && physStart.isAligned());
@@ -86,7 +119,7 @@ namespace vmm
 				vmr.backingPhysPages[virt + ofsPages(i)] = phys + ofsPages(i);
 		};
 
-		for(auto& vmr : this->regions)
+		for(auto& vmr : this->addrspace.regions)
 		{
 			if(end(addr, num) == vmr.addr)
 			{
@@ -115,28 +148,28 @@ namespace vmm
 		auto vmr = VMRegion(addr, num);
 		update_phys(vmr, vmr.addr, physStart, num);
 
-		this->regions.append(krt::move(vmr));
+		this->addrspace.regions.append(krt::move(vmr));
 	}
 
-	void AddressSpace::addSharedRegion(SharedVMRegion&& region)
+	void AddressSpace::LockedAddrSpace::addSharedRegion(SharedVMRegion&& region)
 	{
-		if(this->sharedRegions.find(region) != this->sharedRegions.end())
+		if(this->addrspace.sharedRegions.find(region) != this->addrspace.sharedRegions.end())
 			abort("vmregion: adding duplicate region!");
 
-		this->sharedRegions.append(krt::move(region));
+		this->addrspace.sharedRegions.append(krt::move(region));
 	}
 
-	void AddressSpace::removeSharedRegion(SharedVMRegion&& region)
+	void AddressSpace::LockedAddrSpace::removeSharedRegion(SharedVMRegion&& region)
 	{
-		this->sharedRegions.remove_all(region);
+		this->addrspace.sharedRegions.remove_all(region);
 	}
 
-	void AddressSpace::freeRegion(VirtAddr addr, size_t num, bool freePhys)
+	void AddressSpace::LockedAddrSpace::freeRegion(VirtAddr addr, size_t num, bool freePhys)
 	{
 		assert(heap::initialised());
 		assert(addr.isAligned());
 
-		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
+		for(auto it = this->addrspace.regions.begin(); it != this->addrspace.regions.end(); ++it)
 		{
 			auto& vmr = *it;
 
@@ -158,7 +191,7 @@ namespace vmm
 
 					vmr.shrink_up(num);
 					if(vmr.numPages == 0)
-						this->regions.erase(it);
+						this->addrspace.regions.erase(it);
 
 					return;
 				}
@@ -176,7 +209,7 @@ namespace vmm
 
 					vmr.shrink_down(num);
 					if(vmr.numPages == 0)
-						this->regions.erase(it);
+						this->addrspace.regions.erase(it);
 
 					return;
 				}
@@ -203,12 +236,12 @@ namespace vmm
 					// then shrink it *all the way down*:
 					vmr.shrink_down(num + numBackPages);
 					if(vmr.numPages == 0)
-						this->regions.erase(it);
+						this->addrspace.regions.erase(it);
 
 					// shrink_up the back vmr:
 					back_vmr.shrink_up(numFrontPages + num);
 					if(back_vmr.numPages > 0)
-						this->regions.append(krt::move(back_vmr));
+						this->addrspace.regions.append(krt::move(back_vmr));
 
 					return;
 				}
@@ -218,9 +251,9 @@ namespace vmm
 		abort("vmregion: did not find matching extent for (%p, %zu)", addr, num);
 	}
 
-	PhysAddr AddressSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
+	PhysAddr AddressSpace::LockedAddrSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
 	{
-		for(auto it = this->regions.begin(); it != this->regions.end(); ++it)
+		for(auto it = this->addrspace.regions.begin(); it != this->addrspace.regions.end(); ++it)
 		{
 			auto& vmr = *it;
 
@@ -235,7 +268,7 @@ namespace vmm
 			}
 		}
 
-		for(auto vmr = this->sharedRegions.begin(); vmr != this->sharedRegions.end(); ++vmr)
+		for(auto vmr = this->addrspace.sharedRegions.begin(); vmr != this->addrspace.sharedRegions.end(); ++vmr)
 		{
 			if(vmr->addr <= virt && virt < vmr->end())
 			{
@@ -259,21 +292,21 @@ namespace vmm
 		return PhysAddr::zero();
 	}
 
-	krt::pair<optional<VirtAddr>, optional<PhysAddr>> AddressSpace::lookupVirtualMapping(VirtAddr addr)
+	krt::pair<optional<VirtAddr>, optional<PhysAddr>> AddressSpace::LockedAddrSpace::lookupVirtualMapping(VirtAddr addr)
 	{
 		auto contains = [](const auto& r, VirtAddr v) -> bool {
 			return r.addr <= v && v < r.end();
 		};
 
 		// it is more likely that this will involve the shared mappings, so search those first.
-		for(auto& svmr : this->sharedRegions)
+		for(auto& svmr : this->addrspace.sharedRegions)
 		{
 			if(contains(svmr, addr))
 				return { opt::some(addr), svmr.lookup(addr) };
 		}
 
 		// oof
-		for(auto& vmr : this->regions)
+		for(auto& vmr : this->addrspace.regions)
 		{
 			if(contains(vmr, addr))
 				return { opt::some(addr), vmr.lookup(addr) };

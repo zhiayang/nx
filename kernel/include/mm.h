@@ -183,34 +183,87 @@ namespace nx
 			SharedPhysRegion* backingPhysPages;
 		};
 
+		/*
+			this needs special treatment, because of the shitty way that the kernel is designed.
+
+			because the AddressSpace of a process holds a lot of information, it is not feasible to
+			lock the entire structure when we need to change something. the biggest issue is that
+			the vmmStates have their own lock, and do not need the main addressspace to be locked
+			to manipulate the allocations.
+
+			so, instead of wrapping the AddressSpace in a Synchronised<>, we will manually implement
+			those semantics here; certain methods (eg. those that manipulate regions) will only be
+			callable from a lock()-ed addressspace, while others (eg. cr3(), vmmStates()) can be
+			called on a normal, non-locked instance.
+		*/
 		struct AddressSpace
 		{
-			PhysAddr cr3;
+			// these are accessible without a lock.
+			PhysAddr cr3();
+			extmm::State<>& getVMMState(AddressSpaceType addrspc);
+
+		private:
+			PhysAddr theCR3;
 			nx::array<VMRegion> regions;
 			nx::array<SharedVMRegion> sharedRegions;
+
+			extmm::State<> vmmStates[vmm::NumAddressSpaces];
 
 			// bookkeeping for miscellaneous physical pages that we allocate (eg. for page tables)
 			nx::array<PhysAddr> allocatedPhysPages;
 
-			extmm::State<> vmmStates[vmm::NumAddressSpaces];
+			// this is a spinlock! see the paragraphs in _heap_impl.h on why.
+			nx::spinlock lk;
 
-			void init(PhysAddr cr3 = PhysAddr::zero());
-			void destroy();
+			struct LockedAddrSpace
+			{
+				~LockedAddrSpace() { this->addrspace.lk.unlock(); }
+				LockedAddrSpace* operator -> () { return this; }
 
-			void addRegion(VirtAddr addr, size_t size);
-			void addRegion(VirtAddr virtStart, PhysAddr physStart, size_t size);
+				// here are the methods only accessible from a locked state
 
-			void addSharedRegion(SharedVMRegion&& region);
-			void removeSharedRegion(SharedVMRegion&& region);
+				void init(PhysAddr cr3 = PhysAddr::zero());
+				void destroy();
 
-			void freeRegion(VirtAddr addr, size_t size, bool freePhys);
+				void addRegion(VirtAddr addr, size_t size);
+				void addRegion(VirtAddr virtStart, PhysAddr physStart, size_t size);
 
-			PhysAddr addPhysicalMapping(VirtAddr virt, PhysAddr phys);
+				void addSharedRegion(SharedVMRegion&& region);
+				void removeSharedRegion(SharedVMRegion&& region);
 
-			// if the address was inside the addressspace mapping, then the VirtAddr returned in the
-			// optional will be the same as the input addr. If there is an existing physical mapping
-			// for it also, then the second optional will contain that.
-			krt::pair<optional<VirtAddr>, optional<PhysAddr>> lookupVirtualMapping(VirtAddr addr);
+				void freeRegion(VirtAddr addr, size_t size, bool freePhys);
+
+				PhysAddr addPhysicalMapping(VirtAddr virt, PhysAddr phys);
+
+				// if the address was inside the addressspace mapping, then the VirtAddr returned in the
+				// optional will be the same as the input addr. If there is an existing physical mapping
+				// for it also, then the second optional will contain that.
+				krt::pair<optional<VirtAddr>, optional<PhysAddr>> lookupVirtualMapping(VirtAddr addr);
+
+				void addTrackedPhysPage(PhysAddr addr);
+				void addTrackedPhysPages(PhysAddr base, size_t count);
+
+				void removeTrackedPhysPage(PhysAddr addr);
+				void removeTrackedPhysPages(PhysAddr base, size_t count);
+
+			private:
+				LockedAddrSpace(AddressSpace& sync) : addrspace(sync) { this->addrspace.lk.lock(); }
+
+				LockedAddrSpace(LockedAddrSpace&&) = delete;
+				LockedAddrSpace(const LockedAddrSpace&) = delete;
+
+				LockedAddrSpace& operator = (LockedAddrSpace&&) = delete;
+				LockedAddrSpace& operator = (const LockedAddrSpace&) = delete;
+
+				AddressSpace& addrspace;
+
+				friend struct AddressSpace;
+			};
+
+		public:
+
+			LockedAddrSpace lock() { return LockedAddrSpace(*this); }
+			bool isLocked() { return this->lk.held(); }
 		};
 
 

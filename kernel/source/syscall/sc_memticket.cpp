@@ -100,6 +100,7 @@ namespace nx
 
 				proc->addrspace.lock()->addSharedRegion(svmr.clone());
 
+				// mapLazy will not even map the pages present, so both a read and a write will trap
 				vmm::mapLazy(virt, tik->numPages,
 					vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
 
@@ -140,18 +141,22 @@ namespace nx
 				if(it == tik->collectors.end())
 					return false;
 
+				// find the matching ticket
 				auto it2 = it->value.find(VirtAddr(ticket.ptr));
 				if(it2 == it->value.end())
 					return false;
 
+				// delete it
 				auto svmr = krt::move(it2->value);
 				it->value.erase(it2);
 
+				// if this process released all its collections for *this ticket*, then remove it
 				if(it->value.empty())
 					tik->collectors.erase(it);
 
 				tik->refcount--;
 
+				// remove the collected ticket from the address space
 				vmm::deallocateAddrSpace(svmr.addr, svmr.numPages, proc);
 				vmm::unmapAddress(svmr.addr, svmr.numPages, /* ignore: */ true, proc);
 

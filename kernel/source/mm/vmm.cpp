@@ -32,16 +32,16 @@ namespace vmm
 
 	using ExtMMState = extmm::State<>;
 
-	static size_t getAddrSpace(VirtAddr addr, size_t num)
+	static AddressSpaceType getAddrSpace(VirtAddr addr, size_t num)
 	{
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
 			if(addr >= AddressSpaces[i][0] && addr + ofsPages(num) <= AddressSpaces[i][1])
-				return i;
+				return (AddressSpaceType) i;
 		}
 
 		abort("address %p not in any address space", addr);
-		return 0;
+		return (AddressSpaceType) 0;
 	}
 
 
@@ -49,14 +49,9 @@ namespace vmm
 	{
 		bool isFirst = (proc == scheduler::getKernelProcess());
 
-		// lock the address space for the duration of this.
-		autolock lk(&proc->addrspace.getLock());
-
-		memset(proc->addrspace.get()->vmmStates, 0, sizeof(ExtMMState) * NumAddressSpaces);
-
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
-			auto s = &proc->addrspace.get()->vmmStates[i];
+			auto s = &proc->addrspace.getVMMState((AddressSpaceType) i);
 
 			if(isFirst)
 			{
@@ -80,9 +75,8 @@ namespace vmm
 	{
 		assert(proc && proc->processId != 0);
 
-		autolock lk(&proc->addrspace.getLock());
 		for(size_t i = 0; i < NumAddressSpaces; i++)
-			proc->addrspace.get()->vmmStates[i].destroy();
+			proc->addrspace.getVMMState((AddressSpaceType) i).destroy();
 
 		// note: we don't need to un-setupAddrSpace, because that doesn't
 		// allocate any memory -- only address spaces.
@@ -104,9 +98,7 @@ namespace vmm
 			abort("allocateAddrSpace(): invalid address space '%d'!", type);
 
 
-		auto ret = VirtAddr(proc->addrspace.lock()->vmmStates[(size_t) type]
-			.allocate(num, [](addr_t, size_t) -> bool { return true; }));
-
+		auto ret = VirtAddr(proc->addrspace.getVMMState(type).allocate(num, [](addr_t, size_t) -> bool { return true; }));
 		assert(ret.isAligned());
 
 		return ret;
@@ -119,7 +111,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		return proc->addrspace.lock()->vmmStates[getAddrSpace(addr, num)].deallocate(addr.addr(), num);
+		return proc->addrspace.getVMMState(getAddrSpace(addr, num)).deallocate(addr.addr(), num);
 	}
 
 
@@ -133,7 +125,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		auto virt = VirtAddr(proc->addrspace.lock()->vmmStates[getAddrSpace(addr, num)].allocateSpecific(addr.addr(), num));
+		auto virt = VirtAddr(proc->addrspace.getVMMState(getAddrSpace(addr, num)).allocateSpecific(addr.addr(), num));
 		if(virt.nonZero())  proc->addrspace.lock()->addRegion(virt, num);
 		else                warn("vmm", "failed to allocate specific address (%p, %zu)", addr, num);
 

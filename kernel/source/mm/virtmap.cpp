@@ -90,10 +90,8 @@ namespace vmm
 	// sets up the initial address space for user processes.
 	void setupAddrSpace(scheduler::Process* proc)
 	{
-		assert(proc->addrspace.isLocked());
-
 		// make sure we allocated it.
-		auto cr3 = proc->addrspace.get()->cr3;
+		auto cr3 = proc->addrspace.cr3();
 		assert(cr3.nonZero());
 
 		// ok, give me some temp space.
@@ -191,15 +189,15 @@ namespace vmm
 		// so there's no chance of it being modified.
 		void map()
 		{
-			getPML4()->entries[509] = this->proc->addrspace.unsafeGet()->cr3.addr() | PAGE_PRESENT | PAGE_WRITE;
+			getPML4()->entries[509] = this->proc->addrspace.cr3().addr() | PAGE_PRESENT | PAGE_WRITE;
 
 			// we need to temp-map the 509th entry of the target pml4 to itself as well
 			// to achieve that, get a temp thing to modify it.
 
 			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
-			mapAddress(tmp, this->proc->addrspace.unsafeGet()->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+			mapAddress(tmp, this->proc->addrspace.cr3(), 1, PAGE_PRESENT | PAGE_WRITE);
 
-			((pml_t*) tmp.addr())->entries[509] = this->proc->addrspace.unsafeGet()->cr3.addr() | PAGE_PRESENT | PAGE_WRITE;
+			((pml_t*) tmp.addr())->entries[509] = this->proc->addrspace.cr3().addr() | PAGE_PRESENT | PAGE_WRITE;
 
 			unmapAddress(tmp, 1);
 		}
@@ -209,7 +207,7 @@ namespace vmm
 			getPML4()->entries[509] = 0;
 
 			auto tmp = allocateAddrSpace(1, AddressSpaceType::User);
-			mapAddress(tmp, this->proc->addrspace.unsafeGet()->cr3, 1, PAGE_PRESENT | PAGE_WRITE);
+			mapAddress(tmp, this->proc->addrspace.cr3(), 1, PAGE_PRESENT | PAGE_WRITE);
 
 			((pml_t*) tmp.addr())->entries[509] = 0;
 
@@ -229,7 +227,7 @@ namespace vmm
 
 		// don't track the kernel!
 		if(proc->processId > 0 || scheduler::getInitPhase() > scheduler::SchedulerInitPhase::SchedulerStarted)
-			proc->addrspace.lock()->allocatedPhysPages.append(x);
+			proc->addrspace.lock()->addTrackedPhysPage(x);
 
 		return x;
 	};

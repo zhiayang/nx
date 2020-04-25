@@ -70,6 +70,8 @@ namespace extmm
 			this->bootstrapWatermark = base;
 			this->bootstrapStart = base;
 			this->bootstrapEnd = top;
+
+			this->lock = Lock();
 		}
 
 		void destroy()
