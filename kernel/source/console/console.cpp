@@ -3,6 +3,24 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+
+#if 1
+namespace nx {
+namespace console
+{
+	void init(int x, int y, int scan)
+	{
+
+	}
+
+	void putchar(char c)
+	{
+		fallback::putchar(c);
+	}
+}
+}
+
+#else
 #include "misc/stb/stbtt.h"
 
 namespace nx {
@@ -292,3 +310,4 @@ namespace console
 }
 }
 
+#endif

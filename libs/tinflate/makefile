@@ -1,7 +1,7 @@
 # Makefile for miniz
 # Written in 2019
 
-CFLAGS    = -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
+CFLAGS    = -Wno-pragmas -mno-sse -mno-sse2 -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
 
 .PHONY: all
 

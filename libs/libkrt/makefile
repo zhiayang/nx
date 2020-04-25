@@ -2,8 +2,8 @@
 # Written in 2014
 
 
-CFLAGS		= -ffreestanding -Wno-pragmas -O2 -fPIC -std=c11 -mno-red-zone -fno-strict-aliasing -fno-exceptions -c
-CXXFLAGS	= -ffreestanding -Wno-pragmas -O2 -fPIC -std=c++17 -mno-red-zone -fno-strict-aliasing -fno-exceptions -fno-rtti -c
+CFLAGS		= -ffreestanding -Wno-pragmas -O2 -mno-sse -mno-sse2 -fPIC -std=c11 -mno-red-zone -fno-strict-aliasing -fno-exceptions -c
+CXXFLAGS	= -ffreestanding -Wno-pragmas -O2 -mno-sse -mno-sse2 -fPIC -std=c++17 -mno-red-zone -fno-strict-aliasing -fno-exceptions -fno-rtti -c
 
 SSRC		= $(shell find source -name "*.s")
 CSRC		= $(shell find source -name "*.c")

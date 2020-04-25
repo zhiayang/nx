@@ -2,6 +2,6 @@
 // Copyright (c) 2019, zhiayang
 // Licensed under the Apache License Version 2.0.
 
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "misc/stb/stbtt.h"
+// #define STB_TRUETYPE_IMPLEMENTATION
+// #include "misc/stb/stbtt.h"
 
