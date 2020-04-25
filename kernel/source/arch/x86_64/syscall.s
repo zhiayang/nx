@@ -78,6 +78,7 @@ nx_x64_syscall_entry:
 	// but first, save the user stack into CPULocalState->tmpUserRsp, offset 0x38.
 	movq %rsp, %gs:0x38
 
+	// this loads RSP0 from the TSS.
 	movq %gs:0x10, %rsp
 	movq 4(%rsp), %rsp
 
@@ -108,7 +109,6 @@ nx_x64_syscall_entry:
 	pop %rcx
 	pop %r11
 	pop %rsp
-
 
 	swapgs
 	sysretq

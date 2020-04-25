@@ -179,8 +179,8 @@ namespace interrupts
 		inflightIRQs = krt::list<pending_irq_t, _fixed_allocator, _aborter>();
 		irqHandlers = nx::treemap<int, irq_state_t>();
 
-		handlerLock = nx::mutex();
-		inflightLock = nx::spinlock();
+		new (&handlerLock) nx::mutex();
+		new (&inflightLock) nx::spinlock();
 	}
 }
 }

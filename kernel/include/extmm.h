@@ -91,7 +91,7 @@ namespace extmm
 
 			this->owningProc = owningProc;
 
-			this->lock = Lock();
+			new (&this->lock) Lock();
 
 			// this is ok (even in the pmm), because our array's initial size is always 0 by default.
 			this->extentMemory = nx::array<addr_t>();
@@ -293,7 +293,7 @@ namespace extmm
 			if(!a || !b) return false;
 
 			// check if A lies within B, or if B lies within A.
-			return (a->addr >= b->addr && end(b) >= a->addr) || (b->addr >= a->addr && end(a) >= b->addr);
+			return (b->addr <= a->addr && a->addr < end(b)) || (a->addr <= b->addr && b->addr < end(a));
 		}
 
 		void addExtent(addr_t addr, size_t size)

@@ -69,7 +69,7 @@ namespace scheduler
 	static Process KernelProcess;
 	void setupKernelProcess(PhysAddr cr3)
 	{
-		KernelProcess = Process();
+		new (&KernelProcess) Process();
 		KernelProcess.processId = 0;
 		KernelProcess.addrspace.lock()->init(cr3);
 

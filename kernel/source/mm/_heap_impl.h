@@ -238,6 +238,9 @@ struct heap_impl
 
 	void init()
 	{
+		// init the lock
+		new (&lock) spinlock();
+
 		// pretend to lock it for fun, because our helper functions assert that the lock is held (for safety)
 		autolock lk(Locked ? &lock : 0);
 

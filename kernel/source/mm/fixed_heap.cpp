@@ -22,7 +22,7 @@ namespace fixed_heap
 
 	void init()
 	{
-		impl = decltype(impl)();
+		new (&impl) decltype(impl)();
 		impl.set_name("fixed_heap");
 		impl.init();
 	}

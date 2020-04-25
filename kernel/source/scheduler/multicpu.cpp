@@ -55,7 +55,6 @@ namespace scheduler
 	extern "C" uint64_t nx_x64_get_gs_base();
 	CPULocalState* getCPULocalState()
 	{
-		// use gs.
 		return (CPULocalState*) nx_x64_get_gs_base();
 	}
 
@@ -99,8 +98,7 @@ namespace scheduler
 
 	void preinitCPUs()
 	{
-		processors = array<CPU>();
-
+		new (&processors) array<CPU>();
 		setInitPhase(SchedulerInitPhase::ReadyToRegisterCPUs);
 	}
 
@@ -122,15 +120,7 @@ namespace scheduler
 		// the MADT tables from ACPI guarantee this.
 		assert(!bsp || processors.empty());
 
-		CPU p;
-		p.id = id;
-		p.lApicId = lApicId;
-		p.localApicAddr = localApic;
-
-		p.isBootstrap = bsp;
-
-		processors.append(p);
-
+		processors.emplace(id, lApicId, localApic, bsp);
 		setInitPhase(SchedulerInitPhase::BootstrapCPURegistered);
 	}
 

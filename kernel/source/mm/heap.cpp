@@ -22,7 +22,7 @@ namespace heap
 
 	void init()
 	{
-		impl = decltype(impl)();
+		new (&impl) decltype(impl)();
 		impl.set_name("heap");
 		impl.init();
 	}
