@@ -243,23 +243,29 @@ namespace krt
 
 		static void copy_elements(Container* self, ElmTy* dest, ElmTy* src, size_t num)
 		{
-			if constexpr (::std::is_trivially_copyable<ElmTy>::value)
+			{
+				using namespace std;
+				static_assert(is_trivially_copyable_v<ElmTy> || is_copy_constructible_v<ElmTy> || is_move_constructible_v<ElmTy>,
+					"element type cannot be constructed");
+			}
+
+			if constexpr (std::is_trivially_copyable_v<ElmTy>)
 			{
 				memmove(dest, src, num * sizeof(ElmTy));
 			}
-			else if constexpr (::std::is_copy_constructible<ElmTy>::value)
+			else if constexpr (std::is_copy_constructible_v<ElmTy>)
 			{
 				for(size_t i = 0; i < num; i++)
 					new (&dest[i]) ElmTy(src[i]);
 			}
-			else
+			else if constexpr (std::is_move_constructible_v<ElmTy>)
 			{
 				for(size_t i = 0; i < num; i++)
 					new (&dest[i]) ElmTy(move(src[i]));
 			}
 		}
 
-		private:
+	private:
 		static void set_last_if_char(Container* self)
 		{
 			if constexpr (krt::is_same<ElmTy, char>())

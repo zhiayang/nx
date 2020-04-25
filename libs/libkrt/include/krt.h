@@ -37,16 +37,6 @@ namespace krt
 
 	namespace util
 	{
-		size_t humanSizedBytes(char* buffer, size_t bytes, bool thousand = false);
-
-		template <typename allocator, typename aborter>
-		krt::string<allocator, aborter> humanSizedBytes(size_t bytes, bool thousand = false)
-		{
-			size_t len = 0; char buffer[256];
-			len = humanSizedBytes(&buffer[0], bytes, thousand);
-			return krt::string<allocator, aborter>(buffer, len);
-		}
-
 		void memfill1b(uint8_t* ptr, uint8_t val, size_t count);
 		void memfill2b(uint16_t* ptr, uint16_t val, size_t count);
 		void memfill4b(uint32_t* ptr, uint32_t val, size_t count);

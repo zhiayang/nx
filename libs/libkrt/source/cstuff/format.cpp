@@ -25,7 +25,6 @@
 
 #include "krt.h"
 
-#include <math.h>
 
 #include "limits.h"
 #include "string.h"
@@ -219,39 +218,32 @@ extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_
 			LENGTH_PTRDIFF_T,
 		};
 
-		struct length_modifer
-		{
-			const char* name;
-			enum length length;
-		};
-
-		struct length_modifer length_modifiers[] =
-		{
-			{ "hh", LENGTH_SHORT_SHORT },
-			{ "h", LENGTH_SHORT },
-			{ "", LENGTH_DEFAULT },
-			{ "l", LENGTH_LONG },
-			{ "ll", LENGTH_LONG_LONG },
-			{ "L", LENGTH_LONG_DOUBLE },
-			{ "j", LENGTH_INTMAX_T },
-			{ "z", LENGTH_SIZE_T },
-			{ "t", LENGTH_PTRDIFF_T },
-		};
-
-		enum length length = LENGTH_DEFAULT;
+		auto length = LENGTH_DEFAULT;
 		size_t length_length = 0;
-		for(size_t i = 0; i < sizeof(length_modifiers) / sizeof(length_modifiers[0]); i++)
-		{
-			size_t name_length = strlen(length_modifiers[i].name);
-			if(name_length < length_length)
-				continue;
 
-			if(strncmp(format, length_modifiers[i].name, name_length) != 0)
-				continue;
+		if(strncmp(format, "hh", 2) == 0)
+			length_length = 2, length = LENGTH_SHORT_SHORT;
 
-			length = length_modifiers[i].length;
-			length_length = name_length;
-		}
+		else if(strncmp(format, "ll", 2) == 0)
+			length_length = 2, length = LENGTH_LONG_LONG;
+
+		else if(strncmp(format, "h", 1) == 0)
+			length_length = 1, length = LENGTH_SHORT;
+
+		else if(strncmp(format, "l", 1) == 0)
+			length_length = 1, length = LENGTH_LONG;
+
+		else if(strncmp(format, "L", 1) == 0)
+			length_length = 1, length = LENGTH_LONG_DOUBLE;
+
+		else if(strncmp(format, "j", 1) == 0)
+			length_length = 1, length = LENGTH_INTMAX_T;
+
+		else if(strncmp(format, "z", 1) == 0)
+			length_length = 1, length = LENGTH_SIZE_T;
+
+		else if(strncmp(format, "t", 1) == 0)
+			length_length = 1, length = LENGTH_PTRDIFF_T;
 
 		format += length_length;
 
@@ -427,113 +419,6 @@ extern "C" int vcbprintf(void* ctx, size_t (*callback)(void*, const char*, size_
 				{
 					if(callback(ctx, " ", 1) != 1 )
 						return -1;
-					written++;
-				}
-			}
-		}
-		else if(*format == 'e' || *format == 'E' || *format == 'f' || *format == 'F'
-			|| *format == 'g' || *format == 'G' || *format == 'a' || *format == 'A' )
-		{
-			char conversion = *format++;
-
-			long double value;
-			if(length == LENGTH_DEFAULT)
-				value = va_arg(parameters, double);
-
-			else if(length == LENGTH_LONG_DOUBLE)
-				value = va_arg(parameters, long double);
-
-			else
-				goto incomprehensible_conversion;
-
-
-			bool use_precision = precision != SIZE_MAX;
-			bool use_zero_pad = zero_pad && field_width >= 0;
-			bool use_left_pad = !use_zero_pad && field_width >= 0;
-			bool use_right_pad = !use_zero_pad && field_width < 0;
-
-			// not gonna bother being efficient
-			if(value < 0)
-			{
-				if(callback(ctx, "-", 1) != 1)
-					return -1;
-
-				written++;
-			}
-
-			// default printf uses 6 decimal places
-			if(!use_precision)
-				precision = 6;
-
-			// ok what we gonna do is truncate the float
-			auto whole = (int64_t) value;
-
-			// the number of digits is floor of the log10 of the number + 1
-			int digits = (int) log10(whole) + 1;
-			int decims = precision;
-
-			int total_len = (value < 0 ? 1 : 0) + digits + 1 + decims;
-
-
-			if(use_left_pad)
-			{
-				for(size_t i = total_len; i < abs_field_width; i++)
-				{
-					if(callback(ctx, " ", 1) != 1)
-						return -1;
-
-					written++;
-				}
-			}
-
-			if(use_zero_pad)
-			{
-				for(size_t i = total_len - (value < 0 ? 1 : 0); i < abs_field_width; i++)
-				{
-					if(callback(ctx, "0", 1) != 1 )
-						return -1;
-
-					written++;
-				}
-			}
-
-			// print the digits
-			{
-				char wholes[24];
-				size_t cnt = convert_integer(&wholes[0], whole, 10, "0123456789");
-				if(callback(ctx, wholes, cnt) != cnt)
-					return -1;
-
-				// and the decimal
-				if(callback(ctx, ".", 1) != 1)
-					return -1;
-
-				written += cnt + 1;
-			}
-
-
-			{
-				long double val = value;
-
-				for(int k = 0; k < precision; k++)
-				{
-					val *= 10.0;
-
-					if(callback(ctx, &"0123456789"[((int) val) % 10], 1) != 1)
-						return -1;
-
-					written++;
-				}
-			}
-
-
-			if(use_right_pad)
-			{
-				for(size_t i = total_len; i < abs_field_width; i++ )
-				{
-					if(callback(ctx, " ", 1) != 1 )
-						return -1;
-
 					written++;
 				}
 			}
