@@ -401,7 +401,7 @@ namespace scheduler
 	}
 
 
-	void sleep(uint64_t ns)
+	void nanosleep(uint64_t ns)
 	{
 		auto t = getCurrentThread();
 		assert(t);
