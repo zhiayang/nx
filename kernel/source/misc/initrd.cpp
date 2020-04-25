@@ -134,7 +134,7 @@ namespace initrd
 			abort("failed to load initrd!");
 		}
 
-		log("initrd", "size: %s", humanSizedBytes(finalSz).cstr());
+		log("initrd", "size: %zu kb", finalSz / 1024);
 
 		auto tarfs = vfs::tarfs::create((uint8_t*) finalPtr, finalSz);
 		if(!vfs::mount(tarfs, "/initrd", true))

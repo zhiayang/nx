@@ -69,13 +69,13 @@ namespace pmm
 		}
 
 		// we should have > 1MB, if not UEFI wouldn't boot anyway.
-		double num = totalMem / (1024.0 * 1024.0); int unit = 0;
+		auto num = totalMem / (1024 * 1024); int unit = 0;
 		char units[] = { 'M', 'G', 'T', 'P' };
 
 		while(num >= 1024)
-			num /= 1024.0, unit++;
+			num /= 1024, unit++;
 
-		log("pmm", "initialised with %zu extents, %zu bytes (%.2f %cB)", extmmState.numExtents, totalMem,
+		log("pmm", "initialised with %zu extents, %zu bytes (%zu %cB)", extmmState.numExtents, totalMem,
 			num, units[unit]);
 
 

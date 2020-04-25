@@ -110,10 +110,16 @@ namespace apic
 			auto measurementPeriodNS = 2 * __max(scheduler::getNanosecondsPerTick(), device::pit8253::getNanosecondsPerTick());
 			auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
 
+			// repeat the experiment 5 times, and take the average.
+			// note: while we generally refrain from using SSE (floating point) in the kernel,
+			// this is important to ensure timer accuracy. besides, multitasking isn't up yet,
+			// and this is a one-time thing.
+
 			constexpr int repeats = 5;
 
-			// repeat the experiment 5 times
-			double resultSum = 0;
+			double apic_sum = 0;
+			double pit_sum = 0;
+
 			for(int i = 0; i < repeats; i++)
 			{
 				auto init = readLAPIC(base, REG_TIMER_CURRENT);
@@ -124,25 +130,23 @@ namespace apic
 					asm volatile ("pause");
 
 				// read the current counter
-				auto diff = init - readLAPIC(base, REG_TIMER_CURRENT);
+				auto apic_elapsed = init - readLAPIC(base, REG_TIMER_CURRENT);
 
 				// lapic ticked 'timerDiff' times in 'diff' nanoseconds
-				auto elapsed = (end - start) * device::pit8253::getNanosecondsPerTick();
+				auto pit_elapsed = (end - start) * device::pit8253::getNanosecondsPerTick();
 
-				resultSum += (double) elapsed / (double) diff;
+				apic_sum += apic_elapsed;
+				pit_sum += pit_elapsed;
 			}
 
-			nanosecondsPerTimerTick = resultSum / (double) repeats;
+			nanosecondsPerTimerTick = pit_sum / apic_sum;
 
 			// kill the old PIT
 			device::pit8253::disable();
 		}
 		interrupts::disable();
 
-
-
-		log("lapic", "calibrated lapic timer: %.2f ns per tick", nanosecondsPerTimerTick);
-
+		log("lapic", "calibrated lapic timer: ~%lu ns per tick", (uint64_t) nanosecondsPerTimerTick);
 
 		// arm the timer.
 		{

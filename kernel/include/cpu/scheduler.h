@@ -110,6 +110,9 @@ namespace nx
 
 		struct CPU
 		{
+			CPU(int id, int apic, addr_t apicAddr, bool isBSP) :
+				id(id), lApicId(apic), isBootstrap(isBSP), localApicAddr(apicAddr) { }
+
 			int id = 0;
 			int lApicId = 0;
 
