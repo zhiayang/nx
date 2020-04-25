@@ -15,6 +15,7 @@
 #include "extmm.h"
 #include "synchro.h"
 #include "misc/addrs.h"
+#include "misc/timekeeping.h"
 
 namespace nx
 {
@@ -316,7 +317,11 @@ namespace nx
 		void terminate(Process* p);
 
 		void yield();
-		void sleep(uint64_t ns);
+		void nanosleep(uint64_t ns);
+
+		template <typename T>
+		void sleep(time::unit<T> x) { nanosleep(x.ns()); }
+
 
 		void block(mutex* mtx);
 		void unblock(mutex* mtx);

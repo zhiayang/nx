@@ -169,6 +169,7 @@ namespace vmm
 		so, we have a lock specifically to protect the 509 mapping -- hence its name.
 	*/
 
+	// TODO: this is not initialised!
 	static nx::spinlock globalPml509Lock;
 	struct TempMapper
 	{

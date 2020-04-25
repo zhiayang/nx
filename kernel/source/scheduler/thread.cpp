@@ -159,8 +159,6 @@ namespace scheduler
 			*--kstk     = codeSeg;              // code segment
 			*--kstk     = (addr_t) fn;          // return addr
 
-			error("thr", "user rsp = %p", userRSP.ptr());
-
 			// now for the registers.
 			*--kstk     = 0;            // r15
 			*--kstk     = 0;            // r14

@@ -75,12 +75,12 @@ namespace nx
 					for(int x = 1440 - 160; x < 1440 - 80; x++)
 						*(fb + y * 1440 + x) = colours[ctr % 3];
 
-				scheduler::sleep(time::milliseconds(100).ns());
+				scheduler::sleep(time::milliseconds(100));
 			}
 		}));
 
 		log("kernel", "going to sleep...");
-		scheduler::sleep(500'000'000);
+		scheduler::sleep(time::milliseconds(500));
 
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));

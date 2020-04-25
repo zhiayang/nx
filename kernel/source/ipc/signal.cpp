@@ -67,6 +67,7 @@ namespace nx
 			memcpy(msg.body.bytes, umsg.bytes, sizeof(umsg.bytes));
 
 			// ok, we have the message.
+			// TODO: needs locking!!
 			thr->pendingSignalQueue.append(msg);
 
 			// boost it a bit.
