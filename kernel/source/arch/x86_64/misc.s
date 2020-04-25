@@ -36,17 +36,29 @@ nx_x64_serial_interrupt:
 
 
 
+// if gs is not setup yet, we're fucked (because we call this from exception handlers)
+// so, be safe about it.
 
 .global nx_x64_enter_intr_context
 .type nx_x64_enter_intr_context, @function
 nx_x64_enter_intr_context:
+	mov %gs, %rax
+	test %rax, %rax
+	jz 1f
+
 	lock incl %gs:0x50
+1:
 	ret
 
 .global nx_x64_exit_intr_context
 .type nx_x64_exit_intr_context, @function
 nx_x64_exit_intr_context:
+	mov %gs, %rax
+	test %rax, %rax
+	jz 1f
+
 	lock decl %gs:0x50
+1:
 	ret
 
 
