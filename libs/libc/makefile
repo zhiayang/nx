@@ -29,15 +29,15 @@ $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ) $(HDRS)
 	@cp source/platform/support/crti.s.o $(SYSROOT)/usr/lib/crti.o
 	@cp source/platform/support/crtn.s.o $(SYSROOT)/usr/lib/crtn.o
 
-%.c.o: %.c | print-libc
+%.c.o: %.c makefile | print-libc
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -o $@ $<
 
-%.cpp.o: %.cpp | print-libc
+%.cpp.o: %.cpp makefile | print-libc
 	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
-%.s.o: %.s | print-libc
+%.s.o: %.s makefile | print-libc
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 

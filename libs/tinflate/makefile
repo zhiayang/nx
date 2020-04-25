@@ -16,7 +16,7 @@ print-tinflate:
 $(SYSROOT)/usr/lib/libtinflate.a: $(COBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libtinflate.a $(COBJ)
 
-%.c.o: %.c | print-tinflate
+%.c.o: %.c makefile | print-tinflate
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -o $@ $<
 

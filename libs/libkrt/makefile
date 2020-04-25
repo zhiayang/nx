@@ -27,15 +27,15 @@ print-libkrt:
 $(SYSROOT)/usr/lib/libkrt.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libkrt.a $(SOBJ) $(COBJ) $(CXXOBJ)
 
-%.c.o: %.c | print-libkrt
+%.c.o: %.c makefile | print-libkrt
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.cpp.o: %.cpp | print-libkrt
+%.cpp.o: %.cpp makefile | print-libkrt
 	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -MMD -MP -Iinclude -o $@ $<
 
-%.s.o: %.s | print-libkrt
+%.s.o: %.s makefile | print-libkrt
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 

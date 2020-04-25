@@ -53,15 +53,15 @@ $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
 	@$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 efxloader.tmp $@
 	@rm efxloader.tmp
 
-%.c.o: %.c | print-efxloader
+%.c.o: %.c makefile | print-efxloader
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-%.cpp.o: %.cpp | print-efxloader
+%.cpp.o: %.cpp makefile | print-efxloader
 	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.s.o: %.s | print-efxloader
+%.s.o: %.s makefile | print-efxloader
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 

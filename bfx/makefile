@@ -39,15 +39,15 @@ print-bfxloader:
 $(LOADER): $(COBJ) $(CXXOBJ) $(SOBJ) $(LIBKRT) $(LIBM)
 	@$(LD) -nostdlib -nostartfiles -L $(SYSROOT)/usr/lib -o $@ -T link.ld $(COBJ) $(CXXOBJ) $(SOBJ) -lkrt -lm
 
-%.c.o: %.c | print-bfxloader
+%.c.o: %.c makefile | print-bfxloader
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-%.cpp.o: %.cpp | print-bfxloader
+%.cpp.o: %.cpp makefile | print-bfxloader
 	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.s.o: %.s | print-bfxloader
+%.s.o: %.s makefile | print-bfxloader
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 
