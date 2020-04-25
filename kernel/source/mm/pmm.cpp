@@ -50,7 +50,10 @@ namespace pmm
 		if(!bootstrapped) abort("failed to bootstrap pmm!!");
 
 		// now that we have bootstrapped one starting page for ourselves, we can init the ext mm.
-		extmmState.init("pmm", addrs::PMM_STACK_BASE.addr(), addrs::PMM_STACK_END.addr());
+		auto kproc = scheduler::getKernelProcess();
+		assert(kproc);
+
+		extmmState.init("pmm", addrs::PMM_STACK_BASE.addr(), addrs::PMM_STACK_END.addr(), kproc);
 
 		// ok, now loop through each memory entry for real.
 		size_t totalMem = 0;
@@ -136,7 +139,7 @@ namespace pmm
 		vmm::unmapAddress(VirtAddr::zero(), maxIdentMem / PAGE_SIZE, /* ignoreUnmapped: */ true);
 
 		auto addr = (addr_t) bootinfo;
-		assert(isAligned(addr));
+		assert(isPageAligned(addr));
 
 		// we assume the kernel boot info is one page long!!
 		deallocate(PhysAddr(addr), 1);
@@ -166,7 +169,7 @@ namespace pmm
 		assert(addr.nonZero());
 		assert(num);
 
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 		if(addr == zeroPageAddr && num == 1)
 			return;
 

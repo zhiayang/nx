@@ -94,24 +94,6 @@ namespace nx
 
 
 
-		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
-		enum class AddressSpaceType
-		{
-			Kernel      = 0,
-			KernelHeap  = 1,
-			User        = 2
-		};
-		constexpr size_t NumAddressSpaces = 3;
-
-
-		constexpr uint64_t PAGE_PRESENT         = 0x1;
-		constexpr uint64_t PAGE_WRITE           = 0x2;
-		constexpr uint64_t PAGE_USER            = 0x4;
-		constexpr uint64_t PAGE_COPY_ON_WRITE   = 0x200;
-		constexpr uint64_t PAGE_NX              = 0x8000'0000'0000'0000;
-		constexpr uint64_t ALIGN_BITS           = 12;
-
-
 		struct PageHasher
 		{
 			size_t operator () (VirtAddr v) const

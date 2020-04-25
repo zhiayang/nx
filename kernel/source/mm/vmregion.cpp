@@ -85,7 +85,7 @@ namespace vmm
 	void AddressSpace::LockedAddrSpace::addRegion(VirtAddr addr, size_t num)
 	{
 		assert(heap::initialised());
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 
 		for(auto& vmr : this->addrspace.regions)
 		{
@@ -112,7 +112,7 @@ namespace vmm
 	void AddressSpace::LockedAddrSpace::addRegion(VirtAddr addr, PhysAddr physStart, size_t num)
 	{
 		assert(heap::initialised());
-		assert(addr.isAligned() && physStart.isAligned());
+		assert(addr.isPageAligned() && physStart.isPageAligned());
 
 		auto update_phys = [](VMRegion& vmr, VirtAddr virt, PhysAddr phys, size_t num) {
 			for(size_t i = 0; i < num; i++)
@@ -167,7 +167,7 @@ namespace vmm
 	void AddressSpace::LockedAddrSpace::freeRegion(VirtAddr addr, size_t num, bool freePhys)
 	{
 		assert(heap::initialised());
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 
 		for(auto it = this->addrspace.regions.begin(); it != this->addrspace.regions.end(); ++it)
 		{

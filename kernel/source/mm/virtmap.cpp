@@ -123,7 +123,7 @@ namespace vmm
 			auto stubs_begin = (uintptr_t) &nx_user_kernel_stubs_begin;
 			auto stubs_end   = (uintptr_t) &nx_user_kernel_stubs_end;
 
-			assert(isAligned(stubs_begin));
+			assert(isPageAligned(stubs_begin));
 			auto numPgs = (stubs_end - stubs_begin + PAGE_SIZE - 1) / PAGE_SIZE;
 
 			// we do not allocate memory -- just map the physical pages here.
@@ -237,8 +237,8 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(virt.isAligned());
-		assert(phys.isAligned());
+		assert(virt.isPageAligned());
+		assert(phys.isPageAligned());
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
@@ -339,7 +339,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		flags &= ~PAGE_PRESENT;
 		log("vmm", "region %p - %p marked copy-on-write", virt, virt + ofsPages(num));
@@ -358,7 +358,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		// make sure we don't have write in the provided flags.
 		assert((flags & PAGE_WRITE) == 0);
@@ -381,7 +381,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		// make sure we don't have write in the provided flags.
 		assert((flags & PAGE_PRESENT) == 0);
@@ -406,7 +406,7 @@ namespace vmm
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
@@ -444,7 +444,7 @@ namespace vmm
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -511,7 +511,7 @@ namespace vmm
 		TempMapper tm(isOtherProc ? proc : 0);
 
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		// right.
 		auto p4idx = indexPML4(virt.addr());
@@ -548,7 +548,7 @@ namespace vmm
 		bool isOtherProc = (proc != scheduler::getCurrentProcess());
 		TempMapper tm(isOtherProc ? proc : 0);
 
-		assert(virt.isAligned());
+		assert(virt.isPageAligned());
 
 		for(size_t i = 0; i < num; i++)
 		{

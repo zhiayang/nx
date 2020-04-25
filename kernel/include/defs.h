@@ -92,6 +92,25 @@ namespace nx
 		struct Process;
 	}
 
+	namespace vmm
+	{
+		// vmm.cpp stuff -- handles address space allocation + physical page allocation.
+		enum class AddressSpaceType
+		{
+			Kernel      = 0,
+			KernelHeap  = 1,
+			User        = 2
+		};
+		constexpr size_t NumAddressSpaces = 3;
+
+		constexpr uint64_t PAGE_PRESENT         = 0x1;
+		constexpr uint64_t PAGE_WRITE           = 0x2;
+		constexpr uint64_t PAGE_USER            = 0x4;
+		constexpr uint64_t PAGE_COPY_ON_WRITE   = 0x200;
+		constexpr uint64_t PAGE_NX              = 0x8000'0000'0000'0000;
+		constexpr uint64_t ALIGN_BITS           = 12;
+	}
+
 
 	void log(const char* sys, const char* fmt, ...);
 	void warn(const char* sys, const char* fmt, ...);
@@ -157,7 +176,7 @@ namespace nx
 		else                                return addr & 0x7FFF'FFFF'FFFF'F000;
 	}
 
-	constexpr bool isAligned(addr_t addr)
+	constexpr bool isPageAligned(addr_t addr)
 	{
 		return addr == (addr & ~((addr_t) 0xFFF));
 	}
@@ -209,12 +228,13 @@ namespace nx
 		constexpr inline bool nonZero() const { return !this->isZero(); }
 		constexpr inline bool isZero() const { return this->m_addr == 0; }
 
-		constexpr inline bool isAligned() const { return nx::isAligned(this->m_addr); }
+		constexpr inline bool isPageAligned() const { return nx::isPageAligned(this->m_addr); }
 		constexpr Self pageAligned() const { return Self(PAGE_ALIGN(this->m_addr)); }
 
 		constexpr inline addr_t addr() const { return this->m_addr; }
 		constexpr inline void* ptr() const { return (void*) this->m_addr; }
 
+		constexpr inline bool isAlignedTo(size_t alignment) { return (this->m_addr & (alignment - 1)) == 0; }
 
 		constexpr size_t operator - (const Self& oth) const { return this->m_addr - oth.m_addr; }
 

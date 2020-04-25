@@ -16,12 +16,6 @@ namespace vmm
 		{ addrs::USER_ADDRSPACE_BASE,       addrs::USER_ADDRSPACE_END       }
 	};
 
-	constexpr VirtAddr VMMStackAddresses[NumAddressSpaces][2] = {
-		{ addrs::VMM_STACK0_BASE,   addrs::VMM_STACK0_END },
-		{ addrs::VMM_STACK1_BASE,   addrs::VMM_STACK1_END },
-		{ addrs::VMM_STACK2_BASE,   addrs::VMM_STACK2_END }
-	};
-
 	// we have one extmm for each address space we can allocate.
 	static const char* extmmNames[NumAddressSpaces] = {
 		"vmm/user",
@@ -47,7 +41,14 @@ namespace vmm
 
 	void init(scheduler::Process* proc)
 	{
-		bool isFirst = (proc == scheduler::getKernelProcess());
+		constexpr VirtAddr kernelBootstrapPages[NumAddressSpaces] = {
+			addrs::KERN_VMM_STACK0_BOOTSTRAP,
+			addrs::KERN_VMM_STACK1_BOOTSTRAP,
+			addrs::KERN_VMM_STACK2_BOOTSTRAP,
+		};
+
+		auto kproc = scheduler::getKernelProcess();
+		bool isFirst = (proc == kproc);
 
 		for(size_t i = 0; i < NumAddressSpaces; i++)
 		{
@@ -55,12 +56,15 @@ namespace vmm
 
 			if(isFirst)
 			{
-				mapAddress(VMMStackAddresses[i][0], pmm::allocate(1), 1, PAGE_WRITE | PAGE_PRESENT, proc);
-				s->init(extmmNames[i], VMMStackAddresses[i][0].addr(), VMMStackAddresses[i][1].addr());
+				// the kernel process needs its own special bootstrap page.
+				mapAddress(kernelBootstrapPages[i], pmm::allocate(1), 1, PAGE_WRITE | PAGE_PRESENT, proc);
+				s->init(extmmNames[i], kernelBootstrapPages[i].addr(), (kernelBootstrapPages[i] + ofsPages(1)).addr(), kproc);
 			}
 			else
 			{
-				s->init(extmmNames[i], 0, 0);
+				// user processes don't need an explicit bootstrap, since they will use vmm::allocate to get their
+				// memory, and clean it up accordingly on exit.
+				s->init(extmmNames[i], 0, 0, kproc);
 			}
 
 			s->deallocate(AddressSpaces[i][0].addr(), (AddressSpaces[i][1] - AddressSpaces[i][0]) / PAGE_SIZE);
@@ -99,14 +103,14 @@ namespace vmm
 
 
 		auto ret = VirtAddr(proc->addrspace.getVMMState(type).allocate(num, [](addr_t, size_t) -> bool { return true; }));
-		assert(ret.isAligned());
+		assert(ret.isPageAligned());
 
 		return ret;
 	}
 
 	void deallocateAddrSpace(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -120,7 +124,7 @@ namespace vmm
 
 	VirtAddr allocateSpecific(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -168,7 +172,7 @@ namespace vmm
 
 	void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc)
 	{
-		assert(addr.isAligned());
+		assert(addr.isPageAligned());
 
 		if(proc == 0) proc = scheduler::getCurrentProcess();
 		assert(proc);

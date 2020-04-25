@@ -4,12 +4,20 @@
 
 #pragma once
 
+
 #include "synchro.h"
 #include "devices/serial.h"
 
 #include <type_traits>
 
 namespace nx {
+namespace vmm
+{
+	// need to forward declare, because mm.h includes extmm.h
+	VirtAddr allocate(size_t num, AddressSpaceType type, uint64_t flags, scheduler::Process* proc);
+	void deallocate(VirtAddr addr, size_t num, scheduler::Process* proc);
+}
+
 namespace extmm
 {
 	template <typename ExtraData, typename E = void>
@@ -49,6 +57,8 @@ namespace extmm
 		using extent_t = typename _State<T>::extent_t;
 
 		extent_t* head = 0;
+		extent_t* freeHead = 0;
+		nx::array<addr_t> extentMemory;
 
 		size_t numExtents = 0;
 
@@ -58,11 +68,19 @@ namespace extmm
 		addr_t bootstrapWatermark = 0;
 		addr_t bootstrapEnd = 0;
 
+		scheduler::Process* owningProc = 0;
+		static constexpr auto vmmType = vmm::AddressSpaceType::Kernel;
+
 		Lock lock;
 
-		void init(const char* owner, addr_t base, addr_t top)
+		// TODO: with the way the freeHead is done, this probably can be made to leak memory
+		// since we have no way to return the memory used by the 'free' extents, until the
+		// entire state is destroy()-ed.
+
+		void init(const char* owner, addr_t base, addr_t top, scheduler::Process* owningProc)
 		{
 			this->head = 0;
+			this->freeHead = 0;
 			this->numExtents = 0;
 
 			this->owner = owner;
@@ -71,34 +89,34 @@ namespace extmm
 			this->bootstrapStart = base;
 			this->bootstrapEnd = top;
 
+			this->owningProc = owningProc;
+
 			this->lock = Lock();
+
+			// this is ok (even in the pmm), because our array's initial size is always 0 by default.
+			this->extentMemory = nx::array<addr_t>();
 		}
 
 		void destroy()
 		{
 			autolock lk(&this->lock);
 
-			// just loop through all the extents and destroy them.
-			auto ext = this->head;
-			while(ext)
-			{
-				if(!(((addr_t) ext) >= this->bootstrapStart && ((addr_t) ext) < this->bootstrapEnd))
-				{
-					delete ext;
-				}
+			// we don't care about the bootstrap memory
+			// (though we will memset it to 0)
+			memset((void*) this->bootstrapStart, 0, this->bootstrapEnd - this->bootstrapStart);
 
-				// else do nothing.
-
-				ext = ext->next;
-			}
+			// for the new extents, just deallocate the pages.
+			for(auto mem : this->extentMemory)
+				vmm::deallocate(VirtAddr(mem), 1, this->owningProc);
 
 			this->head = 0;
+			this->freeHead = 0;
 			this->numExtents = 0;
 			this->bootstrapWatermark = this->bootstrapStart;
 		}
 
 		template <typename Predicate>
-		addr_t allocate(size_t num, const Predicate& satisfies)
+		addr_t allocate(size_t num, Predicate&& satisfies)
 		{
 			if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", this->owner);
 
@@ -123,8 +141,8 @@ namespace extmm
 						auto pn = ext->next;
 
 						// delete the extent.
-						if(!(((addr_t) ext) >= this->bootstrapStart && ((addr_t) ext) < this->bootstrapEnd))
-							delete ext;
+						ext->next = this->freeHead;
+						this->freeHead = ext;
 
 						if(prev)    prev->next = pn;
 						else        this->head = pn;
@@ -280,17 +298,44 @@ namespace extmm
 
 		void addExtent(addr_t addr, size_t size)
 		{
+			assert(this->lock.held());
+
 			using extent_t = typename _State<T>::extent_t;
 
-			extent_t* ext = 0;
-			if(this->bootstrapWatermark + sizeof(extent_t) <= this->bootstrapEnd)
+			extent_t* ext = nullptr;
+
+			if(this->freeHead != nullptr)
 			{
-				ext = new ((extent_t*) this->bootstrapWatermark) extent_t();
-				this->bootstrapWatermark += sizeof(extent_t);
+				ext = this->freeHead;
+				this->freeHead = this->freeHead->next;
 			}
 			else
 			{
-				ext = new extent_t();
+				if(this->bootstrapWatermark + sizeof(extent_t) <= this->bootstrapEnd)
+				{
+					ext = new ((extent_t*) this->bootstrapWatermark) extent_t();
+					this->bootstrapWatermark += sizeof(extent_t);
+				}
+				else
+				{
+					auto newmem = vmm::allocate(1, this->vmmType, vmm::PAGE_WRITE, this->owningProc);
+					size_t num = PAGE_SIZE / sizeof(extent_t);
+
+					extent_t* next = 0;
+					for(size_t i = 0; i < num; i++)
+					{
+						auto e = (extent_t*) (newmem + (i * sizeof(extent_t))).ptr();
+						memset(e, 0, sizeof(extent_t));
+
+						e->next = next;
+						next = e;
+					}
+
+					this->freeHead = next->next;
+					ext = next;
+
+					this->extentMemory.append(newmem.addr());
+				}
 			}
 
 			assert(ext);

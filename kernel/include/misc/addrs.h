@@ -34,20 +34,14 @@ namespace nx
 		constexpr auto KERNEL_FRAMEBUFFER           = VirtAddr(0xFFFF'FFFF'0000'0000);
 
 		constexpr auto KERNEL_VMM_ADDRSPACE_BASE    = VirtAddr(0xFFFF'FFFF'8000'0000);
-		constexpr auto KERNEL_VMM_ADDRSPACE_END     = VirtAddr(0xFFFF'FFFF'F3C0'0000);
+		constexpr auto KERNEL_VMM_ADDRSPACE_END     = VirtAddr(0xFFFF'FFFF'F7F0'0000);
 
-		constexpr auto PMM_STACK_BASE               = VirtAddr(0xFFFF'FFFF'F3C0'0000);
-		constexpr auto PMM_STACK_END                = VirtAddr(0xFFFF'FFFF'F3D0'0000);
+		constexpr auto PMM_STACK_BASE               = VirtAddr(0xFFFF'FFFF'F7F0'0000);
+		constexpr auto PMM_STACK_END                = VirtAddr(0xFFFF'FFFF'F7F1'0000);
 
-		constexpr auto VMM_STACK0_BASE              = VirtAddr(0xFFFF'FFFF'F3D0'0000);
-		constexpr auto VMM_STACK0_END               = VirtAddr(0xFFFF'FFFF'F3E0'0000);
-
-		constexpr auto VMM_STACK1_BASE              = VirtAddr(0xFFFF'FFFF'F3E0'0000);
-		constexpr auto VMM_STACK1_END               = VirtAddr(0xFFFF'FFFF'F3F0'0000);
-
-		constexpr auto VMM_STACK2_BASE              = VirtAddr(0xFFFF'FFFF'F3F0'0000);
-		constexpr auto VMM_STACK2_END               = VirtAddr(0xFFFF'FFFF'F400'0000);
-
+		constexpr auto KERN_VMM_STACK0_BOOTSTRAP    = VirtAddr(0xFFFF'FFFF'F7F1'0000);
+		constexpr auto KERN_VMM_STACK1_BOOTSTRAP    = VirtAddr(0xFFFF'FFFF'F7F1'1000);
+		constexpr auto KERN_VMM_STACK2_BOOTSTRAP    = VirtAddr(0xFFFF'FFFF'F7F1'2000);
 
 		constexpr auto KERNEL_ENTRY                 = VirtAddr(0xFFFF'FFFF'F800'0000);
 	}
