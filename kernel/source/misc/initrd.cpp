@@ -78,6 +78,7 @@ namespace initrd
 		if(((gzip_header_t*) initrd)->magic[0] == 0x1F && ((gzip_header_t*) initrd)->magic[1] == 0x8B)
 		{
 			log("initrd", "format: gzip");
+			println("decompressing initrd...\n");
 
 			// note: we do this to avoid unaligned access, which ubsan complains about.
 			size_t uncompressedSize = 0;

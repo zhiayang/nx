@@ -4,6 +4,7 @@
 
 #include "nx.h"
 
+#include "devices/ports.h"
 #include "devices/pc/apic.h"
 #include "devices/pc/pit8253.h"
 
@@ -37,15 +38,18 @@ namespace scheduler
 		// no point sorting, cos the list might change frequently.
 		// just linear search to find the thread with the highest priority.
 		Thread* next = 0;
-		Priority max;
+		auto max = Priority::low();
 		for(auto thr : ss->ThreadList)
 		{
 			if(thr->state == ThreadState::Stopped && (!next || thr->priority > max))
 				next = thr, max = thr->priority;
 		}
 
-		if(!next)
-			return ss->IdleThread;
+		if(!next) next = ss->IdleThread;
+
+		// port::write1b(0x3F8, '[');
+		// port::write1b(0x3F8, '0' + next->threadId);
+		// port::write1b(0x3F8, ']');
 
 		assert(next);
 		return next;
@@ -100,9 +104,11 @@ namespace scheduler
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
 		// serial::debugprintf("old: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", oldthr->threadId, oldthr->parent->processId,
-		// 	oldthr->parent->addrspace.cr3.addr(), stackPointer);
+		// 	oldthr->parent->addrspace.cr3(), stackPointer);
 		// serial::debugprintf("new: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", newthr->threadId, newthr->parent->processId,
-		// 	newcr3.addr(), newthr->kernelStack);
+		// 	newcr3, newthr->kernelStack);
+
+		// serial::debugprintf("%p\n", newcr3);
 
 		__nested_sched = 0;
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3.addr(),

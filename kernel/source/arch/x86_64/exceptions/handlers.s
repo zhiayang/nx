@@ -270,10 +270,16 @@ nx_x64_exception_handler_31:
 
 
 
+.global __last_saved_error_cde
+__last_saved_error_cde:
+.quad 0
+
 .global nx_x64_pagefault_handler
 .type nx_x64_pagefault_handler, @function
 nx_x64_pagefault_handler:
 	// error code pushed by cpu
+	popq (__last_saved_error_cde)
+	pushq (__last_saved_error_cde)
 	pushq $14
 	exception_handler_begin
 
