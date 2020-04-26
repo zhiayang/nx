@@ -313,7 +313,7 @@ namespace ps2
 				kb->addByte(x);
 
 			square(cnt++);
-			// nx::ipc::send<uint64_t>(1, 99);
+			nx::ipc::send<uint64_t>(1, 99);
 		}
 		else
 		{
@@ -331,14 +331,14 @@ int main()
 	ps2::init_controller();
 	ps2::kb = new ps2::Keyboard();
 
-	// auto ticketId = nx::ipc::create_memory_ticket(0x1000 * 40, nx::ipc::MEMTICKET_FLAG_WRITE);
-	// printf("ticket id: %llu\n", ticketId);
+	auto ticketId = nx::ipc::create_memory_ticket(0x1000 * 40, nx::ipc::MEMTICKET_FLAG_WRITE);
+	printf("ticket id: %llu\n", ticketId);
 
-	// auto ticket = nx::ipc::collect_memory_ticket(ticketId);
-	// printf("ticket: %p / %zu\n", ticket.ptr, ticket.len);
+	auto ticket = nx::ipc::collect_memory_ticket(ticketId);
+	printf("ticket: %p / %zu\n", ticket.ptr, ticket.len);
 
-	// for(int i = 0; i < ticket.len / 4; i++)
-	// 	((uint32_t*) ticket.ptr)[i] = 0xFF00FF;
+	for(int i = 0; i < ticket.len / 4; i++)
+		((uint32_t*) ticket.ptr)[i] = 0x2a595f;
 
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_DEVICE_IRQ, &ps2::interrupt_handler);
 

@@ -54,6 +54,7 @@ int main()
 	constexpr uint64_t update_time = 250'000'000;
 
 	printf("time for owo\n");
+	int foozle = 0;
 	while(true)
 	{
 		auto ts = syscall::nanosecond_timestamp();
@@ -73,20 +74,20 @@ int main()
 			}
 		}
 
-		// if(nx::ipc::poll() > 0)
-		// {
-		// 	nx::ipc::message_body_t body;
-		// 	nx::ipc::receive(&body);
+		if(nx::ipc::poll() > 0)
+		{
+			nx::ipc::message_body_t body;
+			nx::ipc::receive(&body);
 
-		// 	auto x = nx::ipc::extract<uint64_t>(body);
+			auto x = nx::ipc::extract<uint64_t>(body);
 
-		// 	auto ticket = nx::ipc::collect_memory_ticket(1);
-		// 	memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
+			auto ticket = nx::ipc::collect_memory_ticket(1);
+			memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
 
-		// 	printf("signalled! (%llu) %p, %zu\n", x, ticket.ptr, ticket.len);
+			printf("%5d signalled! (%llu) %p, %zu\n", foozle++, x, ticket.ptr, ticket.len);
 
-		// 	nx::ipc::release_memory_ticket(ticket);
-		// }
+			nx::ipc::release_memory_ticket(ticket);
+		}
 	}
 }
 
