@@ -105,20 +105,19 @@ namespace apic
 		}
 
 		interrupts::enable();
-		double nanosecondsPerTimerTick = 0;
+
+		// do measurements in femtoseconds, since we don't have floating point.
+		constexpr uint64_t prescale = 1'000'000;
+		uint64_t femtosecondsPerTimerTick = 0;
 		{
 			auto measurementPeriodNS = 2 * __max(scheduler::getNanosecondsPerTick(), device::pit8253::getNanosecondsPerTick());
 			auto waitingTicks = measurementPeriodNS / device::pit8253::getNanosecondsPerTick();
 
 			// repeat the experiment 5 times, and take the average.
-			// note: while we generally refrain from using SSE (floating point) in the kernel,
-			// this is important to ensure timer accuracy. besides, multitasking isn't up yet,
-			// and this is a one-time thing.
-
 			constexpr int repeats = 5;
 
-			double apic_sum = 0;
-			double pit_sum = 0;
+			uint64_t apic_sum = 0;
+			uint64_t pit_sum = 0;
 
 			for(int i = 0; i < repeats; i++)
 			{
@@ -139,18 +138,18 @@ namespace apic
 				pit_sum += pit_elapsed;
 			}
 
-			nanosecondsPerTimerTick = pit_sum / apic_sum;
+			femtosecondsPerTimerTick = (prescale * pit_sum) / apic_sum;
 
 			// kill the old PIT
 			device::pit8253::disable();
 		}
 		interrupts::disable();
 
-		log("lapic", "calibrated lapic timer: ~%lu ns per tick", (uint64_t) nanosecondsPerTimerTick);
+		log("lapic", "calibrated lapic timer: ~%lu fs per tick", (uint64_t) femtosecondsPerTimerTick);
 
 		// arm the timer.
 		{
-			auto timerTicks = (uint32_t) (scheduler::getNanosecondsPerTick() / nanosecondsPerTimerTick);
+			auto timerTicks = (uint32_t) (prescale * scheduler::getNanosecondsPerTick() / (femtosecondsPerTimerTick));
 
 			log("lapic", "timer set to %u ticks", timerTicks);
 

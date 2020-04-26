@@ -2,19 +2,21 @@
 # Written in 2014
 
 
-CFLAGS		= -ffreestanding -Wno-pragmas -O2 -mno-sse -mno-sse2 -fPIC -std=c11 -mno-red-zone -fno-strict-aliasing -fno-exceptions -c
-CXXFLAGS	= -ffreestanding -Wno-pragmas -O2 -mno-sse -mno-sse2 -fPIC -std=c++17 -mno-red-zone -fno-strict-aliasing -fno-exceptions -fno-rtti -c
+COMMON_CLFAGS   = -ffreestanding -Wno-pragmas -O2 $(KERNEL_SSE_DISABLERS) -fPIC -mno-red-zone -fno-strict-aliasing -c
 
-SSRC		= $(shell find source -name "*.s")
-CSRC		= $(shell find source -name "*.c")
-CXXSRC		= $(shell find source -name "*.cpp")
+CFLAGS		    = $(COMMON_CLFAGS) -std=c11
+CXXFLAGS	    = $(COMMON_CLFAGS) -std=c++17 -fno-exceptions -fno-rtti
 
-SOBJ		= $(SSRC:.s=.s.o)
-COBJ		= $(CSRC:.c=.c.o)
-CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
+SSRC		    = $(shell find source -name "*.s")
+CSRC		    = $(shell find source -name "*.c")
+CXXSRC		    = $(shell find source -name "*.cpp")
 
-CXXDEPS     = $(CXXOBJ:.o=.d)
-CDEPS       = $(COBJ:.o=.d)
+SOBJ		    = $(SSRC:.s=.s.o)
+COBJ		    = $(CSRC:.c=.c.o)
+CXXOBJ		    = $(CXXSRC:.cpp=.cpp.o)
+
+CXXDEPS         = $(CXXOBJ:.o=.d)
+CDEPS           = $(COBJ:.o=.d)
 
 .PHONY: all
 

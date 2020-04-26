@@ -2,26 +2,29 @@
 # Written in 2011
 # This makefile is licensed under the WTFPL
 
-export PROJECT_DIR      := $(shell pwd)
+export ARCH                 := x86_64
+export PROJECT_DIR          := $(shell pwd)
+export UNAME                := $(shell uname)
 
-export SYSROOT          := $(PROJECT_DIR)/build/sysroot
-export INITRD_DIR       := $(PROJECT_DIR)/build/initrd
-export TOOLCHAIN        := $(PROJECT_DIR)/build/toolchain
-export CC               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
-export CXX              := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
-export AS               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-as
-export LD               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
-export OBJCOPY          := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-objcopy
-export READELF          := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-readelf
-export STRIP            := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-strip
-export AR               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
-export RANLIB           := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
+export SYSROOT              := $(PROJECT_DIR)/build/sysroot
+export INITRD_DIR           := $(PROJECT_DIR)/build/initrd
+export TOOLCHAIN            := $(PROJECT_DIR)/build/toolchain
+export CC                   := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-gcc
+export CXX                  := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-g++
+export AS                   := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-as
+export LD                   := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY              := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF              := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-readelf
+export STRIP                := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-strip
+export AR                   := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ar
+export RANLIB               := $(PROJECT_DIR)/build/toolchain/bin/x86_64-orionx-ranlib
 
-export INITRD           := $(SYSROOT)/boot/initrd.tar
+export INITRD               := $(SYSROOT)/boot/initrd.tar
 
-export UNAME            := $(shell uname)
+# used by kernel, libkrt, and libtinflate
+export KERNEL_SSE_DISABLERS := -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-80387 -mno-fp-ret-in-387
 
-export ARCH             := x86_64
+
 
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables

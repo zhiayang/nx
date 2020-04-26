@@ -5,9 +5,10 @@
 
 WARNINGS        = -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-unused-macros -Werror=return-type -Wno-unused-parameter -Wno-unused-but-set-parameter -Wextra
 
-CXXFLAGS        = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -Wno-old-style-cast -std=c++17 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -mcmodel=kernel -c
+COMMON_CFLAGS   = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -ffreestanding -mno-red-zone -mcmodel=kernel -c
 
-CFLAGS          = -m64 -Wall -fno-omit-frame-pointer -fno-strict-aliasing -std=c11 -ffreestanding -mno-red-zone -mcmodel=kernel -c
+CXXFLAGS        = $(COMMON_CFLAGS) -Wno-old-style-cast -std=c++17 -fno-exceptions -fno-rtti
+CFLAGS          = $(COMMON_CFLAGS) -std=c11
 
 
 SSRC            =  $(shell find source -name "arch" -prune -o -name "*.s" -print)
@@ -27,7 +28,8 @@ CXXOBJ          = $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS         = $(CXXOBJ:.o=.d)
 CDEPS           = $(COBJ:.o=.d)
 
-OPTIMISATIONS   := -mno-sse -mno-sse2 -O1 -g
+# https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
+OPTIMISATIONS   := $(KERNEL_SSE_DISABLERS) -O2 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1
@@ -35,7 +37,6 @@ INCLUDES        = -Iinclude -I$(PROJECT_DIR)/libs -I$(PROJECT_DIR)/libs/libkrt/i
 
 KERNEL          = nxkernel64
 
-LIBM            = $(SYSROOT)/usr/lib/libm.a
 LIBKRT          = $(SYSROOT)/usr/lib/libkrt.a
 LIBTINFLATE     = $(SYSROOT)/usr/lib/libtinflate.a
 
@@ -53,8 +54,8 @@ all: $(SYSROOT)/boot/$(KERNEL)
 print-kernel:
 	@echo "# nxkernel"
 
-$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBM) $(LIBTINFLATE)
-	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lm -ltinflate
+$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBTINFLATE)
+	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -ltinflate
 
 %.s.o: %.s makefile | print-kernel
 	@echo "  $(notdir $<)"

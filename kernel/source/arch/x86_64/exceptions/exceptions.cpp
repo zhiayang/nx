@@ -162,6 +162,7 @@ namespace exceptions
 		}
 
 		regs->dump();
+		debugprintf("cr3:      %16.8lx\n", cr3);
 
 		if(regs->InterruptID == 14)
 		{
@@ -174,7 +175,6 @@ namespace exceptions
 			uint8_t reservedBits        = regs->ErrorCode & 0x8;    // Overwritten CPU-reserved bits of page entry?
 			uint8_t instructionFetch    = regs->ErrorCode & 0x10;   // Caused by an instruction fetch?
 
-			debugprintf("cr3:    %p\n", cr3);
 			debugprintf("addr:   %p\n", cr2);
 			debugprintf("reason:");
 
