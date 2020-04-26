@@ -77,6 +77,7 @@ namespace nx
 			tickets.lock()->insert(id, MemoryTicket(id, flags, len, pages));
 
 			log("memticket", "pid %lu created memticket (%lu, %zu)", scheduler::getCurrentProcess()->processId, id, len);
+			return id;
 		}
 
 		return -1;
