@@ -20,12 +20,16 @@ nx_x64_clear_segments:
 nx_x64_serial_interrupt:
 	swapgs_if_necessary
 	push_scratch_regs
+	cld
 
+	align_stack_pushreg %rbx
 	call nx_x64_enter_intr_context
 
 	call _ZN2nx6serial11irq_handlerEv
 
 	call nx_x64_exit_intr_context
+	unalign_stack_popreg %rbx
+
 
 	pop_scratch_regs
 	swapgs_if_necessary

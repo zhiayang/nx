@@ -20,6 +20,8 @@ nx_x64_user_signal_enter:
 	// so, subtract 128 for the red zone:
 	sub $128, %rsp
 
+	// and align it.
+	andq $0xFFFFFFFFFFFFFFF0, %rsp
 
 
 	test %r9, %r9

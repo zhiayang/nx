@@ -25,18 +25,21 @@ GlobalHandler:
 	swapgs_if_necessary 0x10    // note: extra offset for the int number
 	push_all_regs
 
+	cld
 	call nx_x64_enter_intr_context
-
-	// TODO: in reality we should save/restore FPU before entering the kernel, since
-	// we cannot guarantee that the kernel doesn't use any floating-point registers!!!
 
 	movq 120(%rsp), %rdi
 
 	// subtract 0x20, since `nx_x64_handle_irq` wants IRQ numbers, not interrupt numbers.
 	sub $0x20, %rdi
 
+	// save the old stack pointer, and align it. we are free to modify rbx since it is callee-saved
+	align_stack %rbx
+
 	call nx_x64_handle_irq
 
+	// restore the old stack pointer
+	unalign_stack %rbx
 
 	call nx_x64_exit_intr_context
 

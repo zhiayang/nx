@@ -68,6 +68,7 @@ nx_x64_syscall_entry:
 	// note: no need for explicit cli, because SF_MASK already handles that for us.
 	swapgs
 
+
 	// here, because we did not interrupt, literally nothing has changed except some segments, and rcx holds the return
 	// address (which we need to preserve)
 
@@ -86,23 +87,31 @@ nx_x64_syscall_entry:
 	pushq %gs:0x38  // user stack
 	push %r11       // user flags
 	push %rcx       // user rip
-
+	cld
 
 	// clear it.
 	movq $0, %gs:0x38
 
 	// ok great we can do stack stuff now.
 	save_regs
+
+	// save the stack pointer, then align it. (we already saved rbx)
+	align_stack %rbx
+
 	sti
 
 	do_syscall_jump_table
 
-	// we need to handle the return value here. the "convention" i think is to
+	// TODO: we need to handle the return value here. the "convention" i think is to
 	// let the kernel return -ERRNO, and return -1; so we need to negate the return
 	// value, set the userspace errno (if we are going to have that concept?), and change
 	// the return value to -1?
 
 	cli
+
+	// restore the saved stack pointer
+	unalign_stack %rbx
+
 	restore_regs
 
 	// restore the things in prep for sysret.
@@ -126,8 +135,15 @@ nx_x64_syscall_intr_entry:
 
 	save_regs
 	sti
+	cld
+
+	// align the stack pointer
+	align_stack %rbx
 
 	do_syscall_jump_table
+
+	// restore it
+	unalign_stack %rbx
 
 	cli
 	restore_regs

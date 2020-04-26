@@ -118,19 +118,12 @@ kernel_premain:
 	xor %rbp, %rbp
 	pushq %rbp
 
-	// stack should be 16-byte aligned on entry into a function
-	// but, the function will push %rbp as part of its prologue
-	// so, we make sure the stack is *not* 16-byte aligned (ie it is 0x......8)
+	// the stack should be 16-byte aligned on the "call" instruction; the call will push a return
+	// address, which leads to it being 8-bytes off. but, since we are using a jmp and not a call,
+	// we need to make sure the stack is "already" 8-bytes off. so just force align and subtract.
 
-	mov %rsp, %rax
-	and $0xfffffffffffffff0, %rax
-	cmp %rax, %rsp
-
-	jne skip_align
-
+	and $0xfffffffffffffff0, %rsp
 	sub $8, %rsp
-
-skip_align:
 
 	jmp _ZN2nx4initEPNS_8BootInfoE
 

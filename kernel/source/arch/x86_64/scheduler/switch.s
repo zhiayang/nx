@@ -39,16 +39,29 @@ restore_state:
 	// save rdx, cos we still need it for the fpu restore.
 	// the rest can be trashed, no worries.
 	pushq %rdx
-
 	mov %rcx, %rdi
+
+	// save the stack in rbx, and align it to call the C functions
+	align_stack %rbx
+
 	call nx_x64_setup_signalled_stack
+
+	// restore it
+	unalign_stack %rbx
 
 	// restore the saved rdx.
 	popq %rdx
 
 	mov %rdx, %rdi
+
+	// and again:
+	// save the stack in rbx, and align it to call the C functions
+	align_stack %rbx
+
 	call _ZN2nx3cpu3fpu7restoreEm
 
+	// restore it
+	unalign_stack %rbx
 
 
 	pop_all_regs
@@ -62,6 +75,7 @@ restore_state:
 // wire this to whatever IRQ we're using to tick the kernel (be it PIT or HPET or whatever)
 nx_x64_tick_handler:
 	swapgs_if_necessary
+	cld
 
 	// we might be calling this at a high frequency, so for the fast path we don't save all
 	// the registers -- only the caller-saved ones. according to system v abi, these are:
@@ -69,6 +83,8 @@ nx_x64_tick_handler:
 	// the order doesn't really matter, but we'll just follow the standard order we use and leave holes.
 	push_scratch_regs
 
+	// align the stack using rbx (and save rbx)
+	align_stack_pushreg %rbx
 
 	call nx_x64_scheduler_tick
 
@@ -81,11 +97,21 @@ nx_x64_tick_handler:
 
 do_something:
 	// need to context switch -- so we need to push all the registers.
+	// but restore the stack pointer first:
+	unalign_stack_popreg %rbx
+
+	// then again:
 	pop_scratch_regs
 	push_all_regs
 
 	// note: we need to pass the context via the stack pointer.
 	movq %rsp, %rdi
+
+	// we need to align the stack *again*. we don't need to additionally save rbx here, since
+	// we already pushed all registers. *BUT*, we force it to be 8-byte offset. this is because
+	// we use 'jmp' instead of 'call' here.
+	align_stack %rbx
+	subq $8, %rsp
 
 	// scheduler code that finds the next thread to run, and calls nx_x64_switch_to_thread (above)
 	// note: since this will result in an iretq, we do not have to handle its return or whatever.
@@ -96,6 +122,9 @@ do_something:
 
 
 do_nothing:
+	// restore the stack pointer, and rbx
+	unalign_stack_popreg %rbx
+
 	pop_scratch_regs
 
 	// bye bye
@@ -106,17 +135,19 @@ do_nothing:
 
 
 
-
-
 // this will be a software interrupt.
 nx_x64_yield_thread:
 	swapgs_if_necessary
+	cld
 
 	push_all_regs
+	movq %rsp, %rdi
+
+	// same thing above to align the stack, but with 'jmp'
+	align_stack %rbx
+	subq $8, %rsp
 
 	// we just find the next thing, no issue.
-
-	movq %rsp, %rdi
 	jmp nx_x64_find_and_switch_thread
 
 	// find_and_switch will iret for us.

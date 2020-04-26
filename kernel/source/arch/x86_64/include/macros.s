@@ -21,7 +21,26 @@
 .endm
 
 
+.macro align_stack register:req
+	mov %rsp, \register
+	andq $0xFFFFFFFFFFFFFFF0, %rsp
+.endm
 
+.macro unalign_stack register:req
+	mov \register, %rsp
+.endm
+
+
+.macro align_stack_pushreg register:req
+	push \register
+	mov %rsp, \register
+	andq $0xFFFFFFFFFFFFFFF0, %rsp
+.endm
+
+.macro unalign_stack_popreg register:req
+	mov \register, %rsp
+	pop \register
+.endm
 
 
 

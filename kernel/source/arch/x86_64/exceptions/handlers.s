@@ -239,24 +239,32 @@ nx_x64_exception_handler_31:
 	swapgs_if_necessary 0x18
 
 	push_all_regs
-	pushq %rsp
+	cld
 
-	call nx_x64_enter_intr_context
+	pushq %rsp
 
 	// Push CR2 in case of page faults
 	movq %cr2, %rbp
-	pushq %rbp
+	push %rbp
 
 	// pass the stack pointer as an argument, aka pointer to structure.
-	movq %rsp, %rdi
+	mov %rsp, %rdi
+
+	call nx_x64_enter_intr_context
+
+	// we are free to modify rbx, since it's callee-saved.
+	align_stack %rbx
 .endm
 
 
 .macro exception_handler_end
-	addq $8, %rsp	// remove cr2
-	addq $8, %rsp	// Don't pop %rsp
+
+	unalign_stack %rbx
 
 	call nx_x64_exit_intr_context
+
+	addq $8, %rsp	// remove cr2
+	addq $8, %rsp	// remove rsp
 
 	pop_all_regs
 
