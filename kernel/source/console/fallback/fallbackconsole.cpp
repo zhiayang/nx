@@ -18,7 +18,8 @@ namespace fallback
 	constexpr int CharWidth = 9;
 	constexpr int CharHeight = 16;
 
-	constexpr int Padding = 6;
+	constexpr int PaddingX = 12;
+	constexpr int PaddingY = 6;
 
 	static int FramebufferWidth = 0;
 	static int FramebufferHeight = 0;
@@ -35,15 +36,19 @@ namespace fallback
 	static uint32_t CurrentFGColour = 0;
 	static uint32_t CurrentBGColour = 0;
 
+	nx::spinlock lock;
+
 	void init(int x, int y, int scanx)
 	{
+		new (&lock) nx::spinlock();
+
 		FramebufferWidth = x;
 		FramebufferHeight = y;
 
 		FramebufferScanWidth = scanx;
 
-		VT_Width = (FramebufferWidth - 2*Padding) / CharWidth;
-		VT_Height = (FramebufferHeight - 2*Padding) / CharHeight;
+		VT_Width = (FramebufferWidth - 2*PaddingX) / CharWidth;
+		VT_Height = (FramebufferHeight - 2*PaddingY) / CharHeight;
 
 		CurrentFGColour = 0xE0E0E0;
 		CurrentBGColour = 0x080808;
@@ -58,8 +63,8 @@ namespace fallback
 	{
 		if(!c) return;
 
-		x += Padding;
-		y += Padding;
+		x += PaddingX;
+		y += PaddingY;
 
 		if(c == ' ' || c > 126)
 		{
@@ -90,13 +95,15 @@ namespace fallback
 	{
 		if(CursorY == VT_Height)
 		{
+			autolock lk(&lock);
+
 			// copy.
-			memmove((void*) (Framebuffer + (4 * FramebufferScanWidth * Padding)),
-				(void*) (Framebuffer + (4 * FramebufferScanWidth * (Padding + CharHeight))),
+			memmove((void*) (Framebuffer + (4 * FramebufferScanWidth * PaddingY)),
+				(void*) (Framebuffer + (4 * FramebufferScanWidth * (PaddingY + CharHeight))),
 				((VT_Height - 1) * CharHeight) * FramebufferScanWidth * 4);
 
 			// memset the last row to 0.
-			krt::util::memfill4b((uint32_t*) (Framebuffer + (Padding + ((VT_Height - 1) * CharHeight)) * FramebufferScanWidth * 4),
+			krt::util::memfill4b((uint32_t*) (Framebuffer + (PaddingY + ((VT_Height - 1) * CharHeight)) * FramebufferScanWidth * 4),
 				CurrentBGColour, FramebufferScanWidth * CharHeight);
 
 			CursorY -= 1;
