@@ -13,12 +13,13 @@ namespace heap
 	};
 
 	constexpr size_t BucketCount        = sizeof(BucketSizes) / sizeof(BucketSizes[0]);
+	constexpr size_t InitialMultiplier  = 1;
 	constexpr bool EnableExpansion      = true;
 	constexpr bool EnableLargeAllocs    = true;
 	constexpr bool Locked               = true;
-	constexpr size_t InitialMultiplier  = 1;
+	constexpr bool Debug                = true;
 
-	static heap_impl<BucketCount, BucketSizes, InitialMultiplier, EnableExpansion, EnableLargeAllocs, Locked> impl;
+	static heap_impl<BucketCount, BucketSizes, InitialMultiplier, EnableExpansion, EnableLargeAllocs, Locked, Debug> impl;
 
 	void init()
 	{

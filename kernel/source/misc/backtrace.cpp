@@ -87,7 +87,8 @@ namespace util
 		int counter = 0;
 		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
 
-		do {
+		while(rbp)
+		{
 			auto rip = *((addr_t*) (rbp + sizeof(uint64_t)));
 			if(!IS_CANONICAL(rip)) break;
 
@@ -109,8 +110,7 @@ namespace util
 			}
 
 			rbp = *((addr_t*) rbp);
-
-		} while(rbp);
+		}
 
 		nested = false;
 	}

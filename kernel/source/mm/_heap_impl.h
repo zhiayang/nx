@@ -8,7 +8,7 @@
 namespace nx {
 
 template <size_t BucketCount, const size_t (&BucketSizes)[BucketCount], size_t InitialMultiplier,
-	bool Expansion, bool LargeAllocations, bool Locked
+	bool Expansion, bool LargeAllocations, bool Locked, bool HeapDebug = false
 >
 struct heap_impl
 {
@@ -40,7 +40,6 @@ struct heap_impl
 
 	static constexpr size_t ExpansionFactor = 2;
 	static constexpr size_t ChunksPerPage = PAGE_SIZE / sizeof(Chunk);
-
 
 	// we always have a fixed number of buckets!
 	Bucket Buckets[BucketCount];
@@ -95,18 +94,12 @@ struct heap_impl
 		assert(kproc);
 
 		auto addr = VirtAddr(_addr);
-		if(userPage && false)
-		{
-			vmm::deallocate(addr, num, kproc);
-		}
-		else
-		{
-			vmm::deallocateAddrSpace(addr, num, kproc);
-			for(size_t i = 0; i < num; i++)
-				pmm::deallocate(vmm::getPhysAddr(addr + (i * PAGE_SIZE), kproc), 1);
 
-			vmm::unmapAddress(addr, num, kproc);
-		}
+		vmm::deallocateAddrSpace(addr, num, kproc);
+		for(size_t i = 0; i < num; i++)
+			pmm::deallocate(vmm::getPhysAddr(addr + (i * PAGE_SIZE), kproc), 1);
+
+		vmm::unmapAddress(addr, num, kproc);
 	}
 
 
@@ -380,6 +373,7 @@ struct heap_impl
 		return ptr;
 	}
 
+	__attribute__((always_inline))
 	addr_t allocate(size_t req_size, size_t align)
 	{
 		if(req_size == 0) return 0;
@@ -394,12 +388,14 @@ struct heap_impl
 			we store a byte of data 'behind' the returned pointer.
 			we also need to store 8 bytes (size_t) for the size of the chunk.
 
+			if debug mode is enabled, we also store the caller's address behind the size.
+
 			it looks like this:
 
-			<   8 bytes   >   <   N bytes   >   < 1 b >
+			<   8 bytes   >   <   8 bytes   >   <   N bytes   >   < 1 b >
 
-			S S S S S S S S   A A A A A A A A   X X X X   M M M M M M M M M M M
-			---   size  ---   -- alignment --   - ofs -   ^ -- returned ptr --
+			C C C C C C C C   S S S S S S S S   A A A A A A A A   X X X X   M M M M M M M M M M M
+			- caller addr -   ---   size  ---   -- alignment --   - ofs -   ^ -- returned ptr --
 
 			so we need to take into account all of the bookkeeping, such that the returned
 			pointer is aligned correctly. 'ofs' stores the size of the alignment + the size of
@@ -409,6 +405,10 @@ struct heap_impl
 		*/
 
 		size_t extra_size = sizeof(size_t) + sizeof(alignment_offset_t) + (align - 1);
+
+		if(HeapDebug)
+			extra_size += sizeof(size_t);
+
 		size_t total_size = req_size + extra_size;
 
 		addr_t return_ptr = 0;
@@ -480,6 +480,12 @@ struct heap_impl
 
 		// we don't need locks here, since we already obtained the memory.
 
+		if(HeapDebug)
+		{
+			*((size_t*) return_ptr) = (size_t) __builtin_return_address(0);
+			return_ptr += sizeof(size_t);
+		}
+
 		*((size_t*) return_ptr) = total_size;
 		return_ptr += sizeof(size_t);
 
@@ -490,6 +496,7 @@ struct heap_impl
 	}
 
 
+	__attribute__((always_inline))
 	void deallocate(addr_t _addr)
 	{
 		if(_addr == 0) return;
@@ -505,6 +512,23 @@ struct heap_impl
 		addr -= sizeof(size_t);
 
 		size_t sz = *((size_t*) addr);
+
+		size_t caller = 0;
+		if(HeapDebug)
+		{
+			addr -= sizeof(size_t);
+			caller = *((size_t*) addr);
+		}
+
+		if(!sz)
+		{
+			error("heap", "heap corruption! (%s)\n"
+							"address: %p\n"
+							"ofs: %x, sz: %zu\n"
+							"caller: %p\n", this->HeapId, _addr, ofs, sz, caller);
+
+			util::printStackTrace();
+		}
 		assert(sz);
 
 		if(sz >= PAGE_SIZE)

@@ -143,7 +143,7 @@ namespace vmm
 		else
 		{
 			// u dun goofed
-			error("pf", "non-CoW page fault: %d / %p", scheduler::getCurrentThread()->threadId, cr2);
+			error("pf", "non-CoW page fault: tid %ld, cr2=%p", scheduler::getCurrentThread()->threadId, cr2);
 			return false;
 		}
 	}
