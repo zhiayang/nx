@@ -4,6 +4,8 @@
 
 #include "nx.h"
 
+extern "C" uint64_t nx_x64_get_rflags();
+
 namespace nx
 {
 	// bool __sync_bool_compare_and_swap (type *ptr, type oldval, type newval, ...)
@@ -22,16 +24,17 @@ namespace nx
 				this->holder->threadId, this->holder->parent->processId);
 		}
 
-		interrupts::disable();
-		while(!__sync_bool_compare_and_swap(&this->value, 0, 1))
+		while(!atomic::cas(&this->value, 0, 1))
 			asm volatile ("pause");
+
+		interrupts::disable();
 
 		// if the scheduler hasn't started properly, don't try to touch cpu-local state
 		// cos it doesn't exist.
 		if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
 		{
 			this->holder = scheduler::getCurrentThread();
-			// log("spin", "tid %lu held lock %p", this->holder->threadId, this);
+			// log("spin", "tid %lu held lock %p (%d)", this->holder->threadId, this, nx_x64_get_rflags());
 
 			// this only needs to be relaxed, since there will be no other threads running.
 			// (it's a per-cpu value)
@@ -45,12 +48,13 @@ namespace nx
 		// cos it doesn't exist.
 		if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
 		{
-		// 	log("spin", "tid %lu released lock %p", this->holder->threadId, this);
+			// log("spin", "unlock: %p (%x) (%d)", this, nx_x64_get_rflags(), this->value);
+			// log("spin", "tid %lu released lock", this->holder->threadId);
 			// __atomic_sub_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
 		}
 
-		__atomic_store_n(&this->value, 0, __ATOMIC_RELAXED);
-		this->holder = 0;
+		__atomic_store_n(&this->value, 0, __ATOMIC_SEQ_CST);
+		__atomic_store_n(&this->holder, 0, __ATOMIC_SEQ_CST);
 
 		interrupts::enable();
 	}
@@ -62,7 +66,26 @@ namespace nx
 
 	bool spinlock::trylock()
 	{
-		return __sync_bool_compare_and_swap(&this->value, 0, 1);
+		if(atomic::cas(&this->value, 0, 1))
+		{
+			interrupts::disable();
+
+			// if the scheduler hasn't started properly, don't try to touch cpu-local state
+			// cos it doesn't exist.
+			if(__likely(scheduler::getInitPhase() >= SchedState::SchedulerStarted))
+			{
+				this->holder = scheduler::getCurrentThread();
+				// log("spin", "tid %lu held lock %p (%d)", this->holder->threadId, this, nx_x64_get_rflags());
+
+				// this only needs to be relaxed, since there will be no other threads running.
+				// (it's a per-cpu value)
+				// __atomic_add_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 
@@ -77,7 +100,7 @@ namespace nx
 				this->holder->threadId, this->holder->parent->processId);
 		}
 
-		while(!__sync_bool_compare_and_swap(&this->value, 0, 1))
+		while(!atomic::cas(&this->value, 0, 1))
 			scheduler::block(this);
 
 		this->holder = scheduler::getCurrentThread();
@@ -101,7 +124,13 @@ namespace nx
 
 	bool mutex::trylock()
 	{
-		return __sync_bool_compare_and_swap(&this->value, 0, 1);
+		if(atomic::cas(&this->value, 0, 1))
+		{
+			this->holder = scheduler::getCurrentThread();
+			return true;
+		}
+
+		return false;
 	}
 }
 
