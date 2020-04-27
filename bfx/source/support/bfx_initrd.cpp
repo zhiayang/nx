@@ -57,7 +57,7 @@ namespace initrd
 		initrdPtr   = (uint8_t*) ptr;
 		initrdSize  = sz;
 
-		if(memcmp(((tarent_t*) initrdPtr)->ustar, "ustar\0""00", 8) != 0)
+		if(memcmp(((tarent_t*) initrdPtr)->ustar, "ustar\0", 5) != 0)
 			abort("invalid (non-tar) initrd format!");
 
 		for(size_t i = 0; i < initrdSize;)
