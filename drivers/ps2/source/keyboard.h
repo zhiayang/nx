@@ -115,7 +115,8 @@ namespace ps2
 
 	struct Keyboard
 	{
-		void addByte(uint8_t x);
+		// returns true if we got a whole character
+		bool addByte(uint8_t x);
 
 	private:
 		uint8_t decodeHID();
@@ -125,7 +126,7 @@ namespace ps2
 
 		// these are temporary!!
 		bool shifting = false;
-		void print(uint8_t hid);
+		bool print(uint8_t hid);
 	};
 }
 

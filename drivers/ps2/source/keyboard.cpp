@@ -12,7 +12,7 @@ namespace ps2
 {
 	// maybe see here also: https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2
 
-	void Keyboard::addByte(uint8_t x)
+	bool Keyboard::addByte(uint8_t x)
 	{
 		this->buffer.write(x);
 
@@ -22,8 +22,10 @@ namespace ps2
 			auto hid = this->decodeHID();
 
 			// temporary!!!!!!!
-			this->print(hid);
+			return this->print(hid);
 		}
+
+		return false;
 	}
 
 	uint8_t Keyboard::decodeHID()
@@ -76,7 +78,7 @@ namespace ps2
 	}
 
 
-	void Keyboard::print(uint8_t hid)
+	bool Keyboard::print(uint8_t hid)
 	{
 		// the hid table is a little strange. it's like 5 years old, forgive me.
 		size_t idx = hid + 3;
@@ -89,7 +91,15 @@ namespace ps2
 		assert(idx < 4 * 0xFF);
 		char x = tables::USB_HID[idx];
 
-		if(x != 0) putchar(x);
+
+		// temporary as fuck!
+		if(x != 0)
+		{
+			putchar(x);
+			return true;
+		}
+
+		return false;
 	}
 }
 
