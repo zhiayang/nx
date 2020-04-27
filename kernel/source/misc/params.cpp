@@ -21,7 +21,7 @@ namespace params
 
 	void init(BootInfo* bi)
 	{
-		Options = array<Option>();
+		new (&Options) array<Option>();
 
 		if(bi->version < 3)
 		{
