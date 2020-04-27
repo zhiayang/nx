@@ -133,15 +133,7 @@ namespace interrupts
 
 
 
-
-
-	static bool in_intr_context()
-	{
-		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
-			return scheduler::getCPULocalState()->interruptNesting > 0;
-
-		return false;
-	}
+	extern "C" bool nx_x64_is_in_intr_context();
 
 	static int32_t early_sti_level = 0;
 	static int32_t& get_sti_level()
@@ -155,21 +147,15 @@ namespace interrupts
 
 	void enable()
 	{
-		// if(in_intr_context())
-		// 	abort("cannot enable interrupts manually in interrupted context!");
-
 		auto& stilvl = get_sti_level();
 		stilvl += 1;
 
-		if(stilvl >= 0 && !in_intr_context())
+		if(stilvl >= 0 && !nx_x64_is_in_intr_context())
 			asm volatile("sti");
 	}
 
 	void disable()
 	{
-		// if(in_intr_context())
-		// 	abort("cannot disable interrupts manually in interrupted context!");
-
 		auto& stilvl = get_sti_level();
 
 		asm volatile("cli");

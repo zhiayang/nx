@@ -46,24 +46,38 @@ nx_x64_serial_interrupt:
 .global nx_x64_enter_intr_context
 .type nx_x64_enter_intr_context, @function
 nx_x64_enter_intr_context:
-	mov %gs, %rax
-	test %rax, %rax
-	jz 1f
-
 	lock incl %gs:0x50
-1:
 	ret
 
 .global nx_x64_exit_intr_context
 .type nx_x64_exit_intr_context, @function
 nx_x64_exit_intr_context:
-	mov %gs, %rax
-	test %rax, %rax
-	jz 1f
-
 	lock decl %gs:0x50
-1:
 	ret
+
+
+.global nx_x64_is_in_intr_context
+.type nx_x64_is_in_intr_context, @function
+nx_x64_is_in_intr_context:
+	movl %gs:0x50, %eax
+	test %eax, %eax
+	setnz %al
+	movzx %al, %rax
+	ret
+
+
+
+
+
+.global nx_x64_get_rflags
+.type nx_x64_get_rflags, @function
+nx_x64_get_rflags:
+	pushfq
+	pop %rax
+	ret
+
+
+
 
 
 
@@ -124,3 +138,5 @@ nx_x64_read_cr4:
 nx_x64_write_cr4:
 	movq %rdi, %cr4
 	ret
+
+
