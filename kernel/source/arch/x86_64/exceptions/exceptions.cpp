@@ -112,7 +112,7 @@ namespace exceptions
 		// the IRQ remapping. if not, we just mask all interrupts from the PIC.
 	}
 
-	extern "C" uint64_t __last_saved_error_cde;
+	extern "C" uint64_t __last_saved_error_code;
 
 	static int faultCount = 0;
 	extern "C" void nx_x64_handle_exception(cpu::ExceptionState* regs)
@@ -135,7 +135,7 @@ namespace exceptions
 
 		debugprintf("\n\n");
 		debugprintf("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
-		debugprintf("error code:   %d  (last_saved_error: %lu)\n", regs->ErrorCode, __last_saved_error_cde);
+		debugprintf("error code:   %d  (last_saved_error: %lu)\n", regs->ErrorCode, __last_saved_error_code);
 
 		// note: we must check gs, in case it was some kind of swapgs failure -- we don't want to end up triple-faulting.
 		if(gsbase != 0 && scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted)

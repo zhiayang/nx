@@ -523,7 +523,7 @@ namespace scheduler
 		assert(!__nested_tick && "TICK PREEMPTED?!");
 		__nested_tick = 1;
 
-		// serial::debugprint('>');
+		// serial::debugprint('.');
 
 		auto ss = getSchedState();
 
@@ -546,7 +546,7 @@ namespace scheduler
 			ret = false;
 
 		// if(ret) serial::debugprint("*");
-		// else    serial::debugprint(".");
+		// else    serial::debugprint("@");
 
 		__nested_tick = 0;
 		return ret;
