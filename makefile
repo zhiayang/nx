@@ -134,14 +134,14 @@ compile: export-headers
 	@$(MAKE) -s -C libs/libm
 	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C libs/libnxsc
-	@$(MAKE) -s -C libs/tinflate
+	@$(MAKE) -s -C libs/miniz
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C bfx
 	@$(MAKE) -s -C kernel
 	@$(MAKE) -s -C drivers
 	@$(MAKE) -s -C services
 
-$(INITRD).gz: $(shell find $(INITRD_DIR)) compile
+$(INITRD).gz: $(shell find $(INITRD_DIR) | sed 's/ /?/g') compile
 	@utils/tools/update-initrd.sh
 
 

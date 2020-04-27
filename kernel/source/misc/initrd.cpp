@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
-#include "tinf.h"
+#include "miniz.h"
 
 #define NX_BOOTINFO_VERSION NX_MAX_BOOTINFO_VERSION
 #include "bootinfo.h"
@@ -58,8 +58,6 @@ namespace initrd
 {
 	void init(BootInfo* bi)
 	{
-		tinf_init();
-
 		if(bi->initrdSize == 0 || bi->initrdBuffer == 0)
 			abort("no initrd!");
 
@@ -77,7 +75,7 @@ namespace initrd
 		// check if it's gzip first.
 		if(((gzip_header_t*) initrd)->magic[0] == 0x1F && ((gzip_header_t*) initrd)->magic[1] == 0x8B)
 		{
-			log("initrd", "format: gzip");
+			log("initrd", "format: gzip (compressed: %zu bytes)", inpSz);
 			println("decompressing initrd...\n");
 
 			// note: we do this to avoid unaligned access, which ubsan complains about.
@@ -90,8 +88,8 @@ namespace initrd
 			}
 
 			// make a thing.
-			void* buf = (void*) vmm::allocateEager((uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE,
-				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
+			auto numPages = (uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE;
+			void* buf = (void*) vmm::allocateEager(numPages, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
 
 			{
 				auto hdr = (gzip_header_t*) initrd;
@@ -102,22 +100,21 @@ namespace initrd
 
 				uint8_t* data = (uint8_t*) (hdr + 1);
 				if(hdr->flags & 0x4)
-					data += *((uint16_t*) data);
+					inpSz -= sizeof(uint16_t), data += *((uint16_t*) data);
 
-				if(hdr->flags & 0x8)    { while(*data) data++; data++; }
-				if(hdr->flags & 0x10)   { while(*data) data++; data++; }
+				if(hdr->flags & 0x8)    { while(*data) data++, inpSz--; data++; inpSz--; }
+				if(hdr->flags & 0x10)   { while(*data) data++, inpSz--; data++; inpSz--; }
 				if(hdr->flags & 0x20)   { abort("initrd is encrypted?!"); }
 
-				unsigned int len = (int) uncompressedSize;
-				int ret = tinf_uncompress(buf, &len, data, (int) inpSz);
-				if(ret != TINF_OK || len != (unsigned int) uncompressedSize)
-					abort("failed to decompress initrd!");
+				auto ret = tinfl_decompress_mem_to_mem(buf, uncompressedSize, data, inpSz, TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
+				if(ret == TINFL_DECOMPRESS_MEM_TO_MEM_FAILED || ret != uncompressedSize)
+					abort("failed to decompress initrd! (ret = %zd)", (int64_t) ret);
 			}
 
 			finalPtr = buf;
 			finalSz = uncompressedSize;
 		}
-		else if(memcmp(((tarent_t*) initrd)->ustar, "ustar\0""00", 8) == 0)
+		else if(memcmp(((tarent_t*) initrd)->ustar, "ustar\0", 5) == 0)
 		{
 			log("initrd", "format: tar");
 

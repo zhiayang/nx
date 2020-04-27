@@ -6,7 +6,7 @@
                 "${workspaceFolder:kernel}/include",
                 "${workspaceFolder:libkrt}/include",
                 "${workspaceFolder:nx}/libs/libm/include",
-                "${workspaceFolder:nx}/libs/tinflate",
+                "${workspaceFolder:nx}/libs/miniz",
                 "${workspaceFolder:nx}/libs",
                 "${workspaceFolder:efx}/zircon-efi"
             ],

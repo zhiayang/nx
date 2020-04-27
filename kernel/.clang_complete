@@ -1,6 +1,6 @@
 -Iinclude
 -I/Users/zhiayang/Desktop/Stuff/Code/nx/libs
--I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/tinflate
+-I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/miniz
 -I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libm/include
 -I/Users/zhiayang/Desktop/Stuff/Code/nx/libs/libkrt/include
 -I/Users/zhiayang/Desktop/Stuff/Code/nx/efx/zircon-efi

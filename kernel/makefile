@@ -33,12 +33,12 @@ OPTIMISATIONS   := $(KERNEL_SSE_DISABLERS) -O2 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1
-INCLUDES        = -Iinclude -I$(PROJECT_DIR)/libs -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/tinflate -I$(PROJECT_DIR)/efx/zircon-efi
+INCLUDES        = -Iinclude -I$(PROJECT_DIR)/libs -I$(PROJECT_DIR)/libs/libkrt/include -I$(PROJECT_DIR)/libs/miniz -I$(PROJECT_DIR)/efx/zircon-efi
 
 KERNEL          = nxkernel64
 
 LIBKRT          = $(SYSROOT)/usr/lib/libkrt.a
-LIBTINFLATE     = $(SYSROOT)/usr/lib/libtinflate.a
+LIBMINIZ        = $(SYSROOT)/usr/lib/libminiz.a
 
 .PHONY: all
 .DEFAULT_GOAL = all
@@ -54,8 +54,8 @@ all: $(SYSROOT)/boot/$(KERNEL)
 print-kernel:
 	@echo "# nxkernel"
 
-$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBTINFLATE)
-	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -ltinflate
+$(SYSROOT)/boot/$(KERNEL): $(SOBJ) $(COBJ) $(CXXOBJ) $(LIBKRT) $(LIBMINIZ)
+	@$(LD) $(LDFLAGS) -T link.ld -o $@ $(SOBJ) $(COBJ) $(CXXOBJ) -lkrt -lminiz
 
 %.s.o: %.s makefile | print-kernel
 	@echo "  $(notdir $<)"
