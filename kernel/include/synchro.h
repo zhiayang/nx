@@ -4,54 +4,12 @@
 
 #pragma once
 #include "defs.h"
+#include "atomic.h"
+
 #include <type_traits>
 
 namespace nx
 {
-	namespace atomic
-	{
-		bool cas16(void* ptr, void* expected_value, void* new_value);
-
-		bool cas_fetch(int8_t* ptr, int8_t* expected_value, int8_t new_value);
-		bool cas_fetch(int16_t* ptr, int16_t* expected_value, int16_t new_value);
-		bool cas_fetch(int32_t* ptr, int32_t* expected_value, int32_t new_value);
-		bool cas_fetch(int64_t* ptr, int64_t* expected_value, int64_t new_value);
-		bool cas_fetch(uint8_t* ptr, uint8_t* expected_value, uint8_t new_value);
-		bool cas_fetch(uint16_t* ptr, uint16_t* expected_value, uint16_t new_value);
-		bool cas_fetch(uint32_t* ptr, uint32_t* expected_value, uint32_t new_value);
-		bool cas_fetch(uint64_t* ptr, uint64_t* expected_value, uint64_t new_value);
-
-		bool cas(int8_t* ptr, int8_t expected_value, int8_t new_value);
-		bool cas(int16_t* ptr, int16_t expected_value, int16_t new_value);
-		bool cas(int32_t* ptr, int32_t expected_value, int32_t new_value);
-		bool cas(int64_t* ptr, int64_t expected_value, int64_t new_value);
-		bool cas(uint8_t* ptr, uint8_t expected_value, uint8_t new_value);
-		bool cas(uint16_t* ptr, uint16_t expected_value, uint16_t new_value);
-		bool cas(uint32_t* ptr, uint32_t expected_value, uint32_t new_value);
-		bool cas(uint64_t* ptr, uint64_t expected_value, uint64_t new_value);
-
-
-		void incr(int8_t* ptr);
-		void incr(int16_t* ptr);
-		void incr(int32_t* ptr);
-		void incr(int64_t* ptr);
-		void incr(uint8_t* ptr);
-		void incr(uint16_t* ptr);
-		void incr(uint32_t* ptr);
-		void incr(uint64_t* ptr);
-
-		void decr(int8_t* ptr);
-		void decr(int16_t* ptr);
-		void decr(int32_t* ptr);
-		void decr(int64_t* ptr);
-		void decr(uint8_t* ptr);
-		void decr(uint16_t* ptr);
-		void decr(uint32_t* ptr);
-		void decr(uint64_t* ptr);
-	}
-
-
-
 	namespace scheduler
 	{
 		struct Thread;

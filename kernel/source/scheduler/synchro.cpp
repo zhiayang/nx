@@ -8,10 +8,6 @@ extern "C" uint64_t nx_x64_get_rflags();
 
 namespace nx
 {
-	// bool __sync_bool_compare_and_swap (type *ptr, type oldval, type newval, ...)
-	// These builtins perform an atomic compare and swap. That is, if the current value of *ptr is oldval, then write newval into *ptr.
-	// The "bool" version returns true if the comparison is successful and newval was written.
-
 	using SchedState = scheduler::SchedulerInitPhase;
 
 	spinlock::spinlock() { }
@@ -53,8 +49,8 @@ namespace nx
 			// __atomic_sub_fetch(&scheduler::getCPULocalState()->numHeldLocks, 1, __ATOMIC_RELAXED);
 		}
 
-		__atomic_store_n(&this->value, 0, __ATOMIC_SEQ_CST);
-		__atomic_store_n(&this->holder, 0, __ATOMIC_SEQ_CST);
+		atomic::store(&this->value, 0);
+		atomic::store(&this->holder, 0);
 
 		interrupts::enable();
 	}
@@ -111,8 +107,8 @@ namespace nx
 	{
 		// log("mutex", "tid %lu released %p", holder ? holder->threadId : 0, this);
 
-		this->value = 0;
-		this->holder = 0;
+		atomic::store(&this->value, 0);
+		atomic::store(&this->holder, 0);
 
 		scheduler::unblock(this);
 	}
