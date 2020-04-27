@@ -21,12 +21,19 @@ struct heap_impl
 		addr_t memory;
 	};
 
+	// this must be 16-byte aligned for cmpxchg16b to work
+	struct ChunkListHead
+	{
+		size_t id;
+		Chunk* chunk;
+	} __attribute__((aligned(16)));
+
 	struct Bucket
 	{
-		Chunk* chunks;
+		ChunkListHead freeChunks;
 		size_t numFreeChunks;
 
-		Chunk* usedChunks;
+		ChunkListHead usedChunks;
 		size_t numUsedChunks;
 
 		size_t bucketIdx;
@@ -40,14 +47,15 @@ struct heap_impl
 
 	static constexpr size_t ExpansionFactor = 2;
 	static constexpr size_t ChunksPerPage = PAGE_SIZE / sizeof(Chunk);
+	static_assert(PAGE_SIZE % sizeof(Chunk) == 0, "invalid chunk size! (not a factor of page size)");
 
 	// we always have a fixed number of buckets!
 	Bucket Buckets[BucketCount];
 
 	bool Initialised = false;
 
-	size_t NumSpareChunks = 0;
-	Chunk* SpareChunks = 0;
+	size_t numSpareChunks = 0;
+	ChunkListHead spareChunks;
 
 	size_t AllocatedByteCount = 0;
 
@@ -69,8 +77,12 @@ struct heap_impl
 		except the heap is already locked, so we go to sleep by calling block()... you get the picture.
 
 		a spinlock "solves" this problem by just... not calling block(). it just spins.
+
+
+		since we moved to a lock-free allocator (for the most part), this lock is only used for
+		the expansion of the heap.
 	*/
-	nx::spinlock lock;
+	nx::spinlock expansionLock;
 
 
 
@@ -103,17 +115,14 @@ struct heap_impl
 	}
 
 
+
 	void makeSpareChunks()
 	{
-		// make sure the lock is held.
-		assert(Locked ? lock.held() : true);
+		assert(Locked ? expansionLock.held() : true);
 
 		// make us one page worth of spare chunks -- 256 of them.
 		addr_t chunkBuffer = internal_allocatePages(1);
 		if(chunkBuffer == 0) abort("heap::makeSpareChunks(): out of memory!");
-
-		// memset((void*) chunkBuffer, 0, 1 * PAGE_SIZE);
-
 
 		Chunk* next = 0;
 		for(size_t k = 0; k < ChunksPerPage; k++)
@@ -124,52 +133,56 @@ struct heap_impl
 			chunk->memory = 0;
 
 			chunkBuffer += sizeof(Chunk);
-
 			next = chunk;
 		}
 
-		// 'next' is the head of the list of these.
-		if(SpareChunks == 0)
+		// 'next' is the head of the list of these. the problem is that we have two pointer-to-heads
+		// so there's no way around it; we need to traverse to the end of one list to append the other.
+		// since this is locked, there's no need to do anything fancy, luckily.
+		if(spareChunks.chunk != nullptr)
 		{
-			SpareChunks = next;
+			auto tail = spareChunks.chunk;
+			while(tail->next)
+				tail = tail->next;
+
+			assert(tail->next == nullptr);
+			tail->next = next;
 		}
 		else
 		{
-			auto old = SpareChunks;
-			SpareChunks = next;
-			next->next = old;
+			spareChunks.chunk = next;
 		}
 
-		NumSpareChunks += ChunksPerPage;
+		numSpareChunks += ChunksPerPage;
 	}
 
 	Chunk* getSpareChunk()
 	{
-		// make sure the lock is held.
-		assert(Locked ? lock.held() : true);
+		assert(Locked ? expansionLock.held() : true);
 
-		if(SpareChunks == 0)
-			makeSpareChunks();
+		assert(spareChunks.chunk);
 
-		assert(NumSpareChunks > 0);
-
-		auto ret = SpareChunks;
-		SpareChunks = ret->next;
+		auto ret = getChunkFromList(&spareChunks);
+		numSpareChunks--;
 
 		return ret;
 	}
 
 	void expandBucket(Bucket* bucket)
 	{
-		// make sure the lock is held.
-		assert(Locked ? lock.held() : true);
-
 		if constexpr (!Expansion)
 			return;
 
+		// only allow one person to expand the bucket at a time.
+		// in fact, if someone else is already expanding the bucket, you can
+		// just go back to your retry-loop. eventually, someone will expand the
+		// bucket to make more chunks.
+		if(Locked ? !expansionLock.trylock() : false)
+			return;
+
+
 		addr_t memoryBuffer = internal_allocatePages(ExpansionFactor);
 		if(memoryBuffer == 0) abort("heap::expandBucket(): out of memory!");
-
 
 		size_t numBytes = ExpansionFactor * PAGE_SIZE;
 		size_t numChunks = numBytes / bucket->chunkSize;
@@ -197,157 +210,71 @@ struct heap_impl
 		}
 
 		// we need 'numChunks' worth of chunks.
-		if(numChunks > NumSpareChunks)
+		if(numSpareChunks < numChunks)
 			makeSpareChunks();
 
-		assert(NumSpareChunks >= numChunks);
+		assert(numSpareChunks >= numChunks);
 
 		// ok we got enough chunks now.
 		for(size_t i = BucketCount; i-- > 0;)
 		{
 			// this is the number of chunks for this size that we will make.
 			size_t num = chunkCounter[i];
-
-			Chunk* next = Buckets[i].chunks;
 			for(size_t k = 0; k < num; k++)
 			{
 				auto chunk = getSpareChunk();
+				assert(chunk);
 
-				chunk->next = next;
 				chunk->memory = memoryBuffer;
 
+				addChunkToList(&Buckets[i].freeChunks, chunk);
+				atomic::incr(&Buckets[i].numFreeChunks);
 				memoryBuffer += BucketSizes[i];
-
-				next = chunk;
-			}
-
-			Buckets[i].chunks = next;
-			Buckets[i].numFreeChunks += num;
-		}
-	}
-
-
-
-
-	void init()
-	{
-		// init the lock
-		new (&lock) spinlock();
-
-		// pretend to lock it for fun, because our helper functions assert that the lock is held (for safety)
-		autolock lk(Locked ? &lock : 0);
-
-		// clear everything first.
-		memset(&Buckets[0], 0, sizeof(Bucket) * BucketCount);
-
-		size_t numChunks[BucketCount];
-		memset(&numChunks[0], 0, sizeof(size_t) * BucketCount);
-
-		size_t numBytes = 0;
-
-		// set up some calculations first.
-		// basically, we allocate some bootstrap pages to store all the initial chunks.
-		size_t slackSpace = 0;
-		size_t numRequiredChunks = 0;
-		for(size_t i = 0; i < BucketCount; i++)
-		{
-			size_t sz = BucketSizes[i];
-
-			size_t n = ((InitialMultiplier * PAGE_SIZE) / sz);            // this truncates to an integer
-			slackSpace += ((InitialMultiplier * PAGE_SIZE) - (n * sz));   // all the non-power-two sizes leave slack space
-
-			numRequiredChunks += n;
-
-			numChunks[i] = n;
-
-			numBytes += sz * n;
-		}
-
-		// cut the slack space down -- prefer big chunks.
-		for(size_t i = BucketCount; i-- > 0;)
-		{
-			size_t sz = BucketSizes[i];
-			if(sz <= slackSpace)
-			{
-				slackSpace -= sz;
-
-				numChunks[i] += 1;
-				numRequiredChunks += 1;
 			}
 		}
 
-		if(slackSpace != 0) abort("failed to consume slack space?! %zu bytes left", slackSpace);
-
-		size_t numChunkPages = ((numRequiredChunks * sizeof(Chunk)) + PAGE_SIZE) / PAGE_SIZE;
-
-		// each bucket gets exactly one page worth of memory for its chunks -- minus the slack space.
-		// redistribution of wealth and all that
-		addr_t chunkBuffer = internal_allocatePages(numChunkPages);
-		addr_t memoryBuffer = internal_allocatePages(BucketCount);
-
-		// memset((void*) chunkBuffer, 0, numChunkPages * PAGE_SIZE);
-
-		// set up the origin chunks
-		for(size_t i = BucketCount; i-- > 0;)
-		{
-			// this is the number of chunks for this size that we will make.
-			size_t num = numChunks[i];
-
-			// since this is a singly-linked list, the first chunk we make will be the tail,
-			// and the last one we make will be the head. it's easier this way
-			Chunk* next = 0;
-			for(size_t k = 0; k < num; k++)
-			{
-				auto chunk = (Chunk*) chunkBuffer;
-
-				chunk->next = next;
-				chunk->memory = memoryBuffer;
-
-				chunkBuffer += sizeof(Chunk);
-				memoryBuffer += BucketSizes[i];
-
-				next = chunk;
-			}
-
-			// next should now be the head.
-			Buckets[i].chunks = next;
-			Buckets[i].numFreeChunks = num;
-			Buckets[i].chunkSize = BucketSizes[i];
-
-			Buckets[i].usedChunks = 0;
-			Buckets[i].numUsedChunks = 0;
-
-			Buckets[i].bucketIdx = i;
-		}
-
-		Initialised = true;
-		log(HeapId, "initialised with %zu chunks in %zu buckets (%zu bytes)", numRequiredChunks, BucketCount,
-			numBytes);
+		if constexpr (Locked)
+			expansionLock.unlock();
 	}
 
-	bool initialised()
+
+
+	Chunk* getChunkFromList(ChunkListHead* list)
 	{
-		return Initialised;
+		ChunkListHead next = { };
+		ChunkListHead orig = *list;
+
+		do {
+			// if someone claimed the buckets before us, then bail.
+			if(orig.chunk == nullptr)
+				return nullptr;
+
+			next.id = orig.id + 1;
+			next.chunk = orig.chunk->next;
+
+		} while(!atomic::cas16(list, &orig, &next));
+
+		return orig.chunk;
 	}
 
-
-	void insertUsedChunk(Bucket* bucket, Chunk* chunk)
+	void addChunkToList(ChunkListHead* list, Chunk* chunk)
 	{
-		// make sure the lock is held.
-		assert(Locked ? lock.held() : true);
+		ChunkListHead next = { };
+		ChunkListHead orig = *list;
 
-		auto old = bucket->usedChunks;
-		bucket->usedChunks = chunk;
-		chunk->next = old;
+		do {
+			chunk->next = orig.chunk;
+			next.id = orig.id + 1;
+			next.chunk = chunk;
 
-		bucket->numUsedChunks += 1;
+		} while(!atomic::cas16(list, &orig, &next));
 	}
+
+
+
 
 	Bucket* getFittingBucket(size_t size)
 	{
-		// make sure the lock is held.
-		assert(Locked ? lock.held() : true);
-
 		// there has to be a more efficient way of doing this right??
 		// like with bit shifting or smth??
 		for(size_t i = 0; i < BucketCount; i++)
@@ -437,9 +364,6 @@ struct heap_impl
 		}
 		else
 		{
-			// lock. we can't put this in an ifconstexpr, if not RAII will not work.
-			autolock lk(Locked ? &lock : 0);
-
 			auto bucket = getFittingBucket(total_size);
 			if(!bucket) abort("allocation of size %zu too large!", total_size);
 
@@ -449,36 +373,26 @@ struct heap_impl
 			assert(bucket->chunkSize >= total_size);
 
 			// see if we have chunks.
-			if(bucket->numFreeChunks == 0)
+		retry:
+			while(bucket->numFreeChunks == 0)
 				expandBucket(bucket);
-
-			if(bucket->numFreeChunks == 0)
-			{
-				error(HeapId, "!! out of memory !!");
-				util::printStackTrace();
-				return 0;
-			}
 
 			// ok, we should have some now!
 			assert(bucket->numFreeChunks > 0);
 
-			// get the first one
-			auto chunk = bucket->chunks;
-			assert(chunk);
-			assert(chunk->memory);
+			auto chunk = getChunkFromList(&bucket->freeChunks);
+			if(!chunk) goto retry;
 
-			bucket->chunks = chunk->next;
-			bucket->numFreeChunks -= 1;
+			atomic::decr(&bucket->numFreeChunks);
 
-			addr_t ptr = chunk->memory;
+			return_ptr = chunk->memory;
 			chunk->memory = 0;
 			chunk->next = 0;
 
-			insertUsedChunk(bucket, chunk);
-			return_ptr = ptr;
+			addChunkToList(&bucket->usedChunks, chunk);
+			atomic::incr(&bucket->numUsedChunks);
 		}
 
-		// we don't need locks here, since we already obtained the memory.
 
 		if(HeapDebug)
 		{
@@ -547,17 +461,18 @@ struct heap_impl
 		}
 		else
 		{
-			autolock lk(Locked ? &lock : 0);
+			// autolock lk(Locked ? &lock : 0);
 
 			auto bucket = getFittingBucket(sz);
 
 			// we should not run out of chunks!!!! the theory is obviously that every free() comes with an alloc(), and every
 			// alloc() puts a chunk into the UsedChunks list!
 			assert(bucket->numUsedChunks > 0);
-			assert(bucket->usedChunks);
+			assert(bucket->usedChunks.chunk);
 
-			auto chunk = bucket->usedChunks;
-			bucket->usedChunks = chunk->next;
+			auto chunk = getChunkFromList(&bucket->usedChunks);
+			atomic::decr(&bucket->numUsedChunks);
+			assert(chunk);
 
 			// set up the chunk
 			chunk->next = 0;
@@ -565,17 +480,9 @@ struct heap_impl
 
 			memset((void*) addr, 0, sz);
 
-
 			// put the chunk back into the free list.
-			{
-				auto old = bucket->chunks;
-
-				chunk->next = old;
-				bucket->chunks = chunk;
-
-				bucket->numFreeChunks += 1;
-				bucket->numUsedChunks -= 1;
-			}
+			addChunkToList(&bucket->freeChunks, chunk);
+			atomic::incr(&bucket->numFreeChunks);
 
 			// ok, we're done.
 		}
@@ -587,6 +494,114 @@ struct heap_impl
 	size_t getNumAllocatedBytes()
 	{
 		return AllocatedByteCount;
+	}
+
+
+
+
+
+
+	void init()
+	{
+		// init the lock
+		new (&expansionLock) spinlock();
+
+		// clear everything first.
+		memset(&Buckets[0], 0, sizeof(Bucket) * BucketCount);
+
+		size_t numChunks[BucketCount];
+		memset(&numChunks[0], 0, sizeof(size_t) * BucketCount);
+
+		size_t numBytes = 0;
+
+		// set up some calculations first.
+		// basically, we allocate some bootstrap pages to store all the initial chunks.
+		size_t slackSpace = 0;
+		size_t numRequiredChunks = 0;
+		for(size_t i = 0; i < BucketCount; i++)
+		{
+			size_t sz = BucketSizes[i];
+
+			size_t n = ((InitialMultiplier * PAGE_SIZE) / sz);            // this truncates to an integer
+			slackSpace += ((InitialMultiplier * PAGE_SIZE) - (n * sz));   // all the non-power-two sizes leave slack space
+
+			numRequiredChunks += n;
+
+			numChunks[i] = n;
+
+			numBytes += sz * n;
+		}
+
+		// cut the slack space down -- prefer big chunks.
+		for(size_t i = BucketCount; i-- > 0;)
+		{
+			size_t sz = BucketSizes[i];
+			if(sz <= slackSpace)
+			{
+				slackSpace -= sz;
+
+				numChunks[i] += 1;
+				numRequiredChunks += 1;
+			}
+		}
+
+		if(slackSpace != 0) abort("failed to consume slack space?! %zu bytes left", slackSpace);
+
+		size_t numChunkPages = ((numRequiredChunks * sizeof(Chunk)) + PAGE_SIZE) / PAGE_SIZE;
+
+		// each bucket gets exactly one page worth of memory for its chunks -- minus the slack space.
+		// redistribution of wealth and all that
+		addr_t chunkBuffer = internal_allocatePages(numChunkPages);
+		addr_t memoryBuffer = internal_allocatePages(BucketCount);
+
+		// memset((void*) chunkBuffer, 0, numChunkPages * PAGE_SIZE);
+
+		// set up the origin chunks
+		for(size_t i = BucketCount; i-- > 0;)
+		{
+			// this is the number of chunks for this size that we will make.
+			size_t num = numChunks[i];
+
+			// since this is a singly-linked list, the first chunk we make will be the tail,
+			// and the last one we make will be the head. it's easier this way
+			Chunk* next = 0;
+			for(size_t k = 0; k < num; k++)
+			{
+				auto chunk = (Chunk*) chunkBuffer;
+
+				chunk->next = next;
+				chunk->memory = memoryBuffer;
+
+				// log("heap", "chunk(%p) = %p", chunk, chunk->memory);
+
+				chunkBuffer += sizeof(Chunk);
+				memoryBuffer += BucketSizes[i];
+
+				next = chunk;
+			}
+
+			// next should now be the head.
+			Buckets[i].freeChunks.chunk = next;
+			Buckets[i].numFreeChunks = num;
+			Buckets[i].chunkSize = BucketSizes[i];
+
+			Buckets[i].usedChunks.chunk = 0;
+			Buckets[i].numUsedChunks = 0;
+
+			Buckets[i].bucketIdx = i;
+		}
+
+		spareChunks.chunk = 0;
+		spareChunks.id = 0;
+
+		Initialised = true;
+		log(HeapId, "initialised with %zu chunks in %zu buckets (%zu bytes)", numRequiredChunks, BucketCount,
+			numBytes);
+	}
+
+	bool initialised()
+	{
+		return Initialised;
 	}
 };
 }
