@@ -233,6 +233,17 @@ namespace memory
 		if(numExtents >= MAX_EXTENTS)
 			efi::abort("out of space for custom extents! (exceeded %zu)", MAX_EXTENTS);
 
+		// translate from the efi type to the type we want in the kernel memory map!!
+		switch(type)
+		{
+			case efi::MemoryType_VMFrame:       // fallthrough
+			case efi::MemoryType_LoadedKernel:  type = (uint32_t) nx::MemoryType::LoadedKernel; break;
+			case efi::MemoryType_MemoryMap:     type = (uint32_t) nx::MemoryType::MemoryMap;    break;
+			case efi::MemoryType_BootInfo:      type = (uint32_t) nx::MemoryType::BootInfo;     break;
+			case efi::MemoryType_Initrd:        type = (uint32_t) nx::MemoryType::Initrd;       break;
+			case efi::MemoryType_KernelElf:     type = (uint32_t) nx::MemoryType::KernelElf;    break;
+		}
+
 		ext.base = base;
 		ext.type = type;
 		ext.num  = num;
@@ -275,13 +286,15 @@ namespace efi
 
 		// this is LoaderCode instead of LoaderData because there's a bunch of implicit assumptions throughout efx that
 		// LoaderData is unimportant and unmappable, so we will fix it as loadercode.
-		if(memType > EfiMaxMemoryType)
-			memType = EfiLoaderCode;
+		auto efiType = memType;
+		if(efiType > EfiMaxMemoryType)
+			efiType = EfiLoaderCode;
 
 		uint64_t out = 0;
-		auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) memType, numPages, &out);
+		auto stat = st->BootServices->AllocatePages(AllocateAnyPages, (efi_memory_type) efiType, numPages, &out);
 		efi::abort_if_error(stat, "failed to allocate memory for %s!", user);
 
+		// we need to pass the originally intended type to the accounting part.
 		efx::memory::accountMemory(out, numPages, memType);
 
 		return (void*) out;
