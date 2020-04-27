@@ -12,6 +12,7 @@ namespace vmm
 {
 	constexpr bool LOG_ALL_FAULTS = false;
 
+
 	bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip)
 	{
 		// The error code gives us details of what happened.
@@ -53,6 +54,11 @@ namespace vmm
 			// an interrupt context. when we exit, the exception handler wrapper in asm will
 			// also exit the intr_context so, we need to "enter" it again so the value never
 			// becomes negative (on exit from this function)
+
+			// even if we pagefault while holding a lock (externally), it should be fine because
+			// we already hold that lock; so even if we get pre-empted here by another thread,
+			// else should be able to go in and mess things up. so it should be safe to force-enable
+			// interrupts with sti/cli instead of using interrupts::enable/disable.
 			struct _ {
 				_() { nx_x64_exit_intr_context(); asm volatile ("sti"); }
 				~_() { asm volatile ("cli"); nx_x64_enter_intr_context(); }
