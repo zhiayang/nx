@@ -73,7 +73,7 @@ enable_nx_bit:
 	cpuid
 
 	andl $(1 << 20), %edx
-	jz skip_nx_bit
+	jz 1f
 
 
 	// we do. set bit 11 of the EFER MSR (0xC0000080)
@@ -84,20 +84,38 @@ enable_nx_bit:
 	wrmsr
 
 	movq $1, __nx_x64_was_nx_bit_enabled
-	jmp nx_bit_set
+	jmp 2f
 
-
-skip_nx_bit:
+1:
 	movq $0, __nx_x64_was_nx_bit_enabled
 
+2:
+	// now we need to check for cmpxchg16b.
+	// it's in function 01, ecx bit 13
+	movl $0x1, %eax
+	cpuid
 
-nx_bit_set:
-	// clear the wp bit in cr0 so ring0 can read/write all pages (without needing PAGE_WRITE)
-	// mov %cr0, %eax
-	// andl $0xfffeffff, %eax
-	// mov %eax, %cr0
+	andl $(1 << 13), %ecx
+	jz 1f
+
+	movq $1, __nx_x64_have_cmpxchg16b
+	jmp 2f
+1:
+	movq $0, __nx_x64_have_cmpxchg16b
+2:
+	jmp goto_kernel
 
 
+
+
+
+
+
+
+
+
+
+goto_kernel:
 	// 'far return' to the kernel -- changing the code segment from whatever nonsense
 	// uefi set up to our proper one.
 
@@ -135,6 +153,10 @@ kernel_premain:
 
 .global __nx_x64_was_nx_bit_enabled
 __nx_x64_was_nx_bit_enabled:
+	.quad 0
+
+.global __nx_x64_have_cmpxchg16b
+__nx_x64_have_cmpxchg16b:
 	.quad 0
 
 

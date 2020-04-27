@@ -44,5 +44,6 @@ namespace nx
 		bool hasFeature(Feature f);
 
 		bool didEnableNoExecute();
+		bool supportsDoubleWordCompareExchange();
 	}
 }

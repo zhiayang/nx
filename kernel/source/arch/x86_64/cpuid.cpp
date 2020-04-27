@@ -6,21 +6,22 @@
 #include "platform-specific.h"
 
 extern "C" uint64_t __nx_x64_was_nx_bit_enabled;
+extern "C" uint64_t __nx_x64_have_cmpxchg16b;
 
 namespace nx {
 namespace cpu
 {
 	bool didEnableNoExecute()
 	{
-		if constexpr (getArchitecture() == Architecture::x64)
-		{
-			return __nx_x64_was_nx_bit_enabled;
-		}
-		else
-		{
-			return false;
-		}
+		return __nx_x64_was_nx_bit_enabled;
 	}
+
+	bool supportsDoubleWordCompareExchange()
+	{
+		return __nx_x64_have_cmpxchg16b;
+	}
+
+
 
 	static uint32_t MaxSupportedLeaf = 0;
 	static uint32_t MaxSupportedExtLeaf = 0;

@@ -135,11 +135,19 @@ namespace nx
 				bootinfo->version, NX_MAX_BOOTINFO_VERSION);
 		}
 
-		// set the wp bit so we don't go around writing stuff.
-		cpu::writeCR0(cpu::readCR0() | cpu::CR0_WP);
-
 		if(!cpu::didEnableNoExecute())
 			warn("kernel", "cpu does not support no-execute bit");
+
+		if(!cpu::supportsDoubleWordCompareExchange())
+		{
+			error("kernel", "cpu does not support cmpxchg16b");
+			abort("hardware does not support required instruction!");
+		}
+
+
+
+		// set the wp bit so we don't go around writing stuff.
+		cpu::writeCR0(cpu::readCR0() | cpu::CR0_WP);
 
 		scheduler::setupKernelProcess(PhysAddr(bootinfo->pml4Address));
 
