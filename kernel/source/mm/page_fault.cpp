@@ -4,8 +4,6 @@
 
 #include "nx.h"
 
-extern "C" void nx_x64_enter_intr_context();
-extern "C" void nx_x64_exit_intr_context();
 
 namespace nx {
 namespace vmm
@@ -60,8 +58,8 @@ namespace vmm
 			// else should be able to go in and mess things up. so it should be safe to force-enable
 			// interrupts with sti/cli instead of using interrupts::enable/disable.
 			struct _ {
-				_() { nx_x64_exit_intr_context(); asm volatile ("sti"); }
-				~_() { asm volatile ("cli"); nx_x64_enter_intr_context(); }
+				_() { platform::leave_interrupt_context(); asm volatile ("sti"); }
+				~_() { asm volatile ("cli"); platform::enter_interrupt_context(); }
 			} __;
 
 			// then, get a new one. note: we don't need to track this in the address space, because the

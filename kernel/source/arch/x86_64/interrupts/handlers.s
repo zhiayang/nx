@@ -41,7 +41,7 @@ GlobalHandler:
 	// restore the old stack pointer
 	unalign_stack %rbx
 
-	call nx_x64_exit_intr_context
+	call nx_x64_leave_intr_context
 
 	pop_all_regs
 

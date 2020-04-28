@@ -43,232 +43,232 @@
 .section .text
 
 
-.global nx_x64_loadidt
-.type nx_x64_loadidt, @function
-nx_x64_loadidt:
+.global bfx_x64_loadidt
+.type bfx_x64_loadidt, @function
+bfx_x64_loadidt:
 	lidt (%rdi)
 	ret
 
-.global nx_x64_exception_handler_0
-.type nx_x64_exception_handler_0, @function
-nx_x64_exception_handler_0:
+.global bfx_x64_exception_handler_0
+.type bfx_x64_exception_handler_0, @function
+bfx_x64_exception_handler_0:
 	pushq $0	// err_code
 	pushq $0	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_1
-.type nx_x64_exception_handler_1, @function
-nx_x64_exception_handler_1:
+.global bfx_x64_exception_handler_1
+.type bfx_x64_exception_handler_1, @function
+bfx_x64_exception_handler_1:
 	pushq $0	// err_code
 	pushq $1	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_2
-.type nx_x64_exception_handler_2, @function
-nx_x64_exception_handler_2:
+.global bfx_x64_exception_handler_2
+.type bfx_x64_exception_handler_2, @function
+bfx_x64_exception_handler_2:
 	pushq $0	// err_code
 	pushq $2	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_3
-.type nx_x64_exception_handler_3, @function
-nx_x64_exception_handler_3:
+.global bfx_x64_exception_handler_3
+.type bfx_x64_exception_handler_3, @function
+bfx_x64_exception_handler_3:
 	pushq $0	// err_code
 	pushq $3	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_4
-.type nx_x64_exception_handler_4, @function
-nx_x64_exception_handler_4:
+.global bfx_x64_exception_handler_4
+.type bfx_x64_exception_handler_4, @function
+bfx_x64_exception_handler_4:
 	pushq $0	// err_code
 	pushq $4	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_5
-.type nx_x64_exception_handler_5, @function
-nx_x64_exception_handler_5:
+.global bfx_x64_exception_handler_5
+.type bfx_x64_exception_handler_5, @function
+bfx_x64_exception_handler_5:
 	pushq $0	// err_code
 	pushq $5	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_6
-.type nx_x64_exception_handler_6, @function
-nx_x64_exception_handler_6:
+.global bfx_x64_exception_handler_6
+.type bfx_x64_exception_handler_6, @function
+bfx_x64_exception_handler_6:
 	pushq $0	// err_code
 	pushq $6	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_7
-.type nx_x64_exception_handler_7, @function
-nx_x64_exception_handler_7:
+.global bfx_x64_exception_handler_7
+.type bfx_x64_exception_handler_7, @function
+bfx_x64_exception_handler_7:
 	pushq $0	// err_code
 	pushq $7	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_8
-.type nx_x64_exception_handler_8, @function
-nx_x64_exception_handler_8:
+.global bfx_x64_exception_handler_8
+.type bfx_x64_exception_handler_8, @function
+bfx_x64_exception_handler_8:
 				// err_code pushed by CPU
 	pushq $8	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_9
-.type nx_x64_exception_handler_9, @function
-nx_x64_exception_handler_9:
+.global bfx_x64_exception_handler_9
+.type bfx_x64_exception_handler_9, @function
+bfx_x64_exception_handler_9:
 	pushq $0	// err_code
 	pushq $9	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_10
-.type nx_x64_exception_handler_10, @function
-nx_x64_exception_handler_10:
+.global bfx_x64_exception_handler_10
+.type bfx_x64_exception_handler_10, @function
+bfx_x64_exception_handler_10:
 				// err_code pushed by CPU
 	pushq $10	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_11
-.type nx_x64_exception_handler_11, @function
-nx_x64_exception_handler_11:
+.global bfx_x64_exception_handler_11
+.type bfx_x64_exception_handler_11, @function
+bfx_x64_exception_handler_11:
 				// err_code pushed by CPU
 	pushq $11	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_12
-.type nx_x64_exception_handler_12, @function
-nx_x64_exception_handler_12:
+.global bfx_x64_exception_handler_12
+.type bfx_x64_exception_handler_12, @function
+bfx_x64_exception_handler_12:
 				// err_code pushed by CPU
 	pushq $12	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_13
-.type nx_x64_exception_handler_13, @function
-nx_x64_exception_handler_13:
+.global bfx_x64_exception_handler_13
+.type bfx_x64_exception_handler_13, @function
+bfx_x64_exception_handler_13:
 				// err_code pushed by CPU
 	pushq $13	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_14
-.type nx_x64_exception_handler_14, @function
-nx_x64_exception_handler_14:
+.global bfx_x64_exception_handler_14
+.type bfx_x64_exception_handler_14, @function
+bfx_x64_exception_handler_14:
 				// err_code pushed by CPU
 	pushq $14	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_15
-.type nx_x64_exception_handler_15, @function
-nx_x64_exception_handler_15:
+.global bfx_x64_exception_handler_15
+.type bfx_x64_exception_handler_15, @function
+bfx_x64_exception_handler_15:
 	pushq $0	// err_code
 	pushq $15	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_16
-.type nx_x64_exception_handler_16, @function
-nx_x64_exception_handler_16:
+.global bfx_x64_exception_handler_16
+.type bfx_x64_exception_handler_16, @function
+bfx_x64_exception_handler_16:
 	pushq $0	// err_code
 	pushq $16	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_17
-.type nx_x64_exception_handler_17, @function
-nx_x64_exception_handler_17:
+.global bfx_x64_exception_handler_17
+.type bfx_x64_exception_handler_17, @function
+bfx_x64_exception_handler_17:
 	pushq $0	// err_code
 	pushq $17	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_18
-.type nx_x64_exception_handler_18, @function
-nx_x64_exception_handler_18:
+.global bfx_x64_exception_handler_18
+.type bfx_x64_exception_handler_18, @function
+bfx_x64_exception_handler_18:
 	pushq $0	// err_code
 	pushq $18	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_19
-.type nx_x64_exception_handler_19, @function
-nx_x64_exception_handler_19:
+.global bfx_x64_exception_handler_19
+.type bfx_x64_exception_handler_19, @function
+bfx_x64_exception_handler_19:
 	pushq $0	// err_code
 	pushq $19	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_20
-.type nx_x64_exception_handler_20, @function
-nx_x64_exception_handler_20:
+.global bfx_x64_exception_handler_20
+.type bfx_x64_exception_handler_20, @function
+bfx_x64_exception_handler_20:
 	pushq $0	// err_code
 	pushq $20	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_21
-.type nx_x64_exception_handler_21, @function
-nx_x64_exception_handler_21:
+.global bfx_x64_exception_handler_21
+.type bfx_x64_exception_handler_21, @function
+bfx_x64_exception_handler_21:
 	pushq $0	// err_code
 	pushq $21	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_22
-.type nx_x64_exception_handler_22, @function
-nx_x64_exception_handler_22:
+.global bfx_x64_exception_handler_22
+.type bfx_x64_exception_handler_22, @function
+bfx_x64_exception_handler_22:
 	pushq $0	// err_code
 	pushq $22	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_23
-.type nx_x64_exception_handler_23, @function
-nx_x64_exception_handler_23:
+.global bfx_x64_exception_handler_23
+.type bfx_x64_exception_handler_23, @function
+bfx_x64_exception_handler_23:
 	pushq $0	// err_code
 	pushq $23	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_24
-.type nx_x64_exception_handler_24, @function
-nx_x64_exception_handler_24:
+.global bfx_x64_exception_handler_24
+.type bfx_x64_exception_handler_24, @function
+bfx_x64_exception_handler_24:
 	pushq $0	// err_code
 	pushq $24	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_25
-.type nx_x64_exception_handler_25, @function
-nx_x64_exception_handler_25:
+.global bfx_x64_exception_handler_25
+.type bfx_x64_exception_handler_25, @function
+bfx_x64_exception_handler_25:
 	pushq $0	// err_code
 	pushq $25	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_26
-.type nx_x64_exception_handler_26, @function
-nx_x64_exception_handler_26:
+.global bfx_x64_exception_handler_26
+.type bfx_x64_exception_handler_26, @function
+bfx_x64_exception_handler_26:
 	pushq $0	// err_code
 	pushq $26	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_27
-.type nx_x64_exception_handler_27, @function
-nx_x64_exception_handler_27:
+.global bfx_x64_exception_handler_27
+.type bfx_x64_exception_handler_27, @function
+bfx_x64_exception_handler_27:
 	pushq $0	// err_code
 	pushq $27	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_28
-.type nx_x64_exception_handler_28, @function
-nx_x64_exception_handler_28:
+.global bfx_x64_exception_handler_28
+.type bfx_x64_exception_handler_28, @function
+bfx_x64_exception_handler_28:
 	pushq $0	// err_code
 	pushq $28	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_29
-.type nx_x64_exception_handler_29, @function
-nx_x64_exception_handler_29:
+.global bfx_x64_exception_handler_29
+.type bfx_x64_exception_handler_29, @function
+bfx_x64_exception_handler_29:
 	pushq $0	// err_code
 	pushq $29	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_30
-.type nx_x64_exception_handler_30, @function
-nx_x64_exception_handler_30:
+.global bfx_x64_exception_handler_30
+.type bfx_x64_exception_handler_30, @function
+bfx_x64_exception_handler_30:
 	pushq $0	// err_code
 	pushq $30	// int_no
 	jmp GlobalHandler
 
-.global nx_x64_exception_handler_31
-.type nx_x64_exception_handler_31, @function
-nx_x64_exception_handler_31:
+.global bfx_x64_exception_handler_31
+.type bfx_x64_exception_handler_31, @function
+bfx_x64_exception_handler_31:
 	pushq $0	// err_code
 	pushq $31	// int_no
 	jmp GlobalHandler
@@ -288,7 +288,7 @@ GlobalHandler:
 	// pass the stack pointer as an argument, aka pointer to structure.
 	movq %rsp, %rdi
 
-	call nx_x64_handle_exception
+	call bfx_x64_handle_exception
 
 	addq $8, %rsp	// remove cr2
 	addq $8, %rsp	// Don't pop %rsp, may not be defined.

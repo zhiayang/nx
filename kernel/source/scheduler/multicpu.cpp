@@ -52,10 +52,9 @@ namespace scheduler
 		}
 	}
 
-	extern "C" uint64_t nx_x64_get_gs_base();
 	CPULocalState* getCPULocalState()
 	{
-		return (CPULocalState*) nx_x64_get_gs_base();
+		return (CPULocalState*) platform::get_gsbase();
 	}
 
 

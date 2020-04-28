@@ -90,22 +90,12 @@ namespace interrupts
 
 	void mapIRQVector(int irq, int vector, int apicId)
 	{
-		if constexpr (getArchitecture() == Architecture::x64)
-		{
-			if(hasIOAPIC()) device::ioapic::setIRQMapping(irq, vector, apicId);
-			else            error("intr", "IRQs cannot be re-mapped without an IOAPIC");
-		}
-		else
-		{
-			abort("architecture not supported!");
-		}
+		if(hasIOAPIC()) device::ioapic::setIRQMapping(irq, vector, apicId);
+		else            error("intr", "IRQs cannot be re-mapped without an IOAPIC");
 	}
 
 	void init_arch()
 	{
-		// i mean if we link this file, then we are x86...
-		assert(getArchitecture() == Architecture::x64);
-
 		if(IsIOAPICPresent = device::ioapic::init(); IsIOAPICPresent)
 		{
 			// disable the legacy PIC by masking all interrupts.
@@ -132,9 +122,6 @@ namespace interrupts
 	}
 
 
-
-	extern "C" bool nx_x64_is_in_intr_context();
-
 	static int32_t early_sti_level = 0;
 	static int32_t& get_sti_level()
 	{
@@ -150,7 +137,7 @@ namespace interrupts
 		auto& stilvl = get_sti_level();
 		stilvl += 1;
 
-		if(stilvl >= 0 && !nx_x64_is_in_intr_context())
+		if(stilvl >= 0 && !platform::is_interrupted())
 			asm volatile("sti");
 	}
 

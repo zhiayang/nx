@@ -32,7 +32,7 @@ namespace idt
 	static IDTEntry idt[NumIDTEntries];
 	static IDTPointer idtp;
 
-	extern "C" void nx_x64_loadidt(uint64_t);
+	extern "C" void bfx_x64_loadidt(uint64_t);
 
 	void init()
 	{
@@ -42,7 +42,7 @@ namespace idt
 		memset(&idt, 0, NumIDTEntries * sizeof(IDTEntry));
 
 		// load the IDT
-		nx_x64_loadidt((uint64_t) &idtp);
+		bfx_x64_loadidt((uint64_t) &idtp);
 	}
 
 	void setEntry(uint8_t num, uint64_t base, uint16_t codeSegment, bool ring3Interrupt, bool nestedInterrupts)

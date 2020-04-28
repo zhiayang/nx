@@ -58,10 +58,15 @@ namespace scheduler
 	static int __nested_sched = 0;
 	extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer)
 	{
+		auto ss = getSchedState();
+
+		// this should never happen
 		assert(!__nested_sched && "TICK PREEMPTED?!");
 		__nested_sched = 1;
 
-		auto ss = getSchedState();
+		// again, this should never happen; if our lock (or any lock for that matter) was acquired,
+		// then the scheduler tick should *NOT* be returning true and switching threads.
+		assert(!ss->lock.held() && "switching with held lock?!");
 
 		Thread* oldthr = ss->CurrentThread;
 		assert(oldthr);
@@ -563,32 +568,25 @@ namespace scheduler
 
 	static void calibrateTickTimer()
 	{
-		if constexpr (getArchitecture() == Architecture::x64)
+		if(interrupts::hasLocalAPIC())
 		{
-			if(interrupts::hasLocalAPIC())
-			{
-				// setup stuff
-				device::apic::initLAPIC();
+			// setup stuff
+			device::apic::initLAPIC();
 
-				// calibrate the local apic timer for our scheduler ticks
-				auto vec = device::apic::calibrateLAPICTimer();
-				setTickIRQ(vec);
-			}
-			else
-			{
-				// re-set the PIT to fit our needs.
-				device::pit8253::setPeriod(NS_PER_TICK);
-
-				// who knows, we might have an ioapic without an lapic??
-				auto irq = device::ioapic::getISAIRQMapping(0);
-
-				interrupts::unmaskIRQ(irq);
-				setTickIRQ(irq);
-			}
+			// calibrate the local apic timer for our scheduler ticks
+			auto vec = device::apic::calibrateLAPICTimer();
+			setTickIRQ(vec);
 		}
 		else
 		{
-			abort("unsupported architecture!");
+			// re-set the PIT to fit our needs.
+			device::pit8253::setPeriod(NS_PER_TICK);
+
+			// who knows, we might have an ioapic without an lapic??
+			auto irq = device::ioapic::getISAIRQMapping(0);
+
+			interrupts::unmaskIRQ(irq);
+			setTickIRQ(irq);
 		}
 	}
 

@@ -27,7 +27,7 @@ nx_x64_serial_interrupt:
 
 	call _ZN2nx6serial11irq_handlerEv
 
-	call nx_x64_exit_intr_context
+	call nx_x64_leave_intr_context
 	unalign_stack_popreg %rbx
 
 
@@ -40,24 +40,24 @@ nx_x64_serial_interrupt:
 
 
 
-// if gs is not setup yet, we're fucked (because we call this from exception handlers)
-// so, be safe about it.
-
-.global nx_x64_enter_intr_context
-.type nx_x64_enter_intr_context, @function
+.global _ZN2nx8platform23enter_interrupt_contextEv; .type _ZN2nx8platform23enter_interrupt_contextEv, @function
+.global nx_x64_enter_intr_context; .type nx_x64_enter_intr_context, @function
+_ZN2nx8platform23enter_interrupt_contextEv:
 nx_x64_enter_intr_context:
 	lock incl %gs:0x50
 	ret
 
-.global nx_x64_exit_intr_context
-.type nx_x64_exit_intr_context, @function
-nx_x64_exit_intr_context:
+.global _ZN2nx8platform23leave_interrupt_contextEv; .type _ZN2nx8platform23leave_interrupt_contextEv, @function
+.global nx_x64_leave_intr_context; .type nx_x64_leave_intr_context, @function
+_ZN2nx8platform23leave_interrupt_contextEv:
+nx_x64_leave_intr_context:
 	lock decl %gs:0x50
 	ret
 
 
-.global nx_x64_is_in_intr_context
-.type nx_x64_is_in_intr_context, @function
+.global _ZN2nx8platform14is_interruptedEv; .type _ZN2nx8platform14is_interruptedEv, @function
+.global nx_x64_is_in_intr_context; .type nx_x64_is_in_intr_context, @function
+_ZN2nx8platform14is_interruptedEv:
 nx_x64_is_in_intr_context:
 	movl %gs:0x50, %eax
 	test %eax, %eax
@@ -69,9 +69,9 @@ nx_x64_is_in_intr_context:
 
 
 
-.global nx_x64_get_rflags
-.type nx_x64_get_rflags, @function
-nx_x64_get_rflags:
+.global _ZN2nx16get_flags_registerEv
+.type _ZN2nx16get_flags_registerEv, @function
+_ZN2nx18get_flags_registerEv:
 	pushfq
 	pop %rax
 	ret
@@ -82,9 +82,9 @@ nx_x64_get_rflags:
 
 
 
-.global nx_x64_read_msr
-.type nx_x64_read_msr, @function
-nx_x64_read_msr:
+.global _ZN2nx8platform8read_msrEj
+.type _ZN2nx8platform8read_msrEj, @function
+_ZN2nx8platform8read_msrEj:
 	// %ecx is the msr to read (but the paramter comes in in %rdi)
 	// writing to %ecx clears the top 32-bits.
 	mov %edi, %ecx
@@ -98,9 +98,9 @@ nx_x64_read_msr:
 
 	ret
 
-.global nx_x64_write_msr
-.type nx_x64_write_msr, @function
-nx_x64_write_msr:
+.global _ZN2nx8platform9write_msrEjm
+.type _ZN2nx8platform9write_msrEjm, @function
+_ZN2nx8platform9write_msrEjm:
 	// %ecx is the msr to write (but the paramter comes in in %rdi)
 	// writing to %ecx clears the top 32-bits.
 	mov %edi, %ecx
@@ -114,28 +114,27 @@ nx_x64_write_msr:
 	ret
 
 
-.global nx_x64_read_cr0
-.type nx_x64_read_cr0, @function
-nx_x64_read_cr0:
+.global _ZN2nx8platform8read_cr0Ev
+.type _ZN2nx8platform8read_cr0Ev, @function
+_ZN2nx8platform8read_cr0Ev:
 	movq %cr0, %rax
 	ret
 
-.global nx_x64_write_cr0
-.type nx_x64_write_cr0, @function
-nx_x64_write_cr0:
+.global _ZN2nx8platform9write_cr0Em
+.type _ZN2nx8platform9write_cr0Em, @function
+_ZN2nx8platform9write_cr0Em:
 	movq %rdi, %cr0
 	ret
 
-
-.global nx_x64_read_cr4
-.type nx_x64_read_cr4, @function
-nx_x64_read_cr4:
+.global _ZN2nx8platform8read_cr4Ev
+.type _ZN2nx8platform8read_cr4Ev, @function
+_ZN2nx8platform8read_cr4Ev:
 	movq %cr4, %rax
 	ret
 
-.global nx_x64_write_cr4
-.type nx_x64_write_cr4, @function
-nx_x64_write_cr4:
+.global _ZN2nx8platform9write_cr4Em
+.type _ZN2nx8platform9write_cr4Em, @function
+_ZN2nx8platform9write_cr4Em:
 	movq %rdi, %cr4
 	ret
 

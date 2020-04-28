@@ -1,7 +1,7 @@
 # Makefile for miniz
 # Written in 2019
 
-CFLAGS    = -Wno-pragmas $(KERNEL_SSE_DISABLERS) -O2 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
+CFLAGS    = -Wno-pragmas $(KERNEL_SSE_DISABLERS) -O3 -fPIC -std=c11 -mno-red-zone -fno-exceptions -c
 
 .PHONY: all
 

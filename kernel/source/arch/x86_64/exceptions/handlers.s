@@ -261,7 +261,7 @@ nx_x64_exception_handler_31:
 
 	unalign_stack %rbx
 
-	call nx_x64_exit_intr_context
+	call nx_x64_leave_intr_context
 
 	addq $8, %rsp	// remove cr2
 	addq $8, %rsp	// remove rsp
