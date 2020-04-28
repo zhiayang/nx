@@ -75,6 +75,7 @@ namespace vmm
 
 				if(pair.first.present())
 				{
+					bool needsClearing = false;
 					auto ph = pair.second;
 					if(!ph.present())
 					{
@@ -83,12 +84,17 @@ namespace vmm
 						proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, p);
 
 						ph = opt::some(p);
+						needsClearing = true;
 					}
 
 					if(LOG_ALL_FAULTS)
 						dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
 
 					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
+
+					if(needsClearing)
+						memset(aligned_cr2.ptr(), 0, PAGE_SIZE);
+
 					return true;
 				}
 				else
@@ -109,7 +115,7 @@ namespace vmm
 				}
 
 				auto phys = pmm::allocate(1);
-				vmm::mapAddressOverwrite(VirtAddr(aligned_cr2), PhysAddr(phys), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
+				vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 				{
 					auto proc = scheduler::getCurrentProcess();
 					proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, phys);
@@ -134,6 +140,10 @@ namespace vmm
 
 					// and free.
 					vmm::deallocateAddrSpace(scratch, 1);
+				}
+				else
+				{
+					memset(aligned_cr2.ptr(), 0, PAGE_SIZE);
 				}
 
 				if(LOG_ALL_FAULTS)
