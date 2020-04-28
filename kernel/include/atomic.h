@@ -11,6 +11,13 @@ namespace nx
 	{
 		bool cas16(void* ptr, void* expected_value, void* new_value);
 
+		void cas_spinlock(uint64_t* ptr, uint64_t expected, uint64_t new_value);
+		bool cas_trylock(uint64_t* ptr, uint64_t expected, uint64_t new_value);
+
+		void cas_spinlock_noirq(uint64_t* ptr, uint64_t expected, uint64_t new_value);
+		bool cas_trylock_noirq(uint64_t* ptr, uint64_t expected, uint64_t new_value);
+
+
 		bool cas_fetch(int8_t* ptr, int8_t* expected_value, int8_t new_value);
 		bool cas_fetch(int16_t* ptr, int16_t* expected_value, int16_t new_value);
 		bool cas_fetch(int32_t* ptr, int32_t* expected_value, int32_t new_value);

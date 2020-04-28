@@ -106,6 +106,8 @@ namespace nx
 	void init(BootInfo* bootinfo)
 	{
 		// open all hatches, extend all flaps and drag fins
+		scheduler::setupEarlyCPULocalState();
+
 		interrupts::disable();
 		serial::init();
 

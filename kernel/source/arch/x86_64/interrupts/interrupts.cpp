@@ -121,21 +121,9 @@ namespace interrupts
 		}
 	}
 
-
-	static int32_t early_sti_level = 0;
-	static int32_t& get_sti_level()
-	{
-		if(__likely(scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted))
-			return scheduler::getCPULocalState()->stiLevel;
-
-		return early_sti_level;
-	}
-
-
 	void enable()
 	{
-		auto& stilvl = get_sti_level();
-		stilvl += 1;
+		auto stilvl = (scheduler::getCPULocalState()->stiLevel += 1);
 
 		if(stilvl >= 0 && !platform::is_interrupted())
 			asm volatile("sti");
@@ -143,15 +131,13 @@ namespace interrupts
 
 	void disable()
 	{
-		auto& stilvl = get_sti_level();
-
 		asm volatile("cli");
-		stilvl -= 1;
+		scheduler::getCPULocalState()->stiLevel -= 1;
 	}
 
 	void resetNesting()
 	{
-		get_sti_level() = 0;
+		scheduler::getCPULocalState()->stiLevel = 0;
 	}
 
 

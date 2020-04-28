@@ -44,6 +44,9 @@ namespace nx
 
 	namespace scheduler
 	{
+		constexpr uint64_t NS_PER_TICK           = time::milliseconds(1).ns();
+		constexpr uint64_t TIMESLICE_DURATION_NS = time::milliseconds(4).ns();
+
 		struct Thread;
 		struct Process;
 
@@ -64,9 +67,14 @@ namespace nx
 
 			nx::list<Process*> ProcessList;
 
+			uint64_t timesliceTicks = 0;
 			uint64_t tickCounter = 0;
+
 			bool expediteSchedule = false;
 
+			// note that this does not need to be an IRQSpinlock, because scheduler ticks
+			// are *NOT* re-entrant, so there is no chance of us being interrupted while
+			// inside the scheduler's critical section.
 			nx::spinlock lock;
 		};
 
@@ -250,6 +258,8 @@ namespace nx
 			nx::list<cpu::InterruptedState, _fixed_allocator> savedSignalStateStack;
 		};
 
+		// this should be the first thing that is called on kernel startup!
+		void setupEarlyCPULocalState();
 
 		void setupKernelProcess(PhysAddr cr3);
 
