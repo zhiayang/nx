@@ -85,10 +85,8 @@ namespace vmm
 						ph = opt::some(p);
 					}
 
-					// this gets a bit spammy
-
 					if(LOG_ALL_FAULTS)
-						log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
+						dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
 
 					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
 					return true;
@@ -139,7 +137,7 @@ namespace vmm
 				}
 
 				if(LOG_ALL_FAULTS)
-					log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
+					dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
 			}
 
 			return true;

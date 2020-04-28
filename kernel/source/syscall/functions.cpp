@@ -10,21 +10,6 @@ namespace syscall
 	extern "C" void nx_x64_syscall_entry();
 	extern "C" void nx_x64_syscall_intr_entry();
 
-	extern "C" void debug_char(char c)
-	{
-		println("char: %c", c);
-	}
-
-	extern "C" void debug_ptr(void* p)
-	{
-		println("ptr: %p", p);
-	}
-
-	extern "C" void debug_str(char* s)
-	{
-		println("str: %s", s);
-	}
-
 	extern "C" {
 		void* SyscallTable[_SYSCALL_MAX];
 		size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);

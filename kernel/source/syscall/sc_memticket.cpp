@@ -112,7 +112,7 @@ namespace nx
 				ret_ticket.len = tik->userLen;
 				ret_ticket.ticketId = tik->id;
 
-				log("memticket", "pid %lu collected memticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+				dbg("memticket", "pid %lu collected memticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
 					ret_ticket.ptr, (addr_t) ret_ticket.ptr + ret_ticket.len);
 			});
 		}
@@ -163,7 +163,7 @@ namespace nx
 
 				proc->addrspace.lock()->removeSharedRegion(krt::move(svmr));
 
-				log("memticket", "pid %lu released ticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+				dbg("memticket", "pid %lu released ticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
 					ticket.ptr, (addr_t) ticket.ptr + ticket.len);
 
 				if(tik->refcount == 0)
