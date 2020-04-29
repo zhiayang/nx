@@ -216,10 +216,15 @@ namespace scheduler
 			ss->timesliceTicks = 0;
 
 		__nested_tick = 0;
+// if(ret) { serial::debugprint('0' + ss->lock.held()); serial::debugprint('a' + getCPULocalState()->numHeldLocks); }
 		return ret;
 	}
 
-
+	void yield()
+	{
+		assert(!getSchedState()->lock.held() && "cannot yield while holding the scheduler lock!!");
+		asm volatile ("int $0xF0");
+	}
 
 	void setTickIRQ(int irq)
 	{

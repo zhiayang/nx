@@ -4,7 +4,7 @@
 
 
 
-
+// see: https://forum.osdev.org/viewtopic.php?f=1&t=28481
 
 
 .global _ZN2nx6atomic12cas_spinlockEPmmm;
@@ -18,24 +18,45 @@ _ZN2nx6atomic12cas_spinlockEPmmm:
 	mov %rsi, %rax
 
 	// optimistically try to get the lock first. if we succeed, then return.
+	// push rflags, and disable interrupts in our optimism.
+	pushfq
+	cli
+
 	// this will check if (%rdi) == rax; if so, then set (rdi) = %rdx
 	lock cmpxchgq %rdx, (%rdi)
 	jz 2f
 
 	// we didn't succeed; use 'pause' to ask the cpu to chill while we try again.
 1:
+	popfq       // restore the old flags
+	pushfq      // and push them again.
 	pause
 
 	// see if we have the original value; if not, then don't bother trying to lock
 	cmp %rsi, (%rdi)
 	jne 1b
 
+	// optimistically disable interrupts, again
+	cli
+
 	lock cmpxchgq %rdx, (%rdi)
 	jnz 1b
 
 2:
-	// success
+	// success. interrupts are already disabled; use this opportunity to
+	// atomically increment the number of held locks.
+	lock incq %gs:0x48
+
+	// and restore the old rflags (enabling interrupts if they were enabled before)
+	popfq
 	ret
+
+
+
+
+
+
+
 
 
 
@@ -102,6 +123,9 @@ _ZN2nx6atomic18cas_spinlock_noirqEPmmm:
 2:
 	// success. interrupts are already disabled, so restore the stack (remove the flags)
 	addq $8, %rsp
+
+	// increment the lock counter
+	lock incq %gs:0x48
 
 	// and update the kernel interrupt-sti-level counter.
 	call _ZN2nx10interrupts7disableEv

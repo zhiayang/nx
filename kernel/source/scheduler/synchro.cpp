@@ -44,9 +44,9 @@ namespace nx
 			abort("deadlock");
 		}
 
+		// this will also help us atomically increment the number of held locks.
 		atomic::cas_spinlock(&this->value, 0, 1);
 
-		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
 		this->holder = scheduler::getCurrentThread();
 	}
 
@@ -93,11 +93,10 @@ namespace nx
 		}
 
 		// this asm function (see lock.s) ensures there's no race condition between
-		// acquiring the lock and disabling interrupts.
+		// acquiring the lock and disabling interrupts. it also increments the lock counter.
 		atomic::cas_spinlock_noirq(&this->value, 0, 1);
 
 		this->holder = scheduler::getCurrentThread();
-		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
 	}
 
 	void IRQSpinlock::unlock()

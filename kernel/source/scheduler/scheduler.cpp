@@ -112,11 +112,6 @@ namespace scheduler
 
 
 
-	void yield()
-	{
-		asm volatile ("int $0xF0");
-	}
-
 	void exit(int status)
 	{
 		auto ss = getSchedState();
@@ -210,23 +205,27 @@ namespace scheduler
 		if(getInitPhase() < SchedulerInitPhase::SchedulerStarted)
 			return;
 
+		auto ss = getSchedState();
+
 		// hmm.
-		auto& bthrs = getSchedState()->BlockedThreads;
+		LockedSection(&ss->lock, [&mtx, &ss]() {
+			auto& bthrs = ss->BlockedThreads;
 
-		for(auto thr = bthrs.begin(); thr != bthrs.end(); )
-		{
-			if((*thr)->state == ThreadState::BlockedOnMutex && (*thr)->blockedMtx == mtx)
+			for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 			{
-				(*thr)->blockedMtx = 0;
-				(*thr)->state = ThreadState::Stopped;
+				if((*thr)->state == ThreadState::BlockedOnMutex && (*thr)->blockedMtx == mtx)
+				{
+					(*thr)->blockedMtx = 0;
+					(*thr)->state = ThreadState::Stopped;
 
-				thr = bthrs.erase(thr);
+					thr = bthrs.erase(thr);
+				}
+				else
+				{
+					thr++;
+				}
 			}
-			else
-			{
-				thr++;
-			}
-		}
+		});
 	}
 
 
@@ -235,7 +234,8 @@ namespace scheduler
 		auto t = getCurrentThread();
 		assert(t);
 
-		LockedSection(&getSchedState()->lock, [&]() {
+		auto ss = getSchedState();
+		LockedSection(&ss->lock, [&]() {
 			t->state = ThreadState::BlockedOnSleep;
 			t->wakeUpTimestamp = getElapsedNanoseconds() + ns;
 

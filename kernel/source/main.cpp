@@ -80,7 +80,7 @@ namespace nx
 		}));
 
 		log("kernel", "going to sleep...");
-		scheduler::sleep(time::milliseconds(500));
+		scheduler::sleep(time::milliseconds(750));
 
 		log("kernel", "woken from slumber, committing murder!");
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
