@@ -31,6 +31,11 @@ namespace nx
 		// start the debug console
 		// debugcon::init();
 
+
+		volatile int* uwu = (int*) 0x5555'1111'1111'3330;
+		*uwu = 30192;
+
+
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 
@@ -185,7 +190,7 @@ namespace nx
 
 		// find the symbol table & demangle symbols for backtracing purposes
 		if(!params::haveOption("no_symbols"))
-			util::initSymbols(bootinfo);
+			util::initKernelSymbols(bootinfo);
 
 		// we should be done with the bootinfo now.
 		pmm::freeAllEarlyMemory(bootinfo);

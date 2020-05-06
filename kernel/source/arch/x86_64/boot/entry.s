@@ -132,16 +132,17 @@ goto_kernel:
 
 
 kernel_premain:
-	// setup a null return address
-	xor %rbp, %rbp
-	pushq %rbp
 
 	// the stack should be 16-byte aligned on the "call" instruction; the call will push a return
 	// address, which leads to it being 8-bytes off. but, since we are using a jmp and not a call,
-	// we need to make sure the stack is "already" 8-bytes off. so just force align and subtract.
+	// we need to make sure the stack is "already" 8-bytes off. by pushing the null rbp, the stack
+	// is now offset by 8, giving us the proper alignment.
 
 	and $0xfffffffffffffff0, %rsp
-	sub $8, %rsp
+
+	// setup a null return address
+	xor %rbp, %rbp
+	pushq %rbp
 
 	jmp _ZN2nx4initEPNS_8BootInfoE
 

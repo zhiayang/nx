@@ -29,7 +29,7 @@ CXXDEPS         = $(CXXOBJ:.o=.d)
 CDEPS           = $(COBJ:.o=.d)
 
 # https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
-OPTIMISATIONS   := $(KERNEL_SSE_DISABLERS) -O2 -g
+OPTIMISATIONS   := $(KERNEL_SSE_DISABLERS) -O1 -g
 LDFLAGS         := -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib -nostdlib
 
 DEFINES         = -DORION_KERNEL=1 -D__ARCH_x64__=1

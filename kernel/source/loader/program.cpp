@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "nx.h"
+#include "misc/util.h"
 #include "loader.h"
 
 #include <elf.h>
@@ -39,6 +40,9 @@ namespace loader
 
 		addr_t entryPt = 0;
 		bool success = loadIndeterminateBinary(proc, buf, sz, &entryPt);
+
+		delete[] buf;
+
 		if(success)
 		{
 			auto thr = scheduler::createThread(proc, (scheduler::Fn0Args_t) entryPt);
@@ -67,7 +71,12 @@ namespace loader
 		{
 			auto tmp = (char*) buf;
 			if(tmp[0] == ELFMAG0 && tmp[1] == ELFMAG1 && tmp[2] == ELFMAG2 && tmp[3] == ELFMAG3)
-				return loadELFBinary(proc, buf, len, entry);
+			{
+				auto ret = loadELFBinary(proc, buf, len, entry);
+				syms::readSymbolsFromELF(buf, len, proc);
+
+				return ret;
+			}
 		}
 
 		// oopss.

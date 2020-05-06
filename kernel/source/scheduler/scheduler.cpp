@@ -70,6 +70,7 @@ namespace scheduler
 		auto ss = getSchedState();
 
 		ss->IdleThread = createThread(getKernelProcess(), idle_worker);
+		ss->CurrentThread = ss->IdleThread;
 
 		ss->ThreadList = nx::list<Thread*>();
 		ss->BlockedThreads = nx::array<Thread*>();
@@ -213,6 +214,10 @@ namespace scheduler
 
 			for(auto thr = bthrs.begin(); thr != bthrs.end(); )
 			{
+				// TODO
+				//! owo
+				// i think there's some sort of race condition where we dispose of the thread or something
+				// while it is holding locks? this place causes a null pointer deref undeterministically.
 				if((*thr)->state == ThreadState::BlockedOnMutex && (*thr)->blockedMtx == mtx)
 				{
 					(*thr)->blockedMtx = 0;

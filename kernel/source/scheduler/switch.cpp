@@ -72,6 +72,8 @@ namespace scheduler
 		cpu::fpu::save(oldthr->fpuSavedStateBuffer);
 
 		Thread* newthr = getNextThread(ss);
+		assert(newthr);
+
 		newthr->state = ThreadState::Running;
 
 		// reset the priority, since it just got scheduled

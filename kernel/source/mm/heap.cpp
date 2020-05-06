@@ -30,6 +30,7 @@ namespace heap
 
 	addr_t allocate(size_t size, size_t align)
 	{
+		// dbg("heap", "alloc %zu (total %zu)", size, impl.getNumAllocatedBytes());
 		return impl.allocate(size, align);
 	}
 

@@ -14,6 +14,7 @@
 #include "cpu.h"
 #include "extmm.h"
 #include "synchro.h"
+#include "misc/util.h"
 #include "misc/addrs.h"
 #include "misc/timekeeping.h"
 
@@ -155,6 +156,7 @@ namespace nx
 
 
 			vfs::IOCtx* ioctx = 0;
+			nx::array<syms::Symbol> symbols;
 
 			static constexpr int PROC_USER      = 0x1;
 			static constexpr int PROC_DRIVER    = 0x2;

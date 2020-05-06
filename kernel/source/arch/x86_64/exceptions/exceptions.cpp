@@ -190,15 +190,19 @@ namespace exceptions
 		}
 
 		debugprintf("\nfault location:\n");
-		debugprintf("%p   |   %s\n\n", regs->rip, util::getSymbolAtAddr(regs->rip).cstr());
+		debugprintf("%p   |   %s\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()).cstr());
 
-		// abort("no stop");
 
 		// if this was a user program, then fuck that guy.
 		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())
 		{
 			auto thr = scheduler::getCurrentThread();
 			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
+
+			if(faultCount == 1)
+				disasm::printDisassembly(regs->rip);
+
+			util::printStackTrace(regs->rbp);
 
 			// this calls yield
 			scheduler::exit(-1);
@@ -208,7 +212,10 @@ namespace exceptions
 			// this is likely to cause faults if we did something really bad
 			// so if we already faulted, don't try again.
 			if(faultCount == 1)
+			{
+				disasm::printDisassembly(regs->rip);
 				util::printStackTrace(regs->rbp);
+			}
 
 			debugprintf("\n!! error: unrecoverable cpu exception !!\n");
 		}

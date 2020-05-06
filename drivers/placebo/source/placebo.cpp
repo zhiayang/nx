@@ -28,6 +28,22 @@ uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uin
 	return 0;
 }
 
+volatile int* foozle = (int*) 0x5555'0000'0000'0000;
+int fn3()
+{
+	return 37 * (*foozle = 300);
+}
+
+int fn2()
+{
+	return 7 * fn3();
+}
+
+int fn1()
+{
+	return 9 - fn2();
+}
+
 
 int main()
 {
@@ -44,7 +60,6 @@ int main()
 		0xff'0089cf,
 		0xff'0ab04a,
 	};
-
 
 	int ctr2 = 0;
 	constexpr size_t numColours = sizeof(colours) / sizeof(uint32_t);
@@ -89,6 +104,9 @@ int main()
 			syscall::kernel_log(0, "", 0, "!", 1);
 
 			nx::ipc::release_memory_ticket(ticket);
+
+			// crash
+			printf("foozle = %d\n", fn1());
 		}
 	}
 }

@@ -31,49 +31,8 @@ namespace util
 		return addrs;
 	}
 
-
-	struct Symbol
-	{
-		addr_t addr;
-		size_t size;
-		nx::string name;
-	};
-
-	static nx::array<Symbol> symbols;
-
-
-
-	nx::string getSymbolAtAddr(addr_t x)
-	{
-		// loop through all symbols...
-		for(const auto& sym : symbols)
-		{
-			if(x >= sym.addr && x < sym.addr + sym.size)
-				return sym.name;
-		}
-
-		return "??";
-	}
-
-	// this does not make temp strings, which comes in handy when we have heap problems
-	// that cause aborts.
-	const nx::string* getSymbolAtAddr1(addr_t x)
-	{
-		// loop through all symbols...
-		for(const auto& sym : symbols)
-		{
-			if(x >= sym.addr && x < sym.addr + sym.size)
-				return &sym.name;
-		}
-
-		return 0;
-	}
-
-
-
-
 	static bool nested = false;
-	void printStackTrace(uint64_t _rbp)
+	void printStackTrace(uint64_t _rbp, scheduler::Process* proc)
 	{
 		serial::debugprintf("\nbacktrace:\n");
 		if(nested)
@@ -81,6 +40,9 @@ namespace util
 			serial::debugprintf("aborting backtrace!\n");
 			return;
 		}
+
+		if(!proc)
+			proc = scheduler::getCurrentProcess();
 
 		nested = true;
 
@@ -96,10 +58,8 @@ namespace util
 			{
 				if(heap::initialised())
 				{
-					auto s = getSymbolAtAddr1(rip);
-					if(!s) break;
-
-					serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s->cstr());
+					const auto& s = syms::symbolicate(rip, proc);
+					serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s.cstr());
 				}
 				else
 				{
@@ -117,29 +77,8 @@ namespace util
 
 
 
-	static void parseSymbolTable(Elf64_Sym* table, size_t numSyms, char* strings)
-	{
-		// index 0 is the undefined symbol.
-		for(size_t i = 1; i < numSyms; i++)
-		{
-			if(table[i].st_value == 0 || table[i].st_name == 0) continue;
 
-			// skip data for now
-			if(ELF64_ST_TYPE(table[i].st_info) != STT_FUNC) continue;
-
-			Symbol sym;
-
-			sym.addr = table[i].st_value;
-			sym.size = table[i].st_size;
-			sym.name = demangleSymbol(string(&strings[table[i].st_name]));
-
-			symbols.append(sym);
-		}
-	}
-
-
-
-	void initSymbols(BootInfo* bi)
+	void initKernelSymbols(BootInfo* bi)
 	{
 		if(bi->version < 2)
 		{
@@ -151,80 +90,12 @@ namespace util
 		assert(bi->kernelElf);
 		assert(bi->kernelElfSize);
 
-		symbols = array<Symbol>();
-
 		// make sure we can demangle shit.
 		initDemangler();
 
+		syms::readSymbolsFromELF(bi->kernelElf, bi->kernelElfSize, scheduler::getKernelProcess());
 
-		// load the elf file.
-		auto file = (uint8_t*) bi->kernelElf;
-
-		auto header = (Elf64_Ehdr*) file;
-		{
-			if(header->e_ident[EI_MAG0] != ELFMAG0 || header->e_ident[EI_MAG1] != ELFMAG1 || header->e_ident[EI_MAG2] != ELFMAG2
-				|| header->e_ident[EI_MAG3] != ELFMAG3)
-			{
-				error("backtrace", "invalid ELF file! (wrong header)");
-				return;
-			}
-
-			if(header->e_ident[EI_CLASS] != ELFCLASS64)
-			{
-				error("backtrace", "expected 64-bit ELF file!");
-				return;
-			}
-
-			if(header->e_ident[EI_DATA] != ELFDATA2LSB)
-			{
-				error("backtrace", "big-endian ELFs not supported at this time!");
-				return;
-			}
-		}
-
-
-
-		{
-			uint8_t* sectionNames = 0;
-			// find the section string table first -- to get the names of our sections.
-			{
-				auto shstrtab = (Elf64_Shdr*) (file + header->e_shoff + (header->e_shstrndx * header->e_shentsize));
-				assert(shstrtab->sh_type == SHT_STRTAB);
-
-				sectionNames = file + shstrtab->sh_offset;
-			}
-
-			// (skip the first one cos it's always null)
-			int strTabIdx = 0;
-			for(int i = 1; i < header->e_shnum; i++)
-			{
-				auto sectionHdr = (Elf64_Shdr*) (file + header->e_shoff + (i * header->e_shentsize));
-
-				// we only want the string table & the symbol table.
-				if(strcmp((const char*) &sectionNames[sectionHdr->sh_name], ".strtab") == 0)
-				{
-					strTabIdx = i;
-					break;
-				}
-			}
-
-			assert(strTabIdx);
-
-
-			char* strings = (char*) (file + ((Elf64_Shdr*) (file + header->e_shoff + (strTabIdx * header->e_shentsize)))->sh_offset);
-
-			for(int i = 1; i < header->e_shnum; i++)
-			{
-				auto sectionHdr = (Elf64_Shdr*) (file + header->e_shoff + (i * header->e_shentsize));
-
-				if(strcmp((const char*) &sectionNames[sectionHdr->sh_name], ".symtab") == 0)
-					parseSymbolTable((Elf64_Sym*) (file + sectionHdr->sh_offset), (sectionHdr->sh_size / sectionHdr->sh_entsize), strings);
-			}
-		}
-
-
-		log("backtrace", "found %s", util::plural("symbol", symbols.size()).cstr());
-
+		log("backtrace", "found %s", util::plural("symbol", scheduler::getKernelProcess()->symbols.size()).cstr());
 		pmm::freeEarlyMemory(bi, MemoryType::KernelElf);
 	}
 }

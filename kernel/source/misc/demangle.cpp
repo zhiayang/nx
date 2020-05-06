@@ -731,7 +731,10 @@ namespace util
 						st.didJustParseTemplate = true;
 				}
 
-				if(s[0] != 'E') ret += "::";
+				// if the thing already ended with '::', don't add ::
+				// TODO this is some ugly-ass hack
+				if(s[0] != 'E' && ret.size() > 0 && ret[ret.size() - 2] != ':' && ret[ret.size() - 1] != ':')
+					ret += "::";
 			}
 
 			st.unqualifiedNameStack.push(cur);
@@ -787,7 +790,12 @@ namespace util
 					::= <unscoped-name>
 					::= <unscoped-template-name> <template-args>
 					::= <local-name>
-					::= St <unqualified-name>                   # ::std::
+
+			<unscoped-name> ::= <unqualified-name>
+							::= St <unqualified-name>   # ::std::
+
+			<unscoped-template-name>	::= <unscoped-name>
+			     						::= <substitution>
 		*/
 
 		if(s[0] == 'N')
@@ -798,14 +806,23 @@ namespace util
 		{
 			return parseLocalName(s, st);
 		}
-		else if(s.find("St") == 0)
-		{
-			s.remove_prefix(2);
-			return "std::" + parseUnqualifiedName(s, st, type);
-		}
 		else
 		{
-			return parseUnqualifiedName(s, st, type);
+			// unscoped-name
+
+			nx::string ret;
+			if(s.find("St") == 0)
+			{
+				ret += "std::";
+				s.remove_prefix(2);
+			}
+
+			ret += parseUnqualifiedName(s, st, type);
+
+			if(s.size() > 0 && s[0] == 'I')
+				ret += parseTemplateArgumentList(s, st);
+
+			return ret;
 		}
 	}
 
@@ -836,11 +853,11 @@ namespace util
 
 		assert(s.size() > 0);
 
-		if(s[0] == 'P')         { s.remove_prefix(1); auto ret = parseType(s, st) + "*"; st.subs.append(ret); return ret; }
-		else if(s[0] == 'K')    { s.remove_prefix(1); auto ret = parseType(s, st) + " const"; st.subs.append(ret); return ret; }
-		else if(s[0] == 'r')    { s.remove_prefix(1); auto ret = parseType(s, st) + " restrict"; st.subs.append(ret); return ret; }
-		else if(s[0] == 'V')    { s.remove_prefix(1); auto ret = parseType(s, st) + " volatile"; st.subs.append(ret); return ret; }
-		else if(s[0] == 'R')
+		if(s[0] == 'P')		{ s.remove_prefix(1); auto ret = parseType(s, st) + "*"; st.subs.append(ret); return ret; }
+		if(s[0] == 'K')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " const"; st.subs.append(ret); return ret; }
+		if(s[0] == 'r')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " restrict"; st.subs.append(ret); return ret; }
+		if(s[0] == 'V')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " volatile"; st.subs.append(ret); return ret; }
+		if(s[0] == 'R')
 		{
 			s.remove_prefix(1);
 			auto ret = parseType(s, st);
@@ -849,7 +866,7 @@ namespace util
 			st.subs.append(ret);
 			return ret;
 		}
-		else if(s[0] == 'O')
+		if(s[0] == 'O')
 		{
 			s.remove_prefix(1);
 			auto ret = parseType(s, st);
@@ -858,7 +875,7 @@ namespace util
 			st.subs.append(ret);
 			return ret;
 		}
-		else if(s[0] == 'F')
+		if(s[0] == 'F')
 		{
 			// function type.
 			s.remove_prefix(1);
@@ -882,7 +899,7 @@ namespace util
 			st.subs.append(ret);
 			return ret;
 		}
-		else if(s[0] == 'A')
+		if(s[0] == 'A')
 		{
 			// array type.
 			s.remove_prefix(1);
@@ -904,51 +921,47 @@ namespace util
 
 			return ret;
 		}
-		else if(s.find("Do") == 0 || s.find("DO") == 0 || s.find("Dw") == 0)
+		if(s.find("Do") == 0 || s.find("DO") == 0 || s.find("Dw") == 0)
 		{
 			// exception specifier.
 			s.remove_prefix(2);
 			return parseType(s, st) + " noexcept";
 		}
-		else if(s.find("Dp") == 0)
+		if(s.find("Dp") == 0)
 		{
 			// parameter pack
 			s.remove_prefix(2);
 			return parseType(s, st) + "...";
 		}
-		else if(s[0] == 'S')
+		if(s[0] != 'E')
+		{
+			auto ret = parseClassType(s, st);
+			if(ret.size() > 0)
+			{
+				st.subs.append(ret);
+				return ret;
+			}
+			else
+			{
+				// see if we can substitute stuff.
+				for(const auto& sub : builtinTypeSubsts)
+				{
+					if(strncmp(s.data(), sub.str.cstr(), sub.str.size()) == 0)
+					{
+						s.remove_prefix(sub.str.size());
+						return sub.replacement;
+					}
+				}
+			}
+		}
+		if(s[0] == 'S')
 		{
 			// substitution.
 			return parseSubstitution(s, st);
 		}
-		else if(s[0] == 'T')
+		if(s[0] == 'T')
 		{
 			return parseTemplateParam(s, st);
-		}
-		else
-		{
-			// else... try something.
-			if(s[0] != 'E')
-			{
-				auto ret = parseClassType(s, st);
-				if(ret.size() > 0)
-				{
-					st.subs.append(ret);
-					return ret;
-				}
-				else
-				{
-					// see if we can substitute stuff.
-					for(const auto& sub : builtinTypeSubsts)
-					{
-						if(strncmp(s.data(), sub.str.cstr(), sub.str.size()) == 0)
-						{
-							s.remove_prefix(sub.str.size());
-							return sub.replacement;
-						}
-					}
-				}
-			}
 		}
 
 		return "";
@@ -1010,7 +1023,9 @@ namespace util
 		assert(s.find("_Z") == 0);
 		s.remove_prefix(2);
 
-		return parseEncoding(s, st);
+		// return parseEncoding(s, st);
+		auto ret = parseEncoding(s, st);
+		return ret;
 	}
 
 	static nx::string parseDecltype(nx::string_view& s, State& st)
@@ -1363,6 +1378,9 @@ namespace util
 		auto input = string_view(mangled);
 		// serial::debugprintf("%s\n", mangled.cstr());
 
+		// if(mangled == "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51")
+		// 	serial::debugprintf("OWO\n");
+
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
 		// _ZN3krt4moveIRcEEONS_16remove_referenceIT_E4typeEOS3_
@@ -1370,8 +1388,14 @@ namespace util
 		// _ZZN2nxL8__loggerIJRjS1_EEEviPKcS3_DpOT_ENUlPvS3_mE_4_FUNES7_S3_m
 		// _ZN2nx9_internal23_consume_neither_sprintIRPKcJRA_cRiRmEvPvEEmPFmS9_S3_mES9_RKNS_11format_argsES3_OT_DpOT0_
 
-		State st;
-		return parseMangledName(input, st);
+		// TODO: this shit don't work:
+		//! _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51
+		//! _ZN3vfs10concatPathERKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE.cold.61
+
+		return mangled;
+
+		// State st;
+		// return parseMangledName(input, st);
 	}
 
 
