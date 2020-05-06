@@ -5,16 +5,15 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			// "launchCompleteCommand": "exec-continue",
 			"preLaunchTask": "qemu",
 			"name": "debug kernel",
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/build/sysroot/boot/nxkernel64",
+			"miDebuggerServerAddress": "localhost:1234",
 			"cwd": "${workspaceFolder}",
 			"miDebuggerPath": "/usr/bin/gdb",
-			"osx": {
-				"miDebuggerPath": "/usr/local/bin/gdb"
-			},
 			"args": [],
 			"MIMode": "gdb",
 			"targetArchitecture":"x64",

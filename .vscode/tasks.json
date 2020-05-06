@@ -7,7 +7,18 @@
 			"label": "qemu",
 			"type": "shell",
 			"isBackground": true,
-			"command": "${workspaceFolder:nx}/build.sh debug",
+			"command": "make debug",
+			// "args": [
+			// 	"-bios", "utils/ovmf-x64/OVMF-pure-efi.fd",
+			// 	"-drive", "format=raw,file=build/disk.img",
+			// 	"-smp", "4", "-cpu", "qemu64,fsgsbase=true,+xsave",
+			// 	"-m", "128", "-nodefaults", "-no-shutdown", "-no-reboot",
+			// 	"-vga", "std",
+			// 	"-chardev", "file,id=qemu-debug-out,path=build/serialout.log",
+			// 	"-device", "isa-debugcon,chardev=qemu-debug-out",
+			// 	// "-monitor", "stdio",
+			// 	"-s", "-S"
+			// ],
 			"problemMatcher": {
                 "pattern": {
                     "regexp": "^(# starting qemu)",
