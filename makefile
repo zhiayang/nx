@@ -35,7 +35,7 @@ QEMU_UEFI_BIOS          := -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_UEFI_DISKIMG       := -drive format=raw,file=build/disk.img
 QEMU_BIOS_DISKIMG       := -drive format=raw,file=build/disk-bios.img
 
-QEMU_CPU_CONFIG         := -smp 4 -cpu qemu64,fsgsbase=true,+xsave
+QEMU_CPU_CONFIG         := -smp 4 -cpu qemu64,fsgsbase=true,+xsave,+xsaveopt,+smep,+smap
 QEMU_FLAGS              := $(QEMU_CPU_CONFIG) -m $(MEMORY) -nodefaults -no-shutdown -no-reboot -vga std # -d exception,cpu_reset,int
 
 QEMU_SERIAL             := -chardev stdio,id=char0,logfile=build/serialout.log -serial chardev:char0

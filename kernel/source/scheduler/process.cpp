@@ -68,15 +68,8 @@ namespace scheduler
 	static Process KernelProcess;
 	static CPULocalState bootstrapLocalState;
 
-	void setupKernelProcess(PhysAddr cr3)
+	void setupEarlyCPULocalState()
 	{
-		new (&KernelProcess) Process();
-		KernelProcess.processId = 0;
-		KernelProcess.addrspace.lock()->init(cr3);
-
-		setInitPhase(SchedulerInitPhase::KernelProcessInit);
-
-
 		// setup the bootstrap local state, so we can dereference %gs
 		new (&bootstrapLocalState) CPULocalState();
 
@@ -85,6 +78,17 @@ namespace scheduler
 
 		cpu::writeMSR(cpu::MSR_GS_BASE, (uint64_t) &bootstrapLocalState);
 		cpu::writeMSR(cpu::MSR_KERNEL_GS_BASE, 0);
+	}
+
+	void setupKernelProcess(PhysAddr cr3)
+	{
+		// now we can do stuff.
+
+		new (&KernelProcess) Process();
+		KernelProcess.processId = 0;
+		KernelProcess.addrspace.lock()->init(cr3);
+
+		setInitPhase(SchedulerInitPhase::KernelProcessInit);
 	}
 
 	Process* getKernelProcess()

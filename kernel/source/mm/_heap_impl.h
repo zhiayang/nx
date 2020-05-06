@@ -97,6 +97,8 @@ struct heap_impl
 		auto phys = pmm::allocate(num);
 
 		vmm::mapAddress(virt, phys, num, vmm::PAGE_WRITE, kproc);
+		memset(virt.ptr(), 0, PAGE_SIZE);
+
 		return virt.addr();
 	}
 

@@ -48,7 +48,7 @@ namespace loader
 		if(header->e_ident[EI_CLASS] != ELFCLASS64) { error(err, "32-bit executables not supported"); return false; }
 		if(header->e_ident[EI_DATA] != ELFDATA2LSB) { error(err, "big-endian executables not supported"); return false; }
 
-		if constexpr (getArchitecture() == Architecture::x64)
+		#if __ARCH_x64__
 		{
 			if(header->e_machine != EM_X86_64)
 			{
@@ -61,7 +61,7 @@ namespace loader
 				return false;
 			}
 		}
-		else if constexpr (getArchitecture() == Architecture::AArch64)
+		#elif __ARCH_AARCH64__
 		{
 			if(header->e_machine != EM_AARCH64)
 			{
@@ -74,11 +74,12 @@ namespace loader
 				return false;
 			}
 		}
-		else
+		#else
 		{
 			error(err, "unsupported architecture %d", header->e_machine);
 			return false;
 		}
+		#endif
 
 		if(header->e_type != ET_EXEC)   { error(err, "non-executables not currently supported"); return false; }
 

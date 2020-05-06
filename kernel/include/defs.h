@@ -111,7 +111,7 @@ namespace nx
 		constexpr uint64_t ALIGN_BITS           = 12;
 	}
 
-
+	void dbg(const char* sys, const char* fmt, ...);
 	void log(const char* sys, const char* fmt, ...);
 	void warn(const char* sys, const char* fmt, ...);
 	void error(const char* sys, const char* fmt, ...);

@@ -33,9 +33,6 @@ namespace idt
 	static IDTPointer idtp;
 
 
-	extern "C" void nx_x64_loadidt(uint64_t);
-
-
 	void init()
 	{
 		idtp.base = (uintptr_t) &idt;
@@ -44,7 +41,7 @@ namespace idt
 		memset(&idt, 0, NumIDTEntries * sizeof(IDTEntry));
 
 		// load the IDT
-		nx_x64_loadidt((uint64_t) &idtp);
+		platform::load_idt((uint64_t) &idtp);
 	}
 
 

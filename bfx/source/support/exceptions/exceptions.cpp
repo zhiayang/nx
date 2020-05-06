@@ -60,48 +60,48 @@ namespace exceptions
 
 
 
-	extern "C" void nx_x64_exception_handler_0();
-	extern "C" void nx_x64_exception_handler_1();
-	extern "C" void nx_x64_exception_handler_2();
-	extern "C" void nx_x64_exception_handler_3();
-	extern "C" void nx_x64_exception_handler_4();
-	extern "C" void nx_x64_exception_handler_5();
-	extern "C" void nx_x64_exception_handler_6();
-	extern "C" void nx_x64_exception_handler_7();
-	extern "C" void nx_x64_exception_handler_8();
-	extern "C" void nx_x64_exception_handler_9();
-	extern "C" void nx_x64_exception_handler_10();
-	extern "C" void nx_x64_exception_handler_11();
-	extern "C" void nx_x64_exception_handler_12();
-	extern "C" void nx_x64_exception_handler_13();
-	extern "C" void nx_x64_exception_handler_14();
-	extern "C" void nx_x64_exception_handler_15();
-	extern "C" void nx_x64_exception_handler_16();
-	extern "C" void nx_x64_exception_handler_17();
-	extern "C" void nx_x64_exception_handler_18();
-	extern "C" void nx_x64_exception_handler_19();
-	extern "C" void nx_x64_exception_handler_20();
-	extern "C" void nx_x64_exception_handler_21();
-	extern "C" void nx_x64_exception_handler_22();
-	extern "C" void nx_x64_exception_handler_23();
-	extern "C" void nx_x64_exception_handler_24();
-	extern "C" void nx_x64_exception_handler_25();
-	extern "C" void nx_x64_exception_handler_26();
-	extern "C" void nx_x64_exception_handler_27();
-	extern "C" void nx_x64_exception_handler_28();
-	extern "C" void nx_x64_exception_handler_29();
-	extern "C" void nx_x64_exception_handler_30();
-	extern "C" void nx_x64_exception_handler_31();
+	extern "C" void bfx_x64_exception_handler_0();
+	extern "C" void bfx_x64_exception_handler_1();
+	extern "C" void bfx_x64_exception_handler_2();
+	extern "C" void bfx_x64_exception_handler_3();
+	extern "C" void bfx_x64_exception_handler_4();
+	extern "C" void bfx_x64_exception_handler_5();
+	extern "C" void bfx_x64_exception_handler_6();
+	extern "C" void bfx_x64_exception_handler_7();
+	extern "C" void bfx_x64_exception_handler_8();
+	extern "C" void bfx_x64_exception_handler_9();
+	extern "C" void bfx_x64_exception_handler_10();
+	extern "C" void bfx_x64_exception_handler_11();
+	extern "C" void bfx_x64_exception_handler_12();
+	extern "C" void bfx_x64_exception_handler_13();
+	extern "C" void bfx_x64_exception_handler_14();
+	extern "C" void bfx_x64_exception_handler_15();
+	extern "C" void bfx_x64_exception_handler_16();
+	extern "C" void bfx_x64_exception_handler_17();
+	extern "C" void bfx_x64_exception_handler_18();
+	extern "C" void bfx_x64_exception_handler_19();
+	extern "C" void bfx_x64_exception_handler_20();
+	extern "C" void bfx_x64_exception_handler_21();
+	extern "C" void bfx_x64_exception_handler_22();
+	extern "C" void bfx_x64_exception_handler_23();
+	extern "C" void bfx_x64_exception_handler_24();
+	extern "C" void bfx_x64_exception_handler_25();
+	extern "C" void bfx_x64_exception_handler_26();
+	extern "C" void bfx_x64_exception_handler_27();
+	extern "C" void bfx_x64_exception_handler_28();
+	extern "C" void bfx_x64_exception_handler_29();
+	extern "C" void bfx_x64_exception_handler_30();
+	extern "C" void bfx_x64_exception_handler_31();
 
 	constexpr void (*exception_handlers[32])() = {
-		nx_x64_exception_handler_0,  nx_x64_exception_handler_1,  nx_x64_exception_handler_2,  nx_x64_exception_handler_3,
-		nx_x64_exception_handler_4,  nx_x64_exception_handler_5,  nx_x64_exception_handler_6,  nx_x64_exception_handler_7,
-		nx_x64_exception_handler_8,  nx_x64_exception_handler_9,  nx_x64_exception_handler_10, nx_x64_exception_handler_11,
-		nx_x64_exception_handler_12, nx_x64_exception_handler_13, nx_x64_exception_handler_14, nx_x64_exception_handler_15,
-		nx_x64_exception_handler_16, nx_x64_exception_handler_17, nx_x64_exception_handler_18, nx_x64_exception_handler_19,
-		nx_x64_exception_handler_20, nx_x64_exception_handler_21, nx_x64_exception_handler_22, nx_x64_exception_handler_23,
-		nx_x64_exception_handler_24, nx_x64_exception_handler_25, nx_x64_exception_handler_26, nx_x64_exception_handler_27,
-		nx_x64_exception_handler_28, nx_x64_exception_handler_29, nx_x64_exception_handler_30, nx_x64_exception_handler_31,
+		bfx_x64_exception_handler_0,  bfx_x64_exception_handler_1,  bfx_x64_exception_handler_2,  bfx_x64_exception_handler_3,
+		bfx_x64_exception_handler_4,  bfx_x64_exception_handler_5,  bfx_x64_exception_handler_6,  bfx_x64_exception_handler_7,
+		bfx_x64_exception_handler_8,  bfx_x64_exception_handler_9,  bfx_x64_exception_handler_10, bfx_x64_exception_handler_11,
+		bfx_x64_exception_handler_12, bfx_x64_exception_handler_13, bfx_x64_exception_handler_14, bfx_x64_exception_handler_15,
+		bfx_x64_exception_handler_16, bfx_x64_exception_handler_17, bfx_x64_exception_handler_18, bfx_x64_exception_handler_19,
+		bfx_x64_exception_handler_20, bfx_x64_exception_handler_21, bfx_x64_exception_handler_22, bfx_x64_exception_handler_23,
+		bfx_x64_exception_handler_24, bfx_x64_exception_handler_25, bfx_x64_exception_handler_26, bfx_x64_exception_handler_27,
+		bfx_x64_exception_handler_28, bfx_x64_exception_handler_29, bfx_x64_exception_handler_30, bfx_x64_exception_handler_31,
 	};
 
 
@@ -138,7 +138,7 @@ namespace exceptions
 
 
 	static int faultCount = 0;
-	extern "C" void nx_x64_handle_exception(RegState_t* regs)
+	extern "C" void bfx_x64_handle_exception(RegState_t* regs)
 	{
 		using namespace serial;
 

@@ -84,7 +84,9 @@ int main()
 			auto ticket = nx::ipc::collect_memory_ticket(1);
 			memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);
 
-			printf("%5d signalled! (%llu) %p, %zu\n", foozle++, x, ticket.ptr, ticket.len);
+			// printf("%5d signalled! (%llu) %p, %zu\n", foozle++, x, ticket.ptr, ticket.len);
+			// printf(".");
+			syscall::kernel_log(0, "", 0, "!", 1);
 
 			nx::ipc::release_memory_ticket(ticket);
 		}

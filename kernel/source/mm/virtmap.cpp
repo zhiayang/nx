@@ -343,7 +343,7 @@ namespace vmm
 		assert(virt.isPageAligned());
 
 		flags &= ~PAGE_PRESENT;
-		log("vmm", "region %p - %p marked copy-on-write", virt, virt + ofsPages(num));
+		dbg("vmm", "region %p - %p marked copy-on-write", virt, virt + ofsPages(num));
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -365,7 +365,7 @@ namespace vmm
 		assert((flags & PAGE_WRITE) == 0);
 		flags &= ~PAGE_WRITE;
 
-		log("vmm", "region %p - %p (pid %ld) marked zeroed-copy-on-write", virt, virt + ofsPages(num), proc->processId);
+		dbg("vmm", "region %p - %p (pid %ld) marked zeroed-copy-on-write", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -388,7 +388,7 @@ namespace vmm
 		assert((flags & PAGE_PRESENT) == 0);
 		flags &= ~PAGE_PRESENT;
 
-		log("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
+		dbg("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{

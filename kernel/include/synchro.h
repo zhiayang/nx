@@ -21,6 +21,8 @@ namespace nx
 		void disable();
 	}
 
+	// this one does not disable interrupts, only delays
+	// thread switching when locked.
 	struct spinlock
 	{
 		spinlock();
@@ -31,7 +33,22 @@ namespace nx
 		bool trylock();
 
 	private:
-		uint8_t value = 0;
+		uint64_t value = 0;
+		scheduler::Thread* holder = 0;
+	};
+
+	// this one will disable interrupts also.
+	struct IRQSpinlock
+	{
+		IRQSpinlock();
+
+		bool held();
+		void lock();
+		void unlock();
+		bool trylock();
+
+	private:
+		uint64_t value = 0;
 		scheduler::Thread* holder = 0;
 	};
 
@@ -45,7 +62,7 @@ namespace nx
 		bool trylock();
 
 	private:
-		uint8_t value = 0;
+		uint64_t value = 0;
 		scheduler::Thread* holder = 0;
 	};
 

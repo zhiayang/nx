@@ -153,11 +153,9 @@ namespace tss
 	}
 
 
-	extern "C" void nx_x64_loadtss(uint16_t);
-
 	void loadTSS(uint16_t selector)
 	{
-		nx_x64_loadtss(selector | 0x3);
+		platform::load_tss(selector | 0x3);
 	}
 }
 }

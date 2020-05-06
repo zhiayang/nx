@@ -36,8 +36,9 @@ namespace nx
 
 		switch(level)
 		{
-			case 1:     warn(sys, "%.*s", buflen, buf);     break;
 			case 2:     error(sys, "%.*s", buflen, buf);    break;
+			case 1:     warn(sys, "%.*s", buflen, buf);     break;
+			case -1:    log(sys, "%.*s", buflen, buf);      break;
 
 			case 0:
 			default:    log(sys, "%.*s", buflen, buf);      break;

@@ -55,16 +55,12 @@ namespace gdt
 	// 6: d (always 0)
 	// 7: granularity (useless, 0)
 
-	extern "C" void nx_x64_loadgdt(uint64_t);
-
 	static addr_t GDTBaseAddress = 0;
 	static addr_t GDTPhysAddress = 0;
 	static size_t CurrentGDTSize = 0;
 
 	static gdtptr_t GDTPointer;
-
 	static bool HasFSGSBaseInstr = false;
-
 
 	static int addDescriptor(const entry_t& entry)
 	{
@@ -94,7 +90,7 @@ namespace gdt
 
 		// reload the gdt with the new limit.
 		GDTPointer.limit = CurrentGDTSize - 1;
-		nx_x64_loadgdt((addr_t) &GDTPointer);
+		platform::load_gdt((addr_t) &GDTPointer);
 	}
 
 	void init()
@@ -132,13 +128,11 @@ namespace gdt
 		GDTPointer.base = GDTBaseAddress;
 		GDTPointer.limit = CurrentGDTSize - 1;
 
-		nx_x64_loadgdt((addr_t) &GDTPointer);
+		platform::load_gdt((addr_t) &GDTPointer);
 
 		HasFSGSBaseInstr = cpu::hasFeature(Feature::FSGSBase);
 		if(HasFSGSBaseInstr)
-		{
 			writeCR4(readCR4() | CR4_FSGSBASE);
-		}
 	}
 }
 
@@ -146,27 +140,19 @@ namespace gdt
 	uint64_t readFSBase()
 	{
 		if(__likely(gdt::HasFSGSBaseInstr))
-		{
-			uint64_t base;
-			asm volatile ("rdfsbase %0" : "=a"(base));
-			return base;
-		}
+			return platform::rdfsbase();
+
 		else
-		{
 			return readMSR(MSR_FS_BASE);
-		}
 	}
 
 	void writeFSBase(uint64_t base)
 	{
 		if(__likely(gdt::HasFSGSBaseInstr))
-		{
-			asm volatile ("wrfsbase %0" :: "a"(base));
-		}
+			platform::wrfsbase(base);
+
 		else
-		{
 			writeMSR(MSR_FS_BASE, base);
-		}
 	}
 }
 }

@@ -38,9 +38,7 @@ namespace interrupts
 	static nx::treemap<int, irq_state_t> irqHandlers;
 
 	// we need the special allocator for this, since we call this inside IRQ handlers.
-	static nx::spinlock inflightLock;
-	static krt::list<pending_irq_t, _fixed_allocator, _aborter> inflightIRQs;
-
+	static Synchronised<nx::list<pending_irq_t, _fixed_allocator>, nx::IRQSpinlock> inflightIRQs;
 
 	void addIRQHandler(int irq, scheduler::Process* proc)
 	{
@@ -76,57 +74,59 @@ namespace interrupts
 
 	void signalIRQIgnored(int num)
 	{
-		autolock lk(&inflightLock);
+		inflightIRQs.perform([num](auto& list) {
 
-		// grab the first pending irq that matches, and decrease the count.
-		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
-			return p.irq == num;
-		});
+			// grab the first pending irq that matches, and decrease the count.
+			auto it = list.find_if([num](const pending_irq_t& p) -> bool {
+				return p.irq == num;
+			});
 
-		if(it != inflightIRQs.end())
-		{
-			it->remaining--;
-
-			if(it->remaining == 0)
+			if(it != list.end())
 			{
-				inflightIRQs.erase(it);
-				if(!it->handled)
+				it->remaining--;
+
+				if(it->remaining == 0)
 				{
-					warn("irq", "no drivers handled irq %d", num);
-					sendEOI(num);
+					list.erase(it);
+					if(!it->handled)
+					{
+						warn("irq", "no drivers handled irq %d", num);
+						sendEOI(num);
+					}
 				}
 			}
-		}
-		else
-		{
-			error("irq", "failed to find matching inflight irq");
-		}
+			else
+			{
+				error("irq", "failed to find matching inflight irq");
+			}
+		});
 	}
 
 
 	void signalIRQHandled(int num)
 	{
-		autolock lk(&inflightLock);
+		inflightIRQs.perform([num](auto& list) {
 
-		sendEOI(num);
+			sendEOI(num);
 
-		// grab the first pending irq that matches, and decrease the count.
-		auto it = inflightIRQs.find_if([num](const pending_irq_t& p) -> bool {
-			return p.irq == num;
+			// grab the first pending irq that matches, and decrease the count.
+			auto it = list.find_if([num](const pending_irq_t& p) -> bool {
+				return p.irq == num;
+			});
+
+			if(it != list.end())
+			{
+				it->handled = true;
+				it->remaining--;
+
+				if(it->remaining == 0)
+					list.erase(it);
+			}
+			else
+			{
+				error("irq", "failed to find matching inflight irq");
+			}
 		});
-
-		if(it != inflightIRQs.end())
-		{
-			it->handled = true;
-			it->remaining--;
-
-			if(it->remaining == 0)
-				inflightIRQs.erase(it);
-		}
-		else
-		{
-			error("irq", "failed to find matching inflight irq");
-		}
 	}
 
 
@@ -168,19 +168,17 @@ namespace interrupts
 		}
 
 		// add this.
-		autolock lk(&inflightLock);
-		inflightIRQs.append(pending);
+		inflightIRQs.lock()->append(pending);
 
 		return ok;
 	}
 
 	void init()
 	{
-		inflightIRQs = krt::list<pending_irq_t, _fixed_allocator, _aborter>();
-		irqHandlers = nx::treemap<int, irq_state_t>();
-
 		new (&handlerLock) nx::mutex();
-		new (&inflightLock) nx::spinlock();
+		new (&irqHandlers) nx::treemap<int, irq_state_t>();
+
+		new (&inflightIRQs) decltype(inflightIRQs)();
 	}
 }
 }

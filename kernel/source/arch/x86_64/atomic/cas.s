@@ -52,7 +52,7 @@ _ZN2nx6atomic5cas16EPvS1_S1_:
 
 
 
-// bool nx::atomic::cas(int8_t*, int8_t*, int8_t)
+// bool nx::atomic::cas_fetch(int8_t*, int8_t*, int8_t)
 .global _ZN2nx6atomic9cas_fetchEPaS1_a; .type _ZN2nx6atomic9cas_fetchEPaS1_a, @function
 .global _ZN2nx6atomic9cas_fetchEPhS1_h; .type _ZN2nx6atomic9cas_fetchEPhS1_h, @function
 _ZN2nx6atomic9cas_fetchEPaS1_a:
@@ -78,7 +78,7 @@ _ZN2nx6atomic9cas_fetchEPhS1_h:
 	ret
 
 
-// bool nx::atomic::cas(int16_t*, int16_t*, int16_t)
+// bool nx::atomic::cas_fetch(int16_t*, int16_t*, int16_t)
 .global _ZN2nx6atomic9cas_fetchEPsS1_s; .type _ZN2nx6atomic9cas_fetchEPsS1_s, @function
 .global _ZN2nx6atomic9cas_fetchEPtS1_t; .type _ZN2nx6atomic9cas_fetchEPtS1_t, @function
 _ZN2nx6atomic9cas_fetchEPsS1_s:
@@ -105,7 +105,7 @@ _ZN2nx6atomic9cas_fetchEPtS1_t:
 
 
 
-// bool nx::atomic::cas(int32_t*, int32_t*, int32_t)
+// bool nx::atomic::cas_fetch(int32_t*, int32_t*, int32_t)
 .global _ZN2nx6atomic9cas_fetchEPiS1_i; .type _ZN2nx6atomic9cas_fetchEPiS1_i, @function
 .global _ZN2nx6atomic9cas_fetchEPjS1_j; .type _ZN2nx6atomic9cas_fetchEPjS1_j, @function
 _ZN2nx6atomic9cas_fetchEPiS1_i:
@@ -132,7 +132,7 @@ _ZN2nx6atomic9cas_fetchEPjS1_j:
 
 
 
-// bool nx::atomic::cas(int64_t*, int64_t*, int64_t)
+// bool nx::atomic::cas_fetch(int64_t*, int64_t*, int64_t)
 .global _ZN2nx6atomic9cas_fetchEPlS1_l; .type _ZN2nx6atomic9cas_fetchEPlS1_l, @function
 .global _ZN2nx6atomic9cas_fetchEPmS1_m; .type _ZN2nx6atomic9cas_fetchEPmS1_m, @function
 _ZN2nx6atomic9cas_fetchEPlS1_l:

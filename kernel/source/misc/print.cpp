@@ -97,16 +97,18 @@ namespace nx
 	constexpr const char* RESET_COLOUR = (USE_COLOURS ? COLOUR_RESET : "");
 	constexpr const char* SUBSYS_COLOUR = (USE_COLOURS ? COLOUR_BLUE_BOLD : "");
 
+	constexpr const char* DBG_COLOUR = (USE_COLOURS ? COLOUR_WHITE : "");
 	constexpr const char* LOG_COLOUR = (USE_COLOURS ? COLOUR_GREY_BOLD : "");
 	constexpr const char* WRN_COLOUR = (USE_COLOURS ? COLOUR_YELLOW_BOLD : "");
 	constexpr const char* ERR_COLOUR = (USE_COLOURS ? COLOUR_RED_BOLD : "");
 
-	constexpr const char* LVL_COLOURS[] = { LOG_COLOUR, WRN_COLOUR, ERR_COLOUR };
-	constexpr const char* LVL_STRINGS[] = { "[log]", "[wrn]", "[err]" };
-
+	constexpr bool ENABLE_DEBUG = false;
 
 	static inline void vgeneric_log(int lvl, const char* sys, const char* fmt, va_list args)
 	{
+		if(!ENABLE_DEBUG && lvl < 0)
+			return;
+
 		interrupts::disable();
 		size_t margin = 0;
 
@@ -125,15 +127,31 @@ namespace nx
 			return len;
 		};
 
-		cbprintf(nullptr, cb_serialprint, "%s%s%s %s%s%s: ", LVL_COLOURS[lvl], LVL_STRINGS[lvl], RESET_COLOUR,
+		const char* col = 0;
+		const char* str = 0;
+
+		if(lvl == -1)       { col = DBG_COLOUR;  str = "[dbg]"; }
+		else if(lvl == 0)   { col = LOG_COLOUR;  str = "[log]"; }
+		else if(lvl == 1)   { col = WRN_COLOUR;  str = "[wrn]"; }
+		else if(lvl == 2)   { col = ERR_COLOUR;  str = "[err]"; }
+
+		cbprintf(nullptr, cb_serialprint, "%s%s%s %s%s%s: ", col, str, RESET_COLOUR,
 			SUBSYS_COLOUR, sys, RESET_COLOUR);
 
-		margin = strlen(LVL_STRINGS[0]) + 1 + strlen(sys) + 2;
+		margin = 5 + 1 + strlen(sys) + 2;
 
 		vcbprintf(&margin, cb, fmt, args);
 		cbprintf(nullptr, cb_serialprint, "\n");
 
 		interrupts::enable();
+	}
+
+
+	void dbg(const char* sys, const char* fmt, ...)
+	{
+		va_list args; va_start(args, fmt);
+		vgeneric_log(-1, sys, fmt, args);
+		va_end(args);
 	}
 
 	void log(const char* sys, const char* fmt, ...)
@@ -142,7 +160,6 @@ namespace nx
 		vgeneric_log(0, sys, fmt, args);
 		va_end(args);
 	}
-
 
 	void warn(const char* sys, const char* fmt, ...)
 	{

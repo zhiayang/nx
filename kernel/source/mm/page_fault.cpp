@@ -4,8 +4,6 @@
 
 #include "nx.h"
 
-extern "C" void nx_x64_enter_intr_context();
-extern "C" void nx_x64_exit_intr_context();
 
 namespace nx {
 namespace vmm
@@ -60,8 +58,8 @@ namespace vmm
 			// else should be able to go in and mess things up. so it should be safe to force-enable
 			// interrupts with sti/cli instead of using interrupts::enable/disable.
 			struct _ {
-				_() { nx_x64_exit_intr_context(); asm volatile ("sti"); }
-				~_() { asm volatile ("cli"); nx_x64_enter_intr_context(); }
+				_() { platform::leave_interrupt_context(); asm volatile ("sti"); }
+				~_() { asm volatile ("cli"); platform::enter_interrupt_context(); }
 			} __;
 
 			// then, get a new one. note: we don't need to track this in the address space, because the
@@ -77,6 +75,7 @@ namespace vmm
 
 				if(pair.first.present())
 				{
+					bool needsClearing = false;
 					auto ph = pair.second;
 					if(!ph.present())
 					{
@@ -85,14 +84,17 @@ namespace vmm
 						proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, p);
 
 						ph = opt::some(p);
+						needsClearing = true;
 					}
 
-					// this gets a bit spammy
-
 					if(LOG_ALL_FAULTS)
-						log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
+						dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
 
 					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
+
+					if(needsClearing)
+						memset(aligned_cr2.ptr(), 0, PAGE_SIZE);
+
 					return true;
 				}
 				else
@@ -113,7 +115,7 @@ namespace vmm
 				}
 
 				auto phys = pmm::allocate(1);
-				vmm::mapAddressOverwrite(VirtAddr(aligned_cr2), PhysAddr(phys), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
+				vmm::mapAddressOverwrite(aligned_cr2, phys, 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_WRITE);
 				{
 					auto proc = scheduler::getCurrentProcess();
 					proc->addrspace.lock()->addPhysicalMapping(aligned_cr2, phys);
@@ -139,9 +141,13 @@ namespace vmm
 					// and free.
 					vmm::deallocateAddrSpace(scratch, 1);
 				}
+				else
+				{
+					memset(aligned_cr2.ptr(), 0, PAGE_SIZE);
+				}
 
 				if(LOG_ALL_FAULTS)
-					log("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
+					dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
 			}
 
 			return true;
