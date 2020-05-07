@@ -472,15 +472,15 @@ namespace instrad::x64
 
 			// TODO: need to handle relative offsets properly
 			case OpKind::Rel8Offset:
-				return readSignedImm8(buf);
+				return RelOffset(readSignedImm8(buf));
 
 			case OpKind::Rel16Offset:
 			case OpKind::Rel32Offset: {
 				if(mods.operandSizeOverride)
-					return readSignedImm16(buf);
+					return RelOffset(readSignedImm16(buf));
 
 				else
-					return readSignedImm32(buf);
+					return RelOffset(readSignedImm32(buf));
 			}
 
 			case OpKind::Memory:

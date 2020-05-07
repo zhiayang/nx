@@ -51,10 +51,24 @@ namespace instrad::x64
 		Register m_index = regs::NONE;
 	};
 
+	struct RelOffset
+	{
+		constexpr explicit RelOffset(int8_t ofs) : m_ofs((int64_t) ofs) { }
+		constexpr explicit RelOffset(int16_t ofs) : m_ofs((int64_t) ofs) { }
+		constexpr explicit RelOffset(int32_t ofs) : m_ofs((int64_t) ofs) { }
+		constexpr explicit RelOffset(int64_t ofs) : m_ofs((int64_t) ofs) { }
+
+		constexpr int64_t offset() const { return this->m_ofs; }
+
+	private:
+		int64_t m_ofs;
+	};
+
 	struct Operand
 	{
 		constexpr Operand() { }
 		constexpr Operand(const MemoryRef& mem) : m_type(TYPE_MEM), m_mem(mem) { }
+		constexpr Operand(const RelOffset& reg) : m_type(TYPE_OFS), m_ofs(reg) { }
 		constexpr Operand(const Register& reg) : m_type(TYPE_REG), m_reg(reg) { }
 
 		constexpr Operand(int64_t imm) : m_type(TYPE_IMM), m_imm(imm), m_immbits(64) { }
@@ -62,10 +76,12 @@ namespace instrad::x64
 		constexpr Operand(int16_t imm) : m_type(TYPE_IMM), m_imm(imm), m_immbits(16) { }
 		constexpr Operand(int8_t imm) : m_type(TYPE_IMM), m_imm(imm), m_immbits(8) { }
 
+		constexpr bool isRelativeOffset() const { return this->m_type == TYPE_OFS; }
 		constexpr bool isImmediate() const { return this->m_type == TYPE_IMM; }
 		constexpr bool isRegister() const { return this->m_type == TYPE_REG; }
 		constexpr bool isMemory() const { return this->m_type == TYPE_MEM; }
 
+		constexpr const RelOffset& ofs() const { return this->m_ofs; }
 		constexpr const MemoryRef& mem() const { return this->m_mem; }
 		constexpr const Register& reg() const { return this->m_reg; }
 		constexpr uint64_t imm() const { return this->m_imm; }
@@ -79,10 +95,12 @@ namespace instrad::x64
 		constexpr static int TYPE_REG = 0;
 		constexpr static int TYPE_IMM = 1;
 		constexpr static int TYPE_MEM = 2;
+		constexpr static int TYPE_OFS = 3;
 
 		int m_type = TYPE_IMM;
 		union {
 			Register m_reg;
+			RelOffset m_ofs;
 			MemoryRef m_mem;
 			int64_t m_imm = 0;
 		};
