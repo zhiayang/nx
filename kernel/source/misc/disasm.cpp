@@ -11,17 +11,23 @@ namespace nx::disasm
 
 	constexpr size_t DISASM_COUNT = 5;
 
-	static void print_intel(const x64::Instruction& instr);
+	static void print_instr(const x64::Instruction& instr, addr_t ip);
 
 	void printDisassembly(addr_t rip)
 	{
-		serial::debugprintf("disassembly at %p\n", (void*) rip);
+		serial::debugprintf("disassembly at %p:\n", (void*) rip);
 
 		auto buf = Buffer((uint8_t*) rip, /* some arbitrary number: */ 0x1000);
+
+		auto ip = rip;
 		for(size_t i = 0; i < DISASM_COUNT; i++)
 		{
 			auto instr = x64::read(buf, x64::ExecMode::Long);
-			print_intel(instr);
+			serial::debugprintf("  %8x  |  ", (uint32_t) ip);
+			print_instr(instr, ip);
+			serial::debugprintf("\n");
+
+			ip += instr.numBytes();
 		}
 
 		serial::debugprintf("\n");
@@ -30,11 +36,11 @@ namespace nx::disasm
 
 
 
-	static void print_intel(const x64::Instruction& instr)
+	static void print_instr(const x64::Instruction& instr, addr_t ip)
 	{
 		auto& printer = serial::debugprintf;
 
-		auto print_operand = [&printer](const instrad::x64::Operand& op) {
+		auto print_operand = [&printer, &ip](const instrad::x64::Operand& op) {
 			if(op.isRegister())
 			{
 				printer("%s", op.reg().name());
@@ -47,6 +53,10 @@ namespace nx::disasm
 				if(op.immediateSize() == 32) value = (uint32_t) value;
 
 				printer("%#lx", value);
+			}
+			else if(op.isRelativeOffset())
+			{
+				printer("%#lx", ip + op.ofs().offset());
 			}
 			else if(op.isMemory())
 			{
@@ -107,9 +117,6 @@ namespace nx::disasm
 			}
 		};
 
-
-		printer("    ");
-
 		// print the bytes
 		size_t col = 0;
 		for(size_t i = 0; i < instr.numBytes(); i++)
@@ -118,7 +125,7 @@ namespace nx::disasm
 			col += 3;
 		}
 
-		while(col++ < 25)
+		while(col++ < 24)
 			printer(" ");
 
 		if(instr.lockPrefix())  printer("lock ");
@@ -142,7 +149,5 @@ namespace nx::disasm
 			print_operand(instr.src()); printer(", ");
 			print_operand(instr.ext());
 		}
-
-		printer("\n");
 	}
 }

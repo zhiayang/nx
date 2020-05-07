@@ -50,6 +50,9 @@ namespace nx
 
 		// this returns the single, 0-filled page we use for CoW and lazy allocation purposes.
 		PhysAddr getZeroPage();
+
+		size_t getNumAllocatedBytes();
+		size_t getTotalPhysicalMemory();
 	}
 
 	namespace vmm

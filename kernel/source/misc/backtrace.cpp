@@ -34,7 +34,7 @@ namespace util
 	static bool nested = false;
 	void printStackTrace(uint64_t _rbp, scheduler::Process* proc)
 	{
-		serial::debugprintf("\nbacktrace:\n");
+		serial::debugprintf("backtrace:\n");
 		if(nested)
 		{
 			serial::debugprintf("aborting backtrace!\n");
@@ -46,7 +46,6 @@ namespace util
 
 		nested = true;
 
-		int counter = 0;
 		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
 
 		while(rbp)
@@ -59,20 +58,19 @@ namespace util
 				if(heap::initialised())
 				{
 					const auto& s = syms::symbolicate(rip, proc);
-					serial::debugprintf("    %2d: %p   |   %s\n", counter, rip, s.cstr());
+					serial::debugprintf("  %8lx  |  %s\n", rip, s.cstr());
 				}
 				else
 				{
-					serial::debugprintf("    %2d: %p\n", counter, rip);
+					serial::debugprintf("  %8lx\n", rip);
 				}
-
-				counter += 1;
 			}
 
 			rbp = *((addr_t*) rbp);
 		}
 
 		nested = false;
+		serial::debugprintf("\n");
 	}
 
 

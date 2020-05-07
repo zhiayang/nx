@@ -32,9 +32,6 @@ namespace nx
 		// debugcon::init();
 
 
-		volatile int* uwu = (int*) 0x5555'1111'1111'3330;
-		*uwu = 30192;
-
 
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 

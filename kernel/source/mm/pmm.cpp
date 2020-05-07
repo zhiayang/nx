@@ -17,12 +17,17 @@ namespace pmm
 
 	static addr_t end(addr_t base, size_t num)  { return base + (num * PAGE_SIZE); }
 	static extmm::State<void, nx::spinlock> extmmState;
+	static size_t totalPhysicalMemory = 0;
+	static size_t numAllocatedBytes = 0;
 
 	static PhysAddr zeroPageAddr { nullptr };
 	PhysAddr getZeroPage()
 	{
 		return zeroPageAddr;
 	}
+
+	size_t getNumAllocatedBytes()   { return numAllocatedBytes; }
+	size_t getTotalPhysicalMemory() { return totalPhysicalMemory; }
 
 	void init(BootInfo* bootinfo)
 	{
@@ -56,7 +61,6 @@ namespace pmm
 		extmmState.init("pmm", addrs::PMM_STACK_BASE.addr(), addrs::PMM_STACK_END.addr(), kproc);
 
 		// ok, now loop through each memory entry for real.
-		size_t totalMem = 0;
 		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
 		{
 			auto entry = &bootinfo->mmEntries[i];
@@ -64,18 +68,18 @@ namespace pmm
 			{
 				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
 				deallocate(PhysAddr(entry->address), entry->numPages);
-				totalMem += entry->numPages * 0x1000;
+				totalPhysicalMemory += entry->numPages * 0x1000;
 			}
 		}
 
 		// we should have > 1MB, if not UEFI wouldn't boot anyway.
-		auto num = totalMem / (1024 * 1024); int unit = 0;
+		auto num = totalPhysicalMemory / (1024 * 1024); int unit = 0;
 		char units[] = { 'M', 'G', 'T', 'P' };
 
 		while(num >= 1024)
 			num /= 1024, unit++;
 
-		log("pmm", "initialised with %zu extents, %zu bytes (%zu %cB)", extmmState.numExtents, totalMem,
+		log("pmm", "initialised with %zu extents, %zu bytes (%zu %cB)", extmmState.numExtents, totalPhysicalMemory,
 			num, units[unit]);
 
 
@@ -148,6 +152,8 @@ namespace pmm
 		// at this point, check for consistency
 		if(!extmmState.checkConsistency())
 			abort("pmm inconsistent!");
+
+		numAllocatedBytes = 0;
 	}
 
 
@@ -161,6 +167,7 @@ namespace pmm
 		assert(ret);
 
 		// log("pmm", "allocated %p - %p (%zu) (%zu)", ret, ret + num * PAGE_SIZE, num, extmmState.numExtents);
+		numAllocatedBytes += num * PAGE_SIZE;
 		return PhysAddr(ret);
 	}
 
@@ -175,6 +182,7 @@ namespace pmm
 
 		// log("pmm", "deallocated %p - %p (%zu)", addr.ptr(), addr + ofsPages(num), num);
 		extmmState.deallocate(addr.addr(), num);
+		numAllocatedBytes -= num * PAGE_SIZE;
 	}
 }
 }

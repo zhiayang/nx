@@ -14,6 +14,9 @@
 			"miDebuggerServerAddress": "localhost:1234",
 			"cwd": "${workspaceFolder}",
 			"miDebuggerPath": "/usr/bin/gdb",
+			"osx": {
+				"miDebuggerPath": "/usr/local/bin/gdb"
+			},
 			"args": [],
 			"MIMode": "gdb",
 			"targetArchitecture":"x64",

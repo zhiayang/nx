@@ -12,7 +12,7 @@ namespace util
 		nx::string str;
 		nx::string replacement;
 
-		Substitution(const nx::string& s, const nx::string& r) : str(s), replacement(r) { }
+		Substitution(nx::string&& s, nx::string&& r) : str(krt::move(s)), replacement(krt::move(r)) { }
 	};
 
 	nx::array<Substitution> operatorSubsts;
@@ -25,109 +25,107 @@ namespace util
 
 	void initDemangler()
 	{
-		operatorSubsts = array<Substitution>();
-		builtinTypeSubsts = array<Substitution>();
-		stdlibTemplateSubsts = array<Substitution>();
+		new (&operatorSubsts) array<Substitution>();
+		new (&builtinTypeSubsts) array<Substitution>();
+		new (&stdlibTemplateSubsts) array<Substitution>();
 
 
 		// New has special syntax (not currently supported).
-		operatorSubsts.append(Substitution("nw", " new")),
-		operatorSubsts.append(Substitution("na", " new[]"));
+		operatorSubsts.emplace("nw", " new"),
+		operatorSubsts.emplace("na", " new[]");
 
 		// Works except that the 'gs' prefix is not supported.
-		operatorSubsts.append(Substitution("dl", " delete"));
-		operatorSubsts.append(Substitution("da", " delete[]"));
+		operatorSubsts.emplace("dl", " delete");
+		operatorSubsts.emplace("da", " delete[]");
 
 		// unary operators
-		operatorSubsts.append(Substitution("ps", "+"));     unaryOperators.append(Substitution("ps", "+"));
-		operatorSubsts.append(Substitution("ng", "-"));     unaryOperators.append(Substitution("ng", "-"));
-		operatorSubsts.append(Substitution("ad", "&"));     unaryOperators.append(Substitution("ad", "&"));
-		operatorSubsts.append(Substitution("de", "*"));     unaryOperators.append(Substitution("de", "*"));
-		operatorSubsts.append(Substitution("co", "~"));     unaryOperators.append(Substitution("co", "~"));
-		operatorSubsts.append(Substitution("nt", "!"));     unaryOperators.append(Substitution("nt", "!"));
-		operatorSubsts.append(Substitution("pp", "++"));    unaryOperators.append(Substitution("pp", "++"));
-		operatorSubsts.append(Substitution("mm", "--"));    unaryOperators.append(Substitution("mm", "--"));
+		operatorSubsts.emplace("ps", "+");     unaryOperators.emplace("ps", "+");
+		operatorSubsts.emplace("ng", "-");     unaryOperators.emplace("ng", "-");
+		operatorSubsts.emplace("ad", "&");     unaryOperators.emplace("ad", "&");
+		operatorSubsts.emplace("de", "*");     unaryOperators.emplace("de", "*");
+		operatorSubsts.emplace("co", "~");     unaryOperators.emplace("co", "~");
+		operatorSubsts.emplace("nt", "!");     unaryOperators.emplace("nt", "!");
+		operatorSubsts.emplace("pp", "++");    unaryOperators.emplace("pp", "++");
+		operatorSubsts.emplace("mm", "--");    unaryOperators.emplace("mm", "--");
 
 		// binary ops
-		operatorSubsts.append(Substitution("pl", "+"));     binaryOperators.append(Substitution("pl", "+"));
-		operatorSubsts.append(Substitution("mi", "-"));     binaryOperators.append(Substitution("mi", "-"));
-		operatorSubsts.append(Substitution("ml", "*"));     binaryOperators.append(Substitution("ml", "*"));
-		operatorSubsts.append(Substitution("dv", "/"));     binaryOperators.append(Substitution("dv", "/"));
-		operatorSubsts.append(Substitution("rm", "%"));     binaryOperators.append(Substitution("rm", "%"));
-		operatorSubsts.append(Substitution("an", "&"));     binaryOperators.append(Substitution("an", "&"));
-		operatorSubsts.append(Substitution("or", "|"));     binaryOperators.append(Substitution("or", "|"));
-		operatorSubsts.append(Substitution("eo", "^"));     binaryOperators.append(Substitution("eo", "^"));
-		operatorSubsts.append(Substitution("aS", "="));     binaryOperators.append(Substitution("aS", "="));
-		operatorSubsts.append(Substitution("pL", "+="));    binaryOperators.append(Substitution("pL", "+="));
-		operatorSubsts.append(Substitution("mI", "-="));    binaryOperators.append(Substitution("mI", "-="));
-		operatorSubsts.append(Substitution("mL", "*="));    binaryOperators.append(Substitution("mL", "*="));
-		operatorSubsts.append(Substitution("dV", "/="));    binaryOperators.append(Substitution("dV", "/="));
-		operatorSubsts.append(Substitution("rM", "%="));    binaryOperators.append(Substitution("rM", "%="));
-		operatorSubsts.append(Substitution("aN", "&="));    binaryOperators.append(Substitution("aN", "&="));
-		operatorSubsts.append(Substitution("oR", "|="));    binaryOperators.append(Substitution("oR", "|="));
-		operatorSubsts.append(Substitution("eO", "^="));    binaryOperators.append(Substitution("eO", "^="));
-		operatorSubsts.append(Substitution("ls", "<<"));    binaryOperators.append(Substitution("ls", "<<"));
-		operatorSubsts.append(Substitution("rs", ">>"));    binaryOperators.append(Substitution("rs", ">>"));
-		operatorSubsts.append(Substitution("lS", "<<="));   binaryOperators.append(Substitution("lS", "<<="));
-		operatorSubsts.append(Substitution("rS", ">>="));   binaryOperators.append(Substitution("rS", ">>="));
-		operatorSubsts.append(Substitution("eq", "=="));    binaryOperators.append(Substitution("eq", "=="));
-		operatorSubsts.append(Substitution("ne", "!="));    binaryOperators.append(Substitution("ne", "!="));
-		operatorSubsts.append(Substitution("lt", "<"));     binaryOperators.append(Substitution("lt", "<"));
-		operatorSubsts.append(Substitution("gt", ">"));     binaryOperators.append(Substitution("gt", ">"));
-		operatorSubsts.append(Substitution("le", "<="));    binaryOperators.append(Substitution("le", "<="));
-		operatorSubsts.append(Substitution("ge", ">="));    binaryOperators.append(Substitution("ge", ">="));
-		operatorSubsts.append(Substitution("aa", "&&"));    binaryOperators.append(Substitution("aa", "&&"));
-		operatorSubsts.append(Substitution("oo", "||"));    binaryOperators.append(Substitution("oo", "||"));
-		operatorSubsts.append(Substitution("cm", ","));     binaryOperators.append(Substitution("cm", ","));
-		operatorSubsts.append(Substitution("pm", "->*"));   binaryOperators.append(Substitution("pm", "->*"));
-		operatorSubsts.append(Substitution("ix", "[]"));    binaryOperators.append(Substitution("ix", "[]"));
+		operatorSubsts.emplace("pl", "+");     binaryOperators.emplace("pl", "+");
+		operatorSubsts.emplace("mi", "-");     binaryOperators.emplace("mi", "-");
+		operatorSubsts.emplace("ml", "*");     binaryOperators.emplace("ml", "*");
+		operatorSubsts.emplace("dv", "/");     binaryOperators.emplace("dv", "/");
+		operatorSubsts.emplace("rm", "%");     binaryOperators.emplace("rm", "%");
+		operatorSubsts.emplace("an", "&");     binaryOperators.emplace("an", "&");
+		operatorSubsts.emplace("or", "|");     binaryOperators.emplace("or", "|");
+		operatorSubsts.emplace("eo", "^");     binaryOperators.emplace("eo", "^");
+		operatorSubsts.emplace("aS", "=");     binaryOperators.emplace("aS", "=");
+		operatorSubsts.emplace("pL", "+=");    binaryOperators.emplace("pL", "+=");
+		operatorSubsts.emplace("mI", "-=");    binaryOperators.emplace("mI", "-=");
+		operatorSubsts.emplace("mL", "*=");    binaryOperators.emplace("mL", "*=");
+		operatorSubsts.emplace("dV", "/=");    binaryOperators.emplace("dV", "/=");
+		operatorSubsts.emplace("rM", "%=");    binaryOperators.emplace("rM", "%=");
+		operatorSubsts.emplace("aN", "&=");    binaryOperators.emplace("aN", "&=");
+		operatorSubsts.emplace("oR", "|=");    binaryOperators.emplace("oR", "|=");
+		operatorSubsts.emplace("eO", "^=");    binaryOperators.emplace("eO", "^=");
+		operatorSubsts.emplace("ls", "<<");    binaryOperators.emplace("ls", "<<");
+		operatorSubsts.emplace("rs", ">>");    binaryOperators.emplace("rs", ">>");
+		operatorSubsts.emplace("lS", "<<=");   binaryOperators.emplace("lS", "<<=");
+		operatorSubsts.emplace("rS", ">>=");   binaryOperators.emplace("rS", ">>=");
+		operatorSubsts.emplace("eq", "==");    binaryOperators.emplace("eq", "==");
+		operatorSubsts.emplace("ne", "!=");    binaryOperators.emplace("ne", "!=");
+		operatorSubsts.emplace("lt", "<");     binaryOperators.emplace("lt", "<");
+		operatorSubsts.emplace("gt", ">");     binaryOperators.emplace("gt", ">");
+		operatorSubsts.emplace("le", "<=");    binaryOperators.emplace("le", "<=");
+		operatorSubsts.emplace("ge", ">=");    binaryOperators.emplace("ge", ">=");
+		operatorSubsts.emplace("aa", "&&");    binaryOperators.emplace("aa", "&&");
+		operatorSubsts.emplace("oo", "||");    binaryOperators.emplace("oo", "||");
+		operatorSubsts.emplace("cm", ",");     binaryOperators.emplace("cm", ",");
+		operatorSubsts.emplace("pm", "->*");   binaryOperators.emplace("pm", "->*");
+		operatorSubsts.emplace("ix", "[]");    binaryOperators.emplace("ix", "[]");
 
 		// ternary.
-		operatorSubsts.append(Substitution("qu", "?"));     ternaryOperators.append(Substitution("qu", "?"));
+		operatorSubsts.emplace("qu", "?");     ternaryOperators.emplace("qu", "?");
 
 
-		operatorSubsts.append(Substitution("pt", "->"));
-		operatorSubsts.append(Substitution("cl", "()"));
-		operatorSubsts.append(Substitution("st", " sizeof"));
-		operatorSubsts.append(Substitution("sz", " sizeof"));
+		operatorSubsts.emplace("pt", "->");
+		operatorSubsts.emplace("cl", "()");
+		operatorSubsts.emplace("st", " sizeof");
+		operatorSubsts.emplace("sz", " sizeof");
 
-		builtinTypeSubsts.append(Substitution("v", "void"));
-		builtinTypeSubsts.append(Substitution("w", "wchar_t"));
-		builtinTypeSubsts.append(Substitution("b", "bool"));
-		builtinTypeSubsts.append(Substitution("c", "char"));
-		builtinTypeSubsts.append(Substitution("a", "signed char"));
-		builtinTypeSubsts.append(Substitution("h", "unsigned char"));
-		builtinTypeSubsts.append(Substitution("s", "short"));
-		builtinTypeSubsts.append(Substitution("t", "unsigned short"));
-		builtinTypeSubsts.append(Substitution("i", "int"));
-		builtinTypeSubsts.append(Substitution("j", "unsigned int"));
-		builtinTypeSubsts.append(Substitution("l", "long"));
-		builtinTypeSubsts.append(Substitution("m", "unsigned long"));
-		builtinTypeSubsts.append(Substitution("x", "long long"));
-		builtinTypeSubsts.append(Substitution("y", "unsigned long long"));
-		builtinTypeSubsts.append(Substitution("n", "__int128"));
-		builtinTypeSubsts.append(Substitution("o", "unsigned __int128"));
-		builtinTypeSubsts.append(Substitution("f", "float"));
-		builtinTypeSubsts.append(Substitution("d", "double"));
-		builtinTypeSubsts.append(Substitution("e", "long double"));
-		builtinTypeSubsts.append(Substitution("g", "__float128"));
-		builtinTypeSubsts.append(Substitution("z", "..."));
-		builtinTypeSubsts.append(Substitution("Di", "char32_t"));
-		builtinTypeSubsts.append(Substitution("Ds", "char16_t"));
-		builtinTypeSubsts.append(Substitution("Da", "auto"));
-		builtinTypeSubsts.append(Substitution("Dc", "decltype(auto)"));
-		builtinTypeSubsts.append(Substitution("Dn", "std::nullptr_t"));
+		builtinTypeSubsts.emplace("v", "void");
+		builtinTypeSubsts.emplace("w", "wchar_t");
+		builtinTypeSubsts.emplace("b", "bool");
+		builtinTypeSubsts.emplace("c", "char");
+		builtinTypeSubsts.emplace("a", "signed char");
+		builtinTypeSubsts.emplace("h", "unsigned char");
+		builtinTypeSubsts.emplace("s", "short");
+		builtinTypeSubsts.emplace("t", "unsigned short");
+		builtinTypeSubsts.emplace("i", "int");
+		builtinTypeSubsts.emplace("j", "unsigned int");
+		builtinTypeSubsts.emplace("l", "long");
+		builtinTypeSubsts.emplace("m", "unsigned long");
+		builtinTypeSubsts.emplace("x", "long long");
+		builtinTypeSubsts.emplace("y", "unsigned long long");
+		builtinTypeSubsts.emplace("n", "__int128");
+		builtinTypeSubsts.emplace("o", "unsigned __int128");
+		builtinTypeSubsts.emplace("f", "float");
+		builtinTypeSubsts.emplace("d", "double");
+		builtinTypeSubsts.emplace("e", "long double");
+		builtinTypeSubsts.emplace("g", "__float128");
+		builtinTypeSubsts.emplace("z", "...");
+		builtinTypeSubsts.emplace("Di", "char32_t");
+		builtinTypeSubsts.emplace("Ds", "char16_t");
+		builtinTypeSubsts.emplace("Da", "auto");
+		builtinTypeSubsts.emplace("Dc", "decltype(auto)");
+		builtinTypeSubsts.emplace("Dn", "std::nullptr_t");
 
-		stdlibTemplateSubsts.append(Substitution("St", "std::"));
-		stdlibTemplateSubsts.append(Substitution("Sa", "std::allocator"));
-		stdlibTemplateSubsts.append(Substitution("Sb", "std::basic_string"));
-		stdlibTemplateSubsts.append(Substitution("Ss", "std::string"));
-		stdlibTemplateSubsts.append(Substitution("Si", "std::istream"));
-		stdlibTemplateSubsts.append(Substitution("So", "std::ostream"));
-		stdlibTemplateSubsts.append(Substitution("Sd", "std::iostream"));
+		stdlibTemplateSubsts.emplace("St", "std::");
+		stdlibTemplateSubsts.emplace("Sa", "std::allocator");
+		stdlibTemplateSubsts.emplace("Sb", "std::basic_string");
+		stdlibTemplateSubsts.emplace("Ss", "std::string");
+		stdlibTemplateSubsts.emplace("Si", "std::istream");
+		stdlibTemplateSubsts.emplace("So", "std::ostream");
+		stdlibTemplateSubsts.emplace("Sd", "std::iostream");
 	}
-
-
 
 
 
@@ -160,7 +158,7 @@ namespace util
 	static nx::string parseBareFunctionType(nx::string_view& s, State& st);
 	static nx::string parseUnqualifiedName(nx::string_view& s, State& st, bool type);
 
-	static nx::string collapseRefs(const nx::string& thing, const nx::string& ref);
+	static nx::string collapseRefs(const nx::string& thing, bool rvalue);
 
 	static nx::string parseExpr(nx::string_view& s, State& st);
 	static nx::string parsePrimaryExpr(nx::string_view& s, State& st);
@@ -199,7 +197,7 @@ namespace util
 		return len;
 	}
 
-	static nx::string collapseRefs(const nx::string& thing, const nx::string& ref)
+	static nx::string collapseRefs(const nx::string& thing, bool rvalue)
 	{
 		// i'd really rather not build an AST, so we do textual search to perform reference collapsing.
 		// for reference (haha):
@@ -211,53 +209,42 @@ namespace util
 		if(thing.empty())
 			return thing;
 
-		if(ref == "&")
+		if(rvalue)
 		{
-			string ret;
+			if(thing.back() == '&')
+			{
+				// don't do anything. looking at the collapsing rules, if we want to add an rvalue ref (&&), if the
+				// existing type is already some kind of reference, the additional && (us) collapses to nothing.
+				return thing;
+			}
+			else
+			{
+				// not an existing reference.
+				return thing + "&&";
+			}
+		}
+		else
+		{
 			if(thing.back() == '&')
 			{
 				// check collapserino
 				if(thing.size() > 1 && thing[thing.size() - 2] == '&')
 				{
 					// this is a '&&'. we have a '&'. collapse to '&'.
-					ret = thing.substring(0, thing.size() - 1);
+					return thing.substring(0, thing.size() - 1);
 				}
 				else
 				{
 					// this is a '&', we have a '&'. collapse to '&'.
 					// ie to say don't do anything, because we already have a '&'.
-					ret = thing;
+					return thing;
 				}
 			}
 			else
 			{
 				// not a ref -- just add the & then.
-				ret = thing + "&";
+				return thing + "&";
 			}
-
-			return ret;
-		}
-		else if(ref == "&&")
-		{
-			string ret;
-
-			if(thing.back() == '&')
-			{
-				// don't do anything. looking at the collapsing rules, if we want to add an rvalue ref (&&), if the
-				// existing type is already some kind of reference, the additional && (us) collapses to nothing.
-				ret = thing;
-			}
-			else
-			{
-				// not an existing reference.
-				ret = thing + "&&";
-			}
-
-			return ret;
-		}
-		else
-		{
-			return thing;
 		}
 	}
 
@@ -480,6 +467,8 @@ namespace util
 		}
 
 		assert(s[0] == '_');
+		s.remove_prefix(1);
+
 		return sprint("unnamed-type#%d", n);
 	}
 
@@ -678,19 +667,23 @@ namespace util
 		s.remove_prefix(1);
 
 
-		string cvQuals;
+		// string cvQuals;
+		int restricts = 0;
+		int volatiles = 0;
+		int consts = 0;
+		int refs = 0;
+
 		while(s[0] == 'r' || s[0] == 'V' || s[0] == 'K')
 		{
-			if(s[0] == 'r') cvQuals += " restrict";
-			if(s[0] == 'V') cvQuals += " volatile";
-			if(s[0] == 'K') cvQuals += " const";
+			if(s[0] == 'r') restricts++; // cvQuals += " restrict";
+			if(s[0] == 'V') volatiles++; // cvQuals += " volatile";
+			if(s[0] == 'K') consts++; // cvQuals += " const";
 
 			s.remove_prefix(1);
 		}
 
-		string refQuals;
-		if(s[0] == 'R')         { refQuals = "&"; s.remove_prefix(1); }
-		else if(s[0] == 'O')    { refQuals = "&&"; s.remove_prefix(1); }
+		if(s[0] == 'R')         { refs += 1; s.remove_prefix(1); }
+		else if(s[0] == 'O')    { refs += 2; s.remove_prefix(1); }
 
 		// parse the 'prefix'.
 		string ret;
@@ -733,7 +726,7 @@ namespace util
 
 				// if the thing already ended with '::', don't add ::
 				// TODO this is some ugly-ass hack
-				if(s[0] != 'E' && ret.size() > 0 && ret[ret.size() - 2] != ':' && ret[ret.size() - 1] != ':')
+				if(s[0] != 'E' && ret.size() > 2 && ret[ret.size() - 2] != ':' && ret[ret.size() - 1] != ':')
 					ret += "::";
 			}
 
@@ -743,7 +736,12 @@ namespace util
 		assert(s[0] == 'E');
 		s.remove_prefix(1);
 
-		return ret + cvQuals + refQuals;
+		while(restricts--)  ret += " restrict";
+		while(volatiles--)  ret += " volatile";
+		while(consts--)     ret += " const";
+		while(refs--)       ret += "&";
+
+		return ret;
 	}
 
 	static nx::string parseLocalName(nx::string_view& s, State& st)
@@ -795,7 +793,7 @@ namespace util
 							::= St <unqualified-name>   # ::std::
 
 			<unscoped-template-name>	::= <unscoped-name>
-			     						::= <substitution>
+										::= <substitution>
 		*/
 
 		if(s[0] == 'N')
@@ -815,9 +813,19 @@ namespace util
 			{
 				ret += "std::";
 				s.remove_prefix(2);
-			}
 
-			ret += parseUnqualifiedName(s, st, type);
+				ret += parseUnqualifiedName(s, st, type);
+
+				st.subs.append(ret);
+			}
+			else if(s[0] == 'S')
+			{
+				ret += parseSubstitution(s, st);
+			}
+			else
+			{
+				ret += parseUnqualifiedName(s, st, type);
+			}
 
 			if(s.size() > 0 && s[0] == 'I')
 				ret += parseTemplateArgumentList(s, st);
@@ -853,15 +861,14 @@ namespace util
 
 		assert(s.size() > 0);
 
-		if(s[0] == 'P')		{ s.remove_prefix(1); auto ret = parseType(s, st) + "*"; st.subs.append(ret); return ret; }
-		if(s[0] == 'K')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " const"; st.subs.append(ret); return ret; }
-		if(s[0] == 'r')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " restrict"; st.subs.append(ret); return ret; }
-		if(s[0] == 'V')    	{ s.remove_prefix(1); auto ret = parseType(s, st) + " volatile"; st.subs.append(ret); return ret; }
+		if(s[0] == 'P') { s.remove_prefix(1); auto ret = parseType(s, st); ret += "*"; st.subs.append(ret); return ret; }
+		if(s[0] == 'K') { s.remove_prefix(1); auto ret = parseType(s, st); ret += " const"; st.subs.append(ret); return ret; }
+		if(s[0] == 'r') { s.remove_prefix(1); auto ret = parseType(s, st); ret += " restrict"; st.subs.append(ret); return ret; }
+		if(s[0] == 'V') { s.remove_prefix(1); auto ret = parseType(s, st); ret += " volatile"; st.subs.append(ret); return ret; }
 		if(s[0] == 'R')
 		{
 			s.remove_prefix(1);
-			auto ret = parseType(s, st);
-			ret = collapseRefs(ret, "&");
+			auto ret = collapseRefs(parseType(s, st), /* rvalue: */ false);
 
 			st.subs.append(ret);
 			return ret;
@@ -869,8 +876,7 @@ namespace util
 		if(s[0] == 'O')
 		{
 			s.remove_prefix(1);
-			auto ret = parseType(s, st);
-			ret = collapseRefs(ret, "&&");
+			auto ret = collapseRefs(parseType(s, st), /* rvalue: */ true);
 
 			st.subs.append(ret);
 			return ret;
@@ -887,59 +893,64 @@ namespace util
 			auto retty = parseType(s, st);
 			assert(retty.size() > 0);
 
-			string ret = retty + " (*)" + parseBareFunctionType(s, st);
+			retty += " (*)";
+			retty += parseBareFunctionType(s, st);
 
-
-			if(s[0] == 'R') { s.remove_prefix(1); ret += " &"; }
-			if(s[0] == 'O') { s.remove_prefix(1); ret += " &&"; }
+			if(s[0] == 'R') { s.remove_prefix(1); retty += " &"; }
+			if(s[0] == 'O') { s.remove_prefix(1); retty += " &&"; }
 
 			assert(s[0] == 'E');
 			s.remove_prefix(1);
 
-			st.subs.append(ret);
-			return ret;
+			st.subs.append(retty);
+			return retty;
 		}
 		if(s[0] == 'A')
 		{
 			// array type.
 			s.remove_prefix(1);
 
-			int n = -1;
+			nx::string dim = " []";
 			if(s[0] != '_')
 			{
-				if(!isdigit(s[0]))
-					abort("non-constant array not supported!");
+				if(isdigit(s[0]))
+					dim = sprint(" [%d]", parseLength(s));
 
-				n = parseLength(s);
+				else
+					dim = sprint(" [%s]", parseExpr(s, st));
 			}
 
 			assert(s[0] == '_');
 			s.remove_prefix(1);
 
-			auto ret = parseType(s, st) + (n == -1 ? sprint(" []") : sprint(" [%d]", n));
-			st.subs.append(ret);
+			auto ret = parseType(s, st);
+			ret += dim;
 
+			st.subs.append(ret);
 			return ret;
 		}
 		if(s.find("Do") == 0 || s.find("DO") == 0 || s.find("Dw") == 0)
 		{
 			// exception specifier.
 			s.remove_prefix(2);
-			return parseType(s, st) + " noexcept";
+			auto ret = parseType(s, st);
+			ret += " noexcept";
+			return ret;
 		}
 		if(s.find("Dp") == 0)
 		{
 			// parameter pack
 			s.remove_prefix(2);
-			return parseType(s, st) + "...";
+			auto ret = parseType(s, st);
+			ret += "...";
+			return ret;
 		}
 		if(s[0] != 'E')
 		{
-			auto ret = parseClassType(s, st);
-			if(ret.size() > 0)
+			if(auto cls = parseClassType(s, st); cls.size() > 0)
 			{
-				st.subs.append(ret);
-				return ret;
+				st.subs.append(cls);
+				return cls;
 			}
 			else
 			{
@@ -1126,12 +1137,17 @@ namespace util
 		if(s.find("srN") == 0)
 		{
 			s.remove_prefix(3);
+			ret += "::";
 			ret += parse_unresolved_type(s, st);
 
 			while(s[0] != 'E')
-				ret += "::" + parse_simple_id(s, st);
+			{
+				ret += "::";
+				ret += parse_simple_id(s, st);
+			}
 
-			return "::" + ret + parse_base_unresolved_name(s, st);
+			ret += parse_base_unresolved_name(s, st);
+			return ret;
 		}
 		else if(s.find("sr") == 0)
 		{
@@ -1140,12 +1156,17 @@ namespace util
 
 			if(have_qual_levels)
 			{
-				ret = "";
+				ret = "::";
 				while(s[0] != 'E')
-					ret += "::" + parse_simple_id(s, st);
+				{
+					ret += "::";
+					ret += parse_simple_id(s, st);
+				}
 
 				assert(s[0] == 'E');
-				return "::" + ret + parse_base_unresolved_name(s, st);
+
+				ret += parse_base_unresolved_name(s, st);
+				return ret;
 			}
 			else
 			{
@@ -1156,7 +1177,9 @@ namespace util
 				auto sn = parse_simple_id(s, st);
 				while(!sn.empty())
 				{
-					ret += "::" + sn;
+					ret += "::";
+					ret += sn;
+
 					sn = parse_simple_id(s, st);
 				}
 
@@ -1313,10 +1336,23 @@ namespace util
 			case 'g':   s.remove_prefix(1); while(isdigit(s[0]) || (s[0] >= 'a' && s[0] <= 'f')) s.remove_prefix(1); break;
 		}
 
-		if(s.find("_Z") == 0)
+		if(s.find("Dn") == 0)
+		{
+			s.remove_prefix(2);
+			ret += "nullptr";
+		}
+		else if(s.find("_Z") == 0)
 		{
 			s.remove_prefix(2);
 			ret = parseEncoding(s, st);
+		}
+		else
+		{
+			// just try to parse a regular type? we'll always use a number then.
+			ret += "(";
+			ret += parseType(s, st);
+			ret += ") ";
+			ret += sprint("%d", parseLength(s));
 		}
 
 		assert(s[0] == 'E');
@@ -1376,10 +1412,7 @@ namespace util
 		if(mangled.find("_Z") != 0) return mangled;
 
 		auto input = string_view(mangled);
-		// serial::debugprintf("%s\n", mangled.cstr());
-
-		// if(mangled == "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51")
-		// 	serial::debugprintf("OWO\n");
+		serial::debugprintf("%s\n", mangled.cstr());
 
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
@@ -1392,10 +1425,11 @@ namespace util
 		//! _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51
 		//! _ZN3vfs10concatPathERKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE.cold.61
 
-		return mangled;
+		State st;
+		auto ret = parseMangledName(input, st);
 
-		// State st;
-		// return parseMangledName(input, st);
+		// serial::debugprintf("**  %s\n", ret.cstr());
+		return ret;
 	}
 
 

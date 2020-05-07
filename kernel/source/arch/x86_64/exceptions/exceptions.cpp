@@ -189,21 +189,23 @@ namespace exceptions
 			debugprintf("\n");
 		}
 
-		debugprintf("\nfault location:\n");
-		debugprintf("%p   |   %s\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()).cstr());
+		warn("mem", "phys: %zu kb / %zu kb,  heap: %zu kb",
+			pmm::getNumAllocatedBytes() / 1024, pmm::getTotalPhysicalMemory() / 1024,
+			heap::getNumAllocatedBytes() / 1024);
 
+
+		debugprintf("\nfault location:\n");
+		debugprintf("  %8lx  |  %s\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()).cstr());
 
 		// if this was a user program, then fuck that guy.
 		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())
 		{
 			auto thr = scheduler::getCurrentThread();
-			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
-
-			if(faultCount == 1)
-				disasm::printDisassembly(regs->rip);
 
 			util::printStackTrace(regs->rbp);
+			disasm::printDisassembly(regs->rip);
 
+			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
 			// this calls yield
 			scheduler::exit(-1);
 		}
@@ -213,8 +215,8 @@ namespace exceptions
 			// so if we already faulted, don't try again.
 			if(faultCount == 1)
 			{
-				disasm::printDisassembly(regs->rip);
 				util::printStackTrace(regs->rbp);
+				disasm::printDisassembly(regs->rip);
 			}
 
 			debugprintf("\n!! error: unrecoverable cpu exception !!\n");
