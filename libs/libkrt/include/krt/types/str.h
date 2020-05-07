@@ -12,7 +12,7 @@
 
 namespace krt
 {
-	template <typename allocator, typename aborter, size_t sso_buf_size = 32>
+	template <typename allocator, typename aborter, size_t sso_buf_size = 24>
 	struct string
 	{
 		using impl = arraylike_impl<string, char, allocator, aborter, sso_buf_size>;
@@ -132,6 +132,9 @@ namespace krt
 
 		string& append(const char& c)                       { return impl::append_element(this, c); }
 		string& append(const string& s)                     { return impl::append(this, s); }
+		string& append(string&& s)                          { return impl::append(this, krt::move(s)); }
+
+		string& append(const char* str)                     { return impl::append(this, str, strlen(str)); }
 
 		char& front()                                       { return impl::front(this); }
 		char& back()                                        { return impl::back(this); }
@@ -141,19 +144,28 @@ namespace krt
 
 		void erase_at(size_t idx, size_t num)               { impl::erase_at(this, idx, num); }
 		bool operator == (const string& other) const        { return impl::op_cmpeq(this, other); }
-		bool operator < (const string& other) const         { return impl::op_cmplt(this, other); }
-
-		bool operator >  (const string& other) const        { return impl::op_cmpgt(this, other); }
 		bool operator != (const string& other) const        { return impl::op_cmpneq(this, other); }
+		bool operator < (const string& other) const         { return impl::op_cmplt(this, other); }
+		bool operator >  (const string& other) const        { return impl::op_cmpgt(this, other); }
 		bool operator >= (const string& other) const        { return impl::op_cmpgeq(this, other); }
 		bool operator <= (const string& other) const        { return impl::op_cmpleq(this, other); }
 
+		bool operator == (const char* other) const          { return impl::op_cmpeq(this, other, strlen(other)); }
+		bool operator != (const char* other) const          { return impl::op_cmpneq(this, other, strlen(other)); }
+		bool operator < (const char* other) const           { return impl::op_cmplt(this, other, strlen(other)); }
+		bool operator >  (const char* other) const          { return impl::op_cmpgt(this, other, strlen(other)); }
+		bool operator >= (const char* other) const          { return impl::op_cmpgeq(this, other, strlen(other)); }
+		bool operator <= (const char* other) const          { return impl::op_cmpleq(this, other, strlen(other)); }
 
 		char& operator [] (size_t idx)                      { return impl::op_subscript(this, idx); }
 		const char& operator [] (size_t idx) const          { return impl::op_subscript_const(this, idx); }
 
 		string& operator += (const string& other)           { this->append(other); return *this; }
+		string& operator += (string&& other)                { this->append(move(other)); return *this; }
+		string& operator += (const char* other)             { this->append(other); return *this; }
+
 		string operator + (const string& other) const       { auto copy = *this; copy.append(other); return copy; }
+		string operator + (const char* other) const         { auto copy = *this; copy.append(other); return copy; }
 
 		string& operator += (char other)                    { this->append(string(&other, 1)); return *this; }
 		string operator + (char other) const                { auto copy = *this; copy.append(string(&other, 1)); return copy; }
@@ -176,12 +188,14 @@ namespace krt
 		char* cstr() const                                  { return this->ptr; }
 
 
-		private:
+	private:
 		char* ptr = 0;
 		size_t cnt = 0;
 		size_t cap = 0;
 
 		char inline_buffer[sso_buf_size] = { };
+
+		char* get_pointer() const { return this->ptr; }
 	};
 
 	template <typename al, typename ab>

@@ -139,9 +139,11 @@ namespace krt
 
 		krt::string<allocator, aborter> str() const         { return string<allocator, aborter>(this->ptr, this->cnt); }
 
-		private:
+	private:
 		const char* ptr = 0;
 		size_t cnt = 0;
+
+		const char* get_pointer() const { return this->ptr; }
 	};
 }
 

@@ -178,10 +178,12 @@ namespace krt
 		size_t capacity() const                             { return this->cap; }
 
 
-		private:
+	private:
 		T* ptr = 0;
 		size_t cnt = 0;
 		size_t cap = 0;
+
+		T* get_pointer() const { return this->ptr; }
 	};
 }
 

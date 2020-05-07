@@ -146,7 +146,31 @@ namespace krt
 			return *self;
 		}
 
+
+		static Container& append(Container* self, const ElmTy* xs, size_t count)
+		{
+			self->reserve(self->cnt + count);
+
+			while(count--)
+				self->ptr[self->cnt++] = *xs++;
+
+			set_last_if_char(self);
+			return *self;
+		}
+
 		static Container& append(Container* self, const Container& s)
+		{
+			self->reserve(self->cnt + s.cnt);
+
+			copy_elements(self, self->ptr + self->cnt, s.ptr, s.cnt);
+
+			self->cnt += s.cnt;
+
+			set_last_if_char(self);
+			return *self;
+		}
+
+		static Container& append(Container* self, Container&& s)
 		{
 			self->reserve(self->cnt + s.cnt);
 
@@ -193,40 +217,56 @@ namespace krt
 		}
 
 
-		static bool op_cmpeq(const Container* self, const Container& other)
+		static bool op_cmpeq(const Container* self, const ElmTy* other, size_t count)
 		{
-			if(self->cnt != other.cnt) return false;
+			if(self->cnt != count) return false;
 			for(size_t i = 0; i < self->cnt; i++)
 			{
-				if(self->ptr[i] != other.ptr[i])
+				if(self->ptr[i] != other[i])
 					return false;
 			}
 
 			return true;
 		}
 
-		static bool op_cmplt(const Container* self, const Container& other)
+		static bool op_cmplt(const Container* self, const ElmTy* other, size_t count)
 		{
-			if(self->cnt != other.cnt) return false;
+			if(self->cnt != count) return false;
 
 			// sadly we do not have the min macro.
-			for(size_t i = 0; i < (other.cnt < self->cnt ? other.cnt : self->cnt); i++)
+			for(size_t i = 0; i < (count < self->cnt ? count : self->cnt); i++)
 			{
-				if(self->ptr[i] < other.ptr[i])
+				if(self->ptr[i] < other[i])
 					return true;
 
-				else if(self->ptr[i] > other.ptr[i])
+				else if(self->ptr[i] > other[i])
 					return false;
 			}
 
 			// well they were equal -- we return the shorter array.
-			return self->cnt < other.cnt;
+			return self->cnt < count;
+		}
+
+
+		static bool op_cmpeq(const Container* self, const Container& other)
+		{
+			return op_cmpeq(self, other.ptr, other.cnt);
+		}
+
+		static bool op_cmplt(const Container* self, const Container& other)
+		{
+			return op_cmplt(self, other.ptr, other.cnt);
 		}
 
 		static bool op_cmpgt(const Container* self, const Container& other) { return (other < *self); }
 		static bool op_cmpneq(const Container* self, const Container& other) { return !(*self == other); }
 		static bool op_cmpgeq(const Container* self, const Container& other) { return !(*self < other); }
 		static bool op_cmpleq(const Container* self, const Container& other) { return !(other < *self); }
+
+		static bool op_cmpgt(const Container* self, const ElmTy* other) { return (other < *self); }
+		static bool op_cmpneq(const Container* self, const ElmTy* other) { return !(*self == other); }
+		static bool op_cmpgeq(const Container* self, const ElmTy* other) { return !(*self < other); }
+		static bool op_cmpleq(const Container* self, const ElmTy* other) { return !(other < *self); }
 
 		static ElmTy& op_subscript(Container* self, size_t idx)
 		{

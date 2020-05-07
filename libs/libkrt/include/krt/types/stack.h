@@ -82,6 +82,7 @@ namespace krt
 
 		void clear()                                        { impl::clear(this); }
 
+		stack& push(T&& c)                                   { return impl::append_element(this, move(c)); }
 		stack& push(const T& c)                             { return impl::append_element(this, c); }
 		stack& push(const stack& s)                         { return impl::append(this, s); }
 
@@ -125,10 +126,12 @@ namespace krt
 		size_t capacity() const                             { return this->cap; }
 
 
-		private:
+	private:
 		T* ptr = 0;
 		size_t cnt = 0;
 		size_t cap = 0;
+
+		T* get_pointer() const { return this->ptr; }
 	};
 }
 
