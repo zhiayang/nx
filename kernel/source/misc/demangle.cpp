@@ -726,7 +726,7 @@ namespace util
 
 				// if the thing already ended with '::', don't add ::
 				// TODO this is some ugly-ass hack
-				if(s[0] != 'E' && ret.size() > 2 && ret[ret.size() - 2] != ':' && ret[ret.size() - 1] != ':')
+				if(s[0] != 'E' && (ret.size() < 2 || (ret[ret.size() - 2] != ':' && ret[ret.size() - 1] != ':')))
 					ret += "::";
 			}
 
@@ -1412,7 +1412,7 @@ namespace util
 		if(mangled.find("_Z") != 0) return mangled;
 
 		auto input = string_view(mangled);
-		serial::debugprintf("%s\n", mangled.cstr());
+		// serial::debugprintf("%s\n", mangled.cstr());
 
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
@@ -1420,16 +1420,11 @@ namespace util
 		// _ZN3krt15prio_q_internal11skip_vectorIN2nx10interrupts13irq_handler_tELm32ENS2_10_allocatorENS2_8_aborterEE7destroyIS4_EENSt9enable_ifIXntsrSt6is_podIT_E5valueEvE4typeEv
 		// _ZZN2nxL8__loggerIJRjS1_EEEviPKcS3_DpOT_ENUlPvS3_mE_4_FUNES7_S3_m
 		// _ZN2nx9_internal23_consume_neither_sprintIRPKcJRA_cRiRmEvPvEEmPFmS9_S3_mES9_RKNS_11format_argsES3_OT_DpOT0_
-
-		// TODO: this shit don't work:
-		//! _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51
-		//! _ZN3vfs10concatPathERKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE.cold.61
+		// _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51
+		// _ZN3vfs10concatPathERKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE.cold.61
 
 		State st;
-		auto ret = parseMangledName(input, st);
-
-		// serial::debugprintf("**  %s\n", ret.cstr());
-		return ret;
+		return parseMangledName(input, st);
 	}
 
 
