@@ -277,6 +277,7 @@ namespace nx
 
 		Process* getProcessWithId(pid_t id);
 		Thread* getThreadWithId(pid_t id);
+		Process* getProcessWithName(const nx::string& name);
 
 
 

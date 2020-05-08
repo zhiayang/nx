@@ -112,6 +112,16 @@ namespace scheduler
 		return cpu->currentProcess;
 	}
 
+	Process* getProcessWithName(const nx::string& name)
+	{
+		// mfw linear search
+		for(auto p : allProcesses)
+			if(p->processName == name)
+				return p;
+
+		return nullptr;
+	}
+
 	Process* getProcessWithId(pid_t id)
 	{
 		// oh no
