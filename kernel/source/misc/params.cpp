@@ -13,6 +13,10 @@ namespace params
 {
 	struct Option
 	{
+		Option() { }
+		Option(const nx::string& name, const nx::string& value) : name(name), value(value) { }
+		Option(nx::string&& name, nx::string&& value) : name(krt::move(name)), value(krt::move(value)) { }
+
 		nx::string name;
 		nx::string value;
 	};
@@ -36,19 +40,14 @@ namespace params
 
 			if(auto eqidx = str.find("="); eqidx != (size_t) -1)
 			{
-				Option opt;
-				opt.name = str.substring(0, eqidx);
-				opt.value = str.substring(eqidx + 1);
-
-				Options.append(opt);
+				Options.emplace(
+					str.substring(0, eqidx),
+					str.substring(eqidx + 1)
+				);
 			}
 			else
 			{
-				Option opt;
-				opt.name = str;
-				opt.value = "";
-
-				Options.append(opt);
+				Options.emplace(str, "");
 			}
 
 			ptr += str.size() + 1;

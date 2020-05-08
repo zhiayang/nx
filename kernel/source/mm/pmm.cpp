@@ -67,7 +67,7 @@ namespace pmm
 			if(entry->memoryType == MemoryType::Available && entry->address > 0)
 			{
 				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
-				deallocate(PhysAddr(entry->address), entry->numPages);
+				extmmState.deallocate(entry->address, entry->numPages);
 				totalPhysicalMemory += entry->numPages * 0x1000;
 			}
 		}
@@ -107,7 +107,7 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == type)
 			{
-				deallocate(PhysAddr(entry->address), entry->numPages);
+				extmmState.deallocate(entry->address, entry->numPages);
 
 				// for safety, make sure we don't touch this again (accidentally or otherwise)
 				entry->memoryType = MemoryType::Reserved;

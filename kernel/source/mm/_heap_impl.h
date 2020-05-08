@@ -49,6 +49,9 @@ struct heap_impl
 	static constexpr size_t ChunksPerPage = PAGE_SIZE / sizeof(Chunk);
 	static_assert(PAGE_SIZE % sizeof(Chunk) == 0, "invalid chunk size! (not a factor of page size)");
 
+	static constexpr uint8_t UNINITIALISED_FILL = 0x55;
+	static constexpr uint8_t DEALLOCATED_FILL   = 0xAA;
+
 	// we always have a fixed number of buckets!
 	Bucket Buckets[BucketCount];
 
@@ -407,6 +410,8 @@ struct heap_impl
 
 		auto ret = align_the_memory(return_ptr, align);
 
+		memset((void*) ret, UNINITIALISED_FILL, req_size);
+
 		AllocatedByteCount += total_size;
 		return ret;
 	}
@@ -455,7 +460,6 @@ struct heap_impl
 			}
 
 			// again, we don't need to lock stuff here.
-
 			// the size is still the size -- but we do some rounding to get the number of pages.
 
 			assert(isPageAligned(addr));
@@ -480,7 +484,7 @@ struct heap_impl
 			chunk->next = 0;
 			chunk->memory = addr;
 
-			memset((void*) addr, 0, sz);
+			memset((void*) addr, DEALLOCATED_FILL, bucket->chunkSize);
 
 			// put the chunk back into the free list.
 			addChunkToList(&bucket->freeChunks, chunk);
