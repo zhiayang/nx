@@ -28,6 +28,18 @@ uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uin
 	return 0;
 }
 
+uint64_t test_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
+{
+	printf("stalling for time...\n");
+	auto end = syscall::nanosecond_timestamp() + 2'500'000'000;
+
+	while(syscall::nanosecond_timestamp() < end)
+		;
+
+	printf("finished stalling\n");
+	return 0;
+}
+
 volatile int* foozle = (int*) 0x5555'0000'0000'0000;
 int fn3()
 {
@@ -48,6 +60,7 @@ int fn1()
 int main()
 {
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_TERMINATE, &sig_handler);
+	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_NORMAL, &test_handler);
 	printf("time for uwu\n");
 
 	uint64_t ctr = 0;

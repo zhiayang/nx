@@ -87,7 +87,7 @@ namespace nx
 		scheduler::sleep(time::milliseconds(500));
 
 		log("kernel", "woken from slumber, committing murder! %p", placebo);
-		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
+		ipc::signal("/proc/name/placebo", ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 		while(true)
 			asm volatile("pause");

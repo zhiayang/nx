@@ -356,6 +356,10 @@ int main()
 
 	printf("ps/2 driver ok\n\n");
 
+	printf("waiting for signal...\n");
+	nx::ipc::signal_block("/proc/name/placebo", 1, 2, 3);
+	printf("signal unblocked!\n\n");
+
 	while(true)
 		;
 }

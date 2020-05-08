@@ -25,6 +25,8 @@ namespace nx::ipc
 
 		uint64_t flags;
 		signal_message_body_t body;
+
+		condvar* blocking_cv;
 	};
 
 	void init();
@@ -45,16 +47,16 @@ namespace nx::ipc
 
 	constexpr uint64_t MAX_SIGNAL_TYPES = 32;
 
-	void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
-	void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
-
-	bool signalThread(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
-	bool signalThreadCritical(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
-
+	bool signal(scheduler::Thread* thr, uint64_t sigType, const signal_message_body_t& msg);
+	bool signal(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg);
+	bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar* cv);
 
 	uint64_t createMemticket(size_t len, uint64_t flags);
 	mem_ticket_t collectMemticket(uint64_t ticketId);
 	void releaseMemticket(const mem_ticket_t& ticket);
+
+	// TODO: for now, again we can only send messages/signals to threads, not processes.
+	scheduler::Thread* resolveSelector(const selector_t& sel);
 }
 
 

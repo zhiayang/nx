@@ -47,6 +47,8 @@ namespace ipc
 		return send(target, reinterpret_cast<const message_body_t*>(&x));
 	}
 
+	void signal(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c);
+	void signal_block(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c);
 
 	uint64_t create_memory_ticket(size_t len, uint64_t flags);
 	mem_ticket_t collect_memory_ticket(uint64_t ticketId);

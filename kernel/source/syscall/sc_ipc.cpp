@@ -79,20 +79,21 @@ namespace nx
 	}
 
 
-	void syscall::ipc_signal(uint64_t target, uint64_t a, uint64_t b, uint64_t c)
+	void syscall::ipc_signal(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
 	{
-		// auto thr = scheduler::get
-		// /process/name/kekw
-		// /process/id/123
-		// /thread/id/123
-
 		auto smb = signal_message_body_t(a, b, c);
-		// ipc::signalThread();
+		ipc::signal(sel, ipc::SIGNAL_NORMAL, smb);
 	}
 
-	void syscall::ipc_signal_block(uint64_t target, uint64_t a, uint64_t b, uint64_t c)
+	void syscall::ipc_signal_block(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
 	{
+		auto smb = signal_message_body_t(a, b, c);
 
+		auto cv = condvar();
+		if(!ipc::signalBlocking(sel, ipc::SIGNAL_NORMAL, smb, &cv))
+			return;
+
+		scheduler::wait(&cv, 0);
 	}
 
 

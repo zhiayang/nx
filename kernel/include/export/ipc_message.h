@@ -6,13 +6,19 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 namespace nx {
 namespace ipc
 {
 	struct selector_t
 	{
-		const char* name;
+		const char* sel;
+		size_t len;
+
+		selector_t() : sel(nullptr), len(0) { }
+		selector_t(const char* s) : sel(s), len(strlen(s)) { }
+		selector_t(const char* s, size_t l) : sel(s), len(l) { }
 	};
 
 	struct message_body_t

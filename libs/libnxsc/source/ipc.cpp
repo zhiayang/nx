@@ -82,6 +82,18 @@ namespace ipc
 	{
 		__nx_syscall_1v(SYSCALL_MEMTICKET_RELEASE, &ticket);
 	}
+
+
+	void signal(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c)
+	{
+		__nx_syscall_5v(SYSCALL_IPC_SIGNAL, sel.sel, sel.len, a, b, c);
+	}
+
+	void signal_block(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c)
+	{
+		__nx_syscall_5v(SYSCALL_IPC_SIGNAL_BLOCK, sel.sel, sel.len, a, b, c);
+	}
+
 }
 }
 

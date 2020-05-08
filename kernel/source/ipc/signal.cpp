@@ -54,8 +54,36 @@ namespace nx
 			of the thread to save/restore.
 		*/
 
-		static void enqueue_signal(Thread* thr, uint64_t sigType, const signal_message_body_t& umsg)
+		// the default action here if there is no handler installed is to discard the message.
+		static bool internal_signal(Thread* thr, uint64_t sigType, const signal_message_body_t& body, condvar* cv)
 		{
+			// TODO: uwu, support this for real eventually
+			bool crit = false;
+
+			if(sigType >= MAX_SIGNAL_TYPES)
+				return false;
+
+			// check if there's a handler for it:
+			auto handler = thr->signalHandlers[sigType];
+			if(!handler)
+			{
+				if(crit)
+				{
+					// terminate that mofo.
+					warn("ipc", "thread %lu did not handle critical signal %lu -- terminating",
+						thr->threadId, sigType);
+
+					// the scheduler will handle the case where we end up needing to terminate ourselves.
+					scheduler::terminate(thr);
+					return false;
+				}
+				else
+				{
+					warn("ipc", "thread %lu has no handle for signal %lu", thr->threadId, sigType);
+					return false;
+				}
+			}
+
 			// first, construct the final message to send:
 			auto msg = signal_message_t();
 
@@ -63,8 +91,9 @@ namespace nx
 			msg.flags           = MSG_FLAG_SIGNAL;
 			msg.senderId        = scheduler::getCurrentThread()->threadId;
 			msg.body.sigType    = sigType;
+			msg.blocking_cv     = cv;
 
-			memcpy(msg.body.bytes, umsg.bytes, sizeof(umsg.bytes));
+			memcpy(msg.body.bytes, body.bytes, sizeof(body.bytes));
 
 			// ok, we have the message.
 			// TODO: needs locking!!
@@ -73,66 +102,35 @@ namespace nx
 			// boost it a bit.
 			thr->priority.boost();
 
-			// that's it for this function.
-		}
-
-		// the default action here if there is no handler installed is to discard the message.
-		bool signalThread(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
-		{
-			if(sigType >= MAX_SIGNAL_TYPES)
-				return false;
-
-			// check if there's a handler for it:
-			auto handler = thr->signalHandlers[sigType];
-			if(!handler)
-			{
-				log("ipc", "thread %lu has no handle for signal %lu", thr->threadId, sigType);
-				return false;
-			}
-
-			enqueue_signal(thr, sigType, msg);
-			return true;
-		}
-
-		// the default action here is to terminate the thread if there's no handler installed.
-		bool signalThreadCritical(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
-		{
-			assert(thr);
-
-			// yo wtf
-			if(sigType >= MAX_SIGNAL_TYPES)
-				return false;
-
-			// check if there's a handler for it:
-			auto handler = thr->signalHandlers[sigType];
-			if(!handler)
-			{
-				// terminate that mofo.
-				log("ipc", "thread %lu did not handle critical signal %lu -- terminating",
-					thr->threadId, sigType);
-
-				// the scheduler will handle the case where we end up needing to terminate ourselves.
-				scheduler::terminate(thr);
-				return false;
-			}
-
-			// ok, time to call the handler i guess?
-			enqueue_signal(thr, sigType, msg);
 			return true;
 		}
 
 
-		// TODO:
-		// we don't support signalling processes "directly", for now. a stopgap measure is that
-		// we signal the first thread in the process, always.
-		void signalProcess(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+
+		bool signal(Thread* thr, uint64_t sigType, const signal_message_body_t& msg)
 		{
-			signalThread(&proc->threads[0], sigType, msg);
+			return internal_signal(thr, sigType, msg, nullptr);
 		}
 
-		void signalProcessCritical(Process* proc, uint64_t sigType, const signal_message_body_t& msg)
+		bool signal(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg)
 		{
-			signalThreadCritical(&proc->threads[0], sigType, msg);
+			auto thr = resolveSelector(sel);
+			if(!thr) return false;
+
+			return internal_signal(thr, sigType, msg, nullptr);
+		}
+
+		bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar* cv)
+		{
+			assert(cv);
+
+			auto thr = resolveSelector(sel);
+			if(!thr) return false;
+
+			auto succ = internal_signal(thr, sigType, msg, cv);
+			if(succ) cv->set(1);
+
+			return succ;
 		}
 	}
 }

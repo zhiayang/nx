@@ -120,12 +120,21 @@ namespace scheduler
 		if(newthr->pendingSignalRestore)
 		{
 			assert(!newthr->savedSignalStateStack.empty());
-			auto savedstate = newthr->savedSignalStateStack.popBack();
+			auto [ savedstate, blocking_cv ] = newthr->savedSignalStateStack.popBack();
 
 			auto intstate = (cpu::InterruptedState*) newthr->kernelStack;
 			memcpy(intstate, &savedstate, sizeof(savedstate));
 
 			newthr->pendingSignalRestore = false;
+
+			auto ss = getSchedState();
+			assert(!ss->lock.held());
+
+			// since the sched state lock is not held, we *should be* safe to call wakeUpBlockers, which
+			// needs to acquire the lock to access the list of blocked threads.
+			if(blocking_cv)
+				blocking_cv->set(0);
+
 			return;
 		}
 
@@ -145,10 +154,12 @@ namespace scheduler
 			return;
 		}
 
-		// ok, we're in user mode here.
-		newthr->savedSignalStateStack.append(*regs);
 
 		auto msg = newthr->pendingSignalQueue.popFront();
+
+		// ok, we're in user mode here.
+		newthr->savedSignalStateStack.append({ *regs, msg.blocking_cv });
+
 		// the signature: nx_x64_user_signal_enter
 		// (uint64_t sender, uint64_t sigType, uint64_t a, uint64_t b, uint64_t c, uint64_t handler);
 		//    ^ rdi            ^ rsi             ^ rdx       ^ rcx       ^ r8        ^ r9
