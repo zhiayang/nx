@@ -142,6 +142,9 @@ namespace nx
 			pid_t processId = 0;
 			nx::string processName;
 
+			// TODO: this should probably be a list, not an array.
+			// most proccess  will probably have a handful of threads at most, so making
+			// an array using the 1.5x expanding capacity is a massive waste of memory.
 			nx::array<Thread> threads;
 
 			int flags = 0;
@@ -244,8 +247,6 @@ namespace nx
 			// we don't really care about the data that goes here.
 			void* userspaceTCB;
 
-
-
 			// signal stuff.
 			// these functions point to USERSPACE CODE!
 			ipc::signal_handler_fn_t signalHandlers[ipc::MAX_SIGNAL_TYPES] = { 0 };
@@ -321,8 +322,8 @@ namespace nx
 		uint64_t getElapsedNanoseconds();
 		uint64_t getNanosecondsPerTick();
 
-
 		[[noreturn]] void exit(int status);
+		[[noreturn]] void crashFromException();
 
 		void terminate(Thread* p);
 		void terminate(Process* p);

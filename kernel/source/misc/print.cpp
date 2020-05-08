@@ -218,6 +218,8 @@ namespace nx
 	{
 		asm volatile ("cli");
 		vabort_nohalt(fmt, args);
+
+		serial::debugprintf("\n");
 		util::printStackTrace();
 
 		halt();

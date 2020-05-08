@@ -70,11 +70,11 @@ run-only:
 
 debug: diskimage
 	# starting qemu
-	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -monitor stdio -s -S
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_E9_PORT_FILE) -monitor stdio -s
 
 qemu: diskimage
 	# starting qemu
-	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_SERIAL)
+	@$(QEMU) $(QEMU_UEFI_BIOS) $(QEMU_UEFI_DISKIMG) $(QEMU_FLAGS) $(QEMU_SERIAL) -s
 
 qemu-monitor: diskimage
 	# starting qemu

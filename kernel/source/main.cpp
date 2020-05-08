@@ -32,13 +32,15 @@ namespace nx
 		// debugcon::init();
 
 
+		log("mem", "phys: used %zu kb / %zu kb", pmm::getNumAllocatedBytes() / 1024,
+			pmm::getTotalPhysicalMemory() / 1024);
+
 
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
 
 		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
 		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
-
 
 		// todo: make this more dynamic
 		{
@@ -82,9 +84,9 @@ namespace nx
 		}));
 
 		log("kernel", "going to sleep...");
-		scheduler::sleep(time::milliseconds(750));
+		scheduler::sleep(time::milliseconds(500));
 
-		log("kernel", "woken from slumber, committing murder!");
+		log("kernel", "woken from slumber, committing murder! %p", placebo);
 		ipc::signalProcess(placebo->parent, ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 		while(true)

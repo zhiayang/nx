@@ -10,8 +10,9 @@
 
 extern "C" void nx_x64_yield_thread();
 extern "C" void nx_x64_tick_handler();
-extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState, nx::scheduler::Thread* thr);
 extern "C" void nx_x64_clear_segments();
+extern "C" void nx_x64_find_and_switch_thread(uint64_t stackPointer);
+extern "C" void nx_x64_switch_to_thread(uint64_t stackPtr, uint64_t cr3, void* fpuState, nx::scheduler::Thread* thr);
 
 extern "C" uint8_t nx_x64_is_in_syscall;
 extern "C" uint8_t nx_user_kernel_stubs_begin;
@@ -116,6 +117,7 @@ namespace scheduler
 	void exit(int status)
 	{
 		auto ss = getSchedState();
+		assert(!platform::is_interrupted());
 
 		auto t = getCurrentThread();
 		assert(t);
@@ -128,7 +130,32 @@ namespace scheduler
 		});
 
 		yield();
+		while(true);
+	}
 
+	void crashFromException()
+	{
+		auto ss = getSchedState();
+
+		auto thr = getCurrentThread();
+		assert(thr);
+
+		LockedSection(&ss->lock, [&]() {
+			thr->state = ThreadState::AboutToExit;
+			ss->DestructionQueue.append(thr);
+
+			warn("kernel", "killing thread %lu (from process %lu) due to exception",
+				thr->threadId, thr->parent->processId);
+		});
+
+		// here's the difference -- we need to switch now, but reset the interrupt level.
+		assert(platform::is_interrupted());
+		platform::leave_interrupt_context();
+
+		// pass the dummy here.
+		nx_x64_find_and_switch_thread(thr->kernelStack);
+
+		// we never get here.
 		while(true);
 	}
 

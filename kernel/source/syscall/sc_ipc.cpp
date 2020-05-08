@@ -29,7 +29,7 @@ namespace nx
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
 
-		return proc->pendingMessages.lock()->size();
+		return proc->pendingMessages.unsafeGet()->size();
 	}
 
 	uint64_t syscall::ipc_receive(message_body_t* msg)

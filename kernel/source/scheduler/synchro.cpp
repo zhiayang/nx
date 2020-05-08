@@ -27,12 +27,15 @@ namespace nx
 		// anyway fairness is probably not that big of an issue until we get more threads... i hope.
 	*/
 
+
 	spinlock::spinlock() { }
+
 
 	bool spinlock::held()
 	{
 		return this->value;
 	}
+
 
 	void spinlock::lock()
 	{
@@ -50,6 +53,7 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 	}
 
+
 	void spinlock::unlock()
 	{
 		atomic::store(&this->value, 0);
@@ -58,12 +62,14 @@ namespace nx
 		atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
 	}
 
+
 	bool spinlock::trylock()
 	{
 		if(!atomic::cas_trylock(&this->value, 0, 1))
 			return false;
 
 		this->holder = scheduler::getCurrentThread();
+
 		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
 
 		return true;
@@ -77,10 +83,12 @@ namespace nx
 
 	IRQSpinlock::IRQSpinlock() { }
 
+
 	bool IRQSpinlock::held()
 	{
 		return this->value;
 	}
+
 
 	void IRQSpinlock::lock()
 	{
@@ -99,15 +107,16 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 	}
 
+
 	void IRQSpinlock::unlock()
 	{
-		atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
-
 		atomic::store(&this->value, 0);
 		atomic::store(&this->holder, 0);
 
+		atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
 		interrupts::enable();
 	}
+
 
 	bool IRQSpinlock::trylock()
 	{
@@ -116,10 +125,12 @@ namespace nx
 			return false;
 
 		this->holder = scheduler::getCurrentThread();
+
 		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
 
 		return true;
 	}
+
 
 
 
@@ -142,6 +153,7 @@ namespace nx
 
 	mutex::mutex() { }
 
+
 	void mutex::lock()
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
@@ -159,6 +171,7 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 	}
 
+
 	void mutex::unlock()
 	{
 		atomic::store(&this->value, 0);
@@ -167,10 +180,12 @@ namespace nx
 		scheduler::unblock(this);
 	}
 
+
 	bool mutex::held()
 	{
 		return this->value;
 	}
+
 
 	bool mutex::trylock()
 	{
@@ -178,6 +193,7 @@ namespace nx
 			return false;
 
 		this->holder = scheduler::getCurrentThread();
+
 		return true;
 	}
 }

@@ -189,25 +189,23 @@ namespace exceptions
 			debugprintf("\n");
 		}
 
-		warn("mem", "phys: %zu kb / %zu kb,  heap: %zu kb",
-			pmm::getNumAllocatedBytes() / 1024, pmm::getTotalPhysicalMemory() / 1024,
-			heap::getNumAllocatedBytes() / 1024);
-
-
 		debugprintf("\nfault location:\n");
 		debugprintf("  %8lx  |  %s\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()).cstr());
 
 		// if this was a user program, then fuck that guy.
 		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())
 		{
-			auto thr = scheduler::getCurrentThread();
-
 			util::printStackTrace(regs->rbp);
-			disasm::printDisassembly(regs->rip);
 
-			warn("kernel", "killing thread %lu (from process %lu) due to exception", thr->threadId, thr->parent->processId);
-			// this calls yield
-			scheduler::exit(-1);
+			// be a little smart about this. don't try to disasm if we died from an instruction fetch.
+			if(regs->InterruptID != 14 || (regs->ErrorCode & 0x10) == 0)
+				disasm::printDisassembly(regs->rip);
+
+			faultCount -= 1;
+
+			// we cannot exit "normally", we need to manually switch to another thread and reset our interrupt
+			// nesting level, and do an IRET.
+			scheduler::crashFromException();
 		}
 		else
 		{

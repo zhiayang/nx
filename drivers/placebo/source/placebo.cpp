@@ -106,7 +106,7 @@ int main()
 			nx::ipc::release_memory_ticket(ticket);
 
 			// crash
-			printf("foozle = %d\n", fn1());
+			// printf("foozle = %d\n", fn1());
 		}
 	}
 }
