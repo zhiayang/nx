@@ -7,52 +7,54 @@
 
 #include "export/ipc_message.h"
 
-namespace nx
+namespace nx::ipc
 {
-	namespace ipc
+	struct message_t
 	{
-		struct message_t
-		{
-			uint64_t senderId;
-			uint64_t targetId;
+		uint64_t senderId;
+		uint64_t targetId;
 
-			uint64_t flags;
-			message_body_t body;
-		};
+		uint64_t flags;
+		message_body_t body;
+	};
 
-		struct signal_message_t
-		{
-			uint64_t senderId;
-			uint64_t targetId;
+	struct signal_message_t
+	{
+		uint64_t senderId;
+		uint64_t targetId;
 
-			uint64_t flags;
-			signal_message_body_t body;
-		};
+		uint64_t flags;
+		signal_message_body_t body;
+	};
 
-		void init();
+	void init();
 
-		void addMessage(const message_t& msg);
-		void disposeMessage(message_t& message);
+	void addMessage(const message_t& msg);
+	void disposeMessage(message_t& message);
 
-		// no flag.
-		constexpr uint64_t MSG_FLAG_NONE        = 0x00;
+	// no flag.
+	constexpr uint64_t MSG_FLAG_NONE        = 0x00;
 
-		// indicates that the incoming message was a signal message
-		constexpr uint64_t MSG_FLAG_SIGNAL      = 0x01;
+	// indicates that the incoming message was a signal message
+	constexpr uint64_t MSG_FLAG_SIGNAL      = 0x01;
 
 
-		// this is completely (kinda) separate from posix signal stuff.
-		// this "signalling" refers to IPC messages that will interrupt the target thread/process,
-		// instead of enqueuing it and relying on the user process to poll for messages.
+	// this is completely (kinda) separate from posix signal stuff.
+	// this "signalling" refers to IPC messages that will interrupt the target thread/process,
+	// instead of enqueuing it and relying on the user process to poll for messages.
 
-		constexpr uint64_t MAX_SIGNAL_TYPES = 32;
+	constexpr uint64_t MAX_SIGNAL_TYPES = 32;
 
-		void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
-		void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
+	void signalProcess(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
+	void signalProcessCritical(scheduler::Process* proc, uint64_t sigType, const signal_message_body_t& msg);
 
-		bool signalThread(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
-		bool signalThreadCritical(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
-	}
+	bool signalThread(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
+	bool signalThreadCritical(scheduler::Thread* proc, uint64_t sigType, const signal_message_body_t& msg);
+
+
+	uint64_t createMemticket(size_t len, uint64_t flags);
+	mem_ticket_t collectMemticket(uint64_t ticketId);
+	void releaseMemticket(const mem_ticket_t& ticket);
 }
 
 

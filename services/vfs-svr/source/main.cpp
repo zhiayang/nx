@@ -13,7 +13,7 @@
 
 int main()
 {
-	// vfs::init();
+	vfs::init();
 
 	// while(true)
 	// {
@@ -32,9 +32,19 @@ int main()
 	// 		printf("a = %d, b = %d\n", x.a, x.b);
 	// 	}
 	// }
-	printf("uwu\n");
-	printf("bye\n");
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49,6 +59,14 @@ namespace vfs
 
 		syscall::kernel_log(lvl, "vfs", 4, buf, len);
 		free(buf);
+	}
+
+	void dbg(const char* fmt, ...)
+	{
+		va_list ap;
+		va_start(ap, fmt);
+		vlog(-1, fmt, ap);
+		va_end(ap);
 	}
 
 	void log(const char* fmt, ...)

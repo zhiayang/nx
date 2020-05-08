@@ -21,7 +21,7 @@ namespace vfs
 		state.root = std::make_unique<vnode>();
 		state.root->type = TYPE_ROOT;
 
-		// log("root initialised");
+		log("root initialised");
 	}
 
 	int mount(const char* mountpt, selector_t sel_drv, selector_t sel_dev, int flags)

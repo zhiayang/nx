@@ -51,6 +51,7 @@ namespace vfs
 
 
 	// wrappers for kernel log.
+	void dbg(const char* fmt, ...);
 	void log(const char* fmt, ...);
 	void warn(const char* fmt, ...);
 	void error(const char* fmt, ...);
