@@ -54,26 +54,26 @@ namespace nx
 		void decr(uint32_t* ptr);
 		void decr(uint64_t* ptr);
 
-		int8_t load(int8_t* ptr);
-		int16_t load(int16_t* ptr);
-		int32_t load(int32_t* ptr);
-		int64_t load(int64_t* ptr);
-		uint8_t load(uint8_t* ptr);
-		uint16_t load(uint16_t* ptr);
-		uint32_t load(uint32_t* ptr);
-		uint64_t load(uint64_t* ptr);
+		int8_t load(const int8_t* ptr);
+		int16_t load(const int16_t* ptr);
+		int32_t load(const int32_t* ptr);
+		int64_t load(const int64_t* ptr);
+		uint8_t load(const uint8_t* ptr);
+		uint16_t load(const uint16_t* ptr);
+		uint32_t load(const uint32_t* ptr);
+		uint64_t load(const uint64_t* ptr);
 
 		// because of type-system problems, we cannot have the first parameter as void** and still let the thing work
 		// so we just use void*, and treat that void* as a void**.
-		void store(void* ptr, void* value);
+		void* store(void* ptr, void* value);
 
-		void store(int8_t* ptr, int8_t value);
-		void store(int16_t* ptr, int16_t value);
-		void store(int32_t* ptr, int32_t value);
-		void store(int64_t* ptr, int64_t value);
-		void store(uint8_t* ptr, uint8_t value);
-		void store(uint16_t* ptr, uint16_t value);
-		void store(uint32_t* ptr, uint32_t value);
-		void store(uint64_t* ptr, uint64_t value);
+		int8_t store(int8_t* ptr, int8_t value);
+		int16_t store(int16_t* ptr, int16_t value);
+		int32_t store(int32_t* ptr, int32_t value);
+		int64_t store(int64_t* ptr, int64_t value);
+		uint8_t store(uint8_t* ptr, uint8_t value);
+		uint16_t store(uint16_t* ptr, uint16_t value);
+		uint32_t store(uint32_t* ptr, uint32_t value);
+		uint64_t store(uint64_t* ptr, uint64_t value);
 	}
 }

@@ -3,10 +3,10 @@
 // Licensed under the Apache License Version 2.0.
 
 
-.global _ZN2nx6atomic4loadEPa; .type _ZN2nx6atomic4loadEPa, @function
-.global _ZN2nx6atomic4loadEPh; .type _ZN2nx6atomic4loadEPh, @function
-_ZN2nx6atomic4loadEPa:
-_ZN2nx6atomic4loadEPh:
+.global _ZN2nx6atomic4loadEPKa; .type _ZN2nx6atomic4loadEPKa, @function
+.global _ZN2nx6atomic4loadEPKh; .type _ZN2nx6atomic4loadEPKh, @function
+_ZN2nx6atomic4loadEPKa:
+_ZN2nx6atomic4loadEPKh:
 	// rdi: pointer to (u)int8_t
 	lfence
 	movb (%rdi), %al
@@ -14,10 +14,10 @@ _ZN2nx6atomic4loadEPh:
 	ret
 
 
-.global _ZN2nx6atomic4loadEPs; .type _ZN2nx6atomic4loadEPs, @function
-.global _ZN2nx6atomic4loadEPt; .type _ZN2nx6atomic4loadEPt, @function
-_ZN2nx6atomic4loadEPs:
-_ZN2nx6atomic4loadEPt:
+.global _ZN2nx6atomic4loadEPKs; .type _ZN2nx6atomic4loadEPKs, @function
+.global _ZN2nx6atomic4loadEPKt; .type _ZN2nx6atomic4loadEPKt, @function
+_ZN2nx6atomic4loadEPKs:
+_ZN2nx6atomic4loadEPKt:
 	// rdi: pointer to (u)int16_t
 	lfence
 	movw (%rdi), %ax
@@ -25,20 +25,20 @@ _ZN2nx6atomic4loadEPt:
 	ret
 
 
-.global _ZN2nx6atomic4loadEPi; .type _ZN2nx6atomic4loadEPi, @function
-.global _ZN2nx6atomic4loadEPj; .type _ZN2nx6atomic4loadEPj, @function
-_ZN2nx6atomic4loadEPi:
-_ZN2nx6atomic4loadEPj:
+.global _ZN2nx6atomic4loadEPKi; .type _ZN2nx6atomic4loadEPKi, @function
+.global _ZN2nx6atomic4loadEPKj; .type _ZN2nx6atomic4loadEPKj, @function
+_ZN2nx6atomic4loadEPKi:
+_ZN2nx6atomic4loadEPKj:
 	// rdi: pointer to (u)int32_t
 	lfence
 	movl (%rdi), %eax
 	ret
 
 
-.global _ZN2nx6atomic4loadEPl; .type _ZN2nx6atomic4loadEPl, @function
-.global _ZN2nx6atomic4loadEPm; .type _ZN2nx6atomic4loadEPm, @function
-_ZN2nx6atomic4loadEPl:
-_ZN2nx6atomic4loadEPm:
+.global _ZN2nx6atomic4loadEPKl; .type _ZN2nx6atomic4loadEPKl, @function
+.global _ZN2nx6atomic4loadEPKm; .type _ZN2nx6atomic4loadEPKm, @function
+_ZN2nx6atomic4loadEPKl:
+_ZN2nx6atomic4loadEPKm:
 	// rdi: pointer to (u)int64_t
 	lfence
 	movq (%rdi), %rax
@@ -58,8 +58,8 @@ _ZN2nx6atomic5storeEPaa:
 _ZN2nx6atomic5storeEPhh:
 	// rdi: pointer to (u)int8_t
 	// sil: value
-	sfence
-	movb %sil, (%rdi)
+	lock xchgb %sil, (%rdi)
+	movzx %sil, %eax
 	ret
 
 
@@ -69,8 +69,8 @@ _ZN2nx6atomic5storeEPss:
 _ZN2nx6atomic5storeEPtt:
 	// rdi: pointer to (u)int16_t
 	// si: value
-	sfence
-	movw %si, (%rdi)
+	lock xchgw %si, (%rdi)
+	movzx %si, %eax
 	ret
 
 
@@ -80,8 +80,8 @@ _ZN2nx6atomic5storeEPii:
 _ZN2nx6atomic5storeEPjj:
 	// rdi: pointer to (u)int32_t
 	// esi: value
-	sfence
-	movl %esi, (%rdi)
+	lock xchgl %esi, (%rdi)
+	mov %esi, %eax
 	ret
 
 
@@ -91,8 +91,8 @@ _ZN2nx6atomic5storeEPll:
 _ZN2nx6atomic5storeEPmm:
 	// rdi: pointer to (u)int64_t
 	// rsi: value
-	sfence
-	movq %rsi, (%rdi)
+	lock xchgq %rsi, (%rdi)
+	mov %rsi, %rax
 	ret
 
 
@@ -100,6 +100,6 @@ _ZN2nx6atomic5storeEPmm:
 _ZN2nx6atomic5storeEPvS1_:
 	// rdi: void**
 	// rsi: void*
-	sfence
-	movq %rsi, (%rdi)
+	lock xchgq %rsi, (%rdi)
+	mov %rsi, %rax
 	ret
