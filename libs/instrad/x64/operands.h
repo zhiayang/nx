@@ -122,7 +122,7 @@ namespace instrad::x64
 			);
 		}
 
-		auto idxIdx = index | (mods.rex.B() << 3);
+		auto idxIdx = index | (mods.rex.X() << 3);
 		mem.setIndex((compat || mods.addressSizeOverride)
 			? regs::get32Bit(index)
 			// you can't use RSP as an index
@@ -522,6 +522,8 @@ namespace instrad::x64
 			case OpKind::MemoryOfs64: {
 				// kekw
 				int bits = 8 * (1 << ((int) kind - (int) OpKind::MemoryOfs8));
+				if(bits == 32 && mods.rex.W())
+					bits = 64;
 
 				auto seg = getSegmentOfOverride(mods.segmentOverride);
 				if(mods.compatibilityMode)

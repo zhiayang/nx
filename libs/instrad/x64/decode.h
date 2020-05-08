@@ -149,6 +149,10 @@ namespace instrad::x64
 			if(entry.numOperands() > 2)
 				ret.setExt(getOperand(xs, entry.operands()[2], mods));
 
+			if(mods.lockPrefix)     ret.addLockPrefix();
+			if(mods.repPrefix)      ret.addRepPrefix();
+			if(mods.repnzPrefix)    ret.addRepNZPrefix();
+
 			return ret;
 		}
 	}
@@ -321,11 +325,6 @@ namespace instrad::x64
 		auto len = xs.ptr() - begin;
 
 		ret.setBytes(begin, len);
-
-		if(modifiers.lockPrefix)    ret.addLockPrefix();
-		if(modifiers.repPrefix)     ret.addRepPrefix();
-		if(modifiers.repnzPrefix)   ret.addRepNZPrefix();
-
 		return ret;
 	}
 }

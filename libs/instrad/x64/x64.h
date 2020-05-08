@@ -16,8 +16,14 @@ namespace instrad::x64
 	{
 		constexpr MemoryRef() { }
 
-		constexpr explicit MemoryRef(int bits, int64_t d) : m_bits(bits), m_displacement(d) { }
-		constexpr explicit MemoryRef(int bits, const Register& b) : m_bits(bits), m_base(b) { }
+		constexpr MemoryRef(int bits, int32_t d) : m_bits(bits), m_64BitDisplacement(false), m_displacement(d) { }
+		constexpr MemoryRef(int bits, uint32_t d) : m_bits(bits), m_64BitDisplacement(false), m_displacement(d) { }
+
+		constexpr MemoryRef(int bits, int64_t d) : m_bits(bits), m_64BitDisplacement(true),  m_displacement(d) { }
+		constexpr MemoryRef(int bits, uint64_t d) : m_bits(bits), m_64BitDisplacement(true),  m_displacement(d) { }
+
+
+		constexpr MemoryRef(int bits, const Register& b) : m_bits(bits), m_base(b) { }
 
 		constexpr MemoryRef(int bits, const Register& b, int64_t d) : m_bits(bits), m_displacement(d), m_base(b) { }
 		constexpr MemoryRef(int bits, const Register& b, const Register& i) : m_bits(bits), m_base(b), m_index(i) { }
@@ -32,6 +38,8 @@ namespace instrad::x64
 		constexpr const Register& base() const { return this->m_base; }
 		constexpr const Register& index() const { return this->m_index; }
 
+		constexpr bool isDisplacement64Bits() const { return this->m_64BitDisplacement; }
+
 		constexpr MemoryRef& setBits(int b) { this->m_bits = b; return *this; }
 		constexpr MemoryRef& setScale(int s) { this->m_scale = s; return *this; }
 		constexpr MemoryRef& setDisplacement(int64_t d) { this->m_displacement = d; return *this; }
@@ -42,6 +50,7 @@ namespace instrad::x64
 	private:
 		int m_bits = 0;
 		Register m_segment = regs::NONE;
+		bool m_64BitDisplacement = false;
 
 		// base + (index * scale) + displacement
 
