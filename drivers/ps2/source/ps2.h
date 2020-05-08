@@ -24,7 +24,7 @@ namespace ps2
 {
 	constexpr uint8_t DATA_PORT         = 0x60;
 	constexpr uint8_t COMMAND_PORT      = 0x64;
-	constexpr uint64_t TIMEOUT_COUNT    = 100;
+	constexpr uint64_t TIMEOUT_COUNT    = 500;
 
 	static inline void wait_output_buf()
 	{

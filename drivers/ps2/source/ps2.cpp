@@ -61,6 +61,8 @@ static void busy_wait(uint64_t cnt)
 
 namespace ps2
 {
+	constexpr int maxRetries = 3;
+
 	static bool Port1Working = true;
 	static bool Port2Working = true;
 
@@ -79,10 +81,17 @@ namespace ps2
 		// setup the ps/2 controller robustly. note that we can support both ports on
 		// a dual-channel controller, but we only support keyboards for now.
 
+		// first, read the command output byte
+		int retries = 0;
+
+	retry:
 		{
 			// flush the buffer.
-			port::read1b(DATA_PORT);
+			while(port::read1b(COMMAND_PORT) & 0x1)
+				port::read1b(DATA_PORT);
+		}
 
+		{
 			uint8_t config = read_config();
 
 			// disable translation, irq1 and irq12
@@ -100,7 +109,10 @@ namespace ps2
 			auto response = get_cmd_response(0xAA);
 			if(response != 0x55)
 			{
-				error("controller failed self-test (response = %02x)", response);
+				error("controller failed self-test (response = %02x) (attempt %d / %d)", response, retries++, maxRetries);
+				if(retries < maxRetries)
+					goto retry;
+
 				return;
 			}
 			else
