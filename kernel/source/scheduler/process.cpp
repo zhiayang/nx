@@ -119,6 +119,7 @@ namespace scheduler
 			if(p->processId == id)
 				return p;
 
+		warn("sched", "attempted to find non-existent process with id %lu", id);
 		return nullptr;
 	}
 
@@ -131,6 +132,7 @@ namespace scheduler
 				if(t.threadId == id)
 					return &t;
 
+		warn("sched", "attempted to find non-existent thread with id %lu", id);
 		return nullptr;
 	}
 

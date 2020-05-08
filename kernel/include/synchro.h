@@ -66,6 +66,30 @@ namespace nx
 		scheduler::Thread* holder = 0;
 	};
 
+	// i'd love to make this templated, but there's no good way to do it.
+	struct condvar
+	{
+		condvar() : value(0) { }
+		condvar(uint64_t initial) : value(initial) { }
+
+		// hmm
+		condvar(const condvar&) = delete;
+		condvar& operator = (const condvar&) = delete;
+
+		condvar(condvar&& oth) : value(oth.value) { }
+		condvar& operator = (condvar&& oth)
+		{
+			this->value = oth.value;
+			return *this;
+		}
+
+		uint64_t get() const;
+		uint64_t set(uint64_t x);
+
+	private:
+		uint64_t value;
+	};
+
 	struct semaphore
 	{
 	};

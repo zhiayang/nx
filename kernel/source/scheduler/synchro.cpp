@@ -177,7 +177,7 @@ namespace nx
 		atomic::store(&this->value, 0);
 		atomic::store(&this->holder, 0);
 
-		scheduler::unblock(this);
+		scheduler::wakeUpBlockers(this);
 	}
 
 
@@ -195,6 +195,21 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 
 		return true;
+	}
+
+
+
+	uint64_t condvar::get() const
+	{
+		return atomic::load(&this->value);
+	}
+
+	uint64_t condvar::set(uint64_t x)
+	{
+		auto ret = atomic::store(&this->value, x);
+		scheduler::wakeUpBlockers(this);
+
+		return ret;
 	}
 }
 

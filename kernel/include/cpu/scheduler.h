@@ -176,11 +176,12 @@ namespace nx
 
 		enum class ThreadState
 		{
-			Stopped         = 0,
-			Running         = 1,
-			BlockedOnMutex  = 2,
-			BlockedOnSleep  = 3,
-			AboutToExit     = 4,
+			Stopped             = 0,
+			Running             = 1,
+			BlockedOnMutex      = 2,
+			BlockedOnSleep      = 3,
+			BlockedOnCondvar    = 4,
+			AboutToExit         = 5,
 		};
 
 		struct Priority
@@ -235,6 +236,8 @@ namespace nx
 			ThreadState state = ThreadState::Stopped;
 
 			mutex* blockedMtx = 0;
+			krt::pair<condvar*, uint64_t> blockedCondVar;
+
 			uint64_t wakeUpTimestamp = 0;
 
 			// saved information from context switches:
@@ -336,7 +339,10 @@ namespace nx
 
 
 		void block(mutex* mtx);
-		void unblock(mutex* mtx);
+		void wakeUpBlockers(mutex* mtx);
+
+		void wait(condvar* cv, uint64_t value);
+		void wakeUpBlockers(condvar* cv);
 
 		// returns t.
 		Thread* addThread(Thread* t);
