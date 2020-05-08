@@ -89,11 +89,14 @@ namespace nx
 	{
 		auto smb = signal_message_body_t(a, b, c);
 
-		auto cv = condvar();
-		if(!ipc::signalBlocking(sel, ipc::SIGNAL_NORMAL, smb, &cv))
+		// this condvar needs to live on the kernel heap, because any process should be able
+		// to set/reset it. we can just free it later, no big deal.
+		auto cv = new condvar();
+		if(!ipc::signalBlocking(sel, ipc::SIGNAL_NORMAL, smb, cv))
 			return;
 
-		scheduler::wait(&cv, 0);
+		scheduler::wait(cv, 0);
+		delete cv;
 	}
 
 
