@@ -46,8 +46,40 @@
 			"*.sty": "latex",
 			"*.s": "gas",
 			"string": "cpp",
-			"string.h": "c"
+			"string.h": "c",
+			"cstdlib": "cpp",
+			"array": "cpp",
+			"*.tcc": "cpp",
+			"cmath": "cpp",
+			"complex": "cpp",
+			"deque": "cpp",
+			"unordered_map": "cpp",
+			"vector": "cpp",
+			"exception": "cpp",
+			"functional": "cpp",
+			"string_view": "cpp",
+			"memory": "cpp",
+			"random": "cpp",
+			"initializer_list": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp",
+			"numeric": "cpp",
+			"sstream": "cpp",
+			"streambuf": "cpp",
+			"system_error": "cpp",
+			"limits": "cpp"
 		},
-		"files.eol": "\n"
+		"files.eol": "\n",
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/*.cpp.d": true,
+			"**/*.cpp.o": true,
+			"**/*.c.d": true,
+			"**/*.c.o": true
+		}
 	}
 }
