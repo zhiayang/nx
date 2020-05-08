@@ -6,7 +6,7 @@
 .align 0x1000
 .global nx_user_kernel_stubs_begin
 nx_user_kernel_stubs_begin:
-	.byte 0
+	nop
 
 
 // as described in signal.cpp, this function takes the address of the signal
@@ -44,7 +44,7 @@ nx_x64_user_signal_enter:
 
 .global nx_user_kernel_stubs_end
 nx_user_kernel_stubs_end:
-	.byte 0
+	nop
 
 
 
