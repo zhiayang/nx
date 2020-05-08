@@ -34,25 +34,31 @@ namespace nx::disasm
 	}
 
 
-
-
-	static void print_instr(const x64::Instruction& instr, addr_t ip)
+	static void print_instr(const x64::Instruction& instr, uint64_t ip)
 	{
-		auto& printer = serial::debugprintf;
+		auto printer = serial::debugprintf;
 
-		auto print_operand = [&printer, &ip](const instrad::x64::Operand& op) {
+		auto print_operand = [&printer, &ip](const x64::Operand& op) {
 			if(op.isRegister())
 			{
-				printer("%s", op.reg().name());
+				printer("%%%s", op.reg().name());
 			}
 			else if(op.isImmediate())
 			{
 				int64_t value = op.imm();
-				if(op.immediateSize() == 8)  value = (uint8_t) value;
-				if(op.immediateSize() == 16) value = (uint16_t) value;
-				if(op.immediateSize() == 32) value = (uint32_t) value;
+				if(op.immediateSize() == 8)
+					value = (uint8_t) value;
 
-				printer("%#lx", value);
+				else if(op.immediateSize() == 16)
+					value = (uint16_t) value;
+
+				else if(op.immediateSize() == 32)
+					value = (uint32_t) value;
+
+				else if(op.immediateSize() == 64)
+					value = (uint64_t) value;
+
+				printer("$%#lx", value);
 			}
 			else if(op.isRelativeOffset())
 			{
@@ -64,56 +70,31 @@ namespace nx::disasm
 				auto& base = mem.base();
 				auto& idx = mem.index();
 
-				switch(mem.bits())
-				{
-					case 8:     printer("BYTE PTR ");     break;
-					case 16:    printer("WORD PTR ");     break;
-					case 32:    printer("DWORD PTR ");    break;
-					case 64:    printer("QWORD PTR ");    break;
-					case 80:    printer("TWORD PTR ");    break;
-					case 128:   printer("XMMWORD PTR ");  break;
-					case 256:   printer("YMMWORD PTR ");  break;
-					case 512:   printer("ZMMWORD PTR ");  break;
-					default:    break;
-				}
-
 				if(mem.segment().present())
-					printer("%s:", mem.segment().name());
+					printer("%%%s:", mem.segment().name());
 
-				// you can't scale a displacement, so we're fine here.
+				if(op.mem().displacement() != 0 || (!base.present() && !idx.present()))
+					printer("%#lx", op.mem().displacement());
+
 				if(!base.present() && !idx.present())
-				{
-					printer("[%#x]", mem.displacement());
 					return;
-				}
 
-				printer("[");
+				printer("(");
+
 				if(base.present())
-				{
-					printer("%s", base.name());
-					if(idx.present() || op.mem().displacement() != 0 || op.mem().scale() != 1)
-						printer(" + ");
-				}
+					printer("%%%s", base.name());
 
 				if(idx.present())
-					printer("%s", idx.name());
+					printer(", %%%s", idx.name());
 
 				if(op.mem().scale() != 1)
-					printer("*%d", op.mem().scale());
+					printer(", %d", op.mem().scale());
 
-				if(op.mem().displacement() != 0)
-				{
-					if(idx.present() || op.mem().scale() != 1)
-						printer(" + ");
-
-					printer("%#x", op.mem().displacement());
-				}
-
-				printer("]");
+				printer(")");
 			}
 			else
 			{
-				serial::debugprintf("??");
+				printer("??");
 			}
 		};
 
@@ -132,7 +113,56 @@ namespace nx::disasm
 		if(instr.repPrefix())   printer("rep ");
 		if(instr.repnzPrefix()) printer("repnz ");
 
-		printer("%s ", instr.op().mnemonic());
+		char size_suffix = 0;
+		bool abs_suffix = false;
+
+		auto inspect = [&size_suffix, &abs_suffix](const x64::Operand& op) {
+
+			if(size_suffix != 0)
+				return;
+
+			if(op.isImmediate())
+			{
+				switch(op.immediateSize())
+				{
+					case 8:  size_suffix = 'b'; break;
+					case 16: size_suffix = 'w'; break;
+					case 32: size_suffix = 'l'; break;
+					case 64: size_suffix = 'q'; abs_suffix = true; break;
+
+					default:
+						break;
+				}
+			}
+			else if(op.isMemory())
+			{
+				auto& mem = op.mem();
+
+				switch(mem.bits())
+				{
+					case 8:  size_suffix = 'b'; break;
+					case 16: size_suffix = 'w'; break;
+					case 32: size_suffix = 'l'; break;
+					case 64: size_suffix = 'q'; break;
+
+					default:
+						break;
+				}
+
+				if(mem.isDisplacement64Bits())
+					abs_suffix = true;
+			}
+		};
+
+		// ugh. this is really dumb, but we don't want to use nx::string.
+		if(instr.operandCount() > 0)
+			inspect(instr.dst());
+
+		if(instr.operandCount() > 1)
+			inspect(instr.src());
+
+
+		printer("%s%s%c ", instr.op().mnemonic(), abs_suffix ? "abs" : "", size_suffix);
 
 		if(instr.operandCount() == 1)
 		{
@@ -140,14 +170,21 @@ namespace nx::disasm
 		}
 		else if(instr.operandCount() == 2)
 		{
-			print_operand(instr.dst()); printer(", ");
-			print_operand(instr.src());
+			print_operand(instr.src()); printer(", ");
+			print_operand(instr.dst());
 		}
 		else if(instr.operandCount() == 3)
 		{
-			print_operand(instr.dst()); printer(", ");
+			print_operand(instr.ext()); printer(", ");
 			print_operand(instr.src()); printer(", ");
-			print_operand(instr.ext());
+			print_operand(instr.dst());
+		}
+		else if(instr.operandCount() == 4)
+		{
+			print_operand(instr.op4()); printer(", ");
+			print_operand(instr.ext()); printer(", ");
+			print_operand(instr.src()); printer(", ");
+			print_operand(instr.dst());
 		}
 	}
 }
