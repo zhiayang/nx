@@ -25,7 +25,7 @@ namespace ipc
 	struct signal_message_body_t
 	{
 		signal_message_body_t() { }
-		signal_message_body_t(uint64_t a, uint64_t b, uint64_t c) : a(a), b(b), c(c) { }
+		signal_message_body_t(uint64_t a, uint64_t b, uint64_t c) : sigType(0), a(a), b(b), c(c) { }
 
 		uint64_t sigType;
 		union {

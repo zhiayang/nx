@@ -82,7 +82,11 @@ namespace nx
 	void syscall::ipc_signal(uint64_t target, uint64_t a, uint64_t b, uint64_t c)
 	{
 		// auto thr = scheduler::get
+		// /process/name/kekw
+		// /process/id/123
+		// /thread/id/123
 
+		auto smb = signal_message_body_t(a, b, c);
 		// ipc::signalThread();
 	}
 
