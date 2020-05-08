@@ -114,6 +114,7 @@ make-folders:
 	@mkdir -p $(INITRD_DIR)/drivers
 	@mkdir -p $(INITRD_DIR)/services
 
+
 export-headers: $(shell find libs/libc/include -type f) $(shell find libs/libm/include -type f) $(shell find libs/libnxsc/include -type f) $(shell find kernel/include/export -type f) $(shell find services/*/include -type f) | make-folders
 	-@find $(SYSROOT)/usr/include/ -type f | xargs rm
 	@cp -R libs/libc/include/*                  $(SYSROOT)/usr/include/

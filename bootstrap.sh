@@ -18,7 +18,7 @@ export GCC_VERSION="9.2.0"
 
 export NUM_MAKE_JOBS=4
 
-GNU_MIRROR_SITE="https://ftp.cse.yzu.edu.tw/gnu"
+GNU_MIRROR_SITE="https://mirror.ossplanet.net/gnu"
 
 SKIP_SETUP_LIBC=false
 SKIP_SETUP_SYSROOT=false
@@ -103,7 +103,9 @@ function main() {
 	echo "${_BOLD}${_GREEN}=> ${_NORMAL}sysroot: ${_BOLD}$SYSROOT${_NORMAL}"
 	echo ""
 
-	cp -R libs/libc/include/* $SYSROOT/usr/include/
+	echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}exporting headers${_NORMAL}"
+	make make-folders > /dev/null
+	make export-headers > /dev/null
 
 	if [ $SKIP_SETUP_TOOLCHAIN == false ]; then
 		export SETUP_DIR=$PROJECT_DIR/toolchain-setup
