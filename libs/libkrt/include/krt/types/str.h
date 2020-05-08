@@ -57,7 +57,7 @@ namespace krt
 
 				dst->ptr[dst->cnt] = 0;
 
-				src->ptr = src->inline_buffer;
+				src->ptr = (sso_buf_size ? src->inline_buffer : nullptr);
 				src->cap = sso_buf_size;
 			}
 			else
@@ -88,7 +88,8 @@ namespace krt
 		{
 			if(this != &other)
 			{
-				if(this->ptr && this->ptr != this->inline_buffer) allocator::deallocate(this->ptr);
+				if(this->ptr && this->ptr != this->inline_buffer)
+					allocator::deallocate(this->ptr);
 
 				move_contents(this, &other);
 			}
