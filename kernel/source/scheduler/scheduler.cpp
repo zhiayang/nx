@@ -207,7 +207,7 @@ namespace scheduler
 	}
 
 
-	void block(mutex* mtx)
+	void block(condition* cv)
 	{
 		auto t = getCurrentThread();
 		assert(t);
@@ -217,15 +217,15 @@ namespace scheduler
 		LockedSection(&ss->lock, [&]() {
 			ss->BlockedThreads.append(t);
 
-			t->blockedMtx = mtx;
-			t->state = ThreadState::BlockedOnMutex;
+			t->blockedOn = cv;
+			t->state = ThreadState::BlockedOnCondition;
 
 		});
 
 		yield();
 	}
 
-	void wakeUpBlockers(mutex* mtx)
+	static void notify(condition* cv, bool all)
 	{
 		// note: we allow you to call unblock before the scheduler is up,
 		// because we unconditionally call unblock() when releasing a mutex,
@@ -236,9 +236,10 @@ namespace scheduler
 		auto ss = getSchedState();
 
 		// hmm.
-		LockedSection(&ss->lock, [&mtx, &ss]() {
+		LockedSection(&ss->lock, [&cv, &ss, &all]() {
 			auto& bthrs = ss->BlockedThreads;
 
+			// ugh, there should be better way to do this (eg. a hashmap)
 			for(auto _thr = bthrs.begin(); _thr != bthrs.end(); )
 			{
 				auto thr = *_thr;
@@ -248,13 +249,16 @@ namespace scheduler
 				//! owo
 				// i think there's some sort of race condition where we dispose of the thread or something
 				// while it is holding locks? this place causes a null pointer deref undeterministically.
-				if(thr->state == ThreadState::BlockedOnMutex && thr->blockedMtx == mtx)
+				if(thr->state == ThreadState::BlockedOnCondition && thr->blockedOn == cv)
 				{
-					thr->blockedMtx = 0;
+					thr->blockedOn = 0;
 					thr->state = ThreadState::Stopped;
 					thr->priority.boost();
 
 					_thr = bthrs.erase(_thr);
+
+					if(!all)
+						break;
 				}
 				else
 				{
@@ -264,60 +268,14 @@ namespace scheduler
 		});
 	}
 
-	void wait(condvar* cv, uint64_t value)
+	void notifyOne(condition* cv)
 	{
-		assert(cv);
-		if(cv->get() == value)
-			return;
-
-		auto t = getCurrentThread();
-		assert(t);
-
-		auto ss = getSchedState();
-
-		LockedSection(&ss->lock, [&]() {
-			ss->BlockedThreads.append(t);
-
-			t->blockedCondVar = { cv, value };
-			t->state = ThreadState::BlockedOnCondvar;
-		});
-
-		yield();
+		notify(cv, /* all: */ false);
 	}
 
-	void wakeUpBlockers(condvar* cv)
+	void notifyAll(condition* cv)
 	{
-		if(getInitPhase() < SchedulerInitPhase::SchedulerStarted)
-			return;
-
-		auto ss = getSchedState();
-
-		// hmm.
-		LockedSection(&ss->lock, [&cv, &ss]() {
-			auto& bthrs = ss->BlockedThreads;
-
-			for(auto _thr = bthrs.begin(); _thr != bthrs.end(); )
-			{
-				auto thr = *_thr;
-				assert(thr);
-
-				if(auto [ condvar, waitval ] = thr->blockedCondVar; thr->state == ThreadState::BlockedOnCondvar
-					&& condvar == cv && cv->get() == waitval)
-				{
-					thr->blockedCondVar.first = nullptr;
-					thr->blockedCondVar.second = 0;
-
-					thr->state = ThreadState::Stopped;
-					thr->priority.boost();
-
-					_thr = bthrs.erase(_thr);
-				}
-				else
-				{
-					_thr++;
-				}
-			}
-		});
+		notify(cv, /* all: */ true);
 	}
 
 

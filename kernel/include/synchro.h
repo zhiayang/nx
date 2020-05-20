@@ -10,9 +10,14 @@
 
 namespace nx
 {
+	struct condition;
+
 	namespace scheduler
 	{
 		struct Thread;
+		void block(condition* cv);
+		void notifyOne(condition* cv);
+		void notifyAll(condition* cv);
 	}
 
 	namespace interrupts
@@ -21,80 +26,13 @@ namespace nx
 		void disable();
 	}
 
-	// this one does not disable interrupts, only delays
-	// thread switching when locked.
-	struct spinlock
+	struct condition
 	{
-		spinlock();
+		// owo...
+		virtual ~condition() { }
 
-		bool held();
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		uint64_t value = 0;
-		scheduler::Thread* holder = 0;
+		uint64_t dummy = 0;
 	};
-
-	// this one will disable interrupts also.
-	struct IRQSpinlock
-	{
-		IRQSpinlock();
-
-		bool held();
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		uint64_t value = 0;
-		scheduler::Thread* holder = 0;
-	};
-
-	struct mutex
-	{
-		mutex();
-
-		bool held();
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		uint64_t value = 0;
-		scheduler::Thread* holder = 0;
-	};
-
-	// i'd love to make this templated, but there's no good way to do it.
-	struct condvar
-	{
-		condvar() : value(0) { }
-		condvar(uint64_t initial) : value(initial) { }
-
-		// hmm
-		condvar(const condvar&) = delete;
-		condvar& operator = (const condvar&) = delete;
-
-		condvar(condvar&& oth) : value(oth.value) { }
-		condvar& operator = (condvar&& oth)
-		{
-			this->value = oth.value;
-			return *this;
-		}
-
-		uint64_t get() const;
-		uint64_t set(uint64_t x);
-
-	private:
-		uint64_t value;
-	};
-
-	struct semaphore
-	{
-	};
-
-
 
 	template <typename T>
 	struct autolock
@@ -112,6 +50,133 @@ namespace nx
 		private:
 		T* lk = 0;
 	};
+
+
+	// this one does not disable interrupts, only delays
+	// thread switching when locked.
+	struct spinlock
+	{
+		spinlock();
+		spinlock(spinlock&&);
+
+		spinlock(const spinlock&) = delete;
+		spinlock& operator = (spinlock&&) = delete;
+		spinlock& operator = (const spinlock&) = delete;
+
+		bool held();
+		void lock();
+		void unlock();
+		bool trylock();
+
+	private:
+		uint64_t value = 0;
+		scheduler::Thread* holder = 0;
+	};
+
+	// this one will disable interrupts also.
+	struct IRQSpinlock
+	{
+		IRQSpinlock();
+		IRQSpinlock(IRQSpinlock&&);
+
+		IRQSpinlock(const IRQSpinlock&) = delete;
+		IRQSpinlock& operator = (IRQSpinlock&&) = delete;
+		IRQSpinlock& operator = (const IRQSpinlock&) = delete;
+
+		bool held();
+		void lock();
+		void unlock();
+		bool trylock();
+
+	private:
+		uint64_t value = 0;
+		scheduler::Thread* holder = 0;
+	};
+
+	struct mutex : condition
+	{
+		mutex();
+		mutex(mutex&&);
+
+		mutex(const mutex&) = delete;
+		mutex& operator = (mutex&&) = delete;
+		mutex& operator = (const mutex&) = delete;
+
+		bool held();
+		void lock();
+		void unlock();
+		bool trylock();
+
+	private:
+		uint64_t value = 0;
+		scheduler::Thread* holder = 0;
+	};
+
+	template <typename T>
+	struct condvar
+	{
+		condvar() : value() { }
+		condvar(const T& initial) : value(initial) { }
+
+		// hmm
+		condvar(const condvar&) = delete;
+		condvar& operator = (const condvar&) = delete;
+
+		condvar(condvar&& oth) : value(oth.value) { }
+		condvar& operator = (condvar&& oth)
+		{
+			this->value = krt::move(oth.value);
+			return *this;
+		}
+
+		T get() const { return this->value; }
+
+		void set_quiet(const T& x)
+		{
+			autolock lk(&this->mtx);
+			this->value = x;
+		}
+
+		void set(const T& x)
+		{
+			this->set_quiet(x);
+			this->notify_one();
+		}
+
+		// TODO: wait with timeout
+		void wait(const T& x)
+		{
+			while(true)
+			{
+				{
+					autolock lk(&this->mtx);
+					if(this->value == x)
+						break;
+				}
+				scheduler::block(&this->cond);
+			}
+		}
+
+		void notify_one()
+		{
+			scheduler::notifyOne(&this->cond);
+		}
+
+		void notify_all()
+		{
+			scheduler::notifyAll(&this->cond);
+		}
+
+	private:
+		T value;
+		mutex mtx;
+		condition cond;
+	};
+
+	struct semaphore
+	{
+	};
+
 
 	template <typename T, bool> struct _wrapper { };
 	template <typename T> struct _wrapper<T, true> { _wrapper(T&& v) : value(v) { } T value; };

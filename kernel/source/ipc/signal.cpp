@@ -55,7 +55,7 @@ namespace nx
 		*/
 
 		// the default action here if there is no handler installed is to discard the message.
-		static bool internal_signal(Thread* thr, uint64_t sigType, const signal_message_body_t& body, condvar* cv)
+		static bool internal_signal(Thread* thr, uint64_t sigType, const signal_message_body_t& body, condvar<bool>* cv)
 		{
 			// TODO: uwu, support this for real eventually
 			bool crit = false;
@@ -120,7 +120,7 @@ namespace nx
 			return internal_signal(thr, sigType, msg, nullptr);
 		}
 
-		bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar* cv)
+		bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar<bool>* cv)
 		{
 			assert(cv);
 
@@ -128,7 +128,7 @@ namespace nx
 			if(!thr) return false;
 
 			auto succ = internal_signal(thr, sigType, msg, cv);
-			if(succ) cv->set(1);
+			if(succ) cv->set(true);
 
 			return succ;
 		}

@@ -40,11 +40,11 @@ namespace nx::ipc
 	{
 		MemoryTicket(uint64_t id, uint64_t flags, size_t userLen, size_t numPages) : id(id), flags(flags), userLen(userLen), numPages(numPages), refcount(0) { }
 
-		MemoryTicket(const MemoryTicket&) = delete;
-		MemoryTicket& operator = (const MemoryTicket&) = delete;
-
 		MemoryTicket(MemoryTicket&&) = default;
-		MemoryTicket& operator = (MemoryTicket&&) = default;
+
+		MemoryTicket(const MemoryTicket&) = delete;
+		MemoryTicket& operator = (MemoryTicket&&) = delete;
+		MemoryTicket& operator = (const MemoryTicket&) = delete;
 
 		uint64_t id;
 		uint64_t flags;

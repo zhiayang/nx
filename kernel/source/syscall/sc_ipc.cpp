@@ -91,11 +91,11 @@ namespace nx
 
 		// this condvar needs to live on the kernel heap, because any process should be able
 		// to set/reset it. we can just free it later, no big deal.
-		auto cv = new condvar();
+		auto cv = new condvar<bool>();
 		if(!ipc::signalBlocking(sel, ipc::SIGNAL_NORMAL, smb, cv))
 			return;
 
-		scheduler::wait(cv, 0);
+		cv->wait(false);
 		delete cv;
 	}
 

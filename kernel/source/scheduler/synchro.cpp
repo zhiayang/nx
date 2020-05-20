@@ -29,13 +29,19 @@ namespace nx
 
 
 	spinlock::spinlock() { }
+	spinlock::spinlock(spinlock&& other)
+	{
+		other.lock();
 
+		// it's already locked here, so we don't need to worry about atomicity... probably.
+		this->value  = 0; other.value = 0;
+		this->holder = 0; other.holder = 0;
+	}
 
 	bool spinlock::held()
 	{
 		return this->value;
 	}
-
 
 	void spinlock::lock()
 	{
@@ -82,7 +88,12 @@ namespace nx
 
 
 	IRQSpinlock::IRQSpinlock() { }
-
+	IRQSpinlock::IRQSpinlock(IRQSpinlock&& other)
+	{
+		other.lock();
+		this->value  = 0; other.value = 0;
+		this->holder = 0; other.holder = 0;
+	}
 
 	bool IRQSpinlock::held()
 	{
@@ -152,7 +163,12 @@ namespace nx
 
 
 	mutex::mutex() { }
-
+	mutex::mutex(mutex&& other)
+	{
+		other.lock();
+		this->value  = 0; other.value = 0;
+		this->holder = 0; other.holder = 0;
+	}
 
 	void mutex::lock()
 	{
@@ -177,7 +193,7 @@ namespace nx
 		atomic::store(&this->value, 0);
 		atomic::store(&this->holder, 0);
 
-		scheduler::wakeUpBlockers(this);
+		scheduler::notifyOne(this);
 	}
 
 
@@ -195,21 +211,6 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 
 		return true;
-	}
-
-
-
-	uint64_t condvar::get() const
-	{
-		return atomic::load(&this->value);
-	}
-
-	uint64_t condvar::set(uint64_t x)
-	{
-		auto ret = atomic::store(&this->value, x);
-		scheduler::wakeUpBlockers(this);
-
-		return ret;
 	}
 }
 

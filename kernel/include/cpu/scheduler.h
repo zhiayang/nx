@@ -178,10 +178,9 @@ namespace nx
 		{
 			Stopped             = 0,
 			Running             = 1,
-			BlockedOnMutex      = 2,
+			BlockedOnCondition  = 2,
 			BlockedOnSleep      = 3,
-			BlockedOnCondvar    = 4,
-			AboutToExit         = 5,
+			AboutToExit         = 4,
 		};
 
 		struct Priority
@@ -235,8 +234,7 @@ namespace nx
 			uint64_t flags = 0;
 			ThreadState state = ThreadState::Stopped;
 
-			mutex* blockedMtx = 0;
-			krt::pair<condvar*, uint64_t> blockedCondVar;
+			condition* blockedOn = 0;
 
 			uint64_t wakeUpTimestamp = 0;
 
@@ -259,7 +257,7 @@ namespace nx
 			struct serviced_signal_t
 			{
 				cpu::InterruptedState saved_regs;
-				condvar* cond = nullptr;
+				condvar<bool>* cond = nullptr;
 			};
 
 			// these things get touched in critical sections, so we use the special
@@ -343,12 +341,10 @@ namespace nx
 		template <typename T>
 		void sleep(time::unit<T> x) { nanosleep(x.ns()); }
 
+		void block(condition* cv);
+		void notifyOne(condition* cv);
+		void notifyAll(condition* cv);
 
-		void block(mutex* mtx);
-		void wakeUpBlockers(mutex* mtx);
-
-		void wait(condvar* cv, uint64_t value);
-		void wakeUpBlockers(condvar* cv);
 
 		// returns t.
 		Thread* addThread(Thread* t);

@@ -26,7 +26,7 @@ namespace nx::ipc
 		uint64_t flags;
 		signal_message_body_t body;
 
-		condvar* blocking_cv;
+		condvar<bool>* blocking_cv;
 	};
 
 	void init();
@@ -49,7 +49,7 @@ namespace nx::ipc
 
 	bool signal(scheduler::Thread* thr, uint64_t sigType, const signal_message_body_t& msg);
 	bool signal(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg);
-	bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar* cv);
+	bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar<bool>* cv);
 
 	uint64_t createMemticket(size_t len, uint64_t flags);
 	mem_ticket_t collectMemticket(uint64_t ticketId);
