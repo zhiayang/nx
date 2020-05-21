@@ -263,7 +263,13 @@ namespace nx
 			// these things get touched in critical sections, so we use the special
 			// allocator to make sure they don't try to acquire locks in the main
 			// kernel heap, which would be a bad thing.
-			nx::list<ipc::signal_message_t, _fixed_allocator> pendingSignalQueue;
+
+			// this needs to be protected by an IRQSpinlock, since IRQ handling
+			// needs to append to this queue.
+			Synchronised<nx::list<ipc::signal_message_t, _fixed_allocator>, IRQSpinlock> pendingSignalQueue;
+
+			// this one does not need to be locked, since it is only ever accessed
+			// from the scheduler, during a context switch in the critical section.
 			nx::list<serviced_signal_t, _fixed_allocator> savedSignalStateStack;
 		};
 

@@ -13,6 +13,6 @@ namespace vfs
 {
 	constexpr int MNT_RDONLY = 1;
 
-	int mount(const char* mountpoint, nx::ipc::selector_t* sel_driver,
-		nx::ipc::selector_t* sel_device, int flags);
+	int mount(const char* mountpoint, nx::ipc::selector_t sel_driver,
+		nx::ipc::selector_t sel_device, int flags);
 }

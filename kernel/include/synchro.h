@@ -125,7 +125,9 @@ namespace nx
 		condvar(condvar&& oth) : value(oth.value) { }
 		condvar& operator = (condvar&& oth)
 		{
-			this->value = krt::move(oth.value);
+			if(this != &oth)
+				this->value = krt::move(oth.value);
+
 			return *this;
 		}
 
@@ -245,12 +247,17 @@ namespace nx
 		Synchronised(const Synchronised&) = delete;
 		Synchronised& operator = (const Synchronised&) = delete;
 
-
 		Synchronised(Synchronised&& oth) : lk(krt::move(assert_not_held(oth.lk))), value(krt::move(oth.value)) { }
 		Synchronised& operator = (Synchronised&& oth)
 		{
-			this->lk    = krt::move(assert_not_held(oth.lk));
-			this->value = krt::move(oth.value);
+			if(this != &oth)
+			{
+				assert_not_held(this->lk);
+				this->lk.~Lk();
+
+				new (&this->lk) Lk(krt::move(assert_not_held(oth.lk)));
+				this->value = krt::move(oth.value);
+			}
 
 			return *this;
 		}

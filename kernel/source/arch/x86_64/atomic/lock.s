@@ -124,11 +124,10 @@ _ZN2nx6atomic18cas_spinlock_noirqEPmmm:
 	// success. interrupts are already disabled, so restore the stack (remove the flags)
 	addq $8, %rsp
 
-	// increment the lock counter
-	lock incq %gs:0x48
-
-	// and update the kernel interrupt-sti-level counter.
+	// update the kernel interrupt-sti-level counter.
 	call _ZN2nx10interrupts7disableEv
+
+	// note we don't update numHeldLocks, because irqs are disabled so it's pointless.
 	ret
 
 

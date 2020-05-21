@@ -13,21 +13,17 @@ namespace ipc
 
 	void addMessage(const message_t& umsg)
 	{
-		auto msg = message_t();
-
-		msg.flags       = umsg.flags;
-		msg.senderId    = umsg.senderId;
-		msg.targetId    = umsg.targetId;
-		memcpy(msg.body.bytes, umsg.body.bytes, umsg.body.BufferSize);
-
-		if(auto proc = scheduler::getProcessWithId(msg.targetId); proc)
-			proc->pendingMessages.lock()->append(msg);
+		if(auto proc = scheduler::getProcessWithId(umsg.targetId); proc)
+			proc->pendingMessages.lock()->append(umsg);
 	}
 
 	void disposeMessage(message_t& message)
 	{
 		// there's nothing to do here lmao
 	}
+
+
+
 
 	scheduler::Thread* resolveSelector(const selector_t& sel)
 	{

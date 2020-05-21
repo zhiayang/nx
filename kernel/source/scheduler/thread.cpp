@@ -59,7 +59,7 @@ namespace scheduler
 		// setup the kernel stack
 
 		assert(proc);
-		proc->threads.append(Thread());
+		proc->threads.emplace();
 
 		auto thr = &proc->threads.back();
 		thr->parent = proc;

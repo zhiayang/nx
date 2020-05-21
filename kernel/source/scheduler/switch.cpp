@@ -138,8 +138,13 @@ namespace scheduler
 			return;
 		}
 
+		// make sure it's not locked. if it's locked, we're fucked. it's an IRQSpinlock,
+		// so we shouldn't be in the scheduler if the lock was held! so, since it's not
+		// held, we are free to use unsafeGet to access the innards.
+		assert(!newthr->pendingSignalQueue.getLock().held());
+
 		// check if we have pending signals.
-		if(newthr->pendingSignalQueue.empty())
+		if(newthr->pendingSignalQueue.unsafeGet()->empty())
 			return;
 
 		// first, save the state.
@@ -154,8 +159,7 @@ namespace scheduler
 			return;
 		}
 
-
-		auto msg = newthr->pendingSignalQueue.popFront();
+		auto msg = newthr->pendingSignalQueue.unsafeGet()->popFront();
 
 		// ok, we're in user mode here.
 		newthr->savedSignalStateStack.append({ *regs, msg.blocking_cv });

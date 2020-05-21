@@ -78,6 +78,8 @@ namespace nx
 		return 0;
 	}
 
+	// TODO: since the selector contains a pointer to a userspace string, we most
+	// likely need to sanitise this as well. sad reacts.
 
 	void syscall::ipc_signal(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
 	{

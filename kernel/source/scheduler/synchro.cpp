@@ -31,11 +31,10 @@ namespace nx
 	spinlock::spinlock() { }
 	spinlock::spinlock(spinlock&& other)
 	{
-		other.lock();
+		autolock lk(&other);
 
-		// it's already locked here, so we don't need to worry about atomicity... probably.
-		this->value  = 0; other.value = 0;
-		this->holder = 0; other.holder = 0;
+		this->value  = 0;
+		this->holder = 0;
 	}
 
 	bool spinlock::held()
@@ -90,9 +89,10 @@ namespace nx
 	IRQSpinlock::IRQSpinlock() { }
 	IRQSpinlock::IRQSpinlock(IRQSpinlock&& other)
 	{
-		other.lock();
-		this->value  = 0; other.value = 0;
-		this->holder = 0; other.holder = 0;
+		autolock lk(&other);
+
+		this->value  = 0;
+		this->holder = 0;
 	}
 
 	bool IRQSpinlock::held()
@@ -124,7 +124,6 @@ namespace nx
 		atomic::store(&this->value, 0);
 		atomic::store(&this->holder, 0);
 
-		atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
 		interrupts::enable();
 	}
 
@@ -136,8 +135,6 @@ namespace nx
 			return false;
 
 		this->holder = scheduler::getCurrentThread();
-
-		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
 
 		return true;
 	}
@@ -165,9 +162,10 @@ namespace nx
 	mutex::mutex() { }
 	mutex::mutex(mutex&& other)
 	{
-		other.lock();
-		this->value  = 0; other.value = 0;
-		this->holder = 0; other.holder = 0;
+		autolock lk(&other);
+
+		this->value  = 0;
+		this->holder = 0;
 	}
 
 	void mutex::lock()
