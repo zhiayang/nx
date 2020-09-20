@@ -130,14 +130,11 @@ namespace nx::ipc
 		return ret_ticket;
 	}
 
-	// the behaviour of this function is that it either re-uses an existing memticket, or collects it if the
-	// current process has not collected it yet. it's not a hard error to release a memticket that is invalid, anyway.
-	mem_ticket_t collectOrReuseMemticket(uint64_t ticketId)
+	mem_ticket_t findExistingMemticket(uint64_t ticketId)
 	{
-		auto found = tickets.map([&](auto& tkts) -> nx::optional<krt::pair<bool, mem_ticket_t>> {
+		auto found = tickets.map([&](auto& tkts) -> nx::optional<mem_ticket_t> {
 
-			using ret_t = krt::pair<bool, mem_ticket_t>;
-			auto fail = opt::some<ret_t>(false, { });
+			auto fail = opt::some<mem_ticket_t>({ });
 
 			auto tit = tkts.find(ticketId);
 			if(tit == tkts.end())
@@ -163,7 +160,7 @@ namespace nx::ipc
 			ret.len = tik->userLen;
 			ret.ticketId = tik->id;
 
-			return opt::some<ret_t>(true, ret);
+			return opt::some<mem_ticket_t>(ret);
 		});
 
 		if(found.empty())
@@ -175,8 +172,7 @@ namespace nx::ipc
 		}
 		else
 		{
-			if(found->first)    return found->second;
-			else                return collectMemticket(ticketId);
+			return found.get();
 		}
 	}
 

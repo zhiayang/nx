@@ -54,7 +54,7 @@ namespace nx::ipc
 	uint64_t createMemticket(size_t len, uint64_t flags);
 	void releaseMemticket(const mem_ticket_t& ticket);
 	mem_ticket_t collectMemticket(uint64_t ticketId);
-	mem_ticket_t collectOrReuseMemticket(uint64_t ticketId);
+	mem_ticket_t findExistingMemticket(uint64_t ticketId);
 
 	// TODO: for now, again we can only send messages/signals to threads, not processes.
 	scheduler::Thread* resolveSelector(const selector_t& sel);
