@@ -67,8 +67,8 @@ namespace nx
 		template <typename T, typename T1 = std::remove_reference_t<T>>
 		optional<T1> some(T&& x) { return krt::opt::some<T1, _aborter>(krt::forward<T>(x)); }
 
-		// template <typename T, typename T1 = std::remove_reference_t<T>>
-		// optional<T1> some(const T& x) { return krt::opt::some<T1, _aborter>(x); }
+		template <typename T, typename T1 = std::remove_reference_t<T>, typename... Args>
+		optional<T1> some(Args&&... xs) { return krt::opt::some<T1, _aborter>(krt::forward<Args>(xs)...); }
 
 		constexpr auto none = krt::nullopt;
 	}

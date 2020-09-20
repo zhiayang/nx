@@ -25,6 +25,9 @@ namespace krt
 
 		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>>
 		optional<U1, Ab> some(const U&);
+
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>, typename... Args>
+		optional<U1, Ab> some(Args&&...);
 	}
 
 	template <typename T, typename aborter>
@@ -115,11 +118,12 @@ namespace krt
 
 		T get()
 		{
-			if(!this->valid)
-				aborter::abort("optional::get(): no value!");
-
+			this->assert_present();
 			return x.val;
 		}
+
+		T* operator-> ()             { this->assert_present(); return &this->x.val; }
+		const T* operator-> () const { this->assert_present(); return &this->x.val; }
 
 		template <typename Fn>
 		auto map(Fn&& fn) -> optional<decltype(fn(std::declval<std::add_lvalue_reference_t<T>>())), aborter>
@@ -128,7 +132,7 @@ namespace krt
 			{
 				if constexpr (!std::is_same_v<decltype(fn(this->x.val)), void>)
 				{
-					return opt::some(fn(this->x.val));
+					return optional<decltype(fn(this->x.val)), aborter>(fn(this->x.val));
 				}
 				else
 				{
@@ -173,8 +177,21 @@ namespace krt
 			return *this;
 		}
 
+		template <typename T1 = T, typename E = std::enable_if_t<!std::is_same_v<T1, void>>>
+		T orElse(const T1& val) const
+		{
+			if(this->empty())   return val;
+			else                return this->x.val;
+		}
+
 
 	private:
+		void assert_present()
+		{
+			if(!this->valid)
+				aborter::abort("optional::get(): no value!");
+		}
+
 		template <typename T1 = T,
 			typename E = std::enable_if_t<!std::is_same_v<T1, void> && !is_optional<std::decay_t<T1>>::value>
 		>
@@ -188,6 +205,13 @@ namespace krt
 		explicit optional(const T1& val)
 		{
 			new (&this->x.val) T(val);
+			this->valid = true;
+		}
+
+		template <typename... Args>
+		explicit optional(Args&&... xs)
+		{
+			new (&this->x.val) T(krt::forward<Args>(xs)...);
 			this->valid = true;
 		}
 
@@ -214,6 +238,7 @@ namespace krt
 
 		template <typename U, typename Ab, typename U1> friend optional<U1, Ab> krt::opt::some(U&&);
 		template <typename U, typename Ab, typename U1> friend optional<U1, Ab> krt::opt::some(const U&);
+		template <typename U, typename Ab, typename U1, typename... Args> friend optional<U1, Ab> krt::opt::some(Args&&...);
 
 		template <typename X, typename Ab> friend struct optional;
 	};
@@ -231,6 +256,12 @@ namespace krt
 		optional<U1, Ab> some(const U& x)
 		{
 			return optional<U1, Ab>(x);
+		}
+
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>, typename... Args>
+		optional<U1, Ab> some(Args&&... xs)
+		{
+			return optional<U1, Ab>(forward<Args>(xs)...);
 		}
 	}
 }
