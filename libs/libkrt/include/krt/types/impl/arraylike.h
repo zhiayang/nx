@@ -19,7 +19,7 @@ namespace krt
 	{
 		static bool reserve(Container* self, size_t atleast)
 		{
-			if constexpr (krt::is_same<ElmTy, char>())
+			if constexpr (std::is_same_v<ElmTy, char>)
 				atleast += 1;
 
 			if(self->cap >= atleast) return false;
@@ -308,7 +308,7 @@ namespace krt
 	private:
 		static void set_last_if_char(Container* self)
 		{
-			if constexpr (krt::is_same<ElmTy, char>())
+			if constexpr (std::is_same_v<ElmTy, char>)
 				self->ptr[self->cnt] = 0;
 		}
 

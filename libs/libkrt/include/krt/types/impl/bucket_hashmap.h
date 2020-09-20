@@ -10,6 +10,7 @@
 
 #include "krt/meta.h"
 #include "krt/iterators.h"
+#include "krt/types/optional.h"
 
 
 namespace krt
@@ -328,8 +329,21 @@ namespace krt
 		size_t buckets() const  { return this->numBuckets; }
 
 
+		optional<ValueTy*, aborter> at(const KeyTy& key)
+		{
+			if(auto it = this->find(key); it != this->end())
+				return opt::some<ValueTy*, aborter>(&it->value);
 
+			return nullopt;
+		}
 
+		optional<const ValueTy*, aborter> at(const KeyTy& key) const
+		{
+			if(auto it = this->find(key); it != this->end())
+				return opt::some<const ValueTy*, aborter>(&it->value);
+
+			return nullopt;
+		}
 
 
 

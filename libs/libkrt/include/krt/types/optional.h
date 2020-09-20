@@ -13,28 +13,41 @@
 
 namespace krt
 {
-	template <typename T, typename Al, typename Ab>
+	template <typename T, typename Ab>
 	struct optional;
 
 	constexpr struct { } nullopt;
 
 	namespace opt
 	{
-		template <typename U, typename Al, typename Ab, typename U1 = std::remove_reference_t<U>>
-		optional<U1, Al, Ab> some(U&&);
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>>
+		optional<U1, Ab> some(U&&);
 
-		template <typename U, typename Al, typename Ab, typename U1 = std::remove_reference_t<U>>
-		optional<U1, Al, Ab> some(const U&);
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>>
+		optional<U1, Ab> some(const U&);
 	}
 
-	template <typename T, typename allocator, typename aborter>
+	template <typename T, typename aborter>
 	struct optional
 	{
+	private:
+		using real_type = std::conditional_t<std::is_same_v<T, void>, int, T>;
+
+		template <typename X>
+		struct is_optional : std::false_type { };
+
+		template <typename X>
+		struct is_optional<optional<X, aborter>> : std::true_type { };
+
+
+	public:
 		// template <typename E = std::enable_if_t<std::is_copy_constructible_v<T>>>
 		optional(const optional& other)
 		{
 			this->valid = other.valid;
-			new (&this->x.val) T(other.x.val);
+
+			if constexpr (!std::is_same_v<T, void>)
+				new (&this->x.val) T(other.x.val);
 		}
 
 		// template <typename E = std::enable_if_t<std::is_copy_constructible_v<T>>>
@@ -47,7 +60,9 @@ namespace krt
 		optional(optional&& other)
 		{
 			this->valid = other.valid; other.valid = false;
-			new (&this->x.val) T(krt::move(other.x.val));
+
+			if constexpr (!std::is_same_v<T, void>)
+				new (&this->x.val) T(krt::move(other.x.val));
 		}
 
 		// move assign
@@ -55,11 +70,16 @@ namespace krt
 		{
 			if(this != &other)
 			{
-				if(this->valid)
-					this->x.val.~T();
+				if constexpr (!std::is_same_v<T, void>)
+				{
+					if(this->valid)
+						this->x.val.~T();
+				}
 
 				this->valid = other.valid; other.valid = false;
-				new (&this->x.val) T(krt::move(other.x.val));
+
+				if constexpr (!std::is_same_v<T, void>)
+					new (&this->x.val) T(krt::move(other.x.val));
 			}
 
 			return *this;
@@ -67,8 +87,11 @@ namespace krt
 
 		optional& operator = (decltype(nullopt) _)
 		{
-			if(this->valid)
-				this->x.val.~T();
+			if constexpr (!std::is_same_v<T, void>)
+			{
+				if(this->valid)
+					this->x.val.~T();
+			}
 
 			this->valid = false;
 		}
@@ -78,8 +101,11 @@ namespace krt
 
 		~optional()
 		{
-			if(this->valid)
-				this->x.val.~T();
+			if constexpr (!std::is_same_v<T, void>)
+			{
+				if(this->valid)
+					this->x.val.~T();
+			}
 		}
 
 
@@ -95,16 +121,71 @@ namespace krt
 			return x.val;
 		}
 
+		template <typename Fn>
+		auto map(Fn&& fn) -> optional<decltype(fn(std::declval<std::add_lvalue_reference_t<T>>())), aborter>
+		{
+			if(this->present())
+			{
+				if constexpr (!std::is_same_v<decltype(fn(this->x.val)), void>)
+				{
+					return opt::some(fn(this->x.val));
+				}
+				else
+				{
+					fn(this->x.val);
+					return optional<void, aborter>::valid_dummy();
+				}
+			}
+			else
+			{
+				return nullopt;
+			}
+		}
+
+		template <typename Fn,
+			typename R = decltype(std::declval<Fn>()(std::declval<std::add_lvalue_reference_t<T>>())),
+			typename E = std::enable_if_t<is_optional<R>::value>
+		>
+		auto flatmap(Fn&& fn) -> R
+		{
+			if(this->present())
+				return fn(this->x.val);
+
+			else
+				return nullopt;
+		}
+
+		template <typename Fn>
+		optional<T, aborter>& performIfEmpty(Fn&& fn)
+		{
+			if(this->empty())
+				fn();
+
+			return *this;
+		}
+
+		template <typename Fn>
+		const optional<T, aborter>& performIfEmpty(Fn&& fn) const
+		{
+			if(this->empty())
+				fn();
+
+			return *this;
+		}
+
 
 	private:
-		explicit optional(T&& val)
+		template <typename T1 = T,
+			typename E = std::enable_if_t<!std::is_same_v<T1, void> && !is_optional<std::decay_t<T1>>::value>
+		>
+		explicit optional(T1&& val)
 		{
 			new (&this->x.val) T(krt::move(val));
 			this->valid = true;
 		}
 
-		template <typename E = std::enable_if_t<std::is_copy_constructible_v<T>>>
-		explicit optional(const T& val)
+		template <typename T1 = T>
+		explicit optional(const T1& val)
 		{
 			new (&this->x.val) T(val);
 			this->valid = true;
@@ -113,7 +194,7 @@ namespace krt
 		optional() : valid(false) { }
 
 		union __wrapper {
-			T val;
+			real_type val;
 			uint8_t dummy;
 
 			__wrapper() : dummy(0) { }
@@ -121,24 +202,35 @@ namespace krt
 
 		bool valid;
 
+		static optional<T, aborter> valid_dummy()
+		{
+			static_assert(std::is_same_v<T, void>, "cannot use valid_dummy() unless T = void");
 
-		template <typename U, typename Al, typename Ab, typename U1> friend optional<U1, Al, Ab> krt::opt::some(U&&);
-		template <typename U, typename Al, typename Ab, typename U1> friend optional<U1, Al, Ab> krt::opt::some(const U&);
+			auto ret = optional<T, aborter>();
+			ret.valid = true;
+
+			return ret;
+		}
+
+		template <typename U, typename Ab, typename U1> friend optional<U1, Ab> krt::opt::some(U&&);
+		template <typename U, typename Ab, typename U1> friend optional<U1, Ab> krt::opt::some(const U&);
+
+		template <typename X, typename Ab> friend struct optional;
 	};
 
 
 	namespace opt
 	{
-		template <typename U, typename Al, typename Ab, typename U1 = std::remove_reference_t<U>>
-		optional<U1, Al, Ab> some(U&& x)
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>>
+		optional<U1, Ab> some(U&& x)
 		{
-			return optional<U1, Al, Ab>(move(x));
+			return optional<U1, Ab>(move(x));
 		}
 
-		template <typename U, typename Al, typename Ab, typename U1 = std::remove_reference_t<U>>
-		optional<U1, Al, Ab> some(const U& x)
+		template <typename U, typename Ab, typename U1 = std::remove_reference_t<U>>
+		optional<U1, Ab> some(const U& x)
 		{
-			return optional<U1, Al, Ab>(x);
+			return optional<U1, Ab>(x);
 		}
 	}
 }

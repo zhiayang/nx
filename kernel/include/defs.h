@@ -58,17 +58,17 @@ namespace nx
 	template <typename K, typename V, typename H = krt::hash<K>, typename Al = _allocator, typename Ab = _aborter>
 	using bucket_hashmap = krt::bucket_hashmap<K, V, Al, Ab, H>;
 
-	template <typename T, typename Al = _allocator, typename Ab = _aborter>
-	using optional = krt::optional<T, Al, Ab>;
+	template <typename T, typename Ab = _aborter>
+	using optional = krt::optional<T, Ab>;
 
 	// instead of doing alias templates (which can't be deduced in c++17), just make a wrapper function.
 	namespace opt
 	{
 		template <typename T, typename T1 = std::remove_reference_t<T>>
-		optional<T1> some(T&& x) { return krt::opt::some<T1, _allocator, _aborter>(krt::move(x)); }
+		optional<T1> some(T&& x) { return krt::opt::some<T1, _aborter>(krt::forward<T>(x)); }
 
-		template <typename T, typename T1 = std::remove_reference_t<T>>
-		optional<T1> some(const T& x) { return krt::opt::some<T1, _allocator, _aborter>(x); }
+		// template <typename T, typename T1 = std::remove_reference_t<T>>
+		// optional<T1> some(const T& x) { return krt::opt::some<T1, _aborter>(x); }
 
 		constexpr auto none = krt::nullopt;
 	}
