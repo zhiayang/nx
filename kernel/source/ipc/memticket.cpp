@@ -89,8 +89,17 @@ namespace nx::ipc
 		auto ret_ticket = ipc::mem_ticket_t();
 		memset(&ret_ticket, 0, sizeof(ipc::mem_ticket_t));
 
-		if(auto it = tickets.lock()->find(ticketId); it != tickets.lock()->end())
-		{
+		tickets.perform([&](auto& tkts) {
+
+			auto it = tkts.find(ticketId);
+			if(it == tkts.end())
+			{
+				warn("memticket", "process %lu tried to collect nonexistent ticket %lu",
+					scheduler::getCurrentProcess()->processId, ticketId);
+
+				return;
+			}
+
 			auto tik = &it->value;
 
 			LockedSection(&tik->physicalPages.mtx, [&]() {
@@ -116,32 +125,90 @@ namespace nx::ipc
 				dbg("memticket", "pid %lu collected memticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
 					ret_ticket.ptr, (addr_t) ret_ticket.ptr + ret_ticket.len);
 			});
-		}
+		});
 
 		return ret_ticket;
+	}
+
+	// the behaviour of this function is that it either re-uses an existing memticket, or collects it if the
+	// current process has not collected it yet. it's not a hard error to release a memticket that is invalid, anyway.
+	mem_ticket_t collectOrReuseMemticket(uint64_t ticketId)
+	{
+		auto found = tickets.map([&](auto& tkts) -> nx::optional<krt::pair<bool, mem_ticket_t>> {
+
+			using ret_t = krt::pair<bool, mem_ticket_t>;
+			auto fail = opt::some<ret_t>(false, { });
+
+			auto tit = tkts.find(ticketId);
+			if(tit == tkts.end())
+				return opt::none;
+
+			auto tik = &tit->value;
+			auto proc = scheduler::getCurrentProcess();
+
+			// check whether the process collected it at all:
+			auto it = tik->collectors.find(proc);
+			if(it == tik->collectors.end())
+				return fail;
+
+			// see if anybody collected it:
+			auto it2 = it->value.begin();
+			if(it2 == it->value.end())
+				return fail;
+
+			auto& svmr = it2->value;
+
+			auto ret = ipc::mem_ticket_t();
+			ret.ptr = svmr.addr.ptr();
+			ret.len = tik->userLen;
+			ret.ticketId = tik->id;
+
+			return opt::some<ret_t>(true, ret);
+		});
+
+		if(found.empty())
+		{
+			warn("memticket", "process %lu tried to collect nonexistent ticket %lu",
+				scheduler::getCurrentProcess()->processId, ticketId);
+
+			return { };
+		}
+		else
+		{
+			if(found->first)    return found->second;
+			else                return collectMemticket(ticketId);
+		}
 	}
 
 	// the reason that we need the user to pass in the entire ticket instead of just the ticket id is because
 	// you can collect a ticket more than once (eg to get two separate regions to the same memory, for whatever reason).
 	void releaseMemticket(const mem_ticket_t& ticket)
 	{
-		if(auto it = tickets.lock()->find(ticket.ticketId); it != tickets.lock()->end())
-		{
-			auto tik = &it->value;
+		auto [ cleanup, tktid ] = tickets.map([&](auto& tkts) -> krt::pair<bool, uint64_t> {
 
-			bool cleanup = LockedSection(&tik->physicalPages.mtx, [&]() -> bool {
+			auto it = tkts.find(ticket.ticketId);
+			if(it == tkts.end())
+			{
+				warn("memticket", "process %lu tried to release nonexistent ticket %lu",
+					scheduler::getCurrentProcess()->processId, ticket.ticketId);
+
+				return { false, 0 };
+			}
+
+			auto tik = &it->value;
+			return LockedSection(&tik->physicalPages.mtx, [&]() -> krt::pair<bool, uint64_t> {
 
 				auto proc = scheduler::getCurrentProcess();
 
 				// check if this process collected it at all
 				auto it = tik->collectors.find(proc);
 				if(it == tik->collectors.end())
-					return false;
+					return { false, 0 };
 
 				// find the matching ticket
 				auto it2 = it->value.find(VirtAddr(ticket.ptr));
 				if(it2 == it->value.end())
-					return false;
+					return { false, 0 };
 
 				// delete it
 				auto svmr = krt::move(it2->value);
@@ -166,18 +233,17 @@ namespace nx::ipc
 				{
 					// destroy while we have the lock.
 					tik->physicalPages.destroy();
-					return true;
+					return { true, tik->id };
 				}
 
-				return false;
+				return { false, 0 };
 			});
+		});
 
-			if(cleanup)
-			{
-				log("memticket", "cleaning up ticket %lu", tik->id);
-
-				tickets.lock()->remove(tik->id);
-			}
+		if(cleanup)
+		{
+			log("memticket", "cleaning up ticket %lu", tktid);
+			tickets.lock()->remove(tktid);
 		}
 	}
 }

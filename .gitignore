@@ -13,3 +13,4 @@ utils/refind-bin-*
 
 *.sublime-workspace
 **/.vscode/ipch
+countloc
