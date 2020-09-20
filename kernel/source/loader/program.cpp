@@ -33,6 +33,7 @@ namespace loader
 		auto didRead = vfs::read(f, buf, sz);
 		if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
 
+		vfs::close(f);
 		auto proc = scheduler::createProcess(getProcName(path), scheduler::Process::PROC_USER);
 
 		// add stdout (1)/stderr (2)/stdin (0) descriptors here
