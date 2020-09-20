@@ -38,7 +38,8 @@ namespace nx::ipc
 
 	struct MemoryTicket
 	{
-		MemoryTicket(uint64_t id, uint64_t flags, size_t userLen, size_t numPages) : id(id), flags(flags), userLen(userLen), numPages(numPages), refcount(0) { }
+		MemoryTicket(memticket_id id, uint64_t flags, size_t userLen, size_t numPages) : id(id), flags(flags),
+			userLen(userLen), numPages(numPages), refcount(0) { }
 
 		MemoryTicket(MemoryTicket&&) = default;
 
@@ -46,12 +47,23 @@ namespace nx::ipc
 		MemoryTicket& operator = (MemoryTicket&&) = delete;
 		MemoryTicket& operator = (const MemoryTicket&) = delete;
 
-		uint64_t id;
+		memticket_id id;
 		uint64_t flags;
 
 		size_t userLen;
 		size_t numPages;
 		size_t refcount;
+
+		void ref() { this->refcount++; }
+		void deref()
+		{
+			this->refcount -= 1;
+			if(this->refcount == 0)
+			{
+				this->physicalPages.destroy();
+				dbg("memticket", "freed memory for ticket %lu", this->id);
+			}
+		}
 
 		// note that we don't keep our own mutex, rather we use the mutex of the physical page region.
 		vmm::SharedVMRegion::SharedPhysRegion physicalPages;
@@ -63,9 +75,9 @@ namespace nx::ipc
 
 	//? store this somewhere else?
 	static uint64_t ticketIdCounter = 0;
-	static Synchronised<nx::bucket_hashmap<uint64_t, MemoryTicket>, nx::mutex> tickets;
+	static Synchronised<nx::bucket_hashmap<memticket_id, MemoryTicket>, nx::mutex> tickets;
 
-	uint64_t createMemticket(size_t len, uint64_t flags)
+	memticket_id createMemticket(size_t len, uint64_t flags)
 	{
 		if(len > 0)
 		{
@@ -84,7 +96,7 @@ namespace nx::ipc
 		return -1;
 	}
 
-	mem_ticket_t collectMemticket(uint64_t ticketId)
+	mem_ticket_t collectMemticket(memticket_id ticketId)
 	{
 		auto ret_ticket = ipc::mem_ticket_t();
 		memset(&ret_ticket, 0, sizeof(ipc::mem_ticket_t));
@@ -111,11 +123,13 @@ namespace nx::ipc
 
 				proc->addrspace.lock()->addSharedRegion(svmr.clone());
 
+				proc->collectedTickets.lock()->append(ticketId);
+
 				// mapLazy will not even map the pages present, so both a read and a write will trap
 				vmm::mapLazy(virt, tik->numPages,
 					vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
 
-				tik->refcount++;
+				tik->ref();
 				tik->collectors[proc].insert(virt, krt::move(svmr));
 
 				ret_ticket.ptr = virt.ptr();
@@ -130,7 +144,7 @@ namespace nx::ipc
 		return ret_ticket;
 	}
 
-	mem_ticket_t findExistingMemticket(uint64_t ticketId)
+	mem_ticket_t findExistingMemticket(memticket_id ticketId)
 	{
 		auto found = tickets.map([&](auto& tkts) -> nx::optional<mem_ticket_t> {
 
@@ -180,7 +194,7 @@ namespace nx::ipc
 	// you can collect a ticket more than once (eg to get two separate regions to the same memory, for whatever reason).
 	void releaseMemticket(const mem_ticket_t& ticket)
 	{
-		auto [ cleanup, tktid ] = tickets.map([&](auto& tkts) -> krt::pair<bool, uint64_t> {
+		auto [ cleanup, tktid ] = tickets.map([&](auto& tkts) -> krt::pair<bool, memticket_id> {
 
 			auto it = tkts.find(ticket.ticketId);
 			if(it == tkts.end())
@@ -192,7 +206,7 @@ namespace nx::ipc
 			}
 
 			auto tik = &it->value;
-			return LockedSection(&tik->physicalPages.mtx, [&]() -> krt::pair<bool, uint64_t> {
+			return LockedSection(&tik->physicalPages.mtx, [&]() -> krt::pair<bool, memticket_id> {
 
 				auto proc = scheduler::getCurrentProcess();
 
@@ -212,9 +226,13 @@ namespace nx::ipc
 
 				// if this process released all its collections for *this ticket*, then remove it
 				if(it->value.empty())
+				{
 					tik->collectors.erase(it);
 
-				tik->refcount--;
+					// also remove the ticket from the process's list
+					proc->collectedTickets.lock()->remove_all(tik->id);
+				}
+
 
 				// remove the collected ticket from the address space
 				vmm::deallocateAddrSpace(svmr.addr, svmr.numPages, proc);
@@ -225,12 +243,9 @@ namespace nx::ipc
 				dbg("memticket", "pid %lu released ticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
 					ticket.ptr, (addr_t) ticket.ptr + ticket.len);
 
+				tik->deref();
 				if(tik->refcount == 0)
-				{
-					// destroy while we have the lock.
-					tik->physicalPages.destroy();
 					return { true, tik->id };
-				}
 
 				return { false, 0 };
 			});
@@ -241,6 +256,41 @@ namespace nx::ipc
 			log("memticket", "cleaning up ticket %lu", tktid);
 			tickets.lock()->remove(tktid);
 		}
+	}
+
+	// called when the process is killed; basically we need to release all the
+	// collections of all the tickets the process is holding.
+	void cleanupProcessTickets(scheduler::Process* proc)
+	{
+		assert(proc);
+
+		proc->collectedTickets.getLock().lock();
+
+		auto& tiks = *proc->collectedTickets.get();
+
+		for(memticket_id id : tiks)
+		{
+			bool cleanup = tickets.map([&](auto& tkts) -> bool {
+				auto it = tkts.find(id);
+				if(it == tkts.end())
+				{
+					warn("memticket", "process %lu was holding onto invalid memticket %lu", proc->processId, id);
+					return false;
+				}
+
+				auto tik = &it->value;
+
+				return LockedSection(&tik->physicalPages.mtx, [&]() -> bool {
+					tik->deref();
+					return tik->refcount == 0;
+				});
+			});
+
+			if(cleanup)
+				tickets.lock()->remove(id);
+		}
+
+		proc->collectedTickets.getLock().unlock();
 	}
 }
 

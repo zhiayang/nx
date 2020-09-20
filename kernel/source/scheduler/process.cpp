@@ -53,6 +53,8 @@ namespace scheduler
 
 		getSchedState()->ProcessList.remove_all(proc);
 
+		ipc::cleanupProcessTickets(proc);
+
 		log("sched", "destroyed process '%s' (pid: %lu)", proc->processName.cstr(), proc->processId);
 		delete proc;
 	}

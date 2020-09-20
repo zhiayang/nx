@@ -154,6 +154,7 @@ namespace nx
 			size_t tlsSize = 0;
 
 			Synchronised<nx::list<ipc::message_t>, nx::mutex> pendingMessages;
+			Synchronised<nx::list<ipc::memticket_id>, nx::mutex> collectedTickets;
 
 			vmm::AddressSpace addrspace;
 

@@ -51,10 +51,12 @@ namespace nx::ipc
 	bool signal(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg);
 	bool signalBlocking(const selector_t& sel, uint64_t sigType, const signal_message_body_t& msg, condvar<bool>* cv);
 
-	uint64_t createMemticket(size_t len, uint64_t flags);
+	memticket_id createMemticket(size_t len, uint64_t flags);
 	void releaseMemticket(const mem_ticket_t& ticket);
-	mem_ticket_t collectMemticket(uint64_t ticketId);
-	mem_ticket_t findExistingMemticket(uint64_t ticketId);
+	mem_ticket_t collectMemticket(memticket_id ticketId);
+	mem_ticket_t findExistingMemticket(memticket_id ticketId);
+
+	void cleanupProcessTickets(scheduler::Process* proc);
 
 	// TODO: for now, again we can only send messages/signals to threads, not processes.
 	scheduler::Thread* resolveSelector(const selector_t& sel);
