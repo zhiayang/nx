@@ -1,7 +1,7 @@
 # Makefile for UnixCompatLibC.
 # Written in 2014
 
-CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -g -fno-omit-frame-pointer
+CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -g -fno-omit-frame-pointer -Wall
 
 .PHONY: all
 

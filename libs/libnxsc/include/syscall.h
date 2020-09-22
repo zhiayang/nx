@@ -9,7 +9,7 @@
 
 #if defined(__x86_64__)
 
-	#include <arch/x86_64/syscall_macros.h>
+	#include <nx/arch/x86_64/syscall_macros.h>
 
 #else
 

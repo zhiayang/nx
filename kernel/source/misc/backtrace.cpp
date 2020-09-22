@@ -48,7 +48,7 @@ namespace util
 
 		addr_t rbp = (_rbp ? _rbp : (addr_t) __builtin_frame_address(0));
 
-		while(rbp)
+		while(rbp && (rbp & 0x7) == 0)
 		{
 			auto rip = *((addr_t*) (rbp + sizeof(uint64_t)));
 			if(!IS_CANONICAL(rip)) break;

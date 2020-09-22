@@ -15,6 +15,9 @@ namespace ipc
 	{
 		if(auto proc = scheduler::getProcessWithId(umsg.targetId); proc)
 			proc->pendingMessages.lock()->append(umsg);
+
+		else
+			warn("ipc", "invalid target '%lu'", umsg.targetId);
 	}
 
 	void disposeMessage(message_t& message)

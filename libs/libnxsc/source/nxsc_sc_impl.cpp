@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <errno.h>
-#include <syscall.h>
+#include <nx/syscall.h>
 
 namespace syscall
 {

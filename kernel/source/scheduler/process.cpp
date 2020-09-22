@@ -46,7 +46,6 @@ namespace scheduler
 		vmm::destroy(proc);
 		proc->addrspace.lock()->destroy();
 
-		// TODO: remove it from its cpu list as well
 		LockedSection(&processListLock, [&proc]() {
 			allProcesses.remove_all(proc);
 		});

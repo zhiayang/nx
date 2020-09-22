@@ -9,6 +9,13 @@ namespace nx
 {
 	using namespace nx::ipc;
 
+	uint64_t syscall::ipc_find_selector(ipc::selector_t sel)
+	{
+		auto thr = ipc::resolveSelector(sel);
+		if(!thr) return -1;
+
+		return thr->parent->processId;
+	}
 
 	void syscall::ipc_discard()
 	{

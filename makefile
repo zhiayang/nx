@@ -119,7 +119,7 @@ export-headers: $(shell find libs/libc/include -type f) $(shell find libs/libm/i
 	-@find $(SYSROOT)/usr/include/ -type f | xargs rm
 	@cp -R libs/libc/include/*                  $(SYSROOT)/usr/include/
 	@cp -R libs/libm/include/*                  $(SYSROOT)/usr/include/
-	@cp -R libs/libnxsc/include/*               $(SYSROOT)/usr/include/
+	@cp -R libs/libnxsc/include/*               $(SYSROOT)/usr/include/nx/
 	@cp -R kernel/include/export/*              $(SYSROOT)/usr/include/nx/
 	@cp -R services/tty-svr/include/export/*    $(SYSROOT)/usr/include/svr/
 	@cp -R services/vfs-svr/include/export/*    $(SYSROOT)/usr/include/svr/

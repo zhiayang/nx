@@ -102,7 +102,7 @@ namespace nx
 	constexpr const char* WRN_COLOUR = (USE_COLOURS ? COLOUR_YELLOW_BOLD : "");
 	constexpr const char* ERR_COLOUR = (USE_COLOURS ? COLOUR_RED_BOLD : "");
 
-	constexpr bool ENABLE_DEBUG = false;
+	constexpr bool ENABLE_DEBUG = true;
 
 	static inline void vgeneric_log(int lvl, const char* sys, const char* fmt, va_list args)
 	{

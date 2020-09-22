@@ -34,11 +34,19 @@ namespace ipc
 
 	// helper functions.
 	template <typename T>
-	T extract(const message_body_t& body)
+	const T& extract(const message_body_t& body)
 	{
 		static_assert(sizeof(T) <= message_body_t::BufferSize, "type is too large to fit");
 		return *reinterpret_cast<const T*>(body.bytes);
 	}
+
+	template <typename T>
+	T& extract(message_body_t& body)
+	{
+		static_assert(sizeof(T) <= message_body_t::BufferSize, "type is too large to fit");
+		return *reinterpret_cast<T*>(body.bytes);
+	}
+
 
 	template <typename T>
 	int send(uint64_t target, const T& x)
@@ -47,12 +55,15 @@ namespace ipc
 		return send(target, reinterpret_cast<const message_body_t*>(&x));
 	}
 
+	uint64_t find_selector(const selector_t& sel);
+
 	void signal(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c);
 	void signal_block(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c);
 
 	uint64_t create_memory_ticket(size_t len, uint64_t flags);
-	mem_ticket_t collect_memory_ticket(uint64_t ticketId);
 	void release_memory_ticket(const mem_ticket_t& ticket);
+	mem_ticket_t collect_memory_ticket(uint64_t ticketId);
+	mem_ticket_t find_existing_memory_ticket(uint64_t ticketId);
 }
 }
 

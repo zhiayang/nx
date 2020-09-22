@@ -18,6 +18,7 @@ namespace nx
 
 		uint64_t create_memory_ticket(size_t len, uint64_t flags);
 		void collect_memory_ticket(ipc::mem_ticket_t* ticket, uint64_t ticketId);
+		void find_existing_memory_ticket(ipc::mem_ticket_t* ticket, uint64_t ticketId);
 		void release_memory_ticket(const ipc::mem_ticket_t* ticket);
 
 
@@ -27,6 +28,7 @@ namespace nx
 		void do_nothing();
 
 		void exit(int status);
+		uint64_t ipc_find_selector(ipc::selector_t sel);
 		int64_t ipc_send(uint64_t target, ipc::message_body_t* msg);
 		size_t ipc_poll();
 		void ipc_discard();

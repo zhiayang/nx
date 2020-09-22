@@ -11,7 +11,9 @@
 #include <string>
 #include <memory>
 
-#include <ipc.h>
+#include <nx/ipc.h>
+
+#include "export/vfs.h"
 
 namespace vfs
 {

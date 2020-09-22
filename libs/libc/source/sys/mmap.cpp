@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#include <syscall.h>
+#include <nx/syscall.h>
 
 extern "C" void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 {

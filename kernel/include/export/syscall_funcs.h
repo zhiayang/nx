@@ -20,16 +20,18 @@ namespace nx
 	constexpr uint64_t SYSCALL_IPC_SET_SIG_HANDLER  = 7;
 	constexpr uint64_t SYSCALL_IPC_SIGNAL           = 8;
 	constexpr uint64_t SYSCALL_IPC_SIGNAL_BLOCK     = 9;
+	constexpr uint64_t SYSCALL_IPC_FIND_SELECTOR    = 10;
 
-	constexpr uint64_t SYSCALL_MMAP_ANON            = 10;
-	constexpr uint64_t SYSCALL_MMAP_FILE            = 11;
-
-	constexpr uint64_t SYSCALL_VFS_READ             = 20;
-	constexpr uint64_t SYSCALL_VFS_WRITE            = 21;
+	constexpr uint64_t SYSCALL_MMAP_ANON            = 20;
+	constexpr uint64_t SYSCALL_MMAP_FILE            = 21;
 
 	constexpr uint64_t SYSCALL_MEMTICKET_CREATE     = 30;
 	constexpr uint64_t SYSCALL_MEMTICKET_COLLECT    = 31;
 	constexpr uint64_t SYSCALL_MEMTICKET_RELEASE    = 32;
+	constexpr uint64_t SYSCALL_MEMTICKET_FIND       = 33;
+
+	constexpr uint64_t SYSCALL_VFS_READ             = 80;
+	constexpr uint64_t SYSCALL_VFS_WRITE            = 81;
 
 	constexpr uint64_t SYSCALL_GET_NANOSECOND_TS    = 97;
 	constexpr uint64_t SYSCALL_USER_SIGNAL_LEAVE    = 98;

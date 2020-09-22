@@ -21,7 +21,7 @@ _start:
 	call init_libc
 
 	// Run the global constructors.
-	call _init
+	call call_constructors
 
 	// Restore argc and argv.
 	popq %rdi
@@ -29,6 +29,8 @@ _start:
 
 	// Run main
 	call main
+
+	call call_destructors
 
 	// Terminate the process with the exit code.
 	mov %rax, %rdi

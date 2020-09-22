@@ -29,6 +29,20 @@ namespace nx
 			return;
 	}
 
+	void syscall::find_existing_memory_ticket(ipc::mem_ticket_t* user_ticket, uint64_t ticketId)
+	{
+		if(ticketId == 0)
+			return;
+
+		auto ret_ticket = ipc::findExistingMemticket(ticketId);
+		if(ret_ticket.ticketId == 0)
+			return;
+
+		if(!copy_to_user(user_ticket, &ret_ticket, sizeof(ipc::mem_ticket_t)))
+			return;
+	}
+
+
 	void syscall::release_memory_ticket(const ipc::mem_ticket_t* user_ticket)
 	{
 		auto ticket = ipc::mem_ticket_t();

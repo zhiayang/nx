@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <syscall.h>
+#include <nx/syscall.h>
 #include <nx/thread_local.h>
 
 #include <stdio.h>
@@ -16,6 +16,14 @@
 namespace nx {
 namespace ipc
 {
+	uint64_t find_selector(const selector_t& sel)
+	{
+		uint64_t ret = 0;
+		__nx_syscall_2(SYSCALL_IPC_FIND_SELECTOR, ret, sel.sel, sel.len);
+
+		return ret;
+	}
+
 	int send(uint64_t target, const message_body_t* body)
 	{
 		int64_t ret = 0;
@@ -78,10 +86,19 @@ namespace ipc
 		return ticket;
 	}
 
+	mem_ticket_t find_existing_memory_ticket(uint64_t ticketId)
+	{
+		mem_ticket_t ticket { 0 };
+		__nx_syscall_2v(SYSCALL_MEMTICKET_FIND, &ticket, ticketId);
+
+		return ticket;
+	}
+
 	void release_memory_ticket(const mem_ticket_t& ticket)
 	{
 		__nx_syscall_1v(SYSCALL_MEMTICKET_RELEASE, &ticket);
 	}
+
 
 
 	void signal(const selector_t& sel, uint64_t a, uint64_t b, uint64_t c)

@@ -6,8 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <ipc.h>
-#include <syscall.h>
+#include <nx/ipc.h>
+#include <nx/syscall.h>
 
 #include "export/tty.h"
 

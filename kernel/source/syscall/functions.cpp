@@ -15,6 +15,11 @@ namespace syscall
 		size_t SyscallTableEntryCount = sizeof(SyscallTable) / sizeof(void*);
 	}
 
+	extern "C" void tmp_debug(uint64_t val)
+	{
+		error("DEBUG", "*** VAL = %lx", val);
+	}
+
 	static void init_vectors()
 	{
 		for(size_t i = 0; i < SyscallTableEntryCount; i++)
@@ -32,6 +37,7 @@ namespace syscall
 		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER]   = (void*) ipc_set_signal_handler;
 		SyscallTable[SYSCALL_IPC_SIGNAL]            = (void*) ipc_signal;
 		SyscallTable[SYSCALL_IPC_SIGNAL_BLOCK]      = (void*) ipc_signal_block;
+		SyscallTable[SYSCALL_IPC_FIND_SELECTOR]     = (void*) ipc_find_selector;
 
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;
@@ -40,10 +46,13 @@ namespace syscall
 		SyscallTable[SYSCALL_MEMTICKET_CREATE]      = (void*) create_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) collect_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_RELEASE]     = (void*) release_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_FIND]        = (void*) find_existing_memory_ticket;
 
 		// syscall/sc_vfs.cpp
 		SyscallTable[SYSCALL_VFS_READ]              = (void*) vfs_read;
 		SyscallTable[SYSCALL_VFS_WRITE]             = (void*) vfs_write;
+
+		SyscallTable[77]                            = (void*) tmp_debug;
 
 		SyscallTable[SYSCALL_GET_NANOSECOND_TS]     = (void*) nanosecond_timestamp;
 		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]     = (void*) user_signal_leave;

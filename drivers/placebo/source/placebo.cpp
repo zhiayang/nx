@@ -3,13 +3,17 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <stdio.h>
+#include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 
-#include <ipc.h>
+#include <nx/ipc.h>
+#include <nx/syscall.h>
+
 #include <svr/tty.h>
-#include <syscall.h>
+#include <svr/vfs.h>
 
 static constexpr int WIDTH = 1440;
 uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
@@ -27,6 +31,7 @@ uint64_t sig_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uin
 
 	return 0;
 }
+
 
 uint64_t test_handler(uint64_t sender, uint64_t type, uint64_t a, uint64_t b, uint64_t c)
 {
@@ -56,14 +61,11 @@ int fn1()
 	return 9 - fn2();
 }
 
-
 int main()
 {
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_TERMINATE, &sig_handler);
 	nx::ipc::install_intr_signal_handler(nx::ipc::SIGNAL_NORMAL, &test_handler);
 	printf("time for uwu\n");
-
-	uint64_t ctr = 0;
 
 	constexpr uint32_t colours[] = {
 		0xff'fdb813,
@@ -108,6 +110,7 @@ int main()
 			nx::ipc::receive(&body);
 
 			auto x = nx::ipc::extract<uint64_t>(body);
+			(void) x;
 
 			auto ticket = nx::ipc::collect_memory_ticket(1);
 			memcpy((void*) 0xFF'0000'0000, ticket.ptr, ticket.len);

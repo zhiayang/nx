@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <ipc.h>
+#include <nx/ipc.h>
 
 namespace vfs
 {

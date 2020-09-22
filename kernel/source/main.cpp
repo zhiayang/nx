@@ -36,11 +36,11 @@ namespace nx
 			pmm::getTotalPhysicalMemory() / 1024);
 
 
+		// scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
+		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
+
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
-
-		scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
-		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
 
 		// todo: make this more dynamic
 		{
