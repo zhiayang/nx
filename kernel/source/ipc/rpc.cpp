@@ -33,6 +33,8 @@ namespace nx::rpc
 		});
 
 		proc->rpcCalleeConnections.lock()->insert(ret);
+		log("rpc", "created connection (%lu): %lu -> %lu", ret, caller, callee);
+
 		return ret;
 	}
 
@@ -81,6 +83,10 @@ namespace nx::rpc
 		}
 
 		msg.counterpart = this->callerPid;
+		msg.sequence = this->seq++;
+		msg.status = RPC_OK;
+
+		log("rpc", "calling %lu (%lu -> %lu)", this->id, this->callerPid, this->calleePid);
 
 		// wait for existing things to finish
 		this->inProgress.wait(false);
@@ -108,6 +114,7 @@ namespace nx::rpc
 		}
 
 		msg.counterpart = this->calleePid;
+		msg.sequence = this->seq++;
 
 		// there must be something in progress...
 		assert(this->inProgress.get());

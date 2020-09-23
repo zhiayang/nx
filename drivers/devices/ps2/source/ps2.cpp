@@ -322,8 +322,9 @@ namespace ps2
 		{
 			auto x = read_data_immediate();
 
-			// if(KeyboardPort == 1)
-			// 	if(kb->addByte(x))
+			if(KeyboardPort == 1)
+				if(kb->addByte(x))
+					;
 			// 		nx::ipc::send<uint64_t>(1, 99);
 
 			square(cnt++);

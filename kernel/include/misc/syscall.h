@@ -39,7 +39,7 @@ namespace nx
 		uint64_t ipc_receive(ipc::message_body_t* msg);
 
 		void rpc_call(uint64_t connId, const rpc::message_t* params, rpc::message_t* result);
-		void rpc_call_void(uint64_t connId, const rpc::message_t* params, uint32_t* status);
+		uint32_t rpc_call_void(uint64_t connId, const rpc::message_t* params);
 		void rpc_return(uint64_t connId, const rpc::message_t* result);
 		void rpc_wait_call(uint64_t connId, rpc::message_t* call_params);
 		uint64_t rpc_wait_any_call(rpc::message_t* call_params);

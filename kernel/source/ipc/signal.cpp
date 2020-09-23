@@ -79,7 +79,7 @@ namespace nx
 				}
 				else
 				{
-					warn("ipc", "thread %lu has no handle for signal %lu", thr->threadId, sigType);
+					warn("ipc", "thread %lu has no handler for signal %lu", thr->threadId, sigType);
 					return false;
 				}
 			}

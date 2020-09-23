@@ -56,6 +56,7 @@ namespace interrupts
 		hand->thr       = thr;
 		hand->next      = 0;
 
+		log("irq", "tid %lu installed handler for irq %d", thr->threadId, num);
 		if(auto it = irqHandlers.find(num); it != irqHandlers.end())
 		{
 			auto head = it->value.handlers;

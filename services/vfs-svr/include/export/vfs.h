@@ -53,108 +53,105 @@ namespace vfs
 		its address space by passing large tickets to collect.
 	*/
 
-	namespace msg
+	namespace fns
 	{
-		constexpr uint8_t OP_REGISTER   = 0;
-		constexpr uint8_t OP_DEREGISTER = 1;
-		constexpr uint8_t OP_BIND       = 2;
-		constexpr uint8_t OP_OPEN       = 3;
-		constexpr uint8_t OP_CLOSE      = 4;
-		constexpr uint8_t OP_READ       = 5;
-		constexpr uint8_t OP_WRITE      = 6;
+		constexpr uint64_t OP_REGISTER   = 0;
+		constexpr uint64_t OP_DEREGISTER = 1;
+		constexpr uint64_t OP_BIND       = 2;
+		constexpr uint64_t OP_OPEN       = 3;
+		constexpr uint64_t OP_CLOSE      = 4;
+		constexpr uint64_t OP_READ       = 5;
+		constexpr uint64_t OP_WRITE      = 6;
 
-		constexpr uint8_t STATUS_OK                     = 0;
-		constexpr uint8_t STATUS_ERR_NOT_IMPLEMENTED    = 1;
-		constexpr uint8_t STATUS_ERR_INVALID_BUFFER     = 2;
-		constexpr uint8_t STATUS_ERR_INVALID_ARGS       = 3;
+		constexpr uint64_t ERR_NOT_IMPLEMENTED    = 1;
+		constexpr uint64_t ERR_INVALID_BUFFER     = 2;
+		constexpr uint64_t ERR_INVALID_ARGS       = 3;
 
-		struct Header
+		struct FnRegister
 		{
-			uint8_t op;
-			uint8_t status;
-			uint32_t sequence;
+			FnRegister(nx::ipc::memticket_id ticket) : ticket(ticket) { }
+
+			using return_type = void;
+			static constexpr auto function_number = OP_REGISTER;
+
+
+			nx::ipc::memticket_id ticket;
 		};
 
-		struct FnRegister : public Header
+		struct FnDeregister
 		{
+			FnDeregister(nx::ipc::memticket_id ticket) : ticket(ticket) { }
+
+			using return_type = void;
+			static constexpr auto function_number = OP_DEREGISTER;
+
+
 			nx::ipc::memticket_id ticket;
+		};
 
-		} __attribute__((packed));
-
-		struct FnDeregister : public Header
+		struct FnBind
 		{
-			nx::ipc::memticket_id ticket;
+			FnBind(const Handle& source, uint64_t flags, const Buffer& path)
+				: source(source), flags(flags), path(path) { }
 
-		} __attribute__((packed));
+			using return_type = Handle;
+			static constexpr auto function_number = OP_BIND;
 
-		struct FnBind : public Header
-		{
+
 			Handle source;
 			uint64_t flags;
 
 			Buffer path;
+		};
 
-		} __attribute__((packed));
-
-		struct FnOpen : public Header
+		struct FnOpen
 		{
+			FnOpen(uint64_t flags, const Buffer& path) : flags(flags), path(path) { }
+
+			using return_type = Handle;
+			static constexpr auto function_number = OP_OPEN;
+
+
 			uint64_t flags;
 			Buffer path;
+		};
 
-		} __attribute__((packed));
-
-		struct FnClose : public Header
+		struct FnClose
 		{
+			FnClose(const Handle& handle) : handle(handle) { }
+
+			using return_type = void;
+			static constexpr auto function_number = OP_CLOSE;
+
+
 			Handle handle;
+		};
 
-		} __attribute__((packed));
-
-		struct FnRead : public Header
+		struct FnRead
 		{
+			FnRead(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
+
+			using return_type = size_t;
+			static constexpr auto function_number = OP_READ;
+
+
 			Handle handle;
 			Buffer buffer;
+		};
 
-		} __attribute__((packed));
-
-		struct FnWrite : public Header
+		struct FnWrite
 		{
+			FnWrite(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
+
+			using return_type = size_t;
+			static constexpr auto function_number = OP_WRITE;
+
+
 			Handle handle;
 			Buffer buffer;
-
-		} __attribute__((packed));
-
+		};
 
 
 
-
-
-		struct ResRegister : public Header
-		{
-
-		} __attribute__((packed));
-
-		struct ResBind : public Header
-		{
-			Handle handle;
-
-		} __attribute__((packed));
-
-		struct ResOpen : public Header
-		{
-			Handle handle;
-
-		} __attribute__((packed));
-
-		struct ResRead : public Header
-		{
-			size_t didRead;
-
-		} __attribute__((packed));
-
-		struct ResWrite : public Header
-		{
-			size_t didWrite;
-
-		} __attribute__((packed));
 	}
 }

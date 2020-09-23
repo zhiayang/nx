@@ -11,6 +11,7 @@
 #include "internal.h"
 #include "export/vfs.h"
 
+#include <nx/rpc.h>
 #include <nx/syscall.h>
 
 
@@ -20,13 +21,11 @@ int main(int argc, char** argv)
 
 	while(true)
 	{
-		if(nx::ipc::poll() == 0)
-			continue;
+		uint64_t conn = 0;
+		nx::rpc::message_t msg = { };
+		msg = nx::rpc_wait_any_call(&conn);
 
-		nx::ipc::message_body_t body;
-		auto client = nx::ipc::receive(&body);
-
-		vfs::handleCall(client, std::move(body));
+		vfs::handleCall(conn, std::move(msg));
 	}
 }
 

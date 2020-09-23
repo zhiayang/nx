@@ -13,10 +13,11 @@ namespace nx::rpc
 {
 	struct Connection
 	{
-		uint64_t id;
+		uint64_t id = 0;
+		uint64_t seq = 0;
 
-		pid_t callerPid;
-		pid_t calleePid;
+		pid_t callerPid = 0;
+		pid_t calleePid = 0;
 
 		condvar<bool> inProgress;
 

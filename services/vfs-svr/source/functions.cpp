@@ -2,9 +2,13 @@
 // Copyright (c) 2020, zhiayang
 // Licensed under the Apache License Version 2.0.
 
+#include <assert.h>
+
 #include <map>
 #include <tuple>
 #include <optional>
+
+#include <nx/rpc.h>
 
 #include "internal.h"
 #include "export/vfs.h"
@@ -33,57 +37,64 @@ namespace vfs
 		std::map<uint64_t, vnode*> openHandles;
 	};
 
-	static std::map<pid_t, ProcessState> processTable;
-
-
-
-	void handleCall(pid_t client, nx::ipc::message_body_t body)
+	template <typename T>
+	static T& extract(nx::rpc::message_t& msg)
 	{
-		using namespace msg;
+		return *reinterpret_cast<T*>(&msg.bytes[0]);
+	}
 
-		auto pst = &processTable[client];
-		pst->pid = client;
+	static std::map<pid_t, ProcessState> processTable;
+	static std::map<uint64_t, pid_t> connectionTable;
+	static std::map<uint64_t, rpc::Server> serverTable;
 
-		auto op = ipc::extract<Header>(body).op;
+	void handleCall(uint64_t conn, nx::rpc::message_t msg)
+	{
+		auto pst = &processTable[msg.counterpart];
+		pst->pid = msg.counterpart;
 
-		if(op == OP_REGISTER)
+		connectionTable[conn] = pst->pid;
+
+		rpc::Server* srv = nullptr;
+		if(auto it = serverTable.find(conn); it == serverTable.end())
+			srv = &serverTable.emplace(conn, rpc::Server(conn)).first->second;
+
+		else
+			srv = &it->second;
+
+		assert(srv != nullptr);
+
+		auto op = msg.function;
+		if(op == fns::OP_REGISTER)
 		{
-			auto& msg = ipc::extract<FnRegister>(body);
-			fns::registerProc(pst, std::move(msg));
+			fns::registerProc(pst, srv, extract<fns::FnRegister>(msg));
 		}
-		else if(op == OP_DEREGISTER)
+		else if(op == fns::OP_DEREGISTER)
 		{
-			auto& msg = ipc::extract<FnDeregister>(body);
-			fns::unregisterProc(pst, std::move(msg));
+			fns::unregisterProc(pst, srv, extract<fns::FnDeregister>(msg));
 		}
-		else if(op == OP_BIND)
+		else if(op == fns::OP_BIND)
 		{
-			auto& msg = ipc::extract<FnBind>(body);
-			fns::bind(pst, std::move(msg));
+			fns::bind(pst, srv, extract<fns::FnBind>(msg));
 		}
-		else if(op == OP_OPEN)
+		else if(op == fns::OP_OPEN)
 		{
-			auto& msg = ipc::extract<FnOpen>(body);
-			fns::open(pst, std::move(msg));
+			fns::open(pst, srv, extract<fns::FnOpen>(msg));
 		}
-		else if(op == OP_CLOSE)
+		else if(op == fns::OP_CLOSE)
 		{
-			auto& msg = ipc::extract<FnClose>(body);
-			fns::close(pst, std::move(msg));
+			fns::close(pst, srv, extract<fns::FnClose>(msg));
 		}
-		else if(op == OP_READ)
+		else if(op == fns::OP_READ)
 		{
-			auto& msg = ipc::extract<FnRead>(body);
-			fns::read(pst, std::move(msg));
+			fns::read(pst, srv, extract<fns::FnRead>(msg));
 		}
-		else if(op == OP_WRITE)
+		else if(op == fns::OP_WRITE)
 		{
-			auto& msg = ipc::extract<FnWrite>(body);
-			fns::write(pst, std::move(msg));
+			fns::write(pst, srv, extract<fns::FnWrite>(msg));
 		}
 		else
 		{
-			error("invalid op %d from pid %lu", op, client);
+			error("invalid op %d from pid %lu", op, pst->pid);
 		}
 	}
 
@@ -140,7 +151,7 @@ namespace vfs
 
 
 
-		void registerProc(ProcessState* pst, msg::FnRegister msg)
+		void registerProc(ProcessState* pst, rpc::Server* srv, FnRegister msg)
 		{
 			if(pst->registeredTicket.ptr != 0)
 				ipc::release_memory_ticket(pst->registeredTicket);
@@ -148,49 +159,34 @@ namespace vfs
 			pst->registeredTicket = ipc::collect_memory_ticket(msg.ticket);
 			if(pst->registeredTicket.ptr == 0)
 				error("failed to collect ticket %lu for proc %lu", msg.ticket, pst->pid);
+
+			log("proc %lu registered with memticket %lu", pst->pid, pst->registeredTicket);
 		}
 
-		void unregisterProc(ProcessState* pst, msg::FnDeregister msg)
+		void unregisterProc(ProcessState* pst, rpc::Server* srv, FnDeregister msg)
 		{
 			if(pst->registeredTicket.ptr == 0)
 				return;
 
 			ipc::release_memory_ticket(pst->registeredTicket);
+			log("proc %lu unregistered memticket %lu", pst->pid, pst->registeredTicket);
 		}
 
-		void bind(ProcessState* pst, msg::FnBind msg)
+		void bind(ProcessState* pst, rpc::Server* srv, FnBind msg)
 		{
-			ipc::send(pst->pid, msg::ResBind {
-				msg::Header {
-					.op         = msg::OP_BIND,
-					.status     = msg::STATUS_ERR_NOT_IMPLEMENTED,
-					.sequence   = msg.sequence + 1
-				},
-				Handle {
-
-				}
-			});
+			srv->error<FnBind>(ERR_NOT_IMPLEMENTED);
 		}
 
-		void open(ProcessState* pst, msg::FnOpen msg)
+		void open(ProcessState* pst, rpc::Server* srv, FnOpen msg)
 		{
 			auto _buf = validate_buffer(pst, msg.path);
 			if(!_buf)
 			{
-				ipc::send(pst->pid, msg::ResOpen {
-					msg::Header {
-						.op         = msg::OP_OPEN,
-						.status     = msg::STATUS_ERR_INVALID_BUFFER,
-						.sequence   = msg.sequence + 1
-					}
-				});
-
+				srv->error<FnOpen>(ERR_INVALID_BUFFER);
 				return;
 			}
 
 			auto [ buf, len, memticket, needs_release ] = *_buf;
-
-			log("proc %lu: open %.*s", pst->pid, (int) len, buf);
 
 			auto hid = pst->nextHandleId++;
 			auto handle = Handle {
@@ -198,30 +194,23 @@ namespace vfs
 				.owner  = pst->pid
 			};
 
-
+			log("proc %lu: open %.*s -> handle(%lu)", pst->pid, (int) len, buf, handle.id);
 
 			if(needs_release)
 				ipc::release_memory_ticket(memticket);
 
-			ipc::send(pst->pid, msg::ResOpen {
-				msg::Header {
-					.op         = msg::OP_OPEN,
-					.status     = msg::STATUS_OK,
-					.sequence   = msg.sequence + 1
-				},
-				handle
-			});
+			srv->reply<FnOpen>(handle);
 		}
 
-		void close(ProcessState* pst, msg::FnClose msg)
+		void close(ProcessState* pst, rpc::Server* srv, FnClose msg)
 		{
 		}
 
-		void read(ProcessState* pst, msg::FnRead msg)
+		void read(ProcessState* pst, rpc::Server* srv, FnRead msg)
 		{
 		}
 
-		void write(ProcessState* pst, msg::FnWrite msg)
+		void write(ProcessState* pst, rpc::Server* srv, FnWrite msg)
 		{
 		}
 	}

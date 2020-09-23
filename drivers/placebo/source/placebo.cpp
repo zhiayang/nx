@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <nx/ipc.h>
+#include <nx/rpc.h>
 #include <nx/syscall.h>
 
 #include <svr/tty.h>
@@ -106,35 +107,21 @@ int main()
 
 		memcpy(tmp.ptr, path, plen);
 
-		auto openMsg = vfs::msg::FnOpen {
-			vfs::msg::Header {
-				.op         = vfs::msg::OP_OPEN,
-				.sequence   = 1
-			},
-			/* flags: */ 0,
-			vfs::Buffer {
-				.memTicketId = tmp.ticketId,
-				.offset      = 0,
-				.length      = plen
-			}
-		};
 
-		ipc::send(id, openMsg);
-	again:
-		while(ipc::poll() == 0)
-			;
+		{
+			auto client = rpc::Client(id);
+			assert(client.valid());
 
-		ipc::message_body_t body;
-		ipc::receive(&body);
+			auto handle = client.call<vfs::fns::FnOpen>(/* flags: */ 0,
+				vfs::Buffer {
+					.memTicketId = tmp.ticketId,
+					.offset = 0,
+					.length = plen
+				}
+			);
 
-		auto reply = ipc::extract<vfs::msg::ResOpen>(body);
-		if(reply.op != vfs::msg::OP_OPEN)
-			goto again;
-
-		auto handle = reply.handle;
-		printf("** received handle: %lu\n", handle.id);
-
-		// vfs::handleCall(client, std::move(body));
+			printf("** received handle: %lu\n", handle.id);
+		}
 
 
 		// ipc::release_memory_ticket(tmp);

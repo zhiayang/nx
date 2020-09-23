@@ -12,8 +12,14 @@
 #include <memory>
 
 #include <nx/ipc.h>
+#include <nx/rpc_message.h>
 
 #include "export/vfs.h"
+
+namespace nx::rpc
+{
+	struct Server;
+}
 
 namespace vfs
 {
@@ -48,22 +54,21 @@ namespace vfs
 	};
 
 	void init();
-	void handleCall(pid_t client, nx::ipc::message_body_t body);
+	void handleCall(uint64_t conn, nx::rpc::message_t msg);
 
 	struct ProcessState;
 
 	namespace fns
 	{
-		void registerProc(ProcessState* pst, msg::FnRegister msg);
-		void unregisterProc(ProcessState* pst, msg::FnDeregister msg);
+		void registerProc(ProcessState* pst, nx::rpc::Server* srv, fns::FnRegister msg);
+		void unregisterProc(ProcessState* pst, nx::rpc::Server* srv, fns::FnDeregister msg);
 
-		void bind(ProcessState* pst, msg::FnBind msg);
-		void open(ProcessState* pst, msg::FnOpen msg);
-		void close(ProcessState* pst, msg::FnClose msg);
-		void read(ProcessState* pst, msg::FnRead msg);
-		void write(ProcessState* pst, msg::FnWrite msg);
+		void bind(ProcessState* pst,  nx::rpc::Server* srv, fns::FnBind msg);
+		void open(ProcessState* pst,  nx::rpc::Server* srv, fns::FnOpen msg);
+		void close(ProcessState* pst, nx::rpc::Server* srv, fns::FnClose msg);
+		void read(ProcessState* pst,  nx::rpc::Server* srv, fns::FnRead msg);
+		void write(ProcessState* pst, nx::rpc::Server* srv, fns::FnWrite msg);
 	}
-
 
 	// utility functions
 	std::vector<std::string> splitPathComponents(const std::string& path);

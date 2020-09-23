@@ -40,23 +40,21 @@ namespace nx::syscall
 		return;
 	}
 
-	void rpc_call_void(uint64_t connId, const rpc::message_t* params, uint32_t* status)
+	uint32_t rpc_call_void(uint64_t connId, const rpc::message_t* params)
 	{
 		rpc::message_t input = { };
 
-		auto rpc_failure = [&](uint32_t err) -> void {
-			copy_to_user(status, &err, sizeof(uint32_t));
-		};
-
 		auto conn = rpc::getConnection(connId);
 		if(conn == nullptr)
-			return rpc_failure(rpc::RPC_ERR_NO_CONNECTION);
+			return rpc::RPC_ERR_NO_CONNECTION;
 
 		if(!copy_to_kernel(&input, params, sizeof(rpc::message_t)))
-			return rpc_failure(rpc::RPC_ERR_INVALID_ARGS);
+			return rpc::RPC_ERR_INVALID_ARGS;
 
 		if(!conn->sendCall(krt::move(input), /* isVoid: */ true))
-			return rpc_failure(rpc::RPC_ERR_WRONG_CONNECTION);
+			return rpc::RPC_ERR_WRONG_CONNECTION;
+
+		return rpc::RPC_OK;
 	}
 
 	void rpc_return(uint64_t connId, const rpc::message_t* result)
