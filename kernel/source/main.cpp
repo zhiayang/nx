@@ -62,23 +62,6 @@ namespace nx
 			scheduler::addThread(thr);
 		}
 
-		{
-			auto f = vfs::open(scheduler::getCurrentProcess()->ioctx, "/initrd/usr/test.txt", vfs::Mode::Read);
-			assert(f);
-
-			auto sz = vfs::stat(f).fileSize;
-			auto buf = new uint8_t[sz + 1];
-
-			auto didRead = vfs::read(f, buf, sz);
-			if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
-
-			vfs::close(f);
-			buf[sz] = 0;
-
-			log("kernel", "contents:\n%s\n", buf);
-			delete[] buf;
-		}
-
 		scheduler::addThread(scheduler::createThread(scheduler::getKernelProcess(), []() {
 
 			constexpr uint32_t colours[] = {
