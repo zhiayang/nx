@@ -19,6 +19,7 @@
 #include "krt/types/treemap.h"
 #include "krt/types/circbuf.h"
 #include "krt/types/hashmap.h"
+#include "krt/types/hashset.h"
 #include "krt/types/optional.h"
 #include "krt/types/string_view.h"
 

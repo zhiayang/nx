@@ -88,12 +88,14 @@ namespace krt
 		{
 			friend bucket_hashmap;
 
+			using value_type = std::conditional_t<std::is_same_v<ValueTy, void>, int, ValueTy>;
+
 			const KeyTy key;
-			ValueTy value;
+			value_type value;
 
 		private:
-			Bucket(const KeyTy& k, const ValueTy& v) : key(k), value(v) { }
-			Bucket(const KeyTy& k, ValueTy&& v) : key(k), value(move(v)) { }
+			Bucket(const KeyTy& k, const value_type& v) : key(k), value(v) { }
+			Bucket(const KeyTy& k, value_type&& v) : key(k), value(move(v)) { }
 
 			template <typename... Args>
 			Bucket(const KeyTy& k, Args&&... args) : key(k), value(args...) { }
@@ -194,19 +196,49 @@ namespace krt
 			return const_iterator(n, this, b);
 		}
 
-		iterator insert(const KeyTy& key, const ValueTy& value)
+		// when value != void (hashmap)
+		template <typename VT = ValueTy, typename = std::enable_if_t<!std::is_same_v<VT, void>>>
+		VT& operator [] (const KeyTy& key)
 		{
-			this->ensureSize();
-			return __insert_internal(this->ptr, this->numBuckets,
-				new (allocator::template allocate<Bucket>(1)) Bucket(key, value));
+			auto it = this->find(key);
+			if(it != this->end())
+				return it->value;
+
+			else
+				return this->insert(key, ValueTy())->value;
 		}
 
-		iterator insert(const KeyTy& key, ValueTy&& value)
+		template <typename VT = ValueTy, typename = std::enable_if_t<!std::is_same_v<VT, void>>>
+		iterator insert(const KeyTy& key, VT&& value)
+		{
+			this->ensureSize();
+			if constexpr (std::is_lvalue_reference_v<VT>)
+			{
+				return __insert_internal(this->ptr, this->numBuckets,
+					new (allocator::template allocate<Bucket>(1)) Bucket(key, value));
+			}
+			else
+			{
+				return __insert_internal(this->ptr, this->numBuckets,
+					new (allocator::template allocate<Bucket>(1)) Bucket(key, move(value)));
+			}
+		}
+
+
+		// when value == void (hashset)
+		template <typename VT = ValueTy, typename = std::enable_if_t<std::is_same_v<VT, void>>>
+		iterator insert(const KeyTy& key)
 		{
 			this->ensureSize();
 			return __insert_internal(this->ptr, this->numBuckets,
-				new (allocator::template allocate<Bucket>(1)) Bucket(key, move(value)));
+				new (allocator::template allocate<Bucket>(1)) Bucket(key, 1));
 		}
+
+
+
+
+
+
 
 		template <typename... Args>
 		iterator emplace(const KeyTy& key, Args&&... args)
@@ -215,8 +247,6 @@ namespace krt
 			return __insert_internal(this->ptr, this->numBuckets,
 				new (allocator::template allocate<Bucket>(1)) Bucket(key, args...));
 		}
-
-
 
 		bool remove(const KeyTy& key)
 		{
@@ -248,16 +278,6 @@ namespace krt
 
 			this->cnt = 0;
 			this->ensureSize();
-		}
-
-		ValueTy& operator [] (const KeyTy& key)
-		{
-			auto it = this->find(key);
-			if(it != this->end())
-				return it->value;
-
-			else
-				return this->insert(key, ValueTy())->value;
 		}
 
 
@@ -345,7 +365,11 @@ namespace krt
 			return nullopt;
 		}
 
-
+		bool contains(const KeyTy& key) const
+		{
+			auto it = this->find(key);
+			return it != this->end();
+		}
 
 	private:
 		static constexpr size_t STARTING_SIZE = 16;

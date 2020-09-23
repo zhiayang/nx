@@ -130,7 +130,7 @@ namespace krt
 		array& append(const array& s)                       { return impl::append(this, s); }
 
 		template <typename... Args>
-		array& emplace(Args&&... args)                      { return impl::emplace_element(this, args...); }
+		array& emplace(Args&&... args)                      { return impl::emplace_element(this, krt::forward<Args>(args)...); }
 
 		T& front()                                          { return impl::front(this); }
 		T& back()                                           { return impl::back(this); }

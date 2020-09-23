@@ -58,6 +58,9 @@ namespace nx
 	template <typename K, typename V, typename H = krt::hash<K>, typename Al = _allocator, typename Ab = _aborter>
 	using bucket_hashmap = krt::bucket_hashmap<K, V, Al, Ab, H>;
 
+	template <typename K, typename H = krt::hash<K>, typename Al = _allocator, typename Ab = _aborter>
+	using bucket_hashset = krt::bucket_hashset<K, Al, Ab, H>;
+
 	template <typename T, typename Ab = _aborter>
 	using optional = krt::optional<T, Ab>;
 
