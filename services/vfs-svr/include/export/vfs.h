@@ -63,12 +63,16 @@ namespace vfs
 		constexpr uint8_t OP_READ       = 5;
 		constexpr uint8_t OP_WRITE      = 6;
 
-		constexpr uint8_t STATUS_OK     = 0;
+		constexpr uint8_t STATUS_OK                     = 0;
+		constexpr uint8_t STATUS_ERR_NOT_IMPLEMENTED    = 1;
+		constexpr uint8_t STATUS_ERR_INVALID_BUFFER     = 2;
+		constexpr uint8_t STATUS_ERR_INVALID_ARGS       = 3;
 
 		struct Header
 		{
 			uint8_t op;
 			uint8_t status;
+			uint32_t sequence;
 		};
 
 		struct FnRegister : public Header
@@ -112,17 +116,19 @@ namespace vfs
 
 		} __attribute__((packed));
 
+		struct FnWrite : public Header
+		{
+			Handle handle;
+			Buffer buffer;
+
+		} __attribute__((packed));
+
 
 
 
 
 
 		struct ResRegister : public Header
-		{
-
-		} __attribute__((packed));
-
-		struct ResDeregister : public Header
 		{
 
 		} __attribute__((packed));
@@ -139,14 +145,15 @@ namespace vfs
 
 		} __attribute__((packed));
 
-		struct ResClose : public Header
-		{
-
-		} __attribute__((packed));
-
 		struct ResRead : public Header
 		{
 			size_t didRead;
+
+		} __attribute__((packed));
+
+		struct ResWrite : public Header
+		{
+			size_t didWrite;
 
 		} __attribute__((packed));
 	}

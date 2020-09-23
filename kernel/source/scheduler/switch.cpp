@@ -133,7 +133,7 @@ namespace scheduler
 			// since the sched state lock is not held, we *should be* safe to call wakeUpBlockers, which
 			// needs to acquire the lock to access the list of blocked threads.
 			if(blocking_cv)
-				blocking_cv->set(0);
+				blocking_cv->set(false);
 
 			return;
 		}

@@ -5,11 +5,11 @@
 #include "nx.h"
 #include "cpu/interrupts.h"
 
-namespace nx
+namespace nx::syscall
 {
 	using namespace nx::ipc;
 
-	uint64_t syscall::ipc_find_selector(ipc::selector_t sel)
+	uint64_t ipc_find_selector(ipc::selector_t sel)
 	{
 		auto thr = ipc::resolveSelector(sel);
 		if(!thr) return -1;
@@ -17,7 +17,7 @@ namespace nx
 		return thr->parent->processId;
 	}
 
-	void syscall::ipc_discard()
+	void ipc_discard()
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -31,7 +31,7 @@ namespace nx
 		});
 	}
 
-	size_t syscall::ipc_poll()
+	size_t ipc_poll()
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -39,7 +39,7 @@ namespace nx
 		return proc->pendingMessages.unsafeGet()->size();
 	}
 
-	uint64_t syscall::ipc_receive(message_body_t* msg)
+	uint64_t ipc_receive(message_body_t* msg)
 	{
 		// note: there is no race condition here cos new messages go to the back, and discard pops from the front.
 		auto ret = ipc_peek(msg);
@@ -48,7 +48,7 @@ namespace nx
 		return ret;
 	}
 
-	uint64_t syscall::ipc_peek(message_body_t* output)
+	uint64_t ipc_peek(message_body_t* output)
 	{
 		auto proc = scheduler::getCurrentProcess();
 		assert(proc);
@@ -65,7 +65,7 @@ namespace nx
 		});
 	}
 
-	int64_t syscall::ipc_send(uint64_t target, message_body_t* body)
+	int64_t ipc_send(uint64_t target, message_body_t* body)
 	{
 		if(target == 0) return -1;
 		auto senderId = (uint64_t) scheduler::getCurrentProcess()->processId;
@@ -88,13 +88,13 @@ namespace nx
 	// TODO: since the selector contains a pointer to a userspace string, we most
 	// likely need to sanitise this as well. sad reacts.
 
-	void syscall::ipc_signal(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
+	void ipc_signal(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
 	{
 		auto smb = signal_message_body_t(a, b, c);
 		ipc::signal(sel, ipc::SIGNAL_NORMAL, smb);
 	}
 
-	void syscall::ipc_signal_block(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
+	void ipc_signal_block(ipc::selector_t sel, uint64_t a, uint64_t b, uint64_t c)
 	{
 		auto smb = signal_message_body_t(a, b, c);
 
@@ -111,7 +111,7 @@ namespace nx
 
 
 	// returns the old handler.
-	void* syscall::ipc_set_signal_handler(uint64_t sigType, void* new_handler)
+	void* ipc_set_signal_handler(uint64_t sigType, void* new_handler)
 	{
 		if(sigType >= MAX_SIGNAL_TYPES)
 			return (void*) -1;
@@ -125,7 +125,7 @@ namespace nx
 		return ret;
 	}
 
-	void syscall::user_signal_leave(uint64_t returnCode)
+	void user_signal_leave(uint64_t returnCode)
 	{
 		auto thr = scheduler::getCurrentThread();
 		assert(thr);
@@ -142,6 +142,7 @@ namespace nx
 		thr->pendingSignalRestore = true;
 		scheduler::yield();
 	}
+
 }
 
 

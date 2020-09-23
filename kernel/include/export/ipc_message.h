@@ -23,7 +23,7 @@ namespace ipc
 
 	struct message_body_t
 	{
-		static constexpr size_t BufferSize = 256;
+		static constexpr size_t BufferSize = 128;
 
 		uint8_t bytes[BufferSize];
 	};

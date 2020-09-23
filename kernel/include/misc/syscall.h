@@ -5,6 +5,7 @@
 #pragma once
 #include "defs.h"
 #include "export/ipc_message.h"
+#include "export/rpc_message.h"
 #include "export/syscall_funcs.h"
 
 namespace nx
@@ -36,6 +37,14 @@ namespace nx
 		// returns the sender ID if there was a message, else 0.
 		uint64_t ipc_peek(ipc::message_body_t* msg);
 		uint64_t ipc_receive(ipc::message_body_t* msg);
+
+		void rpc_call(uint64_t connId, const rpc::message_t* params, rpc::message_t* result);
+		void rpc_call_void(uint64_t connId, const rpc::message_t* params, uint32_t* status);
+		void rpc_return(uint64_t connId, const rpc::message_t* result);
+		void rpc_wait_call(uint64_t connId, rpc::message_t* call_params);
+		uint64_t rpc_wait_any_call(rpc::message_t* call_params);
+		uint64_t rpc_open(uint64_t target);
+		void rpc_close(uint64_t connId);
 
 		// returns the old handler.
 		void* ipc_set_signal_handler(uint64_t sigType, void* new_handler);

@@ -3,35 +3,31 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <stdio.h>
+
+#include <map>
 #include <vector>
 #include <string>
 
 #include "internal.h"
 #include "export/vfs.h"
 
-#include <syscall.h>
+#include <nx/syscall.h>
 
-int main()
+
+int main(int argc, char** argv)
 {
 	vfs::init();
 
-	// while(true)
-	// {
-	// 	if(nx::ipc::poll() > 0)
-	// 	{
-	// 		nx::ipc::message_body_t msg;
-	// 		nx::ipc::receive(&msg);
+	while(true)
+	{
+		if(nx::ipc::poll() == 0)
+			continue;
 
-	// 		struct omo {
-	// 			int a;
-	// 			int b;
+		nx::ipc::message_body_t body;
+		auto client = nx::ipc::receive(&body);
 
-	// 		} __attribute__((packed));
-
-	// 		auto x = nx::ipc::extract<omo>(msg);
-	// 		printf("a = %d, b = %d\n", x.a, x.b);
-	// 	}
-	// }
+		vfs::handleCall(client, std::move(body));
+	}
 }
 
 

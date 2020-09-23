@@ -17,18 +17,25 @@
 
 namespace vfs
 {
-	constexpr int TYPE_NORMAL = 0x01;
-	constexpr int TYPE_FOLDER = 0x02;
-	constexpr int TYPE_ROOT   = 0x80;
+	constexpr uint16_t TYPE_NORMAL = 0x01;
+	constexpr uint16_t TYPE_FOLDER = 0x02;
+	constexpr uint16_t TYPE_ROOT   = 0x80;
 
 	// time for some fancy "modern" c++??
 	struct vnode
 	{
 		id_t id = 0;
-		int type = 0;
+
+		off_t offset   = 0;
+		uint32_t mode  = 0;
+		uint16_t type  = 0;
+		uint16_t flags = 0;
+
+		// something like inode number or whatever
+		uint64_t driverData = 0;
 
 		std::shared_ptr<vnode> parent;
-		std::vector<std::unique_ptr<vnode>> children;
+		std::vector<std::shared_ptr<vnode>> children;
 	};
 
 	struct Filesystem
@@ -37,10 +44,25 @@ namespace vfs
 		nx::ipc::selector_t sel_dev;
 
 		std::string mountpoint;
-		int flags = 0;
+		uint32_t flags = 0;
 	};
 
 	void init();
+	void handleCall(pid_t client, nx::ipc::message_body_t body);
+
+	struct ProcessState;
+
+	namespace fns
+	{
+		void registerProc(ProcessState* pst, msg::FnRegister msg);
+		void unregisterProc(ProcessState* pst, msg::FnDeregister msg);
+
+		void bind(ProcessState* pst, msg::FnBind msg);
+		void open(ProcessState* pst, msg::FnOpen msg);
+		void close(ProcessState* pst, msg::FnClose msg);
+		void read(ProcessState* pst, msg::FnRead msg);
+		void write(ProcessState* pst, msg::FnWrite msg);
+	}
 
 
 	// utility functions

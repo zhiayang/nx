@@ -156,6 +156,11 @@ namespace nx
 			Synchronised<nx::list<ipc::message_t>, nx::mutex> pendingMessages;
 			Synchronised<nx::list<ipc::memticket_id>, nx::mutex> collectedTickets;
 
+			// note: this only knows about the rpc connections where the process is a CALLEE.
+			// this facilitates the rpc_wait_any() system call.
+			wait_queue<uint64_t> rpcCalleePending;
+			Synchronised<nx::bucket_hashset<uint64_t>, nx::mutex> rpcCalleeConnections;
+
 			vmm::AddressSpace addrspace;
 
 

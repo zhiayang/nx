@@ -27,7 +27,7 @@ namespace syscall
 
 		SyscallTable[SYSCALL_EXIT]                  = (void*) exit;
 
-		// ipc/sc_handlers.cpp
+		// syscall/sc_ipc.cpp
 		SyscallTable[SYSCALL_IPC_SEND]              = (void*) ipc_send;
 		SyscallTable[SYSCALL_IPC_PEEK]              = (void*) ipc_peek;
 		SyscallTable[SYSCALL_IPC_POLL]              = (void*) ipc_poll;
@@ -39,10 +39,20 @@ namespace syscall
 		SyscallTable[SYSCALL_IPC_SIGNAL_BLOCK]      = (void*) ipc_signal_block;
 		SyscallTable[SYSCALL_IPC_FIND_SELECTOR]     = (void*) ipc_find_selector;
 
+		// syscall/sc_rpc.cpp
+		SyscallTable[SYSCALL_RPC_CALL]              = (void*) rpc_call;
+		SyscallTable[SYSCALL_RPC_CALL_VOID]         = (void*) rpc_call_void;
+		SyscallTable[SYSCALL_RPC_RETURN]            = (void*) rpc_return;
+		SyscallTable[SYSCALL_RPC_WAIT_CALL]         = (void*) rpc_wait_call;
+		SyscallTable[SYSCALL_RPC_WAIT_ANY_CALL]     = (void*) rpc_wait_any_call;
+		SyscallTable[SYSCALL_RPC_OPEN]              = (void*) rpc_open;
+		SyscallTable[SYSCALL_RPC_CLOSE]             = (void*) rpc_close;
+
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;
 		SyscallTable[SYSCALL_MMAP_FILE]             = (void*) mmap_file;
 
+		// syscall/sc_memticket.cpp
 		SyscallTable[SYSCALL_MEMTICKET_CREATE]      = (void*) create_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) collect_memory_ticket;
 		SyscallTable[SYSCALL_MEMTICKET_RELEASE]     = (void*) release_memory_ticket;

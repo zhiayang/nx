@@ -6,6 +6,7 @@
 #include "defs.h"
 
 #include "export/ipc_message.h"
+#include "export/rpc_message.h"
 
 namespace nx::ipc
 {
@@ -15,7 +16,14 @@ namespace nx::ipc
 		uint64_t targetId;
 
 		uint64_t flags;
-		message_body_t body;
+
+		union {
+			message_body_t body;
+			rpc::message_t rpc;
+		};
+
+		static_assert(sizeof(rpc::message_t) <= 128);
+		static_assert(sizeof(message_body_t) <= 128);
 	};
 
 	struct signal_message_t
