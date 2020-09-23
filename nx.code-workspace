@@ -34,7 +34,7 @@
 		},
 		{
 			"name": "ps2",
-			"path": "drivers/ps2"
+			"path": "drivers/devices/ps2"
 		},
 		{
 			"name": "tty-svr",

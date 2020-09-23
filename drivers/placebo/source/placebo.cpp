@@ -84,7 +84,67 @@ int main()
 	constexpr uint64_t update_time = 250'000'000;
 
 	printf("time for owo\n");
-	int foozle = 0;
+
+	{
+		syscall::kernel_log(2, "placebo", 7, "trying to vfs...", 16);
+
+		using namespace nx;
+
+		auto sel = "/proc/name/vfs-svr";
+		auto id = ipc::find_selector(ipc::selector_t(sel));
+		if(id == (uint64_t) -1)
+		{
+			printf("could not find vfs-svr\n");
+			abort();
+		}
+
+		auto tmp = ipc::collect_memory_ticket(ipc::create_memory_ticket(1024, 0));
+		assert(tmp.ptr != nullptr);
+
+		auto path = "/initrd/usr/test.txt";
+		auto plen = strlen(path);
+
+		memcpy(tmp.ptr, path, plen);
+
+		auto openMsg = vfs::msg::FnOpen {
+			vfs::msg::Header {
+				.op         = vfs::msg::OP_OPEN,
+				.sequence   = 1
+			},
+			/* flags: */ 0,
+			vfs::Buffer {
+				.memTicketId = tmp.ticketId,
+				.offset      = 0,
+				.length      = plen
+			}
+		};
+
+		ipc::send(id, openMsg);
+	again:
+		while(ipc::poll() == 0)
+			;
+
+		ipc::message_body_t body;
+		ipc::receive(&body);
+
+		auto reply = ipc::extract<vfs::msg::ResOpen>(body);
+		if(reply.op != vfs::msg::OP_OPEN)
+			goto again;
+
+		auto handle = reply.handle;
+		printf("** received handle: %lu\n", handle.id);
+
+		// vfs::handleCall(client, std::move(body));
+
+
+		// ipc::release_memory_ticket(tmp);
+	}
+
+
+
+
+
+
 	while(true)
 	{
 		auto ts = syscall::nanosecond_timestamp();

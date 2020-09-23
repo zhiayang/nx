@@ -11,7 +11,7 @@
                 "__orionx__",
                 "_DEBUG"
             ],
-            "compilerPath": "${workspaceFolder}/../../build/toolchain/bin/x86_64-orionx-g++",
+            "compilerPath": "${workspaceFolder:nx}/build/toolchain/bin/x86_64-orionx-g++",
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
