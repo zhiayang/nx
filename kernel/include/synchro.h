@@ -112,6 +112,7 @@ namespace nx
 		scheduler::Thread* holder = 0;
 	};
 
+
 	template <typename T>
 	struct condvar
 	{
@@ -175,9 +176,162 @@ namespace nx
 		condition cond;
 	};
 
+	template <typename T>
 	struct semaphore
 	{
+		semaphore() : value(0) { }
+		semaphore(T x) : value(x) { }
+
+		void post(T num = 1)
+		{
+			{
+				autolock lk(&this->mtx);
+				this->value += num;
+			}
+
+			if(num > 1) scheduler::notifyAll(&this->cond);
+			else        scheduler::notifyOne(&this->cond);
+		}
+
+		void post_if_waiting(T num = 1)
+		{
+			if(atomic::load(&this->waiters) > 0)
+				this->post(num);
+		}
+
+		void wait()
+		{
+			{
+				autolock lk(&this->mtx);
+				if(this->value > 0)
+				{
+					this->value -= 1;
+					return;
+				}
+			}
+
+
+			atomic::incr(&this->waiters);
+			scheduler::block(&this->cond);
+
+			{
+				autolock lk(&this->mtx);
+				this->value -= 1;
+
+				atomic::decr(&this->waiters);
+			}
+		}
+
+		uint64_t num_waiters()
+		{
+			return atomic::load(&this->waiters);
+		}
+
+	private:
+		T value = 0;
+		uint64_t waiters = 0;
+		condition cond;
+		mutex mtx;
 	};
+
+
+	template <typename T>
+	struct wait_queue
+	{
+		wait_queue() : sem(0) { }
+
+		void push(T x)
+		{
+			{
+				autolock lk(&this->mtx);
+				this->queue.append(krt::move(x));
+			}
+			this->sem.post();
+		}
+
+		void push_if_waiting(T x)
+		{
+			if(this->sem.num_waiters() == 0)
+				return;
+
+			this->push(krt::move(x));
+		}
+
+		template <typename... Args>
+		void emplace(Args&&... xs)
+		{
+			{
+				autolock lk(&this->mtx);
+				this->queue.emplace(krt::forward<Args>(xs)...);
+			}
+			this->sem.post();
+		}
+
+		void push_quiet(T x)
+		{
+			{
+				autolock lk(&this->mtx);
+				this->queue.append(krt::move(x));
+			}
+
+			atomic::incr(&this->pending_notifies);
+		}
+
+		template <typename... Args>
+		void emplace_quiet(Args&&... xs)
+		{
+			{
+				autolock lk(&this->mtx);
+				this->queue.emplace_back(krt::forward<Args>(xs)...);
+			}
+
+			atomic::incr(&this->pending_notifies);
+		}
+
+		void notify_pending()
+		{
+			auto tmp = atomic::store(&this->pending_notifies, 0);
+			this->sem.post(tmp);
+		}
+
+		T pop()
+		{
+			this->sem.wait();
+
+			{
+				autolock lk(&this->mtx);
+				auto ret = krt::move(this->queue.front());
+				this->queue.popFront();
+
+				return ret;
+			}
+		}
+
+		size_t size() const
+		{
+			return this->queue.size();
+		}
+
+	private:
+		int64_t pending_notifies = 0;
+		nx::list<T> queue;
+		mutex mtx;                  // mtx is for protecting the queue during push/pop
+		semaphore<uint64_t> sem;    // sem is for signalling when the queue has stuff (or not)
+	};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	template <typename T, bool> struct _wrapper { };
@@ -333,7 +487,6 @@ namespace nx
 
 
 
-
 	template <typename T>
 	struct CriticalSection
 	{
@@ -354,6 +507,7 @@ namespace nx
 		CriticalSection& operator= (const CriticalSection&) = delete;
 		CriticalSection& operator= (CriticalSection&&) = delete;
 	};
+
 }
 
 
