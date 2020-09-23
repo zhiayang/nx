@@ -203,10 +203,8 @@ $ESP_PART_UUID\nu\n2\n$ROOT_PART_UUID\nr\nw\n" | fdisk $UEFI_OUTPUT_DISK > /dev/
 			exit 1
 		fi
 
-		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}downloading bootboot${_NORMAL}" \
-				"(https://gitlab.com/bztsrc/bootboot)"
-		wget -qnc https://gitlab.com/bztsrc/bootboot/raw/master/boot.bin
-		wget -qnc https://gitlab.com/bztsrc/bootboot/raw/master/x86_64-bios/mkboot.c
+		cp $PROJECT_DIR/utils/bootboot_mkboot.c ./mkboot.c
+		cp $PROJECT_DIR/utils/bootboot_stage1.bin ./boot.bin
 
 		xxd -i boot.bin | sed 's/boot_bin/_binary____boot_bin_start/g' > boot_include.c
 		echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}compiling mkboot${_NORMAL}"
