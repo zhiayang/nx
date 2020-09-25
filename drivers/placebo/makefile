@@ -3,7 +3,9 @@
 
 CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -g -fno-omit-frame-pointer -Wall
 
-.PHONY: all
+.PHONY: all install-headers
+
+install-headers:
 
 all: $(INITRD_DIR)/drivers/placebo
 

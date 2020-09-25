@@ -16,9 +16,13 @@ CXXDEPS     = $(CXXOBJ:.o=.d)
 CDEPS       = $(COBJ:.o=.d)
 
 
-.PHONY: all
+.PHONY: all install-headers
 
 all: $(SYSROOT)/usr/lib/libnxsc.a
+
+install-headers:
+	@mkdir -p $(SYSROOT)/usr/include/nx/
+	@cp -R include/* $(SYSROOT)/usr/include/nx/
 
 print-libnxsc:
 	@echo "# libnxsc"
@@ -37,6 +41,7 @@ $(SYSROOT)/usr/lib/libnxsc.a: $(SOBJ) $(COBJ) $(CXXOBJ)
 %.s.o: %.s makefile | print-libnxsc
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
+
 
 
 -include $(CXXDEPS)

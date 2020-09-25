@@ -14,6 +14,8 @@
 #include <nx/ipc.h>
 #include <nx/rpc_message.h>
 
+#include <zst/result.h>
+
 #include "export/vfs.h"
 
 namespace nx::rpc
@@ -60,14 +62,14 @@ namespace vfs
 
 	namespace fns
 	{
-		void registerProc(ProcessState* pst, nx::rpc::Server* srv, fns::FnRegister msg);
-		void unregisterProc(ProcessState* pst, nx::rpc::Server* srv, fns::FnDeregister msg);
+		void rpc_registerProc(ProcessState* pst, nx::rpc::Server* srv, fns::Register msg);
+		void rpc_unregisterProc(ProcessState* pst, nx::rpc::Server* srv, fns::Deregister msg);
 
-		void bind(ProcessState* pst,  nx::rpc::Server* srv, fns::FnBind msg);
-		void open(ProcessState* pst,  nx::rpc::Server* srv, fns::FnOpen msg);
-		void close(ProcessState* pst, nx::rpc::Server* srv, fns::FnClose msg);
-		void read(ProcessState* pst,  nx::rpc::Server* srv, fns::FnRead msg);
-		void write(ProcessState* pst, nx::rpc::Server* srv, fns::FnWrite msg);
+		void rpc_bind(ProcessState* pst,  nx::rpc::Server* srv, fns::Bind msg);
+		void rpc_open(ProcessState* pst,  nx::rpc::Server* srv, fns::Open msg);
+		void rpc_close(ProcessState* pst, nx::rpc::Server* srv, fns::Close msg);
+		void rpc_read(ProcessState* pst,  nx::rpc::Server* srv, fns::Read msg);
+		void rpc_write(ProcessState* pst, nx::rpc::Server* srv, fns::Write msg);
 	}
 
 	// utility functions
@@ -77,6 +79,15 @@ namespace vfs
 
 	bool isPathSubset(const std::vector<std::string>& total, const std::vector<std::string>& subset);
 	std::vector<std::string> getFSRelativePath(Filesystem* fs, const std::vector<std::string>& components);
+
+
+	zst::Result<Handle, uint64_t> mount();
+	zst::Result<Handle, uint64_t> bind(std::string_view path, Handle source, uint64_t flags);
+	zst::Result<Handle, uint64_t> open(std::string_view path, uint64_t flags);
+	void close(Handle handle);
+
+
+
 
 
 	// wrappers for kernel log.

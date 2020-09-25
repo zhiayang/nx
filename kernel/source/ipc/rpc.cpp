@@ -82,11 +82,11 @@ namespace nx::rpc
 			return false;
 		}
 
-		msg.counterpart = this->callerPid;
+		msg.counterpart = scheduler::getCurrentProcess()->processId;
 		msg.sequence = this->seq++;
 		msg.status = RPC_OK;
 
-		log("rpc", "calling %lu (%lu -> %lu)", this->id, this->callerPid, this->calleePid);
+		dbg("rpc", "call %lu (%lu -> %lu)", this->id, msg.counterpart, this->calleePid);
 
 		// wait for existing things to finish
 		this->inProgress.wait(false);
@@ -107,19 +107,24 @@ namespace nx::rpc
 
 	bool Connection::sendResult(message_t msg)
 	{
-		if(auto p = scheduler::getCurrentProcess()->processId; p != this->calleePid)
-		{
-			error("rpc", "pid %lu is not the designated callee of rpc_conn %lu", p, this->id);
-			return false;
-		}
+		//* we check the callerPid for calls, but not the calleePid for returns. this is to
+		//* allow a server (eg. A) to forward client calls to another server (eg. B), so that
+		//* B can return data directly to the client; instead of C -> A -> B -> A -> C, we
+		//* can 'just' do C -> A -> B -> C.
 
-		msg.counterpart = this->calleePid;
+		// TODO:
+		// for now, there is no mechanism to "transfer" the connection to another server, so
+		// that we can potentially do C -> A -> B -> C first, but then only C -> B -> C for
+		// subsequent calls -- as long as both A and B agree on some plumbing.
+
+		msg.counterpart = scheduler::getCurrentProcess()->processId;
 		msg.sequence = this->seq++;
 
 		// there must be something in progress...
 		assert(this->inProgress.get());
 
 		this->results.lock()->append(krt::move(msg));
+		dbg("rpc", "return %lu (%lu <- %lu)", this->id, this->callerPid, msg.counterpart);
 
 		// notify that we're done.
 		this->inProgress.set(false);

@@ -218,6 +218,46 @@ namespace nx
 
 
 
+/*
+	todo (24/09/2020):
+
+	1. figure out how to implement 'rpc_forward' system call.
+		we want the following flow to be possible: client -> server -> delegate -> client
+		in the context of vfs, this means that the filesystem driver sends data straight back to the
+		client process without going through the vfs on the way back.
+
+		ideally, this will scale to the following scenario as well: client -> vfs -> fs -> disk -> client,
+		so we do not need a round-trip back to the vfs nor the filesystem driver either. but that's for
+		another time.
+
+		currently, we removed the requirement that only the designated callee can call rpc_return on a
+		connection; at the most basic level, this enables the delegate server to reply on the connection
+		that it does not own. not sure if this is a good thing; we might want to add kernel mechanisms
+		to ensure that only properly delegated servers (eg. rpc_delegate(conn, pid)) can reply to a given
+		connection.
+
+		anyway, the next thing is how to actually forward the message. currently the idea is that the
+		server and the delegate will have their own connection, and rpc_forward will copy the message from
+		the client<->server connection to the server<->delegate connection, potentially modifying some
+		flags (eg. RPC_FORWARDED?). importantly, there needs to be a way to tell the delegate the original
+		connection id that it should reply to.
+
+		the more i think about it, the more i feel that rpc_forward should not actually be a thing... because
+		it is obvious that each intermediate server (in a chain of delegates) will need to transform the data
+		in *some* manner -- if not then it would be pretty useless. furthermore, we need a way to tell the
+		delegate about the original connection, plus whatever data; it makes sense that we would just use
+		rpc_call to invoke the delegate with application-specific parameter formats and set some application
+		defined flag as well to indicate that it's a forwarded message...?
+
+		this would imply that any given server must be written to accept forwarded messages and with a specific
+		protocol at that, but i think that's fine? like we can write all the fs drivers to interpret forwards
+		from the vfs server, and we can write all the disk drivers to interpret forwards from fs drivers...
+
+
+	2. implement basic vfs proof of concept:
+		(a) tarfs driver
+		(b) vfs mount, tell it about tarfs somehow
+*/
 
 
 

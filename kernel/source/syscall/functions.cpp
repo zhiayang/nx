@@ -41,12 +41,13 @@ namespace syscall
 
 		// syscall/sc_rpc.cpp
 		SyscallTable[SYSCALL_RPC_CALL]              = (void*) rpc_call;
-		SyscallTable[SYSCALL_RPC_CALL_VOID]         = (void*) rpc_call_void;
+		SyscallTable[SYSCALL_RPC_CALL_PROCEDURE]    = (void*) rpc_call_procedure;
 		SyscallTable[SYSCALL_RPC_RETURN]            = (void*) rpc_return;
 		SyscallTable[SYSCALL_RPC_WAIT_CALL]         = (void*) rpc_wait_call;
 		SyscallTable[SYSCALL_RPC_WAIT_ANY_CALL]     = (void*) rpc_wait_any_call;
 		SyscallTable[SYSCALL_RPC_OPEN]              = (void*) rpc_open;
 		SyscallTable[SYSCALL_RPC_CLOSE]             = (void*) rpc_close;
+		SyscallTable[SYSCALL_RPC_FORWARD]           = (void*) rpc_forward;
 
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;

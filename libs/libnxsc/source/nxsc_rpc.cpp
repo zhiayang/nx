@@ -19,10 +19,10 @@ namespace nx
 		return result;
 	}
 
-	uint32_t rpc_call_void(uint64_t connId, const rpc::message_t& params)
+	uint32_t rpc_call_procedure(uint64_t connId, const rpc::message_t& params)
 	{
 		uint64_t ret = 0;
-		__nx_syscall_2(SYSCALL_RPC_CALL_VOID, ret, connId, &params);
+		__nx_syscall_2(SYSCALL_RPC_CALL_PROCEDURE, ret, connId, &params);
 
 		return (uint32_t) ret;
 	}

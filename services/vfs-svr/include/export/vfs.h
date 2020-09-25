@@ -67,36 +67,36 @@ namespace vfs
 		constexpr uint64_t ERR_INVALID_BUFFER     = 2;
 		constexpr uint64_t ERR_INVALID_ARGS       = 3;
 
-		struct FnRegister
+		struct Register
 		{
-			FnRegister(nx::ipc::memticket_id ticket) : ticket(ticket) { }
+			Register(nx::ipc::memticket_id ticket) : ticket(ticket) { }
 
-			using return_type = void;
 			static constexpr auto function_number = OP_REGISTER;
-
-
-			nx::ipc::memticket_id ticket;
-		};
-
-		struct FnDeregister
-		{
-			FnDeregister(nx::ipc::memticket_id ticket) : ticket(ticket) { }
-
 			using return_type = void;
-			static constexpr auto function_number = OP_DEREGISTER;
-
+			using error_type = uint64_t;
 
 			nx::ipc::memticket_id ticket;
 		};
 
-		struct FnBind
+		struct Deregister
 		{
-			FnBind(const Handle& source, uint64_t flags, const Buffer& path)
+			Deregister(nx::ipc::memticket_id ticket) : ticket(ticket) { }
+
+			static constexpr auto function_number = OP_DEREGISTER;
+			using return_type = void;
+			using error_type = uint64_t;
+
+			nx::ipc::memticket_id ticket;
+		};
+
+		struct Bind
+		{
+			Bind(const Handle& source, uint64_t flags, const Buffer& path)
 				: source(source), flags(flags), path(path) { }
 
-			using return_type = Handle;
 			static constexpr auto function_number = OP_BIND;
-
+			using return_type = Handle;
+			using error_type = uint64_t;
 
 			Handle source;
 			uint64_t flags;
@@ -104,48 +104,48 @@ namespace vfs
 			Buffer path;
 		};
 
-		struct FnOpen
+		struct Open
 		{
-			FnOpen(uint64_t flags, const Buffer& path) : flags(flags), path(path) { }
+			Open(uint64_t flags, const Buffer& path) : flags(flags), path(path) { }
 
-			using return_type = Handle;
 			static constexpr auto function_number = OP_OPEN;
-
+			using return_type = Handle;
+			using error_type = uint64_t;
 
 			uint64_t flags;
 			Buffer path;
 		};
 
-		struct FnClose
+		struct Close
 		{
-			FnClose(const Handle& handle) : handle(handle) { }
+			Close(const Handle& handle) : handle(handle) { }
 
-			using return_type = void;
 			static constexpr auto function_number = OP_CLOSE;
-
+			using return_type = void;
+			using error_type = uint64_t;
 
 			Handle handle;
 		};
 
-		struct FnRead
+		struct Read
 		{
-			FnRead(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
+			Read(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
 
-			using return_type = size_t;
 			static constexpr auto function_number = OP_READ;
-
+			using return_type = size_t;
+			using error_type = uint64_t;
 
 			Handle handle;
 			Buffer buffer;
 		};
 
-		struct FnWrite
+		struct Write
 		{
-			FnWrite(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
+			Write(const Handle& handle, const Buffer& buffer) : handle(handle), buffer(buffer) { }
 
-			using return_type = size_t;
 			static constexpr auto function_number = OP_WRITE;
-
+			using return_type = size_t;
+			using error_type = uint64_t;
 
 			Handle handle;
 			Buffer buffer;

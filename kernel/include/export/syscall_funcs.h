@@ -23,12 +23,13 @@ namespace nx
 	constexpr uint64_t SYSCALL_IPC_FIND_SELECTOR    = 10;
 
 	constexpr uint64_t SYSCALL_RPC_CALL             = 11;
-	constexpr uint64_t SYSCALL_RPC_CALL_VOID        = 12;
+	constexpr uint64_t SYSCALL_RPC_CALL_PROCEDURE   = 12;
 	constexpr uint64_t SYSCALL_RPC_RETURN           = 13;
 	constexpr uint64_t SYSCALL_RPC_WAIT_CALL        = 14;
 	constexpr uint64_t SYSCALL_RPC_WAIT_ANY_CALL    = 15;
 	constexpr uint64_t SYSCALL_RPC_OPEN             = 16;
 	constexpr uint64_t SYSCALL_RPC_CLOSE            = 17;
+	constexpr uint64_t SYSCALL_RPC_FORWARD          = 18;
 
 	constexpr uint64_t SYSCALL_MMAP_ANON            = 20;
 	constexpr uint64_t SYSCALL_MMAP_FILE            = 21;

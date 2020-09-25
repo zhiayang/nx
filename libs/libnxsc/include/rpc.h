@@ -10,11 +10,12 @@
 #include <sys/types.h>
 
 #include <nx/rpc_message.h>
+#include <zst/result.h>
 
 namespace nx {
 
 	rpc::message_t rpc_call(uint64_t connId, const rpc::message_t& params);
-	uint32_t rpc_call_void(uint64_t connId, const rpc::message_t& params);
+	uint32_t rpc_call_procedure(uint64_t connId, const rpc::message_t& params);
 	void rpc_return(uint64_t connId, const rpc::message_t& result);
 
 	rpc::message_t rpc_wait_call(uint64_t connId);
@@ -32,6 +33,7 @@ namespace nx {
 			SomeFunction(...) : field(...) {  }
 
 			using return_type = <return_type>;
+			using error_type = <error_type>;
 			static constexpr uint64_t function_number = ...;
 
 		private:
@@ -52,6 +54,7 @@ namespace nx {
 
 	namespace rpc
 	{
+		// i'd rather not pull in the entirety of type_traits just for is_void...
 		namespace __detail
 		{
 			template <typename A>
@@ -70,36 +73,43 @@ namespace nx {
 			void close() { if(this->connId != 0) rpc_close(this->connId); this->connId = 0; }
 
 
-			template <typename Func, typename... Args>
-			typename Func::return_type call(Args&&... args)
+			template <typename Func,
+				typename ReturnType = typename Func::return_type,
+				typename ErrorType = typename Func::error_type,
+				typename... Args
+			>
+			zst::Result<ReturnType, ErrorType> call(Args&&... args)
 			{
-				using return_type = typename Func::return_type;
+				using Ret = zst::Result<ReturnType, ErrorType>;
 
 				static_assert(sizeof(Func) <= rpc::message_t::MAX_SIZE);
-				static_assert(sizeof(return_type) <= rpc::message_t::MAX_SIZE);
+				static_assert(sizeof(ReturnType) <= rpc::message_t::MAX_SIZE);
 
 				rpc::message_t params = { };
 				params.function = Func::function_number;
 
 				new (reinterpret_cast<Func*>(&params.bytes[0])) Func(static_cast<Args&&>(args)...);
 
-				if constexpr (__detail::is_void<return_type>::value)
-				{
-					// TODO: figure out what to do with this status...
-					auto status = rpc_call_void(this->connId, params);
-				}
-				else
 				{
 					auto ret = rpc_call(this->connId, params);
-					return *reinterpret_cast<return_type*>(ret.bytes);
+					if(ret.status == RPC_OK)
+					{
+						if constexpr (__detail::is_void<ReturnType>::value)
+							return Ret::of_value();
+
+						else
+							return Ret::of_value(*reinterpret_cast<ReturnType*>(ret.bytes));
+					}
+					else
+					{
+						return Ret::of_error(*reinterpret_cast<ErrorType*>(ret.bytes));
+					}
 				}
 			}
 
 
 		private:
 			uint64_t connId;
-
-			// i'd rather not pull in the entirety of type_traits just for is_void...
 		};
 
 
@@ -123,7 +133,9 @@ namespace nx {
 				result.status = rpc::RPC_OK;
 				result.function = Func::function_number;
 
-				new (reinterpret_cast<return_type*>(&result.bytes[0])) return_type(static_cast<Args&&>(args)...);
+				if constexpr (!__detail::is_void<return_type>::value)
+					new (reinterpret_cast<return_type*>(&result.bytes[0])) return_type(static_cast<Args&&>(args)...);
+
 				rpc_return(this->connId, result);
 			}
 

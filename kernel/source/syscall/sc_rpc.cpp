@@ -40,7 +40,7 @@ namespace nx::syscall
 		return;
 	}
 
-	uint32_t rpc_call_void(uint64_t connId, const rpc::message_t* params)
+	uint32_t rpc_call_procedure(uint64_t connId, const rpc::message_t* params)
 	{
 		rpc::message_t input = { };
 
@@ -120,5 +120,29 @@ namespace nx::syscall
 	void rpc_close(uint64_t connId)
 	{
 		rpc::closeConnection(connId);
+	}
+
+	void rpc_forward(uint64_t targetConnId, uint64_t connId, const rpc::message_t* message)
+	{
+		// what this function does is to forward the call-message that came from connId,
+		// transparently to the targetConnId. this means that the next (and only the next!)
+		// reply() sent to targetConnId will be transparently replied to connId.
+
+
+
+
+		// rpc::message_t input = { };
+
+		// auto conn = rpc::getConnection(connId);
+		// if(conn == nullptr)
+		// 	return rpc::RPC_ERR_NO_CONNECTION;
+
+		// if(!copy_to_kernel(&input, params, sizeof(rpc::message_t)))
+		// 	return rpc::RPC_ERR_INVALID_ARGS;
+
+		// if(!conn->sendCall(krt::move(input), /* isVoid: */ true))
+		// 	return rpc::RPC_ERR_WRONG_CONNECTION;
+
+		// return rpc::RPC_OK;
 	}
 }

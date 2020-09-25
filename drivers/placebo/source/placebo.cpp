@@ -107,12 +107,15 @@ int main()
 
 		memcpy(tmp.ptr, path, plen);
 
-
 		{
 			auto client = rpc::Client(id);
 			assert(client.valid());
 
-			auto handle = client.call<vfs::fns::FnOpen>(/* flags: */ 0,
+			auto res = client.call<vfs::fns::Register>(tmp.ticketId);
+			if(!res) { printf("register failed\n"); }
+			else     { printf("register ok\n"); }
+
+			auto handle = client.call<vfs::fns::Open>(/* flags: */ 0,
 				vfs::Buffer {
 					.memTicketId = tmp.ticketId,
 					.offset = 0,
@@ -120,7 +123,7 @@ int main()
 				}
 			);
 
-			printf("** received handle: %lu\n", handle.id);
+			printf("** received handle: %lu\n", handle->id);
 		}
 
 

@@ -66,31 +66,31 @@ namespace vfs
 		auto op = msg.function;
 		if(op == fns::OP_REGISTER)
 		{
-			fns::registerProc(pst, srv, extract<fns::FnRegister>(msg));
+			fns::rpc_registerProc(pst, srv, extract<fns::Register>(msg));
 		}
 		else if(op == fns::OP_DEREGISTER)
 		{
-			fns::unregisterProc(pst, srv, extract<fns::FnDeregister>(msg));
+			fns::rpc_unregisterProc(pst, srv, extract<fns::Deregister>(msg));
 		}
 		else if(op == fns::OP_BIND)
 		{
-			fns::bind(pst, srv, extract<fns::FnBind>(msg));
+			fns::rpc_bind(pst, srv, extract<fns::Bind>(msg));
 		}
 		else if(op == fns::OP_OPEN)
 		{
-			fns::open(pst, srv, extract<fns::FnOpen>(msg));
+			fns::rpc_open(pst, srv, extract<fns::Open>(msg));
 		}
 		else if(op == fns::OP_CLOSE)
 		{
-			fns::close(pst, srv, extract<fns::FnClose>(msg));
+			fns::rpc_close(pst, srv, extract<fns::Close>(msg));
 		}
 		else if(op == fns::OP_READ)
 		{
-			fns::read(pst, srv, extract<fns::FnRead>(msg));
+			fns::rpc_read(pst, srv, extract<fns::Read>(msg));
 		}
 		else if(op == fns::OP_WRITE)
 		{
-			fns::write(pst, srv, extract<fns::FnWrite>(msg));
+			fns::rpc_write(pst, srv, extract<fns::Write>(msg));
 		}
 		else
 		{
@@ -151,7 +151,7 @@ namespace vfs
 
 
 
-		void registerProc(ProcessState* pst, rpc::Server* srv, FnRegister msg)
+		void rpc_registerProc(ProcessState* pst, rpc::Server* srv, Register msg)
 		{
 			if(pst->registeredTicket.ptr != 0)
 				ipc::release_memory_ticket(pst->registeredTicket);
@@ -161,28 +161,32 @@ namespace vfs
 				error("failed to collect ticket %lu for proc %lu", msg.ticket, pst->pid);
 
 			log("proc %lu registered with memticket %lu", pst->pid, pst->registeredTicket);
+
+			srv->reply<fns::Register>();
 		}
 
-		void unregisterProc(ProcessState* pst, rpc::Server* srv, FnDeregister msg)
+		void rpc_unregisterProc(ProcessState* pst, rpc::Server* srv, Deregister msg)
 		{
 			if(pst->registeredTicket.ptr == 0)
 				return;
 
 			ipc::release_memory_ticket(pst->registeredTicket);
 			log("proc %lu unregistered memticket %lu", pst->pid, pst->registeredTicket);
+
+			srv->reply<fns::Deregister>();
 		}
 
-		void bind(ProcessState* pst, rpc::Server* srv, FnBind msg)
+		void rpc_bind(ProcessState* pst, rpc::Server* srv, Bind msg)
 		{
-			srv->error<FnBind>(ERR_NOT_IMPLEMENTED);
+			srv->error<fns::Bind>(ERR_NOT_IMPLEMENTED);
 		}
 
-		void open(ProcessState* pst, rpc::Server* srv, FnOpen msg)
+		void rpc_open(ProcessState* pst, rpc::Server* srv, Open msg)
 		{
 			auto _buf = validate_buffer(pst, msg.path);
 			if(!_buf)
 			{
-				srv->error<FnOpen>(ERR_INVALID_BUFFER);
+				srv->error<fns::Open>(ERR_INVALID_BUFFER);
 				return;
 			}
 
@@ -199,19 +203,22 @@ namespace vfs
 			if(needs_release)
 				ipc::release_memory_ticket(memticket);
 
-			srv->reply<FnOpen>(handle);
+			srv->reply<fns::Open>(handle);
 		}
 
-		void close(ProcessState* pst, rpc::Server* srv, FnClose msg)
+		void rpc_close(ProcessState* pst, rpc::Server* srv, Close msg)
 		{
+			srv->error<fns::Close>(ERR_NOT_IMPLEMENTED);
 		}
 
-		void read(ProcessState* pst, rpc::Server* srv, FnRead msg)
+		void rpc_read(ProcessState* pst, rpc::Server* srv, Read msg)
 		{
+			srv->error<fns::Read>(ERR_NOT_IMPLEMENTED);
 		}
 
-		void write(ProcessState* pst, rpc::Server* srv, FnWrite msg)
+		void rpc_write(ProcessState* pst, rpc::Server* srv, Write msg)
 		{
+			srv->error<fns::Write>(ERR_NOT_IMPLEMENTED);
 		}
 	}
 }

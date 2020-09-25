@@ -15,29 +15,34 @@ SOBJ		= $(SSRC:.s=.s.o)
 COBJ		= $(CSRC:.c=.c.o)
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 
-.PHONY: all
+.PHONY: all install-headers
 
 all: $(SYSROOT)/usr/lib/libc.a
+
+install-headers: $(HDRS)
+	@mkdir -p $(SYSROOT)/usr/include/
+	@cp -R include/* $(SYSROOT)/usr/include/
 
 print-libc:
 	@echo "# libc"
 
 $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ) $(HDRS)
 	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) source/platform/jmp/longjmp.s.o source/platform/jmp/setjmp.s.o source/platform/support/crti.s.o source/platform/support/crtn.s.o
+	@mkdir -p $(SYSROOT)/usr/lib/
 	@cp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libg.a
 	@cp source/platform/support/crt0.s.o $(SYSROOT)/usr/lib/crt0.o
 	@cp source/platform/support/crti.s.o $(SYSROOT)/usr/lib/crti.o
 	@cp source/platform/support/crtn.s.o $(SYSROOT)/usr/lib/crtn.o
 
-%.c.o: %.c makefile | print-libc
+%.c.o: %.c makefile $(HDRS) | print-libc
 	@echo "  $(notdir $<)"
 	@$(CC) $(CFLAGS) -o $@ $<
 
-%.cpp.o: %.cpp makefile | print-libc
+%.cpp.o: %.cpp makefile $(HDRS) | print-libc
 	@echo "  $(notdir $<)"
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
-%.s.o: %.s makefile | print-libc
+%.s.o: %.s makefile $(HDRS) | print-libc
 	@echo "  $(notdir $<)"
 	@$(AS) $< -o $@
 

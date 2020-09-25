@@ -369,7 +369,7 @@ all: libs install
 
 libs: $(BINS)
 
-.PHONY: libs headers clean install install-include-dirs install-headers \
+.PHONY: all libs headers clean install install-include-dirs install-headers \
         install-libm-dirs install-libm install-libs
 
 # TODO: Do not pick up the i387 asm version, it is incorrect

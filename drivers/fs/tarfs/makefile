@@ -3,7 +3,9 @@
 
 CXXFLAGS	= -Wno-pragmas -O2 -std=c++17 -fno-strict-aliasing -Wall
 
-.PHONY: all
+.PHONY: all install-headers
+
+install-headers:
 
 all: $(INITRD_DIR)/drivers/ps2
 

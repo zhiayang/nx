@@ -107,6 +107,9 @@ namespace scheduler
 		// primed & ready.
 		interrupts::resetNesting();
 
+		// sometimes we get stuck here, so maybe this will help...
+		interrupts::sendEOI(getTickIRQ());
+
 		nx_x64_switch_to_thread(ss->IdleThread->kernelStack, 0, (void*) ss->IdleThread->fpuSavedStateBuffer, ss->CurrentThread);
 	}
 

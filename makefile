@@ -117,12 +117,13 @@ make-folders:
 
 export-headers: $(shell find libs/libc/include -type f) $(shell find libs/libm/include -type f) $(shell find libs/libnxsc/include -type f) $(shell find kernel/include/export -type f) $(shell find services/*/include -type f) | make-folders
 	-@find $(SYSROOT)/usr/include/ -type f | xargs rm
-	@cp -R libs/libc/include/*                  $(SYSROOT)/usr/include/
-	@cp -R libs/libm/include/*                  $(SYSROOT)/usr/include/
-	@cp -R libs/libnxsc/include/*               $(SYSROOT)/usr/include/nx/
-	@cp -R kernel/include/export/*              $(SYSROOT)/usr/include/nx/
-	@cp -R services/tty-svr/include/export/*    $(SYSROOT)/usr/include/svr/
-	@cp -R services/vfs-svr/include/export/*    $(SYSROOT)/usr/include/svr/
+	@cp -R kernel/include/export/* $(SYSROOT)/usr/include/nx/
+	@$(MAKE) -s -C libs/zst     install-headers
+	@$(MAKE) -s -C libs/libc    install-headers
+	@$(MAKE) -s -C libs/libm    install-headers
+	@$(MAKE) -s -C libs/libnxsc install-headers
+	@$(MAKE) -s -C drivers      install-headers
+	@$(MAKE) -s -C services     install-headers
 
 $(SYSROOT)/boot/nxkernel64: $(shell find kernel)
 	@$(MAKE) -s -C kernel
@@ -133,8 +134,8 @@ $(SYSROOT)/boot/bfxloader: $(shell find bfx)
 compile: export-headers
 	@$(MAKE) -s -C libs/libc
 	@$(MAKE) -s -C libs/libm
-	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C libs/libnxsc
+	@$(MAKE) -s -C libs/libkrt
 	@$(MAKE) -s -C libs/miniz
 	@$(MAKE) -s -C efx
 	@$(MAKE) -s -C bfx

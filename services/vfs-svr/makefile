@@ -7,7 +7,11 @@ CXXSRC		= $(shell find source -name "*.cpp")
 CXXOBJ		= $(CXXSRC:.cpp=.cpp.o)
 CXXDEPS     = $(CXXOBJ:.o=.d)
 
-.PHONY: all
+.PHONY: all install-headers
+
+install-headers:
+	@mkdir -p $(SYSROOT)/usr/include/svr/
+	@cp -R include/export/* $(SYSROOT)/usr/include/svr/
 
 all: $(INITRD_DIR)/services/vfs-svr
 
@@ -16,7 +20,7 @@ $(INITRD_DIR)/services/vfs-svr: $(CXXOBJ) $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/u
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXOBJ)
 
 %.cpp.o: %.cpp makefile
-	@$(CXX) $(CXXFLAGS) -c -MMD -MP -Iinclude -I$(PROJECT_DIR)/libs/libkrt/include -o $@ $<
+	@$(CXX) $(CXXFLAGS) -c -MMD -MP -Iinclude -o $@ $<
 
 
 

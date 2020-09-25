@@ -85,6 +85,8 @@ namespace ps2
 		// first, read the command output byte
 		int retries = 0;
 
+		log("initialising controller");
+
 	retry:
 		{
 			// flush the buffer.
