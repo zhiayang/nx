@@ -18,6 +18,7 @@ namespace krt
 		using impl = arraylike_impl<string, char, allocator, aborter, sso_buf_size>;
 		friend impl;
 
+		using value_type = char;
 		using iterator = ptr_iterator<char>;
 		using const_iterator = const_ptr_iterator<char>;
 
@@ -45,7 +46,7 @@ namespace krt
 		string(const string& other) : string(other.ptr, other.cnt) { }
 
 
-		private:
+	private:
 		static inline void move_contents(string* dst, string* src)
 		{
 			dst->cnt = src->cnt; src->cnt = 0;
@@ -67,7 +68,7 @@ namespace krt
 			}
 		}
 
-		public:
+	public:
 
 
 		// move
@@ -182,7 +183,7 @@ namespace krt
 		const_iterator cend() const     { return this->end(); }
 
 
-		char* data() const                                  { return this->ptr; }
+		const char* data() const                            { return this->ptr; }
 		size_t size() const                                 { return this->cnt; }
 		size_t capacity() const                             { return this->cap; }
 		bool empty() const                                  { return this->cnt == 0; }
@@ -204,6 +205,12 @@ namespace krt
 
 	template <typename al, typename ab>
 	string<al, ab> operator + (const char* a, const string<al, ab>& b) { return string<al, ab>(a) + b; }
+
+	template <typename al, typename ab>
+	auto begin(const krt::string<al, ab>& s) { return s.begin(); }
+
+	template <typename al, typename ab>
+	auto end(const krt::string<al, ab>& s) { return s.end(); }
 }
 
 

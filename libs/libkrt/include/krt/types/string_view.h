@@ -19,8 +19,9 @@ namespace krt
 		using impl = arraylike_impl<string_view, const char, allocator, aborter>;
 		friend impl;
 
-		using iterator = ptr_iterator<char>;
-		using const_iterator = const_ptr_iterator<char>;
+		using value_type = char;
+		using iterator = ptr_iterator<const char>;
+		using const_iterator = const_ptr_iterator<const char>;
 
 		string_view() : string_view("", 0) { }
 
@@ -145,6 +146,12 @@ namespace krt
 
 		const char* get_pointer() const { return this->ptr; }
 	};
+
+	template <typename al, typename ab>
+	auto begin(const krt::string_view<al, ab>& s) { return s.begin(); }
+
+	template <typename al, typename ab>
+	auto end(const krt::string_view<al, ab>& s) { return s.end(); }
 }
 
 
