@@ -68,8 +68,8 @@ namespace vfs
 		MountedFilesystems.append(fs);
 
 		auto ret = driver->init(fs);
-		if(ret) log("vfs", "mounted %s at %s", driver->getDescription(fs), mountpoint.cstr());
-		else    error("vfs", "failed to mount %s at %s!", driver->getDescription(fs), mountpoint.cstr());
+		if(ret) log("vfs", "mounted {} at {}", driver->getDescription(fs), mountpoint);
+		else    error("vfs", "failed to mount {} at {}!", driver->getDescription(fs), mountpoint);
 
 		return ret;
 	}
@@ -93,7 +93,7 @@ namespace vfs
 			bool res = n->filesystem->driver->openNode(n->filesystem, n);
 			if(!res)
 			{
-				error("vfs", "failed to open node at path '%s'!", path.cstr());
+				error("vfs", "failed to open node at path '{}'!", path);
 				return nullptr;
 			}
 
@@ -119,7 +119,7 @@ namespace vfs
 
 		// get the filesystem.
 		auto fs = getFilesystemAtPath(splitPathComponents(path));
-		if(!fs) { error("vfs", "no filesystem mounted at path '%s'!", path.cstr()); return nullptr; }
+		if(!fs) { error("vfs", "no filesystem mounted at path '{}'!", path); return nullptr; }
 
 		// ok...
 		auto nd = openNode(ctx, path);

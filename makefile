@@ -29,7 +29,7 @@ export KERNEL_SSE_DISABLERS := -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-80387
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
-MEMORY                  := 128
+MEMORY                  := 256
 
 QEMU_UEFI_BIOS          := -bios utils/ovmf-x64/OVMF-pure-efi.fd
 QEMU_UEFI_DISKIMG       := -drive format=raw,file=build/disk.img

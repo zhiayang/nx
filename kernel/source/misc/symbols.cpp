@@ -110,8 +110,11 @@ namespace nx::syms
 				}
 			}
 
-			assert(strTabIdx);
-
+			if(strTabIdx == 0)
+			{
+				warn("syms", "kernel had no symbol table; debugging information will be limited");
+				return;
+			}
 
 			char* strings = (char*) (file + ((Elf64_Shdr*) (file + header->e_shoff + (strTabIdx * header->e_shentsize)))->sh_offset);
 

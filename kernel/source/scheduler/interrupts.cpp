@@ -56,7 +56,7 @@ namespace interrupts
 		hand->thr       = thr;
 		hand->next      = 0;
 
-		log("irq", "tid %lu installed handler for irq %d", thr->threadId, num);
+		log("irq", "tid {} installed handler for irq {}", thr->threadId, num);
 		if(auto it = irqHandlers.find(num); it != irqHandlers.end())
 		{
 			auto head = it->value.handlers;
@@ -91,7 +91,7 @@ namespace interrupts
 					list.erase(it);
 					if(!it->handled)
 					{
-						warn("irq", "no drivers handled irq %d", num);
+						warn("irq", "no drivers handled irq {}", num);
 						sendEOI(num);
 					}
 				}

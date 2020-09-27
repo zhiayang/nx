@@ -113,9 +113,9 @@ namespace memory
 		{
 			auto entry = (efi_memory_descriptor*) (buffer + (i * descSz));
 
-			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData, efi::MemoryType_BootInfo,
-				efi::MemoryType_MemoryMap, efi::MemoryType_Initrd, efi::MemoryType_KernelElf))
+			if(krt::match(entry->Type, EfiLoaderCode, EfiBootServicesCode, EfiBootServicesData))
 			{
+				// efi::println("map %p - %p", entry->PhysicalStart, entry->PhysicalStart + entry->NumberOfPages * 0x1000);
 				mapVirtual(entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 			}
 
@@ -295,7 +295,12 @@ namespace efi
 		efi::abort_if_error(stat, "failed to allocate memory for %s!", user);
 
 		// we need to pass the originally intended type to the accounting part.
-		efx::memory::accountMemory(out, numPages, memType);
+		if(efiType != memType)
+			efx::memory::accountMemory(out, numPages, memType);
+
+		// if this isn't for the vmm mapping, then map it in the kernel's (future) cr3
+		if(memType != efi::MemoryType_VMFrame)
+			efx::memory::mapVirtual(out, out, numPages);
 
 		return (void*) out;
 	}

@@ -58,11 +58,11 @@ namespace util
 				if(heap::initialised())
 				{
 					const auto& s = syms::symbolicate(rip, proc);
-					serial::debugprintf("  %8lx  |  %s\n", rip, s.cstr());
+					serial::debugprintf("  {8x}  |  {}\n", rip, s.cstr());
 				}
 				else
 				{
-					serial::debugprintf("  %8lx\n", rip);
+					serial::debugprintf("  {8x}\n", rip);
 				}
 			}
 
@@ -80,7 +80,7 @@ namespace util
 	{
 		if(bi->version < 2)
 		{
-			warn("backtrace", "bootinfo version '%d' does not support symbol loading", bi->version);
+			warn("backtrace", "bootinfo version '{}' does not support symbol loading", bi->version);
 			return;
 		}
 
@@ -93,7 +93,7 @@ namespace util
 
 		syms::readSymbolsFromELF(bi->kernelElf, bi->kernelElfSize, scheduler::getKernelProcess());
 
-		log("backtrace", "found %s", util::plural("symbol", scheduler::getKernelProcess()->symbols.size()).cstr());
+		log("backtrace", "found {}", util::plural("symbol", scheduler::getKernelProcess()->symbols.size()));
 		pmm::freeEarlyMemory(bi, MemoryType::KernelElf);
 	}
 }

@@ -121,7 +121,7 @@ namespace nx::syscall
 
 		thr->signalHandlers[sigType] = (signal_handler_fn_t) new_handler;
 
-		log("ipc", "thr %lu installed handler for sigType %lu", thr->threadId, sigType);
+		log("ipc", "thr {} installed handler for sigType {}", thr->threadId, sigType);
 		return ret;
 	}
 

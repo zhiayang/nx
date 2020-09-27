@@ -74,7 +74,7 @@ namespace ioapic
 			if(mappedBases.find(alignedBase) == mappedBases.end())
 			{
 				if(vmm::allocateSpecific(alignedBase, 1).isZero())
-					abort("ioapic: failed to map base address %p", ioa->baseAddr);
+					abort("ioapic: failed to map base address {p}", ioa->baseAddr);
 
 				vmm::mapAddress(alignedBase, alignedBase.physIdentity(), 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 				mappedBases.append(alignedBase);
@@ -89,7 +89,7 @@ namespace ioapic
 				// which wouldn't be so bad if the id register of the IOAPIC matched, but it doesn't!!
 				// https://www.virtualbox.org/browser/vbox/trunk/src/VBox/Devices/PC/DevACPI.cpp#L2993
 
-				warn("ioapic", "mismatch in ioapic id! MADT reported %d, actual value is %d", ioa->id, id);
+				warn("ioapic", "mismatch in ioapic id! MADT reported {}, actual value is {}", ioa->id, id);
 			}
 
 			// get the number of interrupts this guy handles.
@@ -97,7 +97,7 @@ namespace ioapic
 				uint32_t reg = readIOAPIC(ioa, IOAPIC_REG_VERSION);
 				ioa->maxRedirections = (reg & 0xFF0000) >> 16;
 
-				log("ioapic", "[%d]: ver %x, %d intrs, gsi %d", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
+				log("ioapic", "[{}]: ver {x}, {} intrs, gsi {}", ioa->id, reg & 0xFF, ioa->maxRedirections, ioa->gsiBase);
 			}
 		}
 
@@ -109,7 +109,7 @@ namespace ioapic
 	{
 		assert(IoApics.size() > 0);
 		if(auto it = ISAIRQMapping.find(isa); it != ISAIRQMapping.end())
-			log("ioapic", "ISA IRQ %d already has a mapping to ioapic irq %d!", isa, irq);
+			log("ioapic", "ISA IRQ {} already has a mapping to ioapic irq {}!", isa, irq);
 
 		else
 			ISAIRQMapping.insert(isa, irq);
@@ -136,7 +136,7 @@ namespace ioapic
 				return &ioapic;
 		}
 
-		warn("apic", "cannot handle irq %d because no ioapics handle it", num);
+		warn("apic", "cannot handle irq {} because no ioapics handle it", num);
 		return nullptr;
 	}
 
@@ -162,7 +162,7 @@ namespace ioapic
 		uint32_t polarity   = low & (1 << 13);
 		uint32_t trigger    = low & (1 << 15);
 
-		log("ioapic", "irq %d -> int %d: pol %x, trig %x", irq, vector, polarity, trigger);
+		log("ioapic", "irq {} -> int {}: pol {x}, trig {x}", irq, vector, polarity, trigger);
 
 		// reuse it.
 		low = 0;
@@ -209,7 +209,7 @@ namespace ioapic
 		val |= (1 << 16);
 
 		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2), val);
-		log("apic", "irq %d was disabled", num);
+		log("apic", "irq {} was disabled", num);
 	}
 
 	void unmaskIRQ(int num)
@@ -222,7 +222,7 @@ namespace ioapic
 		val &= ~(1 << 16);
 
 		writeIOAPIC(ioa, IOAPIC_REG_IRQ_BASE + (num * 2), val);
-		log("apic", "irq %d was enabled", num);
+		log("apic", "irq {} was enabled", num);
 	}
 
 

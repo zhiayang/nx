@@ -15,7 +15,7 @@ namespace nx::disasm
 
 	void printDisassembly(addr_t rip)
 	{
-		serial::debugprintf("disassembly at %p:\n", (void*) rip);
+		serial::debugprintf("disassembly at {p}:\n", (void*) rip);
 
 		auto buf = Buffer((uint8_t*) rip, /* some arbitrary number: */ 0x1000);
 
@@ -23,7 +23,7 @@ namespace nx::disasm
 		for(size_t i = 0; i < DISASM_COUNT; i++)
 		{
 			auto instr = x64::read(buf, x64::ExecMode::Long);
-			serial::debugprintf("  %8x  |  ", (uint32_t) ip);
+			serial::debugprintf("  {8x}  |  ", (uint32_t) ip);
 			print_instr(instr, ip);
 			serial::debugprintf("\n");
 
@@ -36,12 +36,10 @@ namespace nx::disasm
 
 	static void print_instr(const x64::Instruction& instr, uint64_t ip)
 	{
-		auto printer = serial::debugprintf;
-
-		auto print_operand = [&printer, &ip](const x64::Operand& op) {
+		auto print_operand = [&ip](const x64::Operand& op) {
 			if(op.isRegister())
 			{
-				printer("%%%s", op.reg().name());
+				serial::debugprintf("%{}", op.reg().name());
 			}
 			else if(op.isImmediate())
 			{
@@ -58,11 +56,11 @@ namespace nx::disasm
 				else if(op.immediateSize() == 64)
 					value = (uint64_t) value;
 
-				printer("$%#lx", value);
+				serial::debugprintf("${#x}", value);
 			}
 			else if(op.isRelativeOffset())
 			{
-				printer("%#lx", ip + op.ofs().offset());
+				serial::debugprintf("{#x}", ip + op.ofs().offset());
 			}
 			else if(op.isMemory())
 			{
@@ -71,30 +69,30 @@ namespace nx::disasm
 				auto& idx = mem.index();
 
 				if(mem.segment().present())
-					printer("%%%s:", mem.segment().name());
+					serial::debugprintf("%{}:", mem.segment().name());
 
 				if(op.mem().displacement() != 0 || (!base.present() && !idx.present()))
-					printer("%#lx", op.mem().displacement());
+					serial::debugprintf("{#x}", op.mem().displacement());
 
 				if(!base.present() && !idx.present())
 					return;
 
-				printer("(");
+				serial::debugprintf("(");
 
 				if(base.present())
-					printer("%%%s", base.name());
+					serial::debugprintf("%{}", base.name());
 
 				if(idx.present())
-					printer(", %%%s", idx.name());
+					serial::debugprintf(", %{}", idx.name());
 
 				if(op.mem().scale() != 1)
-					printer(", %d", op.mem().scale());
+					serial::debugprintf(", {}", op.mem().scale());
 
-				printer(")");
+				serial::debugprintf(")");
 			}
 			else
 			{
-				printer("??");
+				serial::debugprintf("??");
 			}
 		};
 
@@ -102,16 +100,16 @@ namespace nx::disasm
 		size_t col = 0;
 		for(size_t i = 0; i < instr.numBytes(); i++)
 		{
-			printer("%02x ", instr.bytes()[i]);
+			serial::debugprintf("{02x} ", instr.bytes()[i]);
 			col += 3;
 		}
 
 		while(col++ < 24)
-			printer(" ");
+			serial::debugprintf(" ");
 
-		if(instr.lockPrefix())  printer("lock ");
-		if(instr.repPrefix())   printer("rep ");
-		if(instr.repnzPrefix()) printer("repnz ");
+		if(instr.lockPrefix())  serial::debugprintf("lock ");
+		if(instr.repPrefix())   serial::debugprintf("rep ");
+		if(instr.repnzPrefix()) serial::debugprintf("repnz ");
 
 		char size_suffix = 0;
 		bool abs_suffix = false;
@@ -162,7 +160,7 @@ namespace nx::disasm
 			inspect(instr.src());
 
 
-		printer("%s%s%c ", instr.op().mnemonic(), abs_suffix ? "abs" : "", size_suffix);
+		serial::debugprintf("{}{}{} ", instr.op().mnemonic(), abs_suffix ? "abs" : "", size_suffix);
 
 		if(instr.operandCount() == 1)
 		{
@@ -170,20 +168,20 @@ namespace nx::disasm
 		}
 		else if(instr.operandCount() == 2)
 		{
-			print_operand(instr.src()); printer(", ");
+			print_operand(instr.src()); serial::debugprintf(", ");
 			print_operand(instr.dst());
 		}
 		else if(instr.operandCount() == 3)
 		{
-			print_operand(instr.ext()); printer(", ");
-			print_operand(instr.src()); printer(", ");
+			print_operand(instr.ext()); serial::debugprintf(", ");
+			print_operand(instr.src()); serial::debugprintf(", ");
 			print_operand(instr.dst());
 		}
 		else if(instr.operandCount() == 4)
 		{
-			print_operand(instr.op4()); printer(", ");
-			print_operand(instr.ext()); printer(", ");
-			print_operand(instr.src()); printer(", ");
+			print_operand(instr.op4()); serial::debugprintf(", ");
+			print_operand(instr.ext()); serial::debugprintf(", ");
+			print_operand(instr.src()); serial::debugprintf(", ");
 			print_operand(instr.dst());
 		}
 	}

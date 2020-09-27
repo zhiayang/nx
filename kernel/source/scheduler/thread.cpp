@@ -284,15 +284,18 @@ namespace scheduler
 
 		if(isUserProc)
 		{
-			log("sched", "created tid %lu in pid %lu [stks u: hi(%p) -> lo(%p), k: hi(%p) -> lo(%p)] [fpu: %p + %#x] [tls: %p]",
-				thr->threadId, thr->parent->processId, u_stackTop, u_stackTop - USER_STACK_SIZE,
-				k_stackTop, k_stackTop - KERNEL_STACK_SIZE, thr->fpuSavedStateBuffer, cpu::fpu::getFPUStateSize(),
+			log("sched", "created tid {} in pid {} [stks u: hi({}) -> lo({}), k: hi({}) -> lo({})] [fpu: {p} + {#x}] [tls: {p}]",
+				thr->threadId, thr->parent->processId,
+				u_stackTop, u_stackTop - USER_STACK_SIZE,
+				k_stackTop, k_stackTop - KERNEL_STACK_SIZE,
+				thr->fpuSavedStateBuffer, cpu::fpu::getFPUStateSize(),
 				thr->userspaceTCB);
 		}
 		else
 		{
-			log("sched", "created kernel tid %lu [stk: hi(%p) -> lo(%p)] [fpu: %p + %#x] [tls: %p]",
-				thr->threadId, k_stackTop, k_stackTop - KERNEL_STACK_SIZE,
+			log("sched", "created kernel tid {} [stk: hi({}) -> lo({})] [fpu: {} + {#x}] [tls: {p}]",
+				thr->threadId,
+				k_stackTop, k_stackTop - KERNEL_STACK_SIZE,
 				thr->fpuSavedStateBuffer, cpu::fpu::getFPUStateSize(),
 				thr->userspaceTCB);
 		}
@@ -315,11 +318,11 @@ namespace scheduler
 			return t.threadId == thr->threadId;
 		});
 
-		log("sched", "destroyed thread %lu", id);
+		log("sched", "destroyed thread {}", id);
 
 		if(proc->threads.empty())
 		{
-			log("sched", "killed last thread of process %lu, cleaning up process", proc->processId);
+			log("sched", "killed last thread of process {}, cleaning up process", proc->processId);
 			destroyProcess(proc);
 		}
 	}

@@ -17,7 +17,7 @@ namespace syscall
 
 	extern "C" void tmp_debug(uint64_t val)
 	{
-		error("DEBUG", "*** VAL = %lx", val);
+		error("DEBUG", "*** VAL = {}", val);
 	}
 
 	static void init_vectors()
@@ -47,7 +47,7 @@ namespace syscall
 		SyscallTable[SYSCALL_RPC_WAIT_ANY_CALL]     = (void*) rpc_wait_any_call;
 		SyscallTable[SYSCALL_RPC_OPEN]              = (void*) rpc_open;
 		SyscallTable[SYSCALL_RPC_CLOSE]             = (void*) rpc_close;
-		SyscallTable[SYSCALL_RPC_FORWARD]           = (void*) rpc_forward;
+		SyscallTable[SYSCALL_RPC_FORWARD]           = (void*) do_nothing;
 
 		// syscall/sc_mmap.cpp
 		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;

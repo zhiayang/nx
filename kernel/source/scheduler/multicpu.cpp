@@ -11,7 +11,7 @@ namespace scheduler
 	void initCPU(CPU* cpu)
 	{
 		assert(cpu);
-		kassert(cpu->localState == 0, "cpu %d was already initialised!", cpu->id);
+		assert(cpu->localState == 0);
 
 		// we can only init cpus before the scheduler starts, and while we are in the kernel's address space.
 		assert(getCurrentProcess() == getKernelProcess());

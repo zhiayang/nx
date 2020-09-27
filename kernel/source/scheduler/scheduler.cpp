@@ -129,7 +129,7 @@ namespace scheduler
 			t->state = ThreadState::AboutToExit;
 			ss->DestructionQueue.append(t);
 
-			log("sched", "exiting thread %lu (status = %d)", t->threadId, status);
+			log("sched", "exiting thread {} (status = {})", t->threadId, status);
 		});
 
 		yield();
@@ -147,7 +147,7 @@ namespace scheduler
 			thr->state = ThreadState::AboutToExit;
 			ss->DestructionQueue.append(thr);
 
-			warn("kernel", "killing thread %lu (from process %lu) due to exception",
+			warn("kernel", "killing thread {} (from process {}) due to exception",
 				thr->threadId, thr->parent->processId);
 		});
 
@@ -172,7 +172,7 @@ namespace scheduler
 			t->state = ThreadState::AboutToExit;
 			ss->DestructionQueue.append(t);
 
-			log("sched", "terminating tid %lu", t->threadId);
+			log("sched", "terminating tid {}", t->threadId);
 		});
 
 		// if you are terminating yourself, then we need to yield.
@@ -198,7 +198,7 @@ namespace scheduler
 				t.state = ThreadState::AboutToExit;
 			}
 
-			log("sched", "terminating process %lu", p->processId);
+			log("sched", "terminating process {}", p->processId);
 		});
 
 		// if you are terminating yourself, then we need to yield.

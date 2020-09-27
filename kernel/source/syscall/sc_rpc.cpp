@@ -104,7 +104,7 @@ namespace nx::syscall
 		auto callee = scheduler::getProcessWithId(target);
 		if(!callee)
 		{
-			warn("rpc", "tried to open rpc to nonexistent pid %lu", target);
+			warn("rpc", "tried to open rpc to nonexistent pid {}", target);
 			return 0;
 		}
 

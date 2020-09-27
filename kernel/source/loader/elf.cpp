@@ -32,7 +32,7 @@ namespace loader
 			auto checkmagic = [](const char* name, char expected, char found) -> bool {
 				if(expected != found)
 				{
-					error(err, "%s wrong; expected %02x, found %02x", name, expected, found);
+					error(err, "{} wrong; expected {02x}, found {02x}", name, expected, found);
 					return false;
 				}
 				return true;
@@ -52,12 +52,12 @@ namespace loader
 		{
 			if(header->e_machine != EM_X86_64)
 			{
-				error(err, "invalid architecture (expected x86_64, found %d)", header->e_machine);
+				error(err, "invalid architecture (expected x86_64, found {})", header->e_machine);
 				return false;
 			}
 			if(header->e_ident[EI_OSABI] != ELFOSABI_SYSV)
 			{
-				error(err, "invalid abi (expected system v, found %d)", header->e_ident[EI_OSABI]);
+				error(err, "invalid abi (expected system v, found {})", header->e_ident[EI_OSABI]);
 				return false;
 			}
 		}
@@ -65,18 +65,18 @@ namespace loader
 		{
 			if(header->e_machine != EM_AARCH64)
 			{
-				error(err, "invalid architecture (expected aarch64, found %d)", header->e_machine);
+				error(err, "invalid architecture (expected aarch64, found {})", header->e_machine);
 				return false;
 			}
 			if(header->e_ident[EI_OSABI] != ELFOSABI_ARM)
 			{
-				error(err, "invalid abi (expected arm, found %d)", header->e_ident[EI_OSABI]);
+				error(err, "invalid abi (expected arm, found {})", header->e_ident[EI_OSABI]);
 				return false;
 			}
 		}
 		#else
 		{
-			error(err, "unsupported architecture %d", header->e_machine);
+			error(err, "unsupported architecture {}", header->e_machine);
 			return false;
 		}
 		#endif
@@ -160,7 +160,7 @@ namespace loader
 				{
 					if(vmm::allocateSpecific(VirtAddr(progHdr->p_vaddr).pageAligned(), numPages, proc).isZero())
 					{
-						error(err, "could not allocate address %p in the target address space", progHdr->p_vaddr);
+						error(err, "could not allocate address {p} in the target address space", progHdr->p_vaddr);
 
 						pmm::deallocate(phys, numPages);
 						proc->addrspace.lock()->removeTrackedPhysPages(phys, numPages);

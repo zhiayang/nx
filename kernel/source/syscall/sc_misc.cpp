@@ -8,7 +8,7 @@ namespace nx
 {
 	void syscall::do_nothing()
 	{
-		warn("syscall", "pid %lu called invalid syscall vector");
+		warn("syscall", "pid {} called invalid syscall vector");
 	}
 
 	void syscall::exit(int status)
@@ -34,14 +34,15 @@ namespace nx
 		// serial::debugprint(buf, buflen);
 		// serial::debugprint("\n");
 
+		auto msg = nx::string_view(buf, buflen);
 		switch(level)
 		{
-			case 2:     error(sys, "%.*s", buflen, buf);    break;
-			case 1:     warn(sys, "%.*s", buflen, buf);     break;
-			case -1:    dbg(sys, "%.*s", buflen, buf);      break;
+			case 2:     error(sys, "{}", msg);   break;
+			case 1:     warn(sys, "{}", msg);    break;
+			case -1:    dbg(sys, "{}", msg);     break;
 
 			case 0:
-			default:    log(sys, "%.*s", buflen, buf);      break;
+			default:    log(sys, "{}", msg);     break;
 		}
 	}
 

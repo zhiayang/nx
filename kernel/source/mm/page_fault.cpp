@@ -88,7 +88,7 @@ namespace vmm
 					}
 
 					if(LOG_ALL_FAULTS)
-						dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, ph.get());
+						dbg("pf", "pid {} / tid {}: #PF (cr2={p}, ip={p}) -> phys {p}", pid, tid, cr2, rip, ph.get());
 
 					vmm::mapAddressOverwrite(aligned_cr2, ph.get(), 1, (flags & ~PAGE_COPY_ON_WRITE) | PAGE_PRESENT, proc);
 
@@ -99,7 +99,7 @@ namespace vmm
 				}
 				else
 				{
-					error("pf", "access of non-present CoW page? #PF (pid=%lu, tid=%lu, cr2=%p, ip=%p)",
+					error("pf", "access of non-present CoW page? #PF (pid={}, tid={}, cr2={p}, ip={p})",
 						pid, tid, cr2, rip);
 					return false;
 				}
@@ -109,7 +109,7 @@ namespace vmm
 				// if the page was present but we faulted when reading, then... ?!
 				if(!write)
 				{
-					error("pf", "read operation from CoW page caused #PF (pid=%lu, tid=%lu, cr2=%p, ip=%p)",
+					error("pf", "read operation from CoW page caused #PF (pid={}, tid={}, cr2={p}, ip={p})",
 						pid, tid, cr2, rip);
 					return false;
 				}
@@ -147,7 +147,7 @@ namespace vmm
 				}
 
 				if(LOG_ALL_FAULTS)
-					dbg("pf", "pid %lu / tid %lu: #PF (cr2=%p, ip=%p) -> phys %p", pid, tid, cr2, rip, phys);
+					dbg("pf", "pid {} / tid {}: #PF (cr2={p}, ip={p}) -> {}", pid, tid, cr2, rip, phys);
 			}
 
 			return true;
@@ -155,7 +155,7 @@ namespace vmm
 		else
 		{
 			// u dun goofed
-			error("pf", "non-CoW page fault: tid %ld, cr2=%p", scheduler::getCurrentThread()->threadId, cr2);
+			error("pf", "non-CoW page fault: tid {}, cr2={p}", scheduler::getCurrentThread()->threadId, cr2);
 			return false;
 		}
 	}

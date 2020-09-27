@@ -31,7 +31,7 @@ namespace loader
 		auto buf = new uint8_t[sz];
 
 		auto didRead = vfs::read(f, buf, sz);
-		if(didRead != sz) abort("size mismatch! %zu / %zu", didRead, sz);
+		if(didRead != sz) abort("size mismatch! {} / {}", didRead, sz);
 
 		vfs::close(f);
 		auto proc = scheduler::createProcess(getProcName(path), scheduler::Process::PROC_USER);
@@ -51,7 +51,7 @@ namespace loader
 		}
 		else
 		{
-			error("loader", "failed to load program %s!", path.cstr());
+			error("loader", "failed to load program {}!", path);
 			return 0;
 		}
 	}

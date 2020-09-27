@@ -33,7 +33,7 @@ namespace nx::rpc
 		});
 
 		proc->rpcCalleeConnections.lock()->insert(ret);
-		log("rpc", "created connection (%lu): %lu -> %lu", ret, caller, callee);
+		log("rpc", "created connection ({}): {} -> {}", ret, caller, callee);
 
 		return ret;
 	}
@@ -44,7 +44,7 @@ namespace nx::rpc
 			if(auto it = list.find(id); it != list.end())
 				return &it->value;
 
-			warn("rpc", "tried to find invalid connection %lu", id);
+			warn("rpc", "tried to find invalid connection {}", id);
 			return nullptr;
 		});
 	}
@@ -54,7 +54,7 @@ namespace nx::rpc
 		connectionList.perform([&id](auto& list) {
 			if(auto it = list.find(id); it != list.end())
 			{
-				dbg("rpc", "closing connection %lu", id);
+				dbg("rpc", "closing connection {}", id);
 
 				auto proc = scheduler::getProcessWithId(it->value.calleePid);
 				if(proc)
@@ -64,7 +64,7 @@ namespace nx::rpc
 			}
 			else
 			{
-				log("rpc", "invalid connection %lu", id);
+				log("rpc", "invalid connection {}", id);
 			}
 		});
 	}
@@ -78,7 +78,7 @@ namespace nx::rpc
 	{
 		if(auto p = scheduler::getCurrentProcess()->processId; p != this->callerPid)
 		{
-			error("rpc", "pid %lu is not the designated caller of rpc_conn %lu", p, this->id);
+			error("rpc", "pid {} is not the designated caller of rpc_conn {}", p, this->id);
 			return false;
 		}
 
@@ -86,7 +86,7 @@ namespace nx::rpc
 		msg.sequence = this->seq++;
 		msg.status = RPC_OK;
 
-		dbg("rpc", "call %lu (%lu -> %lu)", this->id, msg.counterpart, this->calleePid);
+		dbg("rpc", "call {} ({} -> {})", this->id, msg.counterpart, this->calleePid);
 
 		// wait for existing things to finish
 		this->inProgress.wait(false);
@@ -124,7 +124,7 @@ namespace nx::rpc
 		assert(this->inProgress.get());
 
 		this->results.lock()->append(krt::move(msg));
-		dbg("rpc", "return %lu (%lu <- %lu)", this->id, this->callerPid, msg.counterpart);
+		dbg("rpc", "return {} ({} <- {})", this->id, this->callerPid, msg.counterpart);
 
 		// notify that we're done.
 		this->inProgress.set(false);

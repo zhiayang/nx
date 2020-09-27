@@ -152,6 +152,23 @@ namespace krt
 
 	template <typename al, typename ab>
 	auto end(const krt::string_view<al, ab>& s) { return s.end(); }
+
+
+
+	// implement stuff for string
+	template <typename al, typename ab, size_t sso>
+	string<al, ab, sso>& string<al, ab, sso>::operator+= (const string_view<al, ab>& sv)
+	{
+		impl::append(this, sv.data(), sv.size());
+		return *this;
+	}
+
+	template <typename al, typename ab, size_t sso>
+	string<al, ab, sso>& string<al, ab, sso>::append(const string_view<al, ab>& sv)
+	{
+		impl::append(this, sv.data(), sv.size());
+		return *this;
+	}
 }
 
 

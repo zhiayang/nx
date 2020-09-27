@@ -76,7 +76,7 @@ namespace acpi
 
 		auto table = (RSDPointer2*) (xsdp ? xsdp : rsdp);
 		if(strncmp(table->version1.signature, "RSD PTR ", 8) != 0)
-			abort("invalid rsdp: signature '%.8s' mismatch", table->version1.signature);
+			abort("invalid rsdp: signature '{.8}' mismatch", table->version1.signature);
 
 		assert(!isXSDT || table->version1.revision > 1);
 
@@ -108,7 +108,7 @@ namespace acpi
 		}
 		else
 		{
-			abort("invalid rsdt/xsdt: signature '%.4s' mismatch", hdr->signature);
+			abort("invalid rsdt/xsdt: signature '{.4}' mismatch", hdr->signature);
 		}
 	}
 
@@ -127,7 +127,7 @@ namespace acpi
 			{
 				auto ea = VirtAddr(ent->address);
 				if(vmm::allocateSpecific(ea, ent->numPages).isZero())
-					abort("apic::init(): failed to map ACPI memory at %p", ent->address);
+					abort("apic::init(): failed to map ACPI memory at {p}", ent->address);
 
 				// ok, now just map it in an identity fashion.
 				vmm::mapAddress(ea, ea.physIdentity(), ent->numPages, vmm::PAGE_PRESENT);
@@ -149,7 +149,7 @@ namespace acpi
 			auto xsdt = (XSDTable*) table;
 			size_t numHdrs = (xsdt->header.length - sizeof(header_t)) / sizeof(uint64_t);
 
-			log("acpi", "reading xsdt (%zu tables)", numHdrs);
+			log("acpi", "reading xsdt ({} tables)", numHdrs);
 			for(size_t i = 0; i < numHdrs; i++)
 				readTable((header_t*) xsdt->tables[i]);
 		}
@@ -158,7 +158,7 @@ namespace acpi
 			auto rsdt = (RSDTable*) table;
 			size_t numHdrs = (rsdt->header.length - sizeof(header_t)) / sizeof(uint32_t);
 
-			log("acpi", "reading rsdt (%zu tables)", numHdrs);
+			log("acpi", "reading rsdt ({} tables)", numHdrs);
 			for(size_t i = 0; i < numHdrs; i++)
 				readTable((header_t*) (addr_t) rsdt->tables[i]);
 		}

@@ -348,7 +348,7 @@ struct heap_impl
 		{
 			if constexpr (!LargeAllocations)
 			{
-				error(HeapId, "allocation size %zu too large!", total_size);
+				error(HeapId, "allocation size {} too large!", total_size);
 				return 0;
 			}
 
@@ -370,10 +370,10 @@ struct heap_impl
 		else
 		{
 			auto bucket = getFittingBucket(total_size);
-			if(!bucket) abort("allocation of size %zu too large!", total_size);
+			if(!bucket) abort("allocation of size {} too large!", total_size);
 
 			if(bucket->chunkSize < total_size)
-				abort("%zu, %zu", bucket->chunkSize, total_size);
+				abort("{}, {}", bucket->chunkSize, total_size);
 
 			assert(bucket->chunkSize >= total_size);
 
@@ -443,10 +443,10 @@ struct heap_impl
 
 		if(!sz)
 		{
-			error("heap", "heap corruption! (%s)\n"
-							"address: %p\n"
-							"ofs: %x, sz: %zu\n"
-							"caller: %p\n", this->HeapId, _addr, ofs, sz, caller);
+			error("heap", "heap corruption! ({})\n"
+							"address: {p}\n"
+							"ofs: {x}, sz: {}\n"
+							"caller: {p}\n", this->HeapId, _addr, ofs, sz, caller);
 
 			util::printStackTrace();
 		}
@@ -551,7 +551,7 @@ struct heap_impl
 			}
 		}
 
-		if(slackSpace != 0) abort("failed to consume slack space?! %zu bytes left", slackSpace);
+		if(slackSpace != 0) abort("failed to consume slack space?! {} bytes left", slackSpace);
 
 		size_t numChunkPages = ((numRequiredChunks * sizeof(Chunk)) + PAGE_SIZE) / PAGE_SIZE;
 
@@ -578,7 +578,7 @@ struct heap_impl
 				chunk->next = next;
 				chunk->memory = memoryBuffer;
 
-				// log("heap", "chunk(%p) = %p", chunk, chunk->memory);
+				// log("heap", "chunk({p}) = {p}", chunk, chunk->memory);
 
 				chunkBuffer += sizeof(Chunk);
 				memoryBuffer += BucketSizes[i];
@@ -601,7 +601,7 @@ struct heap_impl
 		spareChunks.id = 0;
 
 		Initialised = true;
-		log(HeapId, "initialised with %zu chunks in %zu buckets (%zu bytes)", numRequiredChunks, BucketCount,
+		log(HeapId, "initialised with {} chunks in {} buckets ({} bytes)", numRequiredChunks, BucketCount,
 			numBytes);
 	}
 

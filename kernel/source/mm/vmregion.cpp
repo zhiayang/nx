@@ -45,7 +45,7 @@ namespace vmm
 			}
 		}
 
-		log("adrspc", "freed %zu physical pages", num);
+		log("adrspc", "freed {} physical pages", num);
 	}
 
 	PhysAddr AddressSpace::cr3()
@@ -102,7 +102,7 @@ namespace vmm
 			else if(vmr.addr == addr)
 			{
 				// hmm...
-				abort("vmregion: potential double free! addr: %p, size: %zu", addr, num);
+				abort("vmregion: potential double free! addr: {p}, size: {}", addr, num);
 			}
 		}
 
@@ -140,7 +140,7 @@ namespace vmm
 			else if(vmr.addr == addr)
 			{
 				// hmm...
-				abort("vmregion: potential double add! addr: %p, phys: %p, size: %zu/%zu", addr, physStart, num, vmr.numPages);
+				abort("vmregion: potential double add! addr: {p}, phys: {p}, size: {}/{}", addr, physStart, num, vmr.numPages);
 			}
 		}
 
@@ -248,7 +248,7 @@ namespace vmm
 			}
 		}
 
-		abort("vmregion: did not find matching extent for (%p, %zu)", addr, num);
+		abort("vmregion: did not find matching extent for ({p}, {})", addr, num);
 	}
 
 	PhysAddr AddressSpace::LockedAddrSpace::addPhysicalMapping(VirtAddr virt, PhysAddr phys)
@@ -288,7 +288,7 @@ namespace vmm
 			}
 		}
 
-		abort("vmregion: did not find matching extent for (%p)", virt);
+		abort("vmregion: did not find matching extent for ({p})", virt);
 		return PhysAddr::zero();
 	}
 

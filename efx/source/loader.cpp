@@ -192,7 +192,6 @@ namespace efx
 
 			switch(efiEnt->Type)
 			{
-
 				case EfiBootServicesCode:           // fallthrough
 				case EfiBootServicesData:           entries[k].memoryType = nx::MemoryType::Reserved; break;
 
@@ -242,6 +241,7 @@ namespace efx
 								entries[k].memoryType = (nx::MemoryType) customExtents[i].type;
 
 								bi->mmEntryCount += 1;
+								k += 1;
 							}
 						}
 					}
@@ -251,10 +251,14 @@ namespace efx
 
 				} break;
 
-				default:                            skip = true; break; // do not include
+				// do not include
+				default:
+					skip = true;
+					break;
 			}
 
-			if(skip) continue;
+			if(skip)
+				continue;
 
 			entries[k].address = efiEnt->PhysicalStart;
 			entries[k].numPages = efiEnt->NumberOfPages;
@@ -273,6 +277,7 @@ namespace efx
 
 				entries[k].address = customExtents[i].base;
 				entries[k].numPages = customExtents[i].num;
+				entries[k].memoryType = (nx::MemoryType) customExtents[i].type;
 				entries[k].efiAttributes = 0;
 
 				bi->mmEntryCount += 1;

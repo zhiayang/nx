@@ -32,7 +32,7 @@ namespace nx
 		// debugcon::init();
 
 
-		log("mem", "phys: used %zu kb / %zu kb", pmm::getNumAllocatedBytes() / 1024,
+		log("mem", "phys: used {} kb / {} kb", pmm::getNumAllocatedBytes() / 1024,
 			pmm::getTotalPhysicalMemory() / 1024);
 
 
@@ -44,6 +44,9 @@ namespace nx
 
 		// todo: make this more dynamic
 		{
+
+			// BUG: sometimes (and quite frequently) the ps2 driver never gets to wake up.
+			// no idea wtf is happening on that front.
 			auto thr = loader::loadProgram("/initrd/drivers/ps2");
 			ps2driverproc = thr->parent;
 
@@ -86,7 +89,7 @@ namespace nx
 		log("kernel", "going to sleep...");
 		scheduler::sleep(time::milliseconds(500));
 
-		log("kernel", "woken from slumber, committing murder! %p", placebo);
+		log("kernel", "woken from slumber, committing murder! {p}", (void*) placebo);
 		ipc::signal("/proc/name/placebo", ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
 
 		while(true)
@@ -127,17 +130,17 @@ namespace nx
 		exceptions::init();
 
 		println("[nx] kernel has control");
-		println("bootloader ident: '%c%c%c', version: %d\n",
+		println("bootloader ident: '{}{}{}', version: {}\n",
 			bootinfo->ident[0], bootinfo->ident[1], bootinfo->ident[2], bootinfo->version);
 
 		if(bootinfo->version < NX_MIN_BOOTINFO_VERSION)
 		{
-			abort("invalid bootloader version: %d; at least version %d is required!",
+			abort("invalid bootloader version: {}; at least version {} is required!",
 				bootinfo->version, NX_MIN_BOOTINFO_VERSION);
 		}
 		else if(bootinfo->version > NX_MAX_BOOTINFO_VERSION)
 		{
-			warn("kernel", "bootloader version %d is newer than supported version %d",
+			warn("kernel", "bootloader version {} is newer than supported version {}",
 				bootinfo->version, NX_MAX_BOOTINFO_VERSION);
 		}
 
@@ -149,8 +152,6 @@ namespace nx
 			error("kernel", "cpu does not support cmpxchg16b");
 			abort("hardware does not support required instruction!");
 		}
-
-
 
 		// set the wp bit so we don't go around writing stuff.
 		cpu::writeCR0(cpu::readCR0() | cpu::CR0_WP);

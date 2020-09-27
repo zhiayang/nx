@@ -52,7 +52,7 @@ namespace acpi
 			lApicAddr = ((MADT_LAPICOverride*) rec)->lapicAddress;
 		});
 
-		log("acpi", "lapic at %p", lApicAddr);
+		log("acpi", "lapic at {p}", lApicAddr);
 
 		// note: we iterate the table three bloody times because we need the information in a specific order
 		// notably -- we need to have seen all IOAPICs before we see any IRQ mappings, because those mappings
@@ -70,7 +70,7 @@ namespace acpi
 					foundBsp = true;
 				}
 
-				log("acpi", "cpu %d (apic id %d)", lapic->processorId, lapic->apicId);
+				log("acpi", "cpu {} (apic id {})", lapic->processorId, lapic->apicId);
 			});
 
 			iterateTables(madt, MADT_ENTRY_TYPE_IOAPIC, [](madt_record_header_t* rec) {
@@ -82,14 +82,14 @@ namespace acpi
 				ioa.baseAddr = (addr_t) ioapic->ioApicAddress;
 				ioa.gsiBase = ioapic->globalSysInterruptBase;
 
-				log("acpi", "ioapic[%d] at %p", ioa.id, ioa.baseAddr);
+				log("acpi", "ioapic[{}] at {p}", ioa.id, ioa.baseAddr);
 
 				device::ioapic::addIOAPIC(ioa);
 			});
 
 			iterateTables(madt, MADT_ENTRY_TYPE_INT_SRC, [](madt_record_header_t* rec) {
 				auto intsrc = (MADT_IntSourceOverride*) rec;
-				log("acpi", "intr source: bus %d, irq %d, gsi %d", intsrc->busSource, intsrc->irqSource, (int) intsrc->globalSysInterrupt);
+				log("acpi", "intr source: bus {}, irq {}, gsi {}", intsrc->busSource, intsrc->irqSource, (int) intsrc->globalSysInterrupt);
 
 				device::ioapic::addISAIRQMapping(intsrc->irqSource, intsrc->globalSysInterrupt);
 			});
@@ -97,8 +97,8 @@ namespace acpi
 
 
 
-		log("acpi", "found %s, %s", util::plural("processor", scheduler::getNumCPUs()).cstr(),
-			util::plural("ioapic", device::ioapic::getNumIOAPICs()).cstr());
+		log("acpi", "found {}, {}", util::plural("processor", scheduler::getNumCPUs()),
+			util::plural("ioapic", device::ioapic::getNumIOAPICs()));
 
 		{
 			// confirm our suspicions. we can also get the local apic base address from an MSR (0x1B).
@@ -109,7 +109,7 @@ namespace acpi
 			addr_t base = cpu::readMSR(cpu::MSR_APIC_BASE);
 			if(PAGE_ALIGN(base) != lApicAddr)
 			{
-				abort("acpi: invalid configuration, lapic base address in MSR (%p) does not match madt (%p)",
+				abort("acpi: invalid configuration, lapic base address in MSR ({p}) does not match madt ({p})",
 					PAGE_ALIGN(base), lApicAddr);
 			}
 			else if(!(base & 0x100))
@@ -134,7 +134,7 @@ namespace acpi
 
 			// we need to actually map this to some virtual address -- just use the same one.
 			if(vmm::allocateSpecific(alignedBase, 1).isZero())
-				abort("lapic: failed to map base address %p", alignedBase);
+				abort("lapic: failed to map base address {p}", alignedBase);
 
 			vmm::mapAddress(alignedBase, alignedBase.physIdentity(), 1, vmm::PAGE_PRESENT | vmm::PAGE_WRITE);
 		}

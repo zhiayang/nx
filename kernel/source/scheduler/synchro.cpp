@@ -46,7 +46,7 @@ namespace nx
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
 		{
-			error("spinlock", "trying to acquire lock held by self! (tid %lu, pid %lu)",
+			error("spinlock", "trying to acquire lock held by self! (tid {}, pid {})",
 				this->holder->threadId, this->holder->parent->processId);
 
 			abort("deadlock");
@@ -105,7 +105,7 @@ namespace nx
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
 		{
-			error("IRQSpinlock", "trying to acquire lock held by self! (tid %lu, pid %lu)",
+			error("IRQSpinlock", "trying to acquire lock held by self! (tid {}, pid {})",
 				this->holder->threadId, this->holder->parent->processId);
 
 			abort("deadlock");
@@ -172,7 +172,7 @@ namespace nx
 	{
 		if(this->holder && this->holder == scheduler::getCurrentThread())
 		{
-			error("mutex", "trying to acquire lock held by self! (tid %lu, pid %lu)",
+			error("mutex", "trying to acquire lock held by self! (tid {}, pid {})",
 				this->holder->threadId, this->holder->parent->processId);
 
 			// TODO: detect this situation and kill the process if we can.

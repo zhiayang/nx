@@ -4,7 +4,7 @@
 
 #pragma once
 
-
+#include "log.h"
 #include "synchro.h"
 #include "devices/serial.h"
 
@@ -118,7 +118,7 @@ namespace extmm
 		template <typename Predicate>
 		addr_t allocate(size_t num, Predicate&& satisfies)
 		{
-			if(num == 0) abort("extmm/%s::allocate(): cannot allocate 0 pages!", this->owner);
+			if(num == 0) abort("extmm/{}::allocate(): cannot allocate 0 pages!", this->owner);
 
 			autolock lk(&this->lock);
 
@@ -155,7 +155,7 @@ namespace extmm
 				ext = ext->next;
 			}
 
-			error("extmm", "(%s): allocate() out of pages!", this->owner);
+			error("extmm", "({}): allocate() out of pages!", this->owner);
 			return 0;
 		}
 
@@ -198,7 +198,7 @@ namespace extmm
 				ext = ext->next;
 			}
 
-			serial::debugprintf("extmm/%s::allocateSpecific(): could not fulfil request!\n", this->owner);
+			serial::debugprintf("extmm/{}::allocateSpecific(): could not fulfil request!\n", this->owner);
 			return 0;
 		}
 
@@ -228,7 +228,7 @@ namespace extmm
 				else if(ext->addr == addr)
 				{
 					// hmm...
-					abort("extmm: potential double free! addr: %p, size: %zu", addr, num);
+					abort("extmm: potential double free! addr: {p}, size: {}", addr, num);
 				}
 
 				ext = ext->next;
@@ -241,11 +241,11 @@ namespace extmm
 
 		void dump()
 		{
-			serial::debugprintf("dumping extmm state %s (%p):\n", this->owner, this);
+			serial::debugprintf("dumping extmm state {} ({p}):\n", this->owner, this);
 			auto ext = this->head;
 			while(ext)
 			{
-				serial::debugprintf("    %p - %p (%zu)\n", ext->addr, end(ext), ext->size);
+				serial::debugprintf("    {p} - {p} ({})\n", ext->addr, end(ext), ext->size);
 				ext = ext->next;
 			}
 			serial::debugprintf("\n");
@@ -263,7 +263,7 @@ namespace extmm
 					// check if they intersect.
 					if(intersects(ext1, ext2))
 					{
-						error("extmm", "inconsistent extent state! (%p, %p, %zu) intersects (%p, %p, %zu)",
+						error("extmm", "inconsistent extent state! ({p}, {p}, {}) intersects ({p}, {p}, {})",
 							ext1->addr, end(ext1), ext1->size, ext2->addr, end(ext2), ext2->size);
 
 						return false;
@@ -274,7 +274,7 @@ namespace extmm
 
 				if(ext1->size == 0)
 				{
-					error("extmm", "inconsistent extent state! extent at %p has 0 size", ext1->addr);
+					error("extmm", "inconsistent extent state! extent at {p} has 0 size", ext1->addr);
 					return false;
 				}
 

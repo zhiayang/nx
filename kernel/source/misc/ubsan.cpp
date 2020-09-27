@@ -70,7 +70,7 @@ static void ubsan_abort(const struct ubsan_source_location* location,
 		location = &unknown_location;
 
 	nx::assert_fail(location->filename, location->line, "undefined behavior",
-		"%s", violation);
+		"{}", violation);
 }
 
 #define ABORT_VARIANT(name, params, call) \
@@ -111,7 +111,7 @@ void __ubsan_handle_type_mismatch_v1(void* data_raw, void* pointer_raw)
 		violation = "unaligned access";
 
 
-	nx::error("ubsan", "type mismatch (%s): type %s, align: %zu, ptr: %p",
+	nx::error("ubsan", "type mismatch ({}): type {}, align: {}, ptr: {p}",
 		type_check_kinds[data->type_check_kind], data->type->type_name, (1 << data->alignment_log), pointer);
 
 	ubsan_abort(&data->location, violation);

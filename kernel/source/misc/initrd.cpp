@@ -9,12 +9,6 @@
 #include "bootinfo.h"
 
 
-extern "C" void printline(const char* s, ...)
-{
-	va_list args; va_start(args, s);
-	nx::vprint(s, args);
-	va_end(args);
-}
 
 struct gzip_header_t
 {
@@ -75,7 +69,7 @@ namespace initrd
 		// check if it's gzip first.
 		if(((gzip_header_t*) initrd)->magic[0] == 0x1F && ((gzip_header_t*) initrd)->magic[1] == 0x8B)
 		{
-			log("initrd", "format: gzip (compressed: %zu bytes)", inpSz);
+			log("initrd", "format: gzip (compressed: {} bytes)", inpSz);
 			println("decompressing initrd...\n");
 
 			// note: we do this to avoid unaligned access, which ubsan complains about.
@@ -108,7 +102,7 @@ namespace initrd
 
 				auto ret = tinfl_decompress_mem_to_mem(buf, uncompressedSize, data, inpSz, TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
 				if(ret == TINFL_DECOMPRESS_MEM_TO_MEM_FAILED || ret != uncompressedSize)
-					abort("failed to decompress initrd! (ret = %zd)", (int64_t) ret);
+					abort("failed to decompress initrd! (ret = {})", (int64_t) ret);
 			}
 
 			finalPtr = buf;
@@ -132,7 +126,7 @@ namespace initrd
 			abort("failed to load initrd!");
 		}
 
-		log("initrd", "size: %zu kb", finalSz / 1024);
+		log("initrd", "size: {} kb", finalSz / 1024);
 
 		auto tarfs = vfs::tarfs::create((uint8_t*) finalPtr, finalSz);
 		if(!vfs::mount(tarfs, "/initrd", true))

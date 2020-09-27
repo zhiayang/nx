@@ -146,7 +146,7 @@ namespace console
 
 			auto buf = new uint8_t[sz];
 			auto r = read(f, buf, sz);
-			if(r != sz) abort("failed to read font file! expected %zu bytes, only %zu were read", sz, r);
+			if(r != sz) abort("failed to read font file! expected {} bytes, only {} were read", sz, r);
 
 			MainFont = Font();
 

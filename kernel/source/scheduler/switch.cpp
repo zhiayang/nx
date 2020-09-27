@@ -101,12 +101,12 @@ namespace scheduler
 		getCPULocalState()->currentThread = newthr;
 		getCPULocalState()->cpu->currentProcess = newthr->parent;
 
-		// serial::debugprintf("old: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", oldthr->threadId, oldthr->parent->processId,
+		// serial::debugprintf("old: [t={}, p={}, cr3={p}, sp={p}]\n", oldthr->threadId, oldthr->parent->processId,
 		// 	oldthr->parent->addrspace.cr3(), stackPointer);
-		// serial::debugprintf("new: [t=%lu, p=%lu, cr3=%p, sp=%p]\n", newthr->threadId, newthr->parent->processId,
+		// serial::debugprintf("new: [t={}, p={}, cr3={p}, sp={p}]\n", newthr->threadId, newthr->parent->processId,
 		// 	newcr3, newthr->kernelStack);
 
-		// serial::debugprintf("%p\n", newcr3);
+		// serial::debugprintf("{p}\n", newcr3);
 
 		__nested_sched = 0;
 		nx_x64_switch_to_thread(newthr->kernelStack, newcr3 == oldcr3 ? 0 : newcr3.addr(),
@@ -193,7 +193,7 @@ namespace scheduler
 		regs->rip = addrs::USER_KERNEL_STUBS.addr() + ((uintptr_t) nx_x64_user_signal_enter - (uintptr_t) &nx_user_kernel_stubs_begin);
 
 		// surgery ok.
-		// log("ipc", "sending signalled message (sigType %lu) to tid %lu / pid %lu",
+		// log("ipc", "sending signalled message (sigType {}) to tid {} / pid {}",
 		// 	msg.body.sigType, newthr->threadId, newthr->parent->processId);
 	}
 
@@ -210,7 +210,7 @@ namespace scheduler
 		assert(!__nested_tick && "TICK PREEMPTED?!");
 		__nested_tick = 1;
 
-		// serial::debugprint('.');
+		// serial::debugprintchar('.');
 
 		auto ss = getSchedState();
 
@@ -233,7 +233,7 @@ namespace scheduler
 			ss->timesliceTicks = 0;
 
 		__nested_tick = 0;
-// if(ret) { serial::debugprint('0' + ss->lock.held()); serial::debugprint('a' + getCPULocalState()->numHeldLocks); }
+
 		return ret;
 	}
 

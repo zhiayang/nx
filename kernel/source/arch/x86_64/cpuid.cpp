@@ -31,7 +31,7 @@ namespace cpu
 		do_cpuid(0, &MaxSupportedLeaf, 0, 0, 0);
 		do_cpuid(0x80000000, &MaxSupportedExtLeaf, 0, 0, 0);
 
-		log("cpuid", "max supported leaf = %d (extended = %x)", MaxSupportedLeaf, MaxSupportedExtLeaf);
+		log("cpuid", "max supported leaf = {} (extended = {x})", MaxSupportedLeaf, MaxSupportedExtLeaf);
 	}
 
 

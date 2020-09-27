@@ -70,7 +70,7 @@ namespace nx
 				if(crit)
 				{
 					// terminate that mofo.
-					warn("ipc", "thread %lu did not handle critical signal %lu -- terminating",
+					warn("ipc", "thread {} did not handle critical signal {} -- terminating",
 						thr->threadId, sigType);
 
 					// the scheduler will handle the case where we end up needing to terminate ourselves.
@@ -79,7 +79,7 @@ namespace nx
 				}
 				else
 				{
-					warn("ipc", "thread %lu has no handler for signal %lu", thr->threadId, sigType);
+					warn("ipc", "thread {} has no handler for signal {}", thr->threadId, sigType);
 					return false;
 				}
 			}

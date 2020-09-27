@@ -146,7 +146,7 @@ namespace vmm
 			// and it should be the same for every CPU.
 			auto lapicBase = VirtAddr(scheduler::getCurrentCPU()->localApicAddr);
 			if(allocateSpecific(lapicBase, 1, proc) != lapicBase)
-				abort("failed to map lapic (at %p) to user process!", lapicBase);
+				abort("failed to map lapic (at {p}) to user process!", lapicBase);
 
 			mapAddress(lapicBase, lapicBase.physIdentity(), 1, PAGE_PRESENT | PAGE_WRITE, proc);
 		}
@@ -278,7 +278,7 @@ namespace vmm
 			memset(pdpt, 0, PAGE_SIZE);
 
 			if(pml4->entries[p4idx] & PAGE_NX)
-				abort("somehow page %p has a NX pdpt! (p=%p)", virt, pp);
+				abort("somehow page {p} has a NX pdpt! (p={p})", virt, pp);
 		}
 
 		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
@@ -290,7 +290,7 @@ namespace vmm
 			memset(pdir, 0, PAGE_SIZE);
 
 			if(pdpt->entries[p3idx] & PAGE_NX)
-				abort("somehow page %p has a NX pdir! (p=%p)", virt, pp);
+				abort("somehow page {p} has a NX pdir! (p={p})", virt, pp);
 		}
 
 		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
@@ -302,11 +302,11 @@ namespace vmm
 			memset(ptab, 0, PAGE_SIZE);
 
 			if(pdir->entries[p2idx] & PAGE_NX)
-				abort("somehow page %p has a NX ptab! (p=%p)", virt, pp);
+				abort("somehow page {p} has a NX ptab! (p={p})", virt, pp);
 		}
 
 		if(!overwrite && (ptab->entries[p1idx] & PAGE_PRESENT))
-			abort("virtual addr %p was already mapped (to phys %p)!", virt, PAGE_ALIGN(ptab->entries[p1idx]));
+			abort("virtual addr {p} was already mapped (to phys {p})!", virt, PAGE_ALIGN(ptab->entries[p1idx]));
 
 		// since this is the internal one, we don't add extra flags.
 		ptab->entries[p1idx] = phys.addr() | flags;
@@ -343,7 +343,7 @@ namespace vmm
 		assert(virt.isPageAligned());
 
 		flags &= ~PAGE_PRESENT;
-		dbg("vmm", "region %p - %p marked copy-on-write", virt, virt + ofsPages(num));
+		dbg("vmm", "region {} - {} marked copy-on-write", virt, virt + ofsPages(num));
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -365,7 +365,7 @@ namespace vmm
 		assert((flags & PAGE_WRITE) == 0);
 		flags &= ~PAGE_WRITE;
 
-		dbg("vmm", "region %p - %p (pid %ld) marked zeroed-copy-on-write", virt, virt + ofsPages(num), proc->processId);
+		dbg("vmm", "region {} - {} (pid {}) marked zeroed-copy-on-write", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -388,7 +388,7 @@ namespace vmm
 		assert((flags & PAGE_PRESENT) == 0);
 		flags &= ~PAGE_PRESENT;
 
-		dbg("vmm", "region %p - %p (pid %ld) marked lazy", virt, virt + ofsPages(num), proc->processId);
+		dbg("vmm", "region {} - {} (pid {}) marked lazy", virt, virt + ofsPages(num), proc->processId);
 
 		for(size_t i = 0; i < num; i++)
 		{
@@ -467,19 +467,19 @@ namespace vmm
 			if(!(pml4->entries[p4idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("unmap: %p was not mapped! (pdpt not present)", virt);
+				abort("unmap: {p} was not mapped! (pdpt not present)", virt);
 			}
 
 			if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("unmap: %p was not mapped! (pdir not present)", virt);
+				abort("unmap: {p} was not mapped! (pdir not present)", virt);
 			}
 
 			if(!(pdir->entries[p2idx] & PAGE_PRESENT))
 			{
 				if(ignore) continue;
-				abort("unmap: %p was not mapped! (ptab not present)", virt);
+				abort("unmap: {p} was not mapped! (ptab not present)", virt);
 			}
 
 			if(!(ptab->entries[p1idx] & PAGE_PRESENT))
@@ -494,7 +494,7 @@ namespace vmm
 					continue;
 				}
 
-				abort("unmap: %p was not mapped! (page not present)", virt);
+				abort("unmap: {p} was not mapped! (page not present)", virt);
 			}
 
 			ptab->entries[p1idx] = 0;
@@ -526,16 +526,16 @@ namespace vmm
 		auto ptab = (isOtherProc ? getPTab<509>(p4idx, p3idx, p2idx) : getPTab(p4idx, p3idx, p2idx));
 
 		if(!(pml4->entries[p4idx] & PAGE_PRESENT))
-			abort("getPhys: %p was not mapped! (pdpt not present)", virt);
+			abort("getPhys: {p} was not mapped! (pdpt not present)", virt);
 
 		if(!(pdpt->entries[p3idx] & PAGE_PRESENT))
-			abort("getPhys: %p was not mapped! (pdir not present)", virt);
+			abort("getPhys: {p} was not mapped! (pdir not present)", virt);
 
 		if(!(pdir->entries[p2idx] & PAGE_PRESENT))
-			abort("getPhys: %p was not mapped! (ptab not present)", virt);
+			abort("getPhys: {p} was not mapped! (ptab not present)", virt);
 
 		if(!(ptab->entries[p1idx] & PAGE_PRESENT))
-			abort("getPhys: %p was not mapped! (page not present)", virt);
+			abort("getPhys: {p} was not mapped! (page not present)", virt);
 
 		return PhysAddr(ptab->entries[p1idx]).pageAligned();
 	}

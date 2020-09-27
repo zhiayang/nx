@@ -5,6 +5,7 @@
 #pragma once
 
 #include "defs.h"
+#include "log.h"
 
 #include "fs.h"
 #include "mm.h"
@@ -39,13 +40,6 @@ namespace nx
 	{
 		void init(BootInfo* bi);
 	}
-
-	// some misc stuff.
-	void print(const char* fmt, ...);
-	void println(const char* fmt, ...);
-	int vprint(const char* fmt, va_list args);
-
-	string sprint(const char* fmt, ...);
 }
 
 

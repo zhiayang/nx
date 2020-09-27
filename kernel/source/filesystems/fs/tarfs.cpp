@@ -93,7 +93,7 @@ namespace tarfs
 			// BSD tar behaves correctly, but gnu tar gives us "ustar  \0" instead...
 			if(memcmp(ent->ustar, "ustar", 5) != 0)
 			{
-				error("tarfs", "non-ustar format unsupported: '%.5s'", ent->ustar);
+				error("tarfs", "non-ustar format unsupported: '{.5s}'", ent->ustar);
 				return false;
 			}
 
@@ -112,7 +112,7 @@ namespace tarfs
 
 			if(file.size > 0) dd->files.append(file);
 
-			// nx::println("filename: %s, size: %zu", file.name.cstr(), file.size);
+			// nx::println("filename: {}, size: {}", file.name, file.size);
 
 			auto s = ((file.size + 511) & ~511);
 			i += __max((size_t) 512, ((512 + s) / 512) * 512);

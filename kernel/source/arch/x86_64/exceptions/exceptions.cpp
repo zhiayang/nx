@@ -134,13 +134,13 @@ namespace exceptions
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
 
 		debugprintf("\n\n");
-		debugprintf("cpu exception %d: %s\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
-		debugprintf("error code:   %d  (last_saved_error: %lu)\n", regs->ErrorCode, __last_saved_error_code);
+		debugprintf("cpu exception {}: {}\n", regs->InterruptID, ExceptionMessages[regs->InterruptID]);
+		debugprintf("error code:   {}  (last_saved_error: {})\n", regs->ErrorCode, __last_saved_error_code);
 
 		// note: we must check gs, in case it was some kind of swapgs failure -- we don't want to end up triple-faulting.
 		if(gsbase != 0 && scheduler::getInitPhase() >= scheduler::SchedulerInitPhase::SchedulerStarted)
 		{
-			debugprintf("pid: %lu / tid: %lu\n", scheduler::getCurrentProcess()->processId,
+			debugprintf("pid: {} / tid: {}\n", scheduler::getCurrentProcess()->processId,
 				scheduler::getCurrentThread()->threadId);
 		}
 		else
@@ -160,11 +160,11 @@ namespace exceptions
 			if((err & 0x6) == 4)    debugprintf(" (ldt)");
 			if((err & 0x6) == 6)    debugprintf(" (idt)");
 
-			debugprintf(", selector: %x\n", err & 0xfff8);
+			debugprintf(", selector: {x}\n", err & 0xfff8);
 		}
 
 		regs->dump();
-		debugprintf("cr3:      %16.8lx\n", cr3);
+		debugprintf("cr3:      {16.8x}\n", cr3);
 
 		if(regs->InterruptID == 14)
 		{
@@ -177,7 +177,7 @@ namespace exceptions
 			uint8_t reservedBits        = regs->ErrorCode & 0x8;    // Overwritten CPU-reserved bits of page entry?
 			uint8_t instructionFetch    = regs->ErrorCode & 0x10;   // Caused by an instruction fetch?
 
-			debugprintf("addr:   %p\n", cr2);
+			debugprintf("addr:   {p}\n", cr2);
 			debugprintf("reason:");
 
 			if(notPresent)          debugprintf(" (not present)");
@@ -190,7 +190,7 @@ namespace exceptions
 		}
 
 		debugprintf("\nfault location:\n");
-		debugprintf("  %8lx  |  %s\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()).cstr());
+		debugprintf("  {8x}  |  {}\n\n", regs->rip, syms::symbolicate(regs->rip, scheduler::getCurrentProcess()));
 
 		// if this was a user program, then fuck that guy.
 		if(gsbase != 0 && scheduler::getCurrentProcess() != scheduler::getKernelProcess())
@@ -268,25 +268,25 @@ namespace cpu
 		using namespace serial;
 
 		debugprintf("\n");
-		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
-		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
-		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
-		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
-		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
-		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
-		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
-		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
-		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
-		debugprintf("ss:       %16.8lx   u-rsp:    %16.8lx\n", r->ss, r->useresp);
-		debugprintf("rflags:   %16.8lx   cr2:      %16.8lx\n", r->rflags, r->cr2);
+		debugprintf("rax:      {16.8x}   rbx:      {16.8x}\n", r->rax, r->rbx);
+		debugprintf("rcx:      {16.8x}   rdx:      {16.8x}\n", r->rcx, r->rdx);
+		debugprintf("r08:      {16.8x}   r09:      {16.8x}\n", r->r8, r->r9);
+		debugprintf("r10:      {16.8x}   r11:      {16.8x}\n", r->r10, r->r11);
+		debugprintf("r12:      {16.8x}   r13:      {16.8x}\n", r->r12, r->r13);
+		debugprintf("r14:      {16.8x}   r15:      {16.8x}\n", r->r14, r->r15);
+		debugprintf("rdi:      {16.8x}   rsi:      {16.8x}\n", r->rdi, r->rsi);
+		debugprintf("rbp:      {16.8x}   rsp:      {16.8x}\n", r->rbp, r->rsp);
+		debugprintf("rip:      {16.8x}   cs:       {16.8x}\n", r->rip, r->cs);
+		debugprintf("ss:       {16.8x}   u-rsp:    {16.8x}\n", r->ss, r->useresp);
+		debugprintf("rflags:   {16.8x}   cr2:      {16.8x}\n", r->rflags, r->cr2);
 		debugprintf("\n");
 
 		auto fsbase = cpu::readMSR(cpu::MSR_FS_BASE);
 		auto gsbase = cpu::readMSR(cpu::MSR_GS_BASE);
 		auto kgsbase = cpu::readMSR(cpu::MSR_KERNEL_GS_BASE);
 
-		debugprintf("gs_base:  %16.8lx   kgs_base: %16.8lx\n", gsbase, kgsbase);
-		debugprintf("fs_base:  %16.8lx\n", fsbase);
+		debugprintf("gs_base:  {16.8x}   kgs_base: {16.8x}\n", gsbase, kgsbase);
+		debugprintf("fs_base:  {16.8x}\n", fsbase);
 	}
 
 	void InterruptedState::dump() const
@@ -295,16 +295,16 @@ namespace cpu
 
 		using namespace serial;
 
-		debugprintf("rax:      %16.8lx   rbx:      %16.8lx\n", r->rax, r->rbx);
-		debugprintf("rcx:      %16.8lx   rdx:      %16.8lx\n", r->rcx, r->rdx);
-		debugprintf("r08:      %16.8lx   r09:      %16.8lx\n", r->r8, r->r9);
-		debugprintf("r10:      %16.8lx   r11:      %16.8lx\n", r->r10, r->r11);
-		debugprintf("r12:      %16.8lx   r13:      %16.8lx\n", r->r12, r->r13);
-		debugprintf("r14:      %16.8lx   r15:      %16.8lx\n", r->r14, r->r15);
-		debugprintf("rdi:      %16.8lx   rsi:      %16.8lx\n", r->rdi, r->rsi);
-		debugprintf("rbp:      %16.8lx   rsp:      %16.8lx\n", r->rbp, r->rsp);
-		debugprintf("rip:      %16.8lx   cs:       %16.8lx\n", r->rip, r->cs);
-		debugprintf("ss:       %16.8lx   rflags:   %16.8lx\n", r->ss, r->rflags);
+		debugprintf("rax:      {16.8x}   rbx:      {16.8x}\n", r->rax, r->rbx);
+		debugprintf("rcx:      {16.8x}   rdx:      {16.8x}\n", r->rcx, r->rdx);
+		debugprintf("r08:      {16.8x}   r09:      {16.8x}\n", r->r8, r->r9);
+		debugprintf("r10:      {16.8x}   r11:      {16.8x}\n", r->r10, r->r11);
+		debugprintf("r12:      {16.8x}   r13:      {16.8x}\n", r->r12, r->r13);
+		debugprintf("r14:      {16.8x}   r15:      {16.8x}\n", r->r14, r->r15);
+		debugprintf("rdi:      {16.8x}   rsi:      {16.8x}\n", r->rdi, r->rsi);
+		debugprintf("rbp:      {16.8x}   rsp:      {16.8x}\n", r->rbp, r->rsp);
+		debugprintf("rip:      {16.8x}   cs:       {16.8x}\n", r->rip, r->cs);
+		debugprintf("ss:       {16.8x}   rflags:   {16.8x}\n", r->ss, r->rflags);
 	}
 }
 }

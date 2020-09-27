@@ -62,7 +62,7 @@ namespace idt
 
 		// IST goes from 1 to 7.
 		if(ist > 7 || ist < 0)
-			abort("invalid ist index!! (setting IDT entry %02x)", num);
+			abort("invalid ist index!! (setting IDT entry {02x})", num);
 
 		ist &= 0x7;
 

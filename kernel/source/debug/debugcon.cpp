@@ -28,7 +28,7 @@ namespace debugcon
 	static void do_command(char* cmd, size_t len)
 	{
 		// move to the next line
-		serial::debugprint('\n');
+		serial::debugprintchar('\n');
 
 		// trim whitespace at the beginning:
 		while(*cmd && (*cmd == ' ' || *cmd == '\t'))
@@ -58,10 +58,10 @@ namespace debugcon
 		}
 		else
 		{
-			serial::debugprintf("unknown command '%.*s'", cmd_len, cmd);
+			serial::debugprintf("unknown command '{}'", nx::string_view(cmd, cmd_len));
 		}
 
-		serial::debugprint('\n');
+		serial::debugprintchar('\n');
 	}
 
 
@@ -102,7 +102,7 @@ namespace debugcon
 			// if we're full, ding.
 			if(line.length >= MAX_BUFFER_SIZE)
 			{
-				serial::debugprint('\a');
+				serial::debugprintchar('\a');
 				return false;
 			}
 
@@ -127,7 +127,7 @@ namespace debugcon
 			serial::debugprint(line.buffer, line.length);
 
 			// move the cursor to the right place
-			serial::debugprintf("\x1b[%zuG", line.cursor + 1);
+			serial::debugprintf("\x1b[{}G", line.cursor + 1);
 		};
 
 		auto erase_left = [&refresh_line]() {
@@ -351,7 +351,7 @@ namespace debugcon
 
 						// we need to refresh the line, in case we edited stuff in the middle.
 						if(needClr) refresh_line();
-						else        serial::debugprint((char) x);
+						else        serial::debugprintchar(x);
 					}
 				}
 			}

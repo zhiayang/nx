@@ -44,12 +44,12 @@ namespace pit8253
 		if(divisor < MINIMUM_SAFE_DIVISOR)
 		{
 			divisor = MINIMUM_SAFE_DIVISOR;
-			warn("pit8253", "clamping divisor to %u (%.2f hz)", divisor, BASE_FREQUENCY_HZ / divisor);
+			warn("pit8253", "clamping divisor to {} ({.2} hz)", divisor, BASE_FREQUENCY_HZ / divisor);
 		}
 		else if(divisor > 65535)
 		{
 			divisor = 65535;
-			warn("pit8253", "clamping divisor to %u (%.2f hz)", divisor, BASE_FREQUENCY_HZ / divisor);
+			warn("pit8253", "clamping divisor to {} ({.2} hz)", divisor, BASE_FREQUENCY_HZ / divisor);
 		}
 
 		setDivisor((uint16_t) divisor);

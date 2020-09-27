@@ -108,7 +108,7 @@ namespace fpu
 		}
 
 		XCR0ComponentBitmap = (((uint64_t) edx) << 32) | (eax);
-		log("fpu", "reported xsave size: %zu bytes", ecx);
+		log("fpu", "reported xsave size: {} bytes", ecx);
 
 		XSaveStateMaxSize = XSAVE_EXTENDED_AREA_OFFSET;
 
@@ -125,7 +125,7 @@ namespace fpu
 		// the virtualbox people don't know what they're doing yet again.
 		if((XCR0ComponentBitmap & 0x3) != 0x3)
 		{
-			warn("fpu", "XFeatureSupportedMask mismatch; expected 0x3, got %x", XCR0ComponentBitmap);
+			warn("fpu", "XFeatureSupportedMask mismatch; expected 0x3, got {x}", XCR0ComponentBitmap);
 		}
 
 		// get information about each component.
@@ -151,7 +151,7 @@ namespace fpu
 			XSaveStateMaxSize += XSaveStateComponents[i].size;
 		}
 
-		log("fpu", "xsave size: %zu", XSaveStateMaxSize);
+		log("fpu", "xsave size: {}", XSaveStateMaxSize);
 	}
 
 	static void enableFPU()

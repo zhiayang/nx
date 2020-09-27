@@ -48,6 +48,9 @@ void efx::init()
 		auto kernelPath = options::get_option("kernel");
 		if(kernelPath.empty()) efi::abort("did not specify 'kernel' option!");
 
+
+		efi::println("reading kernel from disk...");
+
 		size_t len = 0;
 		auto buf = fs::readFile(kernelPath, &len);
 
@@ -90,8 +93,13 @@ void efx::init()
 			memset((uint8_t*) out + len, 0, pages * 0x1000 - len);
 
 			auto crc32 = [](const uint8_t* ptr, size_t buf_len) -> uint32_t {
-				static const uint32_t s_crc32[16] = { 0, 0x1db71064, 0x3b6e20c8, 0x26d930ac, 0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
-													0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c, 0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c };
+				static const uint32_t s_crc32[16] = {
+					0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
+					0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
+					0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
+					0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
+				};
+
 				uint32_t crcu32 = 0;
 				if(!ptr) return 0;
 

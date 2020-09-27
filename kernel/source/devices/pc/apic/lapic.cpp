@@ -145,13 +145,13 @@ namespace apic
 		}
 		interrupts::disable();
 
-		log("lapic", "calibrated lapic timer: ~%lu fs per tick", (uint64_t) femtosecondsPerTimerTick);
+		log("lapic", "calibrated lapic timer: ~{} fs per tick", (uint64_t) femtosecondsPerTimerTick);
 
 		// arm the timer.
 		{
 			auto timerTicks = (uint32_t) (prescale * scheduler::getNanosecondsPerTick() / (femtosecondsPerTimerTick));
 
-			log("lapic", "timer set to %u ticks", timerTicks);
+			log("lapic", "timer set to {} ticks", timerTicks);
 
 			writeLAPIC(base, REG_TIMER_DIVISOR, 0x1);
 			writeLAPIC(base, REG_TIMER_INITIAL, timerTicks);

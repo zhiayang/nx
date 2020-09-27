@@ -9,8 +9,8 @@ namespace util
 {
 	nx::string plural(const nx::string& s, size_t count)
 	{
-		if(count == 1)  return sprint("1 %s", s.cstr());
-		else            return sprint("%zu %ss", count, s.cstr());
+		if(count == 1)  return sprint("1 {}", s.cstr());
+		else            return sprint("{} {}s", count, s.cstr());
 	}
 }
 }

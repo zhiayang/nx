@@ -32,7 +32,7 @@ namespace scheduler
 			allProcesses.append(proc);
 		});
 
-		log("sched", "created process '%s' (pid: %lu, cr3: %p)", proc->processName.cstr(), proc->processId, proc->addrspace.cr3());
+		log("sched", "created process '{}' (pid: {}, cr3: {p})", proc->processName, proc->processId, proc->addrspace.cr3());
 		return proc;
 	}
 
@@ -54,7 +54,7 @@ namespace scheduler
 
 		ipc::cleanupProcessTickets(proc);
 
-		log("sched", "destroyed process '%s' (pid: %lu)", proc->processName.cstr(), proc->processId);
+		log("sched", "destroyed process '{}' (pid: {})", proc->processName, proc->processId);
 		delete proc;
 	}
 
@@ -130,7 +130,7 @@ namespace scheduler
 			if(p->processId == id)
 				return p;
 
-		warn("sched", "attempted to find non-existent process with id %lu", id);
+		warn("sched", "attempted to find non-existent process with id {}", id);
 		return nullptr;
 	}
 
@@ -143,7 +143,7 @@ namespace scheduler
 				if(t.threadId == id)
 					return &t;
 
-		warn("sched", "attempted to find non-existent thread with id %lu", id);
+		warn("sched", "attempted to find non-existent thread with id {}", id);
 		return nullptr;
 	}
 

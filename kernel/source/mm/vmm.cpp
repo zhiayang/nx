@@ -34,7 +34,7 @@ namespace vmm
 				return (AddressSpaceType) i;
 		}
 
-		abort("address %p not in any address space", addr);
+		abort("address {p} not in any address space", addr);
 		return (AddressSpaceType) 0;
 	}
 
@@ -99,7 +99,7 @@ namespace vmm
 		assert(proc);
 
 		if((size_t) type >= NumAddressSpaces)
-			abort("allocateAddrSpace(): invalid address space '%d'!", type);
+			abort("allocateAddrSpace(): invalid address space '{}'!", type);
 
 
 		auto ret = VirtAddr(proc->addrspace.getVMMState(type).allocate(num, [](addr_t, size_t) -> bool { return true; }));
@@ -131,7 +131,7 @@ namespace vmm
 
 		auto virt = VirtAddr(proc->addrspace.getVMMState(getAddrSpace(addr, num)).allocateSpecific(addr.addr(), num));
 		if(virt.nonZero())  proc->addrspace.lock()->addRegion(virt, num);
-		else                warn("vmm", "failed to allocate specific address (%p, %zu)", addr, num);
+		else                warn("vmm", "failed to allocate specific address ({p}, {})", addr, num);
 
 		return virt;
 	}

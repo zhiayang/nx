@@ -61,7 +61,7 @@ namespace nx::ipc
 			if(this->refcount == 0)
 			{
 				this->physicalPages.destroy();
-				dbg("memticket", "freed memory for ticket %lu", this->id);
+				dbg("memticket", "freed memory for ticket {}", this->id);
 			}
 		}
 
@@ -89,7 +89,7 @@ namespace nx::ipc
 			auto id = __atomic_add_fetch(&ticketIdCounter, 1, __ATOMIC_SEQ_CST);
 			tickets.lock()->insert(id, MemoryTicket(id, flags, len, pages));
 
-			log("memticket", "pid %lu created memticket (%lu, %zu)", scheduler::getCurrentProcess()->processId, id, len);
+			dbg("memticket", "pid {} created memticket ({}, {})", scheduler::getCurrentProcess()->processId, id, len);
 			return id;
 		}
 
@@ -106,7 +106,7 @@ namespace nx::ipc
 			auto it = tkts.find(ticketId);
 			if(it == tkts.end())
 			{
-				warn("memticket", "process %lu tried to collect nonexistent ticket %lu",
+				warn("memticket", "process {} tried to collect nonexistent ticket {}",
 					scheduler::getCurrentProcess()->processId, ticketId);
 
 				return;
@@ -136,7 +136,7 @@ namespace nx::ipc
 				ret_ticket.len = tik->userLen;
 				ret_ticket.ticketId = tik->id;
 
-				dbg("memticket", "pid %lu collected memticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+				dbg("memticket", "pid {} collected memticket ({}, {p} -> {p})", scheduler::getCurrentProcess()->processId, tik->id,
 					ret_ticket.ptr, (addr_t) ret_ticket.ptr + ret_ticket.len);
 			});
 		});
@@ -179,7 +179,7 @@ namespace nx::ipc
 
 		if(found.empty())
 		{
-			warn("memticket", "process %lu tried to collect nonexistent ticket %lu",
+			warn("memticket", "process {} tried to collect nonexistent ticket {}",
 				scheduler::getCurrentProcess()->processId, ticketId);
 
 			return { };
@@ -199,7 +199,7 @@ namespace nx::ipc
 			auto it = tkts.find(ticket.ticketId);
 			if(it == tkts.end())
 			{
-				warn("memticket", "process %lu tried to release nonexistent ticket %lu",
+				warn("memticket", "process {} tried to release nonexistent ticket {}",
 					scheduler::getCurrentProcess()->processId, ticket.ticketId);
 
 				return { false, 0 };
@@ -240,7 +240,7 @@ namespace nx::ipc
 
 				proc->addrspace.lock()->removeSharedRegion(krt::move(svmr));
 
-				dbg("memticket", "pid %lu released ticket (%lu, %p -> %p)", scheduler::getCurrentProcess()->processId, tik->id,
+				dbg("memticket", "pid {} released ticket ({}, {p} -> {p})", scheduler::getCurrentProcess()->processId, tik->id,
 					ticket.ptr, (addr_t) ticket.ptr + ticket.len);
 
 				tik->deref();
@@ -253,7 +253,7 @@ namespace nx::ipc
 
 		if(cleanup)
 		{
-			log("memticket", "cleaning up ticket %lu", tktid);
+			dbg("memticket", "cleaning up ticket {}", tktid);
 			tickets.lock()->remove(tktid);
 		}
 	}
@@ -274,7 +274,7 @@ namespace nx::ipc
 				auto it = tkts.find(id);
 				if(it == tkts.end())
 				{
-					warn("memticket", "process %lu was holding onto invalid memticket %lu", proc->processId, id);
+					warn("memticket", "process {} was holding onto invalid memticket {}", proc->processId, id);
 					return false;
 				}
 

@@ -90,7 +90,7 @@ namespace serial
 
 
 
-	void debugprint(char c)
+	void debugprintchar(char c)
 	{
 		port::write1b(QEMU_DEBUG_SERIAL_PORT, c);
 		while(!(port::read1b(COM1.port + 5) & 0x20))
@@ -99,29 +99,18 @@ namespace serial
 		port::write1b(COM1.port, c);
 	}
 
-	void debugprint(char* s, size_t l)
+	void debugprint(const char* s, size_t l)
 	{
-		if(!s) return;
+		if(!s)
+			return;
+
 		for(size_t i = 0; i < l && s[i]; i++)
-			debugprint(s[i]);
+			debugprintchar(s[i]);
 	}
 
 	void debugprint(const char* s)
 	{
-		debugprint((char*) s, strlen(s));
-	}
-
-
-	void debugprintf(const char* fmt, ...)
-	{
-		va_list args; va_start(args, fmt);
-
-		vcbprintf(nullptr, [](void* ctx, const char* s, size_t len) -> size_t {
-			serial::debugprint((char*) s, len);
-			return len;
-		}, fmt, args);
-
-		va_end(args);
+		debugprint(s, strlen(s));
 	}
 }
 }

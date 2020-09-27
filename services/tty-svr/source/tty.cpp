@@ -4,13 +4,11 @@
 
 #include "export/tty.h"
 
-//* note: we do not link with libkrt! we only want the template types, which are
-//* all in headers.
-
-#include <krt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+
+#include <list>
 
 struct allocator
 {
@@ -53,9 +51,6 @@ struct aborter
 };
 
 
-template <typename T>
-using list = krt::list<T, allocator, aborter>;
-
 namespace ttysvr
 {
 	struct tty_t
@@ -85,7 +80,7 @@ namespace ttysvr
 
 
 
-	list<tty_t> ttyList;
+	std::list<tty_t> ttyList;
 	tty_t* currentTTY = 0;
 
 	void switchToTTY(uint16_t id)

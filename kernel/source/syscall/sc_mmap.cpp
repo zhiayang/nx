@@ -56,7 +56,7 @@ namespace nx
 			auto ret = vmm::allocate(numPages, vmm::AddressSpaceType::User, flg);
 			if(ret.isZero()) return MAP_FAILED;
 
-			dbg("mmap", "user mmap: %p -> %p", ret.addr(), (ret + ofsPages(numPages)).addr());
+			dbg("mmap", "user mmap: {} -> {}", ret, (ret + ofsPages(numPages)));
 			return ret.ptr();
 		}
 		else

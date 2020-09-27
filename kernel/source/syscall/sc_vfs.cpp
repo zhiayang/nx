@@ -21,7 +21,7 @@ namespace nx
 
 		if(fd == 1 || fd == 2)
 		{
-			print("%.*s", len, buf);
+			print("{}", nx::string_view((const char*) buf, len));
 			return len;
 		}
 		else

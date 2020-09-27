@@ -4,9 +4,12 @@
 
 #include "nx.h"
 
+#include <cxxabi.h>
+
 namespace nx {
 namespace util
 {
+#if 0
 	struct Substitution
 	{
 		nx::string str;
@@ -293,7 +296,7 @@ namespace util
 				}
 			}
 
-			if(!found) abort("invalid substitution! (current: %s)", s.data());
+			if(!found) abort("invalid substitution! (current: {})", s.data());
 
 			s.remove_prefix(2);
 			return ret;
@@ -345,7 +348,7 @@ namespace util
 			}
 			else
 			{
-				ret = sprint("auto:%d", n + 1);
+				ret = sprint("auto:{}", n + 1);
 				st.templateSubs.append(ret);
 			}
 		}
@@ -469,7 +472,7 @@ namespace util
 		assert(s[0] == '_');
 		s.remove_prefix(1);
 
-		return sprint("unnamed-type#%d", n);
+		return sprint("unnamed-type#{}", n);
 	}
 
 	static nx::string parseClassType(nx::string_view& s, State& st)
@@ -518,7 +521,7 @@ namespace util
 		int n = 0;
 		if(isdigit(s[0])) n = parseLength(s) + 1;
 
-		ret += sprint("#%d", n + 1);
+		ret += sprint("#{}", n + 1);
 
 		assert(s[0] == '_');
 		s.remove_prefix(1);
@@ -775,7 +778,7 @@ namespace util
 				s.remove_prefix(1);
 
 			int n = parseLength(s) + 1;
-			ret += sprint("#%d", n);
+			ret += sprint("#{}", n);
 		}
 
 		return ret;
@@ -857,7 +860,7 @@ namespace util
 					::= <substitution>
 		*/
 
-		// println("parseType: %s", s.data());
+		// println("parseType: {}", s.data());
 
 		assert(s.size() > 0);
 
@@ -914,10 +917,10 @@ namespace util
 			if(s[0] != '_')
 			{
 				if(isdigit(s[0]))
-					dim = sprint(" [%d]", parseLength(s));
+					dim = sprint(" [{}]", parseLength(s));
 
 				else
-					dim = sprint(" [%s]", parseExpr(s, st));
+					dim = sprint(" [{}]", parseExpr(s, st));
 			}
 
 			assert(s[0] == '_');
@@ -1315,7 +1318,7 @@ namespace util
 		{
 			case 'b':   s.remove_prefix(1); ret += (s[0] - '0' ? "true" : "false"); s.remove_prefix(1); break;
 			case 'a':
-			case 'c':   s.remove_prefix(1); ret += sprint("'%c'", parseLength(s)); break;
+			case 'c':   s.remove_prefix(1); ret += sprint("'{}'", parseLength(s)); break;
 
 			case 'n':   s.remove_prefix(1); ret += "-"; // fallthrough
 
@@ -1327,7 +1330,7 @@ namespace util
 			case 'l':
 			case 'm':
 			case 'x':
-			case 'y':   s.remove_prefix(1); ret += sprint("%d", parseLength(s)); break;
+			case 'y':   s.remove_prefix(1); ret += sprint("{}", parseLength(s)); break;
 
 			// don't support floating point literals for now...
 			case 'f':
@@ -1352,7 +1355,7 @@ namespace util
 			ret += "(";
 			ret += parseType(s, st);
 			ret += ") ";
-			ret += sprint("%d", parseLength(s));
+			ret += sprint("{}", parseLength(s));
 		}
 
 		assert(s[0] == 'E');
@@ -1405,14 +1408,17 @@ namespace util
 
 
 
-
 	nx::string demangleSymbol(const nx::string& mangled)
 	{
 		// then it's not mangled.
 		if(mangled.find("_Z") != 0) return mangled;
 
 		auto input = string_view(mangled);
-		// serial::debugprintf("%s\n", mangled.cstr());
+
+		input = "_ZN3zpr6detail11visit_threeIRNS0_17callback_appenderIZN2nx13__generic_logIJEEEviPKcS6_DpOT_EUlS6_mE_EEZNS0_5printISC_NS_2tt5tupleIJRS6_SG_RKS6_SI_SG_SI_EEEEEvOT_S6_mOT0_EUlSL_NS_11format_argsESN_OT1_OT2_E0_SJ_Lm0EEEvSL_SQ_mSO_SN_";
+
+
+		serial::debugprintf("{}\n", mangled.cstr());
 
 		// _ZN3krt6stringIN2nx10_allocatorENS1_8_aborterEEC1ERKS4_
 		// _ZN3krt5arrayIPN2nx3vfs10FilesystemENS1_10_allocatorENS1_8_aborterEEaSEOS7_
@@ -1423,11 +1429,22 @@ namespace util
 		// _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm.isra.51
 		// _ZN3vfs10concatPathERKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE.cold.61
 
+
 		State st;
 		return parseMangledName(input, st);
 	}
+#endif
 
+	// TODO: this entire thing needs a rewrite.
+	void initDemangler()
+	{
+	}
 
+	nx::string demangleSymbol(const nx::string& mangled)
+	{
+		// for now, we're stuck.
+		return mangled;
+	}
 }
 }
 

@@ -10,11 +10,74 @@
 
 #include "krt.h"
 
+#define ZPR_FREESTANDING 1
+#include <zst/zpr.h>
+
 using addr_t = uintptr_t;
 
 namespace nx
 {
 	constexpr size_t PAGE_SIZE = 0x1000;
+
+	[[noreturn]] void __internal_abort();
+	void console_print(const char* s, size_t len);
+
+	namespace interrupts
+	{
+		void enable();
+		void disable();
+	}
+
+	namespace serial
+	{
+		void debugprintchar(char c);
+		void debugprint(const char* c, size_t l);
+
+		template <typename... Args>
+		void debugprintf(const char* fmt, Args&&... args)
+		{
+			zpr::cprint(&serial::debugprint, fmt, static_cast<Args&&>(args)...);
+		}
+	}
+
+
+	template <typename... Args>
+	void print(const char* fmt, Args&&... args)
+	{
+		zpr::cprint(&console_print, fmt, static_cast<Args&&>(args)...);
+	}
+
+	template <typename... Args>
+	void println(const char* fmt, Args&&... args)
+	{
+		zpr::cprintln(&console_print, fmt, static_cast<Args&&>(args)...);
+	}
+
+	template <typename... Args>
+	[[noreturn]] void abort(const char* fmt, Args&&... args)
+	{
+		serial::debugprintf("\n\nkernel abort! error: ");
+		serial::debugprintf(fmt, static_cast<Args&&>(args)...);
+
+		__internal_abort();
+	}
+
+	template <typename... Args>
+	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, Args&&... args)
+	{
+		interrupts::disable();
+
+		println("failed assertion");
+		println("invariant: {}", thing);
+		print("reason:    ");
+		print(fmt, static_cast<Args&&>(args)...);
+
+		print("\nlocation:  {}:{}\n\n", file, line);
+
+		__internal_abort();
+	}
+
+
 
 	struct _allocator
 	{
@@ -34,10 +97,18 @@ namespace nx
 
 	struct _aborter
 	{
-		static void abort(const char* fmt, ...);
-		static void debuglog(const char* fmt, ...);
-	};
+		template <typename... Args>
+		static void abort(const char* fmt, Args&&... args)
+		{
+			abort(fmt, static_cast<Args&&>(args)...);
+		}
 
+		template <typename... Args>
+		static void debuglog(const char* fmt, Args&&... args)
+		{
+			abort(fmt, static_cast<Args&&>(args)...);
+		}
+	};
 
 	// re-export the krt types with our own stuff.
 	using string = krt::string<_allocator, _aborter>;
@@ -76,18 +147,7 @@ namespace nx
 		constexpr auto none = krt::nullopt;
 	}
 
-
 	[[noreturn]] void halt();
-
-	[[noreturn]] void vabort(const char* fmt, va_list args);
-	[[noreturn]] void abort(const char* fmt, ...);
-
-	void vabort_nohalt(const char* fmt, va_list args);
-	void abort_nohalt(const char* fmt, ...);
-
-	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing);
-	[[noreturn]] void assert_fail(const char* file, size_t line, const char* thing, const char* fmt, ...);
-
 
 	namespace scheduler
 	{
@@ -114,17 +174,28 @@ namespace nx
 		constexpr uint64_t ALIGN_BITS           = 12;
 	}
 
-	void dbg(const char* sys, const char* fmt, ...);
-	void log(const char* sys, const char* fmt, ...);
-	void warn(const char* sys, const char* fmt, ...);
-	void error(const char* sys, const char* fmt, ...);
+
+
+
+	template <typename... Args>
+	nx::string sprint(const char* fmt, Args&&... args)
+	{
+		nx::string ret;
+		zpr::cprint([&ret](const char* s, size_t len) {
+
+			ret += nx::string_view(s, len);
+
+		}, fmt, static_cast<Args&&>(args)...);
+
+		return ret;
+	}
 }
 
 // wow fucking c++ is so poorly designed
 namespace std
 {
 	enum class align_val_t : size_t { };
-	using max_align_t = long double;
+	// using max_align_t = long double;
 }
 
 [[nodiscard]] void* operator new    (size_t count);
@@ -145,11 +216,7 @@ void operator delete[]  (void* ptr, size_t al);
 #undef assert
 #endif
 
-#define assert(x)               ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x))
-
-#define VA_ARGS(...)            , ##__VA_ARGS__
-#define kassert(x, fmt, ...)    ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x, fmt VA_ARGS(__VA_ARGS__)))
-
+#define assert(x)               ((x) ? ((void) 0) : ::nx::assert_fail(__FILE__, __LINE__, #x, ""))
 
 #define __unlikely(x)           __builtin_expect((x), 0)
 #define __likely(x)             __builtin_expect((x), 1)

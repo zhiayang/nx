@@ -66,10 +66,12 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == MemoryType::Available && entry->address > 0)
 			{
-				// log("pmm", "extent: %p - %p (%zu)", entry->address, end(entry->address, entry->numPages), entry->numPages);
 				extmmState.deallocate(entry->address, entry->numPages);
 				totalPhysicalMemory += entry->numPages * 0x1000;
 			}
+
+			dbg("pmm", "extent: {p} - {p} ({} pages, {} bytes) - {#x}", entry->address, end(entry->address, entry->numPages),
+				entry->numPages, entry->numPages * 0x1000, entry->memoryType);
 		}
 
 		// we should have > 1MB, if not UEFI wouldn't boot anyway.
@@ -79,7 +81,7 @@ namespace pmm
 		while(num >= 1024)
 			num /= 1024, unit++;
 
-		log("pmm", "initialised with %zu extents, %zu bytes (%zu %cB)", extmmState.numExtents, totalPhysicalMemory,
+		log("pmm", "initialised with {} extents, {} bytes ({} {}B)", extmmState.numExtents, totalPhysicalMemory,
 			num, units[unit]);
 
 
@@ -107,7 +109,11 @@ namespace pmm
 			auto entry = &bootinfo->mmEntries[i];
 			if(entry->memoryType == type)
 			{
-				extmmState.deallocate(entry->address, entry->numPages);
+				assert(type != MemoryType::MemoryMap);
+
+				// mark the memory is usable in the allocator, and additionally unmap it.
+				// extmmState.deallocate(entry->address, entry->numPages);
+				// vmm::unmapAddress(VirtAddr(entry->address), entry->numPages, /* ignoreUnmapped: */ true);
 
 				// for safety, make sure we don't touch this again (accidentally or otherwise)
 				entry->memoryType = MemoryType::Reserved;
@@ -125,19 +131,28 @@ namespace pmm
 		// but it's too much effort to allow allocating specific chunks in the extmm. (if we set sysmem to 256MB, then
 		// we don't get entries starting around 0x7a00000 in the memory map)
 
+		// first make a copy, because we are about to deallocate and unmap the bootinfo memory that
+		// the memory map sits on, so it would be prudent to make sure we have a copy of it first.
+		auto numEntries = bootinfo->mmEntryCount;
+		auto entriesCopy = new MemMapEntry[bootinfo->mmEntryCount];
+		memcpy(entriesCopy, bootinfo->mmEntries, sizeof(MemMapEntry) * numEntries);
+
 		// unmap any extraneous bits and pieces
-		for(size_t i = 0; i < bootinfo->mmEntryCount; i++)
+		for(size_t i = 0; i < numEntries; i++)
 		{
-			auto entry = &bootinfo->mmEntries[i];
-			if(entry->memoryType == MemoryType::AvailableAfterUnmap && entry->address >= maxIdentMem)
+			auto entry = &entriesCopy[i];
+			if(entry->address >= maxIdentMem && (entry->memoryType == MemoryType::AvailableAfterUnmap
+				|| entry->memoryType == MemoryType::MemoryMap))
 			{
-				// error("vmm", "unmap %p - %zu (%d)", entry->address, entry->numPages, entry->memoryType);
-				// vmm::unmapAddress(VirtAddr(entry->address), entry->numPages, /* ignoreUnmapped: */ true);
-				// deallocate(PhysAddr(entry->address), entry->numPages);
+				totalPhysicalMemory += entry->numPages * 0x1000;
+
+				extmmState.deallocate(entry->address, entry->numPages);
+				vmm::unmapAddress(VirtAddr(entry->address), entry->numPages, /* ignoreUnmapped: */ true);
 			}
 		}
 
-		freeEarlyMemory(bootinfo, MemoryType::MemoryMap);
+		// now get rid of the copy, for obvious reasons.
+		delete[] entriesCopy;
 
 		// ask the vmm to unmap all identity memory.
 		vmm::unmapAddress(VirtAddr::zero(), maxIdentMem / PAGE_SIZE, /* ignoreUnmapped: */ true);
@@ -147,7 +162,16 @@ namespace pmm
 
 		// we assume the kernel boot info is one page long!!
 		deallocate(PhysAddr(addr), 1);
-		log("pmm", "freed all bootloader memory");
+
+		{
+			auto num = totalPhysicalMemory / (1024 * 1024); int unit = 0;
+			char units[] = { 'M', 'G', 'T', 'P' };
+
+			while(num >= 1024)
+				num /= 1024, unit++;
+
+			log("pmm", "freed all bootloader memory: {} bytes ({} {}B)", totalPhysicalMemory, num, units[unit]);
+		}
 
 		// at this point, check for consistency
 		if(!extmmState.checkConsistency())
@@ -166,7 +190,7 @@ namespace pmm
 
 		assert(ret);
 
-		// log("pmm", "allocated %p - %p (%zu) (%zu)", ret, ret + num * PAGE_SIZE, num, extmmState.numExtents);
+		// log("pmm", "allocated {p} - {p} ({}) ({})", ret, ret + num * PAGE_SIZE, num, extmmState.numExtents);
 		numAllocatedBytes += num * PAGE_SIZE;
 		return PhysAddr(ret);
 	}
@@ -180,7 +204,7 @@ namespace pmm
 		if(addr == zeroPageAddr && num == 1)
 			return;
 
-		// log("pmm", "deallocated %p - %p (%zu)", addr.ptr(), addr + ofsPages(num), num);
+		// log("pmm", "deallocated {p} - {p} ({})", addr.ptr(), addr + ofsPages(num), num);
 		extmmState.deallocate(addr.addr(), num);
 		numAllocatedBytes -= num * PAGE_SIZE;
 	}

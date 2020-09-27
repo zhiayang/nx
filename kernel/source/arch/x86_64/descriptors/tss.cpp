@@ -97,7 +97,7 @@ namespace tss
 				tss->ists[i] = (vmm::allocateEager(1, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE | vmm::PAGE_NX)
 									+ PAGE_SIZE).addr();
 
-				// log("tss", "ist %d: %p", 1 + i, tss->ists[i]);
+				// log("tss", "ist {}: {p}", 1 + i, tss->ists[i]);
 			}
 		}
 

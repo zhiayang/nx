@@ -29,7 +29,7 @@ namespace params
 
 		if(bi->version < 3)
 		{
-			warn("kernel", "bootinfo version '%d' does not support kernel parameters", bi->version);
+			warn("kernel", "bootinfo version '{}' does not support kernel parameters", bi->version);
 			return;
 		}
 
@@ -53,7 +53,7 @@ namespace params
 			ptr += str.size() + 1;
 		}
 
-		log("kernel", "parsed %s", util::plural("kernel parameter", Options.size()).cstr());
+		log("kernel", "parsed {}", util::plural("kernel parameter", Options.size()));
 	}
 
 	bool haveOption(const nx::string& name)

@@ -17,7 +17,7 @@ namespace ipc
 			proc->pendingMessages.lock()->append(umsg);
 
 		else
-			warn("ipc", "invalid target '%lu'", umsg.targetId);
+			warn("ipc", "invalid target {}", umsg.targetId);
 	}
 
 	void disposeMessage(message_t& message)
@@ -84,7 +84,7 @@ namespace ipc
 			}
 		}
 
-		warn("ipc", "failed to resolve selector '%*.s'", path.size(), path.data());
+		warn("ipc", "failed to resolve selector '{}'", path);
 		return nullptr;
 	}
 }
