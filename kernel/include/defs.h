@@ -10,6 +10,10 @@
 
 #include "krt.h"
 
+#ifdef ZPR_FREESTANDING
+	#undef ZPR_FREESTANDING
+#endif
+
 #define ZPR_FREESTANDING 1
 #include <zst/zpr.h>
 

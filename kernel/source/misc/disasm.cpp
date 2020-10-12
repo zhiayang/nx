@@ -36,7 +36,7 @@ namespace nx::disasm
 
 	static void print_instr(const x64::Instruction& instr, uint64_t ip)
 	{
-		auto print_operand = [&ip](const x64::Operand& op) {
+		auto print_operand = [&ip, &instr](const x64::Operand& op) {
 			if(op.isRegister())
 			{
 				serial::debugprintf("%{}", op.reg().name());
@@ -60,7 +60,7 @@ namespace nx::disasm
 			}
 			else if(op.isRelativeOffset())
 			{
-				serial::debugprintf("{#x}", ip + op.ofs().offset());
+				serial::debugprintf("{#x}", ip + instr.numBytes() + op.ofs().offset());
 			}
 			else if(op.isMemory())
 			{

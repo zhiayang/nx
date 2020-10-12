@@ -153,14 +153,18 @@ build: make-initrd
 
 clean:
 	@find "efx" -name "*.o" -delete
-	@find "libs" -name "*.o" -delete
 	@find "bfx" -name "*.o" -delete
-	@find "kernel" -name "*.o" -delete
+	@find "libs" -name "*.o" -delete
+
+	@find "efx" -name "*.h.d" -delete
+	@find "bfx" -name "*.h.d" -delete
+	@find "libs" -name "*.h.d" -delete
 
 	@find "efx" -name "*.cpp.d" -delete
-	@find "libs" -name "*.cpp.d" -delete
 	@find "bfx" -name "*.cpp.d" -delete
-	@find "kernel" -name "*.cpp.d" -delete
+	@find "libs" -name "*.cpp.d" -delete
+
+	@$(MAKE) -s -C kernel clean
 
 	@rm -f $(SYSROOT)/boot/efxloader
 	@rm -f $(SYSROOT)/boot/bfxloader
@@ -169,10 +173,7 @@ clean:
 	@rm -rf $(SYSROOT)/usr/include/*
 
 clean-kernel:
-	@find "kernel" -name "*.o" -delete
-	@find "kernel" -name "*.cpp.d" -delete
-
-	@rm -f $(SYSROOT)/boot/nxkernel64
+	@$(MAKE) -s -C kernel clean
 
 
 

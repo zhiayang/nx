@@ -5,6 +5,8 @@
 *.dll
 *.cpp.d
 *.c.d
+*.h.d
+*.h.gch
 *.log
 build
 toolchain-setup

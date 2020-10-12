@@ -88,12 +88,13 @@ namespace interrupts
 
 				if(it->remaining == 0)
 				{
-					list.erase(it);
 					if(!it->handled)
 					{
 						warn("irq", "no drivers handled irq {}", num);
 						sendEOI(num);
 					}
+
+					list.erase(it);
 				}
 			}
 			else
