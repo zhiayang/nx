@@ -70,11 +70,28 @@ _ZN2nx6atomic11cas_trylockEPmmm:
 	// load rax first
 	mov %rsi, %rax
 
-	lock cmpxchgq %rdx, (%rdi)
+	// optimistically try to get the lock first. if we succeed, then return.
+	// push rflags, and disable interrupts in our optimism.
+	pushfq
+	cli
 
-	// zero flag set on success
-	setz %al
-	movzx %al, %rax
+	lock cmpxchgq %rdx, (%rdi)
+	jz 2f
+
+1:
+	// we didn't succeed; pop the flags and return false.
+	xor %eax, %eax
+	popfq
+	ret
+
+2:
+	// we succeeded; pop the flags, incr numHeldLocks, and return true.
+	mov $1, %eax
+
+	// interrupts are still disabled until we pop the flags
+	lock incq %gs:0x48
+
+	popfq
 	ret
 
 

@@ -294,7 +294,21 @@ namespace scheduler
 
 
 
+	void pause()
+	{
+		atomic::incr(&getCPULocalState()->numHeldLocks);
+	}
 
+	void unpause()
+	{
+		assert(isPaused());
+		atomic::decr(&getCPULocalState()->numHeldLocks);
+	}
+
+	bool isPaused()
+	{
+		return getCPULocalState()->numHeldLocks > 0;
+	}
 
 	void nanosleep(uint64_t ns)
 	{
@@ -314,7 +328,7 @@ namespace scheduler
 
 	Thread* getCurrentThread()
 	{
-		if(getInitPhase() < SchedulerInitPhase::SchedulerStarted)
+		if(__unlikely(getInitPhase() < SchedulerInitPhase::SchedulerStarted))
 			return 0;
 
 		return getSchedState()->CurrentThread;

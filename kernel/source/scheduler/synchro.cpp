@@ -28,6 +28,25 @@ namespace nx
 	*/
 
 
+	// check if the lock is held by the current thread in a race-free manner.
+	static bool check_selflock(scheduler::Thread* holder)
+	{
+		if(!holder)
+			return false;
+
+		// prevent the situation where we get the current thread and store it in a register,
+		// and then we get scheduled, leading to a stale comparison. (since obviously before
+		// the lock is acquired, the scheduler is not paused).
+
+		scheduler::pause();
+		auto cur = scheduler::getCurrentThread();
+		auto ret = (cur == holder);
+
+		scheduler::unpause();
+		return ret;
+	}
+
+
 	spinlock::spinlock() { }
 	spinlock::spinlock(spinlock&& other)
 	{
@@ -44,7 +63,7 @@ namespace nx
 
 	void spinlock::lock()
 	{
-		if(this->holder && this->holder == scheduler::getCurrentThread())
+		if(check_selflock(this->holder))
 		{
 			error("spinlock", "trying to acquire lock held by self! (tid {}, pid {})",
 				this->holder->threadId, this->holder->parent->processId);
@@ -58,15 +77,14 @@ namespace nx
 		this->holder = scheduler::getCurrentThread();
 	}
 
-
 	void spinlock::unlock()
 	{
 		atomic::store(&this->value, 0);
 		atomic::store(&this->holder, 0);
 
-		atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
+		// atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
+		scheduler::unpause();
 	}
-
 
 	bool spinlock::trylock()
 	{
@@ -75,10 +93,70 @@ namespace nx
 
 		this->holder = scheduler::getCurrentThread();
 
-		atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
+		// atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
+		// scheduler::pause();
 
 		return true;
 	}
+
+
+
+
+
+	r_spinlock::r_spinlock() { }
+	r_spinlock::r_spinlock(r_spinlock&& other)
+	{
+		autolock lk(&other);
+
+		this->value  = 0;
+		this->holder = 0;
+		this->recursion = 0;
+	}
+
+	bool r_spinlock::held()
+	{
+		return this->value;
+	}
+
+	void r_spinlock::lock()
+	{
+		if(check_selflock(this->holder))
+			return atomic::incr(&this->recursion);
+
+		// this will also help us atomically increment the number of held locks.
+		atomic::cas_spinlock(&this->value, 0, 1);
+
+		this->holder = scheduler::getCurrentThread();
+	}
+
+	void r_spinlock::unlock()
+	{
+		// the scheduler is paused when locked, so there should be no race condition here.
+		if(this->recursion > 0)
+			return atomic::decr(&this->recursion);
+
+		atomic::store(&this->value, 0);
+		atomic::store(&this->holder, 0);
+		atomic::store(&this->recursion, 0);
+
+		// atomic::decr(&scheduler::getCPULocalState()->numHeldLocks);
+		scheduler::unpause();
+	}
+
+	bool r_spinlock::trylock()
+	{
+		if(!atomic::cas_trylock(&this->value, 0, 1))
+			return false;
+
+		this->holder = scheduler::getCurrentThread();
+
+		// atomic::incr(&scheduler::getCPULocalState()->numHeldLocks);
+		return true;
+	}
+
+
+
+
 
 
 

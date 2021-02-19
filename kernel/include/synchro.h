@@ -73,6 +73,28 @@ namespace nx
 		scheduler::Thread* holder = 0;
 	};
 
+	// this is a spinlock that is recursive.
+	struct r_spinlock
+	{
+		r_spinlock();
+		r_spinlock(r_spinlock&&);
+
+		r_spinlock(const r_spinlock&) = delete;
+		r_spinlock& operator = (r_spinlock&&) = delete;
+		r_spinlock& operator = (const r_spinlock&) = delete;
+
+		bool held();
+		void lock();
+		void unlock();
+		bool trylock();
+
+	private:
+		uint64_t value = 0;
+		uint64_t recursion = 0;
+		scheduler::Thread* holder = 0;
+	};
+
+
 	// this one will disable interrupts also.
 	struct IRQSpinlock
 	{
