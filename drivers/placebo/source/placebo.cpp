@@ -102,7 +102,8 @@ int main()
 		auto tmp = ipc::collect_memory_ticket(ipc::create_memory_ticket(1024, 0));
 		assert(tmp.ptr != nullptr);
 
-		auto path = "/initrd/usr/test.txt";
+	#if 0
+		auto path = "/initrd/boot/bfx_kernel_params";
 		auto plen = strlen(path);
 
 		memcpy(tmp.ptr, path, plen);
@@ -127,10 +128,9 @@ int main()
 		}
 
 
-		// ipc::release_memory_ticket(tmp);
+		ipc::release_memory_ticket(tmp);
+	#endif
 	}
-
-
 
 
 

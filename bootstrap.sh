@@ -16,7 +16,7 @@ export TARGET=x86_64-orionx
 export BINUTILS_VERSION="2.33.1"
 export GCC_VERSION="9.2.0"
 
-export NUM_MAKE_JOBS=4
+export NUM_MAKE_JOBS=7
 
 GNU_MIRROR_SITE="https://mirror.ossplanet.net/gnu"
 
