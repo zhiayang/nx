@@ -28,6 +28,8 @@ namespace nx
 		// the syscall function table to work.
 		void do_nothing();
 
+		pid_t spawn_process_from_memory(void* buf, size_t len);
+
 		void exit(int status);
 		uint64_t ipc_find_selector(ipc::selector_t sel);
 		int64_t ipc_send(uint64_t target, ipc::message_body_t* msg);
