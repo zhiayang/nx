@@ -101,9 +101,15 @@ namespace initrd
 				uncompressedSize = tmp;
 			}
 
+			log("initrd", "format: gzip (compressed: {} kb, expanded: {} kb)",
+				inpSz / 1024, uncompressedSize / 1024);
+
 			// make a thing.
-			auto numPages = (uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE;
-			void* buf = (void*) vmm::allocateEager(numPages, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
+			// auto numPages = (uncompressedSize + PAGE_SIZE - 1) / PAGE_SIZE;
+			// void* buf = (void*) vmm::allocateEager(numPages, vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
+
+			void* buf = setup_memticket(uncompressedSize);
+			assert(buf);
 
 			{
 				auto hdr = (gzip_header_t*) initrd;
@@ -132,8 +138,11 @@ namespace initrd
 		{
 			log("initrd", "format: tar");
 
-			void* buf = (void*) vmm::allocateEager((inpSz + PAGE_SIZE - 1) / PAGE_SIZE,
-				vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
+			// void* buf = (void*) vmm::allocateEager((inpSz + PAGE_SIZE - 1) / PAGE_SIZE,
+			// 	vmm::AddressSpaceType::Kernel, vmm::PAGE_WRITE).addr();
+
+			void* buf = setup_memticket(inpSz);
+			assert(buf);
 
 			memcpy(buf, initrd, inpSz);
 
