@@ -45,55 +45,6 @@ int main(int argc, char** argv)
 
 
 
-namespace vfs
-{
-	void vlog(int lvl, const char* fmt, va_list ap)
-	{
-		char* buf = 0;
-		int len = vasprintf(&buf, fmt, ap);
-
-		syscall::kernel_log(lvl, "vfs", 4, buf, len);
-		free(buf);
-	}
-
-	void dbg(const char* fmt, ...)
-	{
-		va_list ap;
-		va_start(ap, fmt);
-		vlog(-1, fmt, ap);
-		va_end(ap);
-	}
-
-	void log(const char* fmt, ...)
-	{
-		va_list ap;
-		va_start(ap, fmt);
-		vlog(0, fmt, ap);
-		va_end(ap);
-	}
-
-	void warn(const char* fmt, ...)
-	{
-		va_list ap;
-		va_start(ap, fmt);
-		vlog(1, fmt, ap);
-		va_end(ap);
-	}
-
-	void error(const char* fmt, ...)
-	{
-		va_list ap;
-		va_start(ap, fmt);
-		vlog(2, fmt, ap);
-		va_end(ap);
-	}
-}
-
-
-
-
-
-
 
 
 

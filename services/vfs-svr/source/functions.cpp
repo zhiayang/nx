@@ -18,23 +18,16 @@ using namespace nx;
 
 namespace vfs
 {
+	VfsState state;
+
 	struct ProcessState
 	{
 		pid_t pid;
 		nx::ipc::mem_ticket_t registeredTicket;
 
-
-		/*
-			TODO: this does not re-use file descriptors, which breaks POSIX compatibility.
-			spec:
-
-			All functions that open one or more file descriptors shall, unless specified otherwise,
-			atomically allocate the lowest numbered available (that is, not already open in the calling process)
-			file descriptor at the time of each allocation.
-		*/
-
-		uint64_t nextHandleId = 0;
-		std::map<uint64_t, vnode*> openHandles;
+		// this is a vector so that we can get the posix behaviour of having new
+		// file descriptors get the lowest free number.
+		std::vector<vnode*> openHandles;
 	};
 
 	template <typename T>
@@ -43,20 +36,44 @@ namespace vfs
 		return *reinterpret_cast<T*>(&msg.bytes[0]);
 	}
 
-	static std::map<pid_t, ProcessState> processTable;
-	static std::map<uint64_t, pid_t> connectionTable;
-	static std::map<uint64_t, rpc::Server> serverTable;
+	// TODO: enforce limits on number of open files
+	static size_t get_free_handle(ProcessState* pst, vnode* vn)
+	{
+		for(size_t i = 0; i < pst->openHandles.size(); i++)
+		{
+			if(pst->openHandles[i] == nullptr)
+			{
+				pst->openHandles[i] = vn;
+				return i;
+			}
+		}
+
+		pst->openHandles.push_back(vn);
+		return pst->openHandles.size() - 1;
+	}
+
+	static std::pair<size_t, vnode*> get_free_vnode()
+	{
+		for(size_t i = 0; i < state.vnodeTable.size(); i++)
+		{
+			if(state.vnodeTable[i].inode == 0)
+				return { i, &state.vnodeTable[i] };
+		}
+
+		state.vnodeTable.emplace_back();
+		return { state.vnodeTable.size() - 1, &state.vnodeTable.back() };
+	}
 
 	void handleCall(uint64_t conn, nx::rpc::message_t msg)
 	{
-		auto pst = &processTable[msg.counterpart];
+		auto pst = &state.processTable[msg.counterpart];
 		pst->pid = msg.counterpart;
 
-		connectionTable[conn] = pst->pid;
+		state.connectionTable[conn] = pst->pid;
 
 		rpc::Server* srv = nullptr;
-		if(auto it = serverTable.find(conn); it == serverTable.end())
-			srv = &serverTable.emplace(conn, rpc::Server(conn)).first->second;
+		if(auto it = state.serverTable.find(conn); it == state.serverTable.end())
+			srv = &state.serverTable.emplace(conn, rpc::Server(conn)).first->second;
 
 		else
 			srv = &it->second;
@@ -92,9 +109,25 @@ namespace vfs
 		{
 			fns::rpc_write(pst, srv, extract<fns::Write>(msg));
 		}
+		else if(op == fns::OP_SPAWN_FS)
+		{
+			fns::rpc_spawn_fs(srv, extract<fns::SpawnFilesystem>(msg));
+		}
+		else if(op == fns::OP_REGISTER_FS)
+		{
+			fns::rpc_register_fs(srv, extract<fns::RegisterFilesystem>(msg));
+		}
+		else if(op == fns::OP_DEREGISTER_FS)
+		{
+			fns::rpc_deregister_fs(srv, extract<fns::DeregisterFilesystem>(msg));
+		}
+		else if(op == fns::OP_CONNECT_INITRD)
+		{
+			fns::rpc_connect_initrd(srv, extract<fns::ConnectInitialRamdisk>(msg));
+		}
 		else
 		{
-			error("invalid op %d from pid %lu", op, pst->pid);
+			error("invalid op {} from pid {}", op, pst->pid);
 		}
 	}
 
@@ -107,46 +140,52 @@ namespace vfs
 
 	namespace fns
 	{
-		static std::optional<std::tuple<void*, size_t, ipc::mem_ticket_t, bool>>
-		validate_buffer(ProcessState* pst, const Buffer& buffer)
+		using ReturnTicket = std::tuple<void*, size_t, ipc::mem_ticket_t, bool>;
+
+		static std::optional<ReturnTicket> check_ticket_bounds(const Buffer& buffer, ipc::mem_ticket_t ticket, bool release)
+		{
+			if(buffer.offset > ticket.len || buffer.offset + buffer.length > ticket.len)
+			{
+				error("invalid buffer received: (id: {}, ofs: {}, len: {})", buffer.memTicketId, buffer.offset, buffer.length);
+				return std::nullopt;
+			}
+			else
+			{
+				return std::make_tuple(((uint8_t*) ticket.ptr + buffer.offset), buffer.length, ticket, release);
+			}
+		}
+
+		std::optional<ReturnTicket> validate_buffer(const Buffer& buffer)
 		{
 			auto tik_id = buffer.memTicketId;
-
-			auto check_bounds = [&](ipc::mem_ticket_t ticket, bool release)
-				-> std::optional<std::tuple<void*, size_t, ipc::mem_ticket_t, bool>>
-			{
-				if(buffer.offset > ticket.len || buffer.offset + buffer.length > ticket.len)
-				{
-					error("pid %lu passed invalid buffer { %lu, %zu, %zu }",
-						pst->pid, tik_id, buffer.offset, buffer.length);
-
-					return std::nullopt;
-				}
-				else
-				{
-					return std::make_tuple(((uint8_t*) ticket.ptr + buffer.offset), buffer.length, ticket, release);
-				}
-			};
-
-			if(auto x = pst->registeredTicket.ticketId; x != 0 && x == tik_id)
-				return check_bounds(pst->registeredTicket, /* release: */ false);
 
 			auto existing = ipc::find_existing_memory_ticket(tik_id);
 			if(existing.ptr != nullptr)
 			{
-				return check_bounds(existing, /* release: */ false);
+				return check_ticket_bounds(buffer, existing, /* release: */ false);
 			}
 			else
 			{
 				auto mt = ipc::collect_memory_ticket(tik_id);
 				if(mt.ptr == nullptr)
-				{
-					error("invalid memticket %lu from proc %lu", tik_id, pst->pid);
 					return std::nullopt;
-				}
 
-				return check_bounds(mt, /* release: */ true);
+				return check_ticket_bounds(buffer, mt, /* release: */ true);
 			}
+		}
+
+		std::optional<ReturnTicket> validate_buffer(ProcessState* pst, const Buffer& buffer)
+		{
+			auto tik_id = buffer.memTicketId;
+
+			if(auto x = pst->registeredTicket.ticketId; x != 0 && x == tik_id)
+				return check_ticket_bounds(buffer, pst->registeredTicket, /* release: */ false);
+
+			auto ret = validate_buffer(buffer);
+			if(!ret)
+				error("invalid memticket {} from proc {}", tik_id, pst->pid);
+
+			return ret;
 		}
 
 
@@ -158,9 +197,9 @@ namespace vfs
 
 			pst->registeredTicket = ipc::collect_memory_ticket(msg.ticket);
 			if(pst->registeredTicket.ptr == 0)
-				error("failed to collect ticket %lu for proc %lu", msg.ticket, pst->pid);
+				error("failed to collect ticket {} for proc {}", msg.ticket, pst->pid);
 
-			log("proc %lu registered with memticket %lu", pst->pid, pst->registeredTicket);
+			log("proc {} registered with memticket {}", pst->pid, pst->registeredTicket.ticketId);
 
 			srv->reply<fns::Register>();
 		}
@@ -171,14 +210,36 @@ namespace vfs
 				return;
 
 			ipc::release_memory_ticket(pst->registeredTicket);
-			log("proc %lu unregistered memticket %lu", pst->pid, pst->registeredTicket);
+			log("proc {} unregistered memticket {}", pst->pid, pst->registeredTicket.ticketId);
 
 			srv->reply<fns::Deregister>();
 		}
 
 		void rpc_bind(ProcessState* pst, rpc::Server* srv, Bind msg)
 		{
-			srv->error<fns::Bind>(ERR_NOT_IMPLEMENTED);
+			auto _buf = validate_buffer(pst, msg.path);
+			if(!_buf)
+			{
+				srv->error<fns::Open>(ERR_INVALID_BUFFER);
+				return;
+			}
+
+			// copy the path and release the buffer asap.
+			auto [ buf, len, memticket, needs_release ] = *_buf;
+			auto path = std::string((const char*) buf, len);
+			if(needs_release)
+				ipc::release_memory_ticket(memticket);
+
+
+			if(msg.flags & BIND_FILESYSTEM)
+			{
+
+			}
+			else
+			{
+				srv->error<fns::Bind>(ERR_NOT_IMPLEMENTED);
+				return;
+			}
 		}
 
 		void rpc_open(ProcessState* pst, rpc::Server* srv, Open msg)
@@ -191,14 +252,34 @@ namespace vfs
 			}
 
 			auto [ buf, len, memticket, needs_release ] = *_buf;
+			auto path = std::string_view((const char*) buf, len);
 
-			auto hid = pst->nextHandleId++;
+			auto fs = getFilesystemForPath(path);
+			if(fs == nullptr)
+			{
+				dbg("proc {}: no filesystem for path {}", path);
+				srv->error<fns::Open>(ERR_FILE_NOT_FOUND);
+				return;
+			}
+
+			auto fs_sel = fs->sel_drv;
+			auto dv_sel = fs->sel_dev;
+
+
+
+
+
+			auto [ vni, vnode ] = get_free_vnode();
+			assert(vnode != nullptr);
+			assert(vni != 0);
+
+			auto fd = get_free_handle(pst, vnode);
 			auto handle = Handle {
-				.id     = hid,
-				.owner  = pst->pid
+				.id    = fd,
+				.owner = pst->pid
 			};
 
-			log("proc %lu: open %.*s -> handle(%lu)", pst->pid, (int) len, buf, handle.id);
+			dbg("proc {}: open {} -> handle({})", pst->pid, path, handle.id);
 
 			if(needs_release)
 				ipc::release_memory_ticket(memticket);
@@ -213,12 +294,42 @@ namespace vfs
 
 		void rpc_read(ProcessState* pst, rpc::Server* srv, Read msg)
 		{
+			dbg("proc {}: read(handle: {})", pst->pid, msg.handle.id);
+			auto _buf = validate_buffer(pst, msg.buffer);
+			if(!_buf)
+			{
+				srv->error<fns::Read>(ERR_INVALID_BUFFER);
+				return;
+			}
+
+			auto [ buf, len, memticket, needs_release ] = *_buf;
+
+
+
+
+			if(needs_release)
+				ipc::release_memory_ticket(memticket);
+
 			srv->error<fns::Read>(ERR_NOT_IMPLEMENTED);
 		}
 
 		void rpc_write(ProcessState* pst, rpc::Server* srv, Write msg)
 		{
 			srv->error<fns::Write>(ERR_NOT_IMPLEMENTED);
+		}
+
+
+
+		void rpc_spawn_fs(rpc::Server* srv, SpawnFilesystem msg)
+		{
+			if(msg.fs_type == 0)
+			{
+				dbg("fs_type autodetection not implemented");
+				srv->error<fns::SpawnFilesystem>(ERR_NOT_IMPLEMENTED);
+				return;
+			}
+
+			srv->error<fns::SpawnFilesystem>(ERR_NOT_IMPLEMENTED);
 		}
 	}
 }

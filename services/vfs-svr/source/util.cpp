@@ -11,7 +11,10 @@
 
 namespace vfs
 {
-	std::vector<std::string> splitPathComponents(const std::string& path)
+	extern VfsState state;
+
+
+	std::vector<std::string> splitPathComponents(std::string_view path)
 	{
 		std::vector<std::string> ret;
 
@@ -77,12 +80,23 @@ namespace vfs
 		return ret;
 	}
 
-	std::string sanitise(const std::string& path)
+	std::string sanitise(std::string_view path)
 	{
 		auto ret = path;
+		return std::string(ret);
+	}
 
+	Filesystem* getFilesystemForPath(std::string_view path)
+	{
+		auto xs = splitPathComponents(path);
+		for(auto& fs : state.mountedFilesystems)
+		{
+			auto ys = splitPathComponents(fs.mountpoint);
+			if(isPathSubset(xs, ys))
+				return &fs;
+		}
 
-		return ret;
+		return nullptr;
 	}
 }
 
