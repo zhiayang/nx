@@ -357,6 +357,9 @@ namespace nx
 		void notifyOne(condition* cv);
 		void notifyAll(condition* cv);
 
+		void pause();
+		void unpause();
+		bool isPaused();
 
 		// returns t.
 		Thread* addThread(Thread* t);

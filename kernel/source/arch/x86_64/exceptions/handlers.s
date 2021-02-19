@@ -278,6 +278,7 @@ nx_x64_exception_handler_31:
 
 
 
+.align 16
 .global __last_saved_error_code
 __last_saved_error_code:
 .quad 0

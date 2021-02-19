@@ -14,13 +14,17 @@ function plural() {
 }
 
 # check if any of the files in the initrd folder are newer than the output:
-NUM_FILES=$(find ${INITRD_DIR} -newer ${INITRD}.gz | wc -l | xargs)
+NUM_FILES=$(find ${INITRD_DIR} -type f -newer ${INITRD}.gz | wc -l | xargs)
+THE_FILES=$(find ${INITRD_DIR} -type f -newer ${INITRD}.gz)
 if [ ! -f ${INITRD}.gz ]; then
 	NUM_FILES=1
 fi
 
 if [ ${NUM_FILES} -gt 0 ]; then
-	echo "# initrd: updating ${NUM_FILES} $(plural file ${NUM_FILES})"
+	echo "# initrd: updating ${NUM_FILES} $(plural file ${NUM_FILES})..."
+	for f in $THE_FILES; do
+		echo "    $(basename $f)"
+	done
 	pushd ${INITRD_DIR} > /dev/null
 		tar -cf ${INITRD} *
 		gzip -cf9 ${INITRD} > ${INITRD}.gz

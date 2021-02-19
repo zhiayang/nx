@@ -25,53 +25,52 @@ namespace syscall
 		for(size_t i = 0; i < SyscallTableEntryCount; i++)
 			SyscallTable[i] = (void*) do_nothing;
 
-		SyscallTable[SYSCALL_EXIT]                  = (void*) exit;
+		SyscallTable[SYSCALL_EXIT]                      = (void*) exit;
 
 		// syscall/sc_ipc.cpp
-		SyscallTable[SYSCALL_IPC_SEND]              = (void*) ipc_send;
-		SyscallTable[SYSCALL_IPC_PEEK]              = (void*) ipc_peek;
-		SyscallTable[SYSCALL_IPC_POLL]              = (void*) ipc_poll;
-		SyscallTable[SYSCALL_IPC_DISCARD]           = (void*) ipc_discard;
-		SyscallTable[SYSCALL_IPC_RECEIVE]           = (void*) ipc_receive;
-		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]     = (void*) do_nothing;
-		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER]   = (void*) ipc_set_signal_handler;
-		SyscallTable[SYSCALL_IPC_SIGNAL]            = (void*) ipc_signal;
-		SyscallTable[SYSCALL_IPC_SIGNAL_BLOCK]      = (void*) ipc_signal_block;
-		SyscallTable[SYSCALL_IPC_FIND_SELECTOR]     = (void*) ipc_find_selector;
+		SyscallTable[SYSCALL_IPC_SEND]                  = (void*) ipc_send;
+		SyscallTable[SYSCALL_IPC_PEEK]                  = (void*) ipc_peek;
+		SyscallTable[SYSCALL_IPC_POLL]                  = (void*) ipc_poll;
+		SyscallTable[SYSCALL_IPC_DISCARD]               = (void*) ipc_discard;
+		SyscallTable[SYSCALL_IPC_RECEIVE]               = (void*) ipc_receive;
+		SyscallTable[SYSCALL_IPC_RECEIVE_BLOCK]         = (void*) do_nothing;
+		SyscallTable[SYSCALL_IPC_SET_SIG_HANDLER]       = (void*) ipc_set_signal_handler;
+		SyscallTable[SYSCALL_IPC_SIGNAL]                = (void*) ipc_signal;
+		SyscallTable[SYSCALL_IPC_SIGNAL_BLOCK]          = (void*) ipc_signal_block;
+		SyscallTable[SYSCALL_IPC_FIND_SELECTOR]         = (void*) ipc_find_selector;
 
 		// syscall/sc_rpc.cpp
-		SyscallTable[SYSCALL_RPC_CALL]              = (void*) rpc_call;
-		SyscallTable[SYSCALL_RPC_CALL_PROCEDURE]    = (void*) rpc_call_procedure;
-		SyscallTable[SYSCALL_RPC_RETURN]            = (void*) rpc_return;
-		SyscallTable[SYSCALL_RPC_WAIT_CALL]         = (void*) rpc_wait_call;
-		SyscallTable[SYSCALL_RPC_WAIT_ANY_CALL]     = (void*) rpc_wait_any_call;
-		SyscallTable[SYSCALL_RPC_OPEN]              = (void*) rpc_open;
-		SyscallTable[SYSCALL_RPC_CLOSE]             = (void*) rpc_close;
-		SyscallTable[SYSCALL_RPC_FORWARD]           = (void*) do_nothing;
+		SyscallTable[SYSCALL_RPC_CALL]                  = (void*) rpc_call;
+		SyscallTable[SYSCALL_RPC_CALL_PROCEDURE]        = (void*) rpc_call_procedure;
+		SyscallTable[SYSCALL_RPC_RETURN]                = (void*) rpc_return;
+		SyscallTable[SYSCALL_RPC_WAIT_CALL]             = (void*) rpc_wait_call;
+		SyscallTable[SYSCALL_RPC_WAIT_ANY_CALL]         = (void*) rpc_wait_any_call;
+		SyscallTable[SYSCALL_RPC_OPEN]                  = (void*) rpc_open;
+		SyscallTable[SYSCALL_RPC_CLOSE]                 = (void*) rpc_close;
+		SyscallTable[SYSCALL_RPC_FORWARD]               = (void*) do_nothing;
 
 		// syscall/sc_mmap.cpp
-		SyscallTable[SYSCALL_MMAP_ANON]             = (void*) mmap_anon;
-		SyscallTable[SYSCALL_MMAP_FILE]             = (void*) mmap_file;
+		SyscallTable[SYSCALL_MMAP_ANON]                 = (void*) mmap_anon;
+		SyscallTable[SYSCALL_MMAP_FILE]                 = (void*) mmap_file;
 
 		// syscall/sc_memticket.cpp
-		SyscallTable[SYSCALL_MEMTICKET_CREATE]      = (void*) create_memory_ticket;
-		SyscallTable[SYSCALL_MEMTICKET_COLLECT]     = (void*) collect_memory_ticket;
-		SyscallTable[SYSCALL_MEMTICKET_RELEASE]     = (void*) release_memory_ticket;
-		SyscallTable[SYSCALL_MEMTICKET_FIND]        = (void*) find_existing_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_CREATE]          = (void*) create_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_COLLECT]         = (void*) collect_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_RELEASE]         = (void*) release_memory_ticket;
+		SyscallTable[SYSCALL_MEMTICKET_FIND]            = (void*) find_existing_memory_ticket;
+
+		// syscall/sc_process.cpp
+		SyscallTable[SYSCALL_PROCESS_SPAWN_FROM_MEMORY] = (void*) spawn_process_from_memory;
 
 		// syscall/sc_vfs.cpp
-		SyscallTable[SYSCALL_VFS_READ]              = (void*) vfs_read;
-		SyscallTable[SYSCALL_VFS_WRITE]             = (void*) vfs_write;
+		SyscallTable[SYSCALL_VFS_READ]                  = (void*) vfs_read;
+		SyscallTable[SYSCALL_VFS_WRITE]                 = (void*) vfs_write;
 
-		SyscallTable[77]                            = (void*) tmp_debug;
+		SyscallTable[77]                                = (void*) tmp_debug;
 
-		SyscallTable[SYSCALL_GET_NANOSECOND_TS]     = (void*) nanosecond_timestamp;
-		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]     = (void*) user_signal_leave;
-		SyscallTable[SYSCALL_LOG]                   = (void*) kernel_log;
-
-		// SyscallTable[11] = (void*) debug_char;
-		// SyscallTable[12] = (void*) debug_ptr;
-		// SyscallTable[13] = (void*) debug_str;
+		SyscallTable[SYSCALL_GET_NANOSECOND_TS]         = (void*) nanosecond_timestamp;
+		SyscallTable[SYSCALL_USER_SIGNAL_LEAVE]         = (void*) user_signal_leave;
+		SyscallTable[SYSCALL_LOG]                       = (void*) kernel_log;
 	}
 
 	void init()

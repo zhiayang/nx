@@ -14,6 +14,8 @@
 #include "cpu/exceptions.h"
 #include "devices/pc/apic.h"
 
+#include "rpc.h"
+
 namespace nx
 {
 	// TODO: jesus christ get rid of this
@@ -174,10 +176,6 @@ namespace nx
 		// parse the kernel parameters from the bootloader.
 		params::init(bootinfo);
 
-		// setup the vfs and the initrd
-		vfs::init();
-		initrd::init(bootinfo);
-
 		// init the real console
 		console::init(bootinfo->fbHorz, bootinfo->fbVert, bootinfo->fbScanWidth);
 
@@ -192,17 +190,23 @@ namespace nx
 		if(!params::haveOption("no_symbols"))
 			util::initKernelSymbols(bootinfo);
 
-		// we should be done with the bootinfo now.
-		pmm::freeAllEarlyMemory(bootinfo);
-
 		// initialise the interrupt controller (APIC or PIC).
 		// init_arch allows us to do basic scheduling.
 		interrupts::init_arch();
 
+		// bootstrap the scheduler first
+		scheduler::bootstrap();
+
+		// setup the vfs and the initrd
+		vfs::init();
+		initrd::init(bootinfo);
+
+		// we should be done with the bootinfo now.
+		pmm::freeAllEarlyMemory(bootinfo);
+
 		// hopefully we are flying more than half a ship at this point
 		// initialise the scheduler with some threads -- this function will end!!
 		{
-			scheduler::bootstrap();
 			scheduler::init();
 			scheduler::installTickHandlers();
 
@@ -261,8 +265,24 @@ namespace nx
 */
 
 
+/*
+	todo (09/01/2021):
 
+	1. all prior todos
 
+	2. a lot of the syscalls don't return error codes; we need to figure out a way to either
+		(a) return an error code nicely to the user via the return value
+		(b) use (clobber) another register to return an error code "out of band"
+*/
+
+/*
+	todo (19/02/2021):
+
+	1. all prior todos
+
+	2. it would be nice to have a mechanism for "prefetching" pagefaults (we need that for mmap's
+		MAP_POPULATE in the future anyway).
+*/
 
 
 

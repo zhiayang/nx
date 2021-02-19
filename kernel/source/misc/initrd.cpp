@@ -50,6 +50,27 @@ struct tarent_t
 namespace nx {
 namespace initrd
 {
+	static ipc::mem_ticket_t initrdTicket;
+	static void* setup_memticket(size_t size)
+	{
+		auto id = ipc::createMemticket(size, ipc::MEMTICKET_FLAG_READ | ipc::MEMTICKET_FLAG_WRITE);
+		if(id == (ipc::memticket_id) -1)
+			abort("failed to create memticket for initrd");
+
+		//* obviously put it in the kernel address space. since memtickets are lazy by design, this...
+		//* will be a page-fault-fest on startup... which is probably not that big of a deal.
+		initrdTicket = ipc::collectMemticket(id, vmm::AddressSpaceType::Kernel);
+		if(!initrdTicket.ptr || !initrdTicket.len)
+			abort("failed to collect memticket for initrd");
+
+		return initrdTicket.ptr;
+	}
+
+	ipc::mem_ticket_t getInitrdMemticket()
+	{
+		return initrdTicket;
+	}
+
 	void init(BootInfo* bi)
 	{
 		if(bi->initrdSize == 0 || bi->initrdBuffer == 0)
@@ -69,7 +90,6 @@ namespace initrd
 		// check if it's gzip first.
 		if(((gzip_header_t*) initrd)->magic[0] == 0x1F && ((gzip_header_t*) initrd)->magic[1] == 0x8B)
 		{
-			log("initrd", "format: gzip (compressed: {} bytes)", inpSz);
 			println("decompressing initrd...\n");
 
 			// note: we do this to avoid unaligned access, which ubsan complains about.

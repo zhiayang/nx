@@ -39,6 +39,7 @@ namespace nx
 	namespace initrd
 	{
 		void init(BootInfo* bi);
+		ipc::mem_ticket_t getInitrdMemticket();
 	}
 }
 

@@ -10,7 +10,6 @@ namespace vmm
 {
 	constexpr bool LOG_ALL_FAULTS = false;
 
-
 	bool handlePageFault(uint64_t cr2, uint64_t errorCode, uint64_t rip)
 	{
 		// The error code gives us details of what happened.
@@ -21,13 +20,11 @@ namespace vmm
 		if(reserved)
 			return false;
 
-
 		auto aligned_cr2 = VirtAddr(PAGE_ALIGN(cr2));
 
 		// this will get the flags for the current process's address space, so we
 		// don't need to pass it explicitly.
 		auto flags = vmm::getPageFlags(aligned_cr2);
-
 
 		/*
 			make sure this is something that's a legitimate situation.
@@ -40,7 +37,7 @@ namespace vmm
 		if(flags & PAGE_COPY_ON_WRITE)
 		{
 			auto pid = scheduler::getCurrentProcess()->processId;
-			auto tid = scheduler::getCurrentThread()->threadId;
+			auto tid = scheduler::getCurrentThread() ? scheduler::getCurrentThread()->threadId : 0;
 
 			// ok, we should be sane here. we enable interrupts here, for a number of reasons:
 			// 1. this handler might need to do complex work, so we don't want to hold up the

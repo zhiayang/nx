@@ -198,7 +198,9 @@ namespace nx
 			nx::array<PhysAddr> allocatedPhysPages;
 
 			// this is a spinlock! see the paragraphs in _heap_impl.h on why.
-			nx::spinlock lk;
+			// this is also a *recursive* spinlock! it might happen that updating the addressspace
+			// requires performing other addrspace-related operations, which should be allowable.
+			nx::r_spinlock lk;
 
 			struct LockedAddrSpace
 			{

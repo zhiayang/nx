@@ -96,7 +96,7 @@ namespace nx::ipc
 		return -1;
 	}
 
-	mem_ticket_t collectMemticket(memticket_id ticketId)
+	mem_ticket_t collectMemticket(memticket_id ticketId, vmm::AddressSpaceType aspace)
 	{
 		auto ret_ticket = ipc::mem_ticket_t();
 		memset(&ret_ticket, 0, sizeof(ipc::mem_ticket_t));
@@ -118,7 +118,7 @@ namespace nx::ipc
 				auto proc = scheduler::getCurrentProcess();
 
 				// TODO: we might want to abstract this out a bit more?
-				auto virt = vmm::allocateAddrSpace(tik->numPages, vmm::AddressSpaceType::User);
+				auto virt = vmm::allocateAddrSpace(tik->numPages, aspace);
 				auto svmr = vmm::SharedVMRegion(virt, tik->numPages, &tik->physicalPages);
 
 				proc->addrspace.lock()->addSharedRegion(svmr.clone());
@@ -126,8 +126,11 @@ namespace nx::ipc
 				proc->collectedTickets.lock()->append(ticketId);
 
 				// mapLazy will not even map the pages present, so both a read and a write will trap
-				vmm::mapLazy(virt, tik->numPages,
-					vmm::PAGE_USER | ((tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0), proc);
+				auto pageflags = (tik->flags & ipc::MEMTICKET_FLAG_WRITE) ? vmm::PAGE_WRITE : 0;
+				if(aspace == vmm::AddressSpaceType::User)
+					pageflags |= vmm::PAGE_USER;
+
+				vmm::mapLazy(virt, tik->numPages, pageflags, proc);
 
 				tik->ref();
 				tik->collectors[proc].insert(virt, krt::move(svmr));

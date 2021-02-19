@@ -61,8 +61,11 @@ namespace nx::ipc
 
 	memticket_id createMemticket(size_t len, uint64_t flags);
 	void releaseMemticket(const mem_ticket_t& ticket);
-	mem_ticket_t collectMemticket(memticket_id ticketId);
 	mem_ticket_t findExistingMemticket(memticket_id ticketId);
+
+	// map to userspace by default, but allow overriding so we can put tickets in kernel space.
+	mem_ticket_t collectMemticket(memticket_id ticketId,
+		vmm::AddressSpaceType aspace = vmm::AddressSpaceType::User);
 
 	void cleanupProcessTickets(scheduler::Process* proc);
 
