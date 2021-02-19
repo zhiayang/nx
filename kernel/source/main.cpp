@@ -39,7 +39,7 @@ namespace nx
 
 
 		// scheduler::addThread(loader::loadProgram("/initrd/services/tty-svr"));
-		scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
+		auto vfs = scheduler::addThread(loader::loadProgram("/initrd/services/vfs-svr"));
 
 		auto placebo = scheduler::addThread(loader::loadProgram("/initrd/drivers/placebo"));
 
@@ -93,6 +93,33 @@ namespace nx
 
 		log("kernel", "woken from slumber, committing murder! {p}", (void*) placebo);
 		ipc::signal("/proc/name/placebo", ipc::SIGNAL_TERMINATE, ipc::signal_message_body_t(31, 45, 67));
+
+		{
+			auto vfs_pid = vfs->parent->processId;
+			auto conn = rpc::createConnection(0, vfs_pid);
+
+			rpc::message_t params;
+			params.function = 0x100;
+
+			auto mt = initrd::getInitrdMemticket();
+			struct {
+				uint64_t memTicketId;
+				size_t offset;
+				size_t length;
+			} buf = {
+				.memTicketId = mt.ticketId,
+				.offset = 0,
+				.length = mt.len
+			};
+
+			memcpy(params.bytes, &buf, sizeof(buf));
+
+			rpc::message_t result;
+			syscall::rpc_call(conn, &params, &result);
+
+			scheduler::yield();
+			scheduler::sleep(time::seconds(5));
+		}
 
 		while(true)
 			asm volatile("pause");
